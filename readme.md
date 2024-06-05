@@ -1,5 +1,5 @@
 # Overview
-Bread engine is a chess engine written in c++. I started working on it in 2020, and only just finished. There is still a lot of room for improvement, but the engine is quite strong (for humans, at least). It uses NNUE (efficiently updatable neural network) to evaluate positions, as well as minimax search.
+Bread engine is a chess engine written in c++. I started working on it in 2021, and only just finished. There is still a lot of room for improvement, but the engine is quite strong (for humans, at least). It uses NNUE (efficiently updatable neural network) to evaluate positions, as well as minimax search.
 Bread engine does not have a GUI built in, however it supports the uci protocol, you can therefore run it on any chess GUI.
 
 The engine has two build options:
@@ -68,7 +68,7 @@ So let's say you wrote a function that takes a chess position and returns a scor
 The associated score is usually in centipawns, but the measure is arbitrary, the important is that the evaluation is coherent: if the position A is better than B for white, then f(A) > f(B).
 
 Now that we have an evaluation function, we can use it to find moves: For a given chess position, we can look at every legal move, and choose the one that increases the evaluation function the most if it is white's turn to play, and decreases the evaluation the most if it is black's turn to play.
-However, this is not enough to make a strong chess engine. The issue is that the evaluation function is never perfect, so the engine will make mistakes. If we use the "piece count" evaluation function, our engine may play queen takes pawn in this position, and loose its queen on the next move. 
+However, this is not enough to make a strong chess engine. The issue is that the evaluation function is never perfect, so the engine will make mistakes. If we use the "piece count" evaluation function, our engine may take a defended pawn with a queen, and loose it on the next move. 
 Therefore, what we need to do is consider the opponent's responses to our moves. So when the engine thinks, after queen takes pawn, it will look at all the opponent's legal moves and evaluate these using the evaluation function. The opponent wants to minimize the score so it will pick the lowest evaluation. Now we can update the queen takes pawn position to be bad for us.
 
 We saw how the engine can consider its move, and the opponent's response. We say that the engine searches at depth 2. But there is no reason to stop there, a depth of 3 means the engine considers: its move, the opponent's response, and its move again.
@@ -122,7 +122,7 @@ Currently, the fifty-move rule isn't supported by Bread Engine.
 
 ## Neural Network
 ### Neural network types
-In its first prototype, Bread Engine relied on a convolutional neural network as its evaluation function. You can find the network specs [here](). Even though convolutional neural networks are suited for pattern recognition, they are too slow for a strong chess engine. A classic multilayer perceptron, on the other hand, may have weaker accuracy, but its speed more than makes up for it. Moreover, recent techniques make use of clever aspects of chess evaluation to speed up these networks even more.
+In its first prototype, Bread Engine relied on a convolutional neural network as its evaluation function. You can find the network specs [here](./images/CNN%20specs.png?raw=true). Even though convolutional neural networks are suited for pattern recognition, they are too slow for a strong chess engine. A classic multilayer perceptron, on the other hand, may have weaker accuracy, but its speed more than makes up for it. Moreover, recent techniques make use of clever aspects of chess evaluation to speed up these networks even more.
 
 ### Description of NNUE
 Bread Engine's NNUE is heavily inspired by the approach described by [stockfish](https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md).
@@ -139,7 +139,7 @@ Each perspective consists of a board representation similar to before, but with 
 So there are 64 king squares * 64 piece squares * 10 piece types (not including the kings) = 40960 input features for one perspective.
 This overparametrisation from the intuitive 768 to 40960 input neurons helps to leverage the efficiency of NNUE.
 In the case of Bread Engine, the two perspectives are each run through the same set of weights 40960->256 and concatenated into a vector of size 512, with the side to move perspective first, and the other second.
-Here are the full [network specs]() (Relu is actually clipped relu between 0 and 1).
+Here are the full [network specs](./images/NNUE%20specs.png?raw=true) (Relu is actually clipped relu between 0 and 1).
 
 ### quantization
 An important way to speed up the neural network is to use quantization with SIMD vectorization on the cpu (unfortunately, gpu's aren't usually suited for chess engines as minimax is difficult to paralellize because of alpha beta pruning (see [ybwf](https://www.chessprogramming.org/Young_Brothers_Wait_Concept) or [lazy SMP](https://www.chessprogramming.org/Lazy_SMP)). Also, the data transfer latency between cpu and gpu is too high).

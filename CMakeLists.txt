@@ -11,7 +11,7 @@ set(bread_NEURAL_NETWORKS ${CMAKE_CURRENT_SOURCE_DIR}/neural_networks)
 
 option(bread_USE_TB "use endgame tablebase" ON)
 option(bread_EMBED_NN "embed neural network in the executable" ON)
-set(bread_EMBED_NN OFF)
+
 message(STATUS "use endgame tablebase: ${bread_USE_TB}")
 message(STATUS "embed neural network in executable: ${bread_EMBED_NN}")
 
