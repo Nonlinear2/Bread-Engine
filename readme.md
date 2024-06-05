@@ -34,29 +34,22 @@ These can all be built using cmake.
 # Technical details
 in this section we provide an overview of the search algorithm, and the main engine features. The explanations are very high level, so feel free to search more details on other resources.
 
-- [Overview](#overview)
-- [Installation](#installation)
-- [Technical details](#technical-details)
-  - [Search Algorithm](#search-algorithm)
-    - [Minimax](#minimax)
-    - [Alpha Beta pruning](#alpha-beta-pruning)
-    - [Transposition Table](#transposition-table)
-    - [Move ordering.](#move-ordering)
-    - [Iterative deepening.](#iterative-deepening)
-    - [Quiescence search](#quiescence-search)
-    - [pondering](#pondering)
-    - [aspiration windows.](#aspiration-windows)
-    - [other optimizations](#other-optimizations)
-    - [threefold repetition](#threefold-repetition)
-  - [Neural Network](#neural-network)
-    - [Neural network types](#neural-network-types)
-    - [Description of NNUE](#description-of-nnue)
-    - [the halfKP feature set](#the-halfkp-feature-set)
-    - [quantization](#quantization)
-- [Learning resources](#learning-resources)
-- [Notable games](#notable-games)
-- [Acknowledgements](#acknowledgements)
-
+- [Search Algorithm](#search-algorithm)
+  - [Minimax](#minimax)
+  - [Alpha Beta pruning](#alpha-beta-pruning)
+  - [Transposition Table](#transposition-table)
+  - [Move ordering.](#move-ordering)
+  - [Iterative deepening.](#iterative-deepening)
+  - [Quiescence search](#quiescence-search)
+  - [pondering](#pondering)
+  - [aspiration windows.](#aspiration-windows)
+  - [other optimizations](#other-optimizations)
+  - [threefold repetition](#threefold-repetition)
+- [Neural Network](#neural-network)
+  - [Neural network types](#neural-network-types)
+  - [Description of NNUE](#description-of-nnue)
+  - [the halfKP feature set](#the-halfkp-feature-set)
+  - [quantization](#quantization)
 
 ## Search Algorithm
 A chess engine is only just a program that takes a chess position and returns the corresponding best move to play. To play a full game of chess, you can just give the engine the positions that arise on the board one after the other.
@@ -134,6 +127,7 @@ Let's consider a simple deep neural network, taking 768 inputs corresponding to 
 ### the halfKP feature set
 There are many different choices for the input feature representation, but 
 > HalfKP is the most common feature set and other successful ones build on top of it. It fits in a sweet spot of being just the right size, and requiring very few updates per move on average. [Link](https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#halfkp)
+
 This board representation works with two components: the perspective of the side to move, and the other perspective.
 Each perspective consists of a board representation similar to before, but with separate features for each friendly king square.
 So there are 64 king squares * 64 piece squares * 10 piece types (not including the kings) = 40960 input features for one perspective.
