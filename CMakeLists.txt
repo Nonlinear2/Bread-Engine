@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(bread_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(bread_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 set(bread_DEPENDENCIES ${CMAKE_CURRENT_SOURCE_DIR}/dependencies)
+set(bread_NEURAL_NETWORKS ${CMAKE_CURRENT_SOURCE_DIR}/neural_networks)
 
 option(bread_USE_TB "use endgame tablebase" ON)
 option(bread_EMBED_NN "embed neural network in the executable" ON)
@@ -16,7 +17,7 @@ message(STATUS "embed neural network in executable: ${bread_EMBED_NN}")
 
 # this path is relative to the executable. It can be changed if needed
 set(bread_NNUE_MODEL_PATH
-    "${bread_DEPENDENCIES}/model_NNUE_2-40960_2x256_8_8_1_quant_layers"
+    "${bread_NEURAL_NETWORKS}/model_NNUE_2-40960_2x256_8_8_1_quant_layers"
 )
 
 # this path is relative to the executable. It can be changed if needed
