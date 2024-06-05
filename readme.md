@@ -191,9 +191,13 @@ void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
 
 # Learning resources
 [chess programming wiki](https://www.chessprogramming.org/Main_Page)
+
 [wikipedia](https://en.wikipedia.org/wiki/Monte_Carlo_tree_search)
+
 [avx tutorial](https://www.codeproject.com/Articles/874396/Crunching-Numbers-with-AVX-and-AVX)
+
 [intel avx](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html#ig_expand=140,92,83)
+
 - posts:
 [nnue](https://chess.stackexchange.com/questions/33691/halfkp-structure-for-stockfish-shogi-nnue-how-does-it-work)
 
@@ -206,9 +210,15 @@ f5 22. Bd2 f4 23. Bxf4 Rxf4 24. Kh2 Bf5+ 25. Kg2 Qg5+ 26. Kf1 Bh3# 0-1
 
 # Acknowledgements
 [lichess's open database](https://database.lichess.org/) for training data for the neural network.
+
 [stockfish](https://stockfishchess.org/) for their documentation and training evaluations.
+
 [tensorflow](https://www.tensorflow.org/)
+
 [onnx runtime](https://onnxruntime.ai/)
+
 [sebastian lague](https://www.youtube.com/watch?v=U4ogK0MIzqk&t=1174s) for inspiring me to do this project
+
 [disservin's chess library](https://github.com/Disservin/chess-library)
+
 [fathom tablebase probe](https://github.com/jdart1/Fathom)
