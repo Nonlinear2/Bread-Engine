@@ -138,10 +138,10 @@ Here are the full [network specs](./images/NNUE%20specs.png?raw=true) (Relu is a
 ### quantization
 An important way to speed up the neural network is to use quantization with SIMD vectorization on the cpu (unfortunately, gpu's aren't usually suited for chess engines as minimax is difficult to paralellize because of alpha beta pruning (see [ybwf](https://www.chessprogramming.org/Young_Brothers_Wait_Concept) or [lazy SMP](https://www.chessprogramming.org/Lazy_SMP)). Also, the data transfer latency between cpu and gpu is too high).
 
-The first layer weights and biases are multiplied by a scale of 127 and stored in int16. Accumulation also happens in int16.  With a maximum of 30 active input features (all pieces on the board), there won't be any integer overflow unless (sum of 30 weights) + bias > 32767, which is most definitely not the case. We then apply clipped relu while converting to int8. Now layer_1_quant_output = input @ (127*weights) + 127*bias = 127 * (input @ weights + bias) = 127 * true_output.
+The first layer weights and biases are multiplied by a scale of 127 and stored in int16. Accumulation also happens in int16.  With a maximum of 30 active input features (all pieces on the board), there won't be any integer overflow unless (sum of 30 weights) + bias > 32767, which is most definitely not the case. We then apply clipped relu while converting to int8. Now `layer_1_quant_output = input @ (127*weights) + 127*bias = 127*(input @ weights + bias) = 127*true_output`.
 For the second layer, weights are multiplied by 64 and stored in int8, and bias is multiplied by 127 * 64 and stored in int32.
-To be able to store weights in int8, we need to make sure that weights*64 < 127, so a weight can't exceed 127/64 = 1.98. This is the price to pay for full integer quantization. After this layer, the output is
-layer_2_quant_output = quant_input @ (64*weights) + 127*64*bias = 127*64*(input @ weights + bias) = 127*64*true_output. Therefore, we need to divide the quantized output by 64 before applying the clipped relu (this is done using bitshifts as 64 is a power of 2. We lose at most 1/127 = 0.0078 of precision by doing this).
+To be able to store weights in int8, we need to make sure that weights * 64 < 127, so a weight can't exceed 127/64 = 1.98. This is the price to pay for full integer quantization. After this layer, the output is
+`layer_2_quant_output = quant_input @ (64*weights) + 127*64*bias = 127*64*(input @ weights + bias) = 127*64*true_output`. Therefore, we need to divide the quantized output by 64 before applying the clipped relu (this is done using bitshifts as 64 is a power of 2. We lose at most 1/127 = 0.0078 of precision by doing this).
 Layers 3 and 4 are similar. Layer 4 is small enough that we can accumulate outputs in in16.
 Here is the relevant code in Bread Engine:
 
@@ -198,15 +198,11 @@ void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
 
 [intel avx](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html#ig_expand=140,92,83)
 
-- posts:
-[nnue](https://chess.stackexchange.com/questions/33691/halfkp-structure-for-stockfish-shogi-nnue-how-does-it-work)
+[halfkp](https://chess.stackexchange.com/questions/33691/halfkp-structure-for-stockfish-shogi-nnue-how-does-it-work)
 
 # Notable games
 nnue without quantization vs nnue with quantization 0-1: 
-1. d4 Nf6 2. c4 c5 3. d5 e6 4. Nc3 exd5 5. cxd5 d6 6. e4 g6 7. Bf4 a6 8. Bd3 b5
-9. Nge2 Bg7 10. a3 O-O 11. O-O Nh5 12. Bc1 Nd7 13. h3 Ne5 14. Bc2 Nf3+ 15. gxf3
-Bxh3 16. Ng3 Qh4 17. Nce2 Rae8 18. Re1 Bd4 19. Nxd4 Nxg3 20. Ne2 Nxe2+ 21. Qxe2
-f5 22. Bd2 f4 23. Bxf4 Rxf4 24. Kh2 Bf5+ 25. Kg2 Qg5+ 26. Kf1 Bh3# 0-1
+1. d4 Nf6 2. c4 c5 3. d5 e6 4. Nc3 exd5 5. cxd5 d6 6. e4 g6 7. Bf4 a6 8. Bd3 b5 9. Nge2 Bg7 10. a3 O-O 11. O-O Nh5 12. Bc1 Nd7 13. h3 Ne5 14. Bc2 Nf3+ 15. gxf3 Bxh3 16. Ng3 Qh4 17. Nce2 Rae8 18. Re1 Bd4 19. Nxd4 Nxg3 20. Ne2 Nxe2+ 21. Qxe2 f5 22. Bd2 f4 23. Bxf4 Rxf4 24. Kh2 Bf5+ 25. Kg2 Qg5+ 26. Kf1 Bh3# 0-1
 
 # Acknowledgements
 [lichess's open database](https://database.lichess.org/) for training data for the neural network.
