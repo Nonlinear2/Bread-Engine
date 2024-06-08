@@ -2,26 +2,18 @@
 Bread engine is a chess engine written in c++. I started working on it in 2021, and only just finished. There is still a lot of room for improvement, but the engine is quite strong (for humans, at least). It uses NNUE (efficiently updatable neural network) to evaluate positions, as well as minimax search.
 Bread engine does not have a GUI built in, however it supports the uci protocol, you can therefore run it on any chess GUI.
 
-The engine has two build options:
-
-- Option 1: use endgame tablebase
-If this option is on, the engine will search for a folder next to the executable, named `3-4-5_pieces_Syzygy` containing the tablebase. You can download the folder [here](https://chess.massimilianogoi.com/download/tablebases/Syzygy3-4-5/). Thanks to Massimiliano Goi for sharing this tablebase. 
-
-- Option 2: embed neural network in executable.
-If this option is off, the engine will search for the folder `model_NNUE_2-40960_2x256_8_8_1_quant_layers` next to the executable.
-
 # Installation
-For windows, you can find precompiled binaries in the release section. There are 4 of them, one for each option combination.
+For windows, you can find the precompiled binary in the release section. 
+Please note that the engine requires a cpu with AVX2 support.
 
-If you want to change the tablebase or neural network path, you can build the engine yourself using cmake.
-
-Once you have the engine installed, you can run the executable, and write the following commands:
+Once you have the engine installed, you can run the executable, and write the following commands one after the other:
 
 ```console
 uci
 position startpos
-go wtime 10000 btime 10000 winc 1000 binc 1000
+go movetime 5000
 ```
+
 and the engine will return the best move. To set a position with a specific fen, you can use `position fen 5rkq/3prp1p/5RpP/p1p5/5Q2/1B4P1/P4PK1/8 w - a6 0 51` for instance. You can find more details on the [uci protocol](https://www.wbec-ridderkerk.nl/html/UCIProtocol.html) webpage. Please note that only the main commands are supported.
 
 Besides the main engine build, you can also build some utility code to:

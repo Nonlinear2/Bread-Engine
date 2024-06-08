@@ -242,13 +242,11 @@ chess::Move Engine::iterative_deepening(int time_limit_, int min_depth_=4, int m
 
     engine_color = (inner_board.sideToMove() == chess::Color::WHITE) ? 1: -1;
 
-    #if bread_USE_TB
     chess::Move tb_move;
     if (inner_board.probe_dtz(tb_move)){
         std::cout << "bestmove " << chess::uci::moveToUci(tb_move) << std::endl;
         return tb_move;
     };
-    #endif
 
     while (true){
         search_depth = current_depth;
@@ -438,13 +436,11 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
 float Engine::qsearch(float alpha, float beta, int color, int depth){
     nodes++;
 
-    #if bread_USE_TB
     // tablebase probe
     float wdl_eval;
     if (inner_board.probe_wdl(wdl_eval)){
         return wdl_eval;
     }
-    #endif
 
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = inner_board.hash();
@@ -461,7 +457,8 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
 
             // we can already check for cutoff
             if (stand_pat >= beta){
-                return stand_pat;
+                // return stand_pat;
+                return beta;
             }
         } else if (transposition->flag == TFlag::EXACT){
             // this means that it is either a higher depth search, in which case we can return,
@@ -493,7 +490,8 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
         stand_pat = inner_board.evaluate();
         transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
         if (stand_pat >= beta){
-            return stand_pat;
+            // return stand_pat;
+            return beta;
         }
 
         if (depth == 0){
@@ -523,6 +521,7 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
         if (pos_eval > alpha){
             alpha = pos_eval;
             if (alpha >= beta){ // only check for cutoffs when alpha gets updated.
+                // return alpha;
                 return beta;
             }
         }

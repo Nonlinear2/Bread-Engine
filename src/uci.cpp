@@ -5,12 +5,16 @@ bool UCIAgent::process_uci_command(std::string command){
     std::string first = parsed_command[0];
 
     if (first == "uci"){
-        std::cout << "id name Bread Engine\n";
-        std::cout << "id author Nonlinear\n";
-        std::cout << "uciok\n";
+        std::cout << "id name Bread Engine " << bread_VERSION << std::endl;
+        std::cout << "id author Nonlinear" << std::endl;
+        std::cout << std::endl;
+        std::cout << "option name SyzygyPath type string default <empty>" << std::endl;
+        std::cout << "uciok" << std::endl;
+    } else if (first == "setoption"){
+        process_setoption(parsed_command);
 
     } else if (first == "isready"){
-        std::cout << "readyok\n";
+        std::cout << "readyok" << std::endl;
 
     } else if (first == "ucinewgame"){
         engine.transposition_table.clear();
@@ -30,9 +34,7 @@ bool UCIAgent::process_uci_command(std::string command){
 
     } else if (first == "quit"){
         interrupt_if_searching();
-        #if bread_USE_TB
         tb_free();
-        #endif
         return 0;
 
     } else {
@@ -52,6 +54,25 @@ std::vector<std::string> UCIAgent::split_string(std::string str){
         }
     }
     return split;
+}
+
+void UCIAgent::process_setoption(std::vector<std::string> command){
+    std::string option_name = command[2];
+    std::transform(option_name.begin(), option_name.end(), option_name.begin(), [](unsigned char c){ return std::tolower(c); });
+    if (option_name == "syzygypath"){
+        std::string path = command[4];
+        for (int i = 5; i < command.size(); i++){
+            path += " " + command[i];
+        }
+        bool tb_success = tb_init(path.c_str());
+        if (!tb_success){
+            std::cout << "info string tablebase initialisation failed" << std::endl;
+        } else if (TB_LARGEST == 0){
+            std::cout << "info string no tablebase loaded" << std::endl;
+        } else {
+            std::cout << "info string tablebase loaded" << std::endl;
+        }
+    }
 }
 
 void UCIAgent::process_position(std::vector<std::string> command){
@@ -81,6 +102,7 @@ void UCIAgent::process_position(std::vector<std::string> command){
 }
 
 void UCIAgent::process_go(std::vector<std::string> command){
+    bool exact_movetime = false;
     int wtime = -1;
     int btime = -1;
     int inc = 0;
@@ -96,18 +118,26 @@ void UCIAgent::process_go(std::vector<std::string> command){
         } else if (token == "movestogo"){
             movestogo = std::stoi(command[i+1]);
             // normally, handle depth, node, mate, movetime command now
+        } else if (token == "movetime"){
+            exact_movetime = true;
+            think_time = std::stoi(command[i+1]);
+            break;
         } else if (token == "infinite"){
-            wtime = btime = INT32_MAX;
+            exact_movetime = true;
+            think_time = INT32_MAX;
+            break;
         }
     }
-    if ((wtime == -1) || (btime == -1)){
-        std::cout << "no time specified\n";
-        return;
-    };
+    if (!exact_movetime){
+        if ((wtime == -1) || (btime == -1)){
+            std::cout << "no time specified\n";
+            return;
+        };
+        int engine_time_left = (engine.inner_board.sideToMove() == chess::Color::WHITE) ? wtime: btime;
 
-    int engine_time_left = (engine.inner_board.sideToMove() == chess::Color::WHITE) ? wtime: btime;
-
-    think_time = static_cast<int>(engine.get_think_time(engine_time_left, num_moves_out_of_book, movestogo, inc));
+        think_time = static_cast<int>(engine.get_think_time(engine_time_left, num_moves_out_of_book, movestogo, inc));
+    }
+    
     if (command[1] == "ponder"){
         main_search_thread = std::thread(&Engine::iterative_deepening, 
                                          &engine, INT32_MAX, 0, 25); // infinite search time

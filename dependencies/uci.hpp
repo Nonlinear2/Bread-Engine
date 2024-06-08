@@ -21,6 +21,8 @@ class UCIAgent {
     
     std::vector<std::string> split_string(std::string str);
 
+    void process_setoption(std::vector<std::string> command);
+    
     void process_position(std::vector<std::string> command);
 
     void process_go(std::vector<std::string> command);

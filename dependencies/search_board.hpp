@@ -2,17 +2,12 @@
 
 #include "chess.hpp"
 #include "piece_square_tables.hpp"
-
-#if bread_USE_TB
 #include "tbprobe.hpp"
-#endif
 
 #include <string>
 
 class SearchBoard: public chess::Board {
     public:
-    SearchBoard();
-    SearchBoard(std::string_view fen);
 
     virtual void synchronize() = 0;
 

@@ -1,19 +1,6 @@
 #include "search_board.hpp"
 
-SearchBoard::SearchBoard(): chess::Board::Board(){
-    #if bread_USE_TB
-    tb_init(bread_TB_PATH);
-    #endif
-};
-
-SearchBoard::SearchBoard(std::string_view fen): chess::Board::Board(fen) {
-    #if bread_USE_TB
-    tb_init(bread_TB_PATH);
-    #endif
-};
-
 bool SearchBoard::probe_wdl(float& eval){
-    #if bread_USE_TB
     if (occ().count() > 5){
         return false;
     }
@@ -39,13 +26,9 @@ bool SearchBoard::probe_wdl(float& eval){
         return true;
     }
     return false;
-    #else
-    return false;
-    #endif
 }
 
 bool SearchBoard::probe_dtz(chess::Move& move){
-    #if bread_USE_TB
     if (occ().count() > TB_LARGEST){
         return false;
     }
@@ -101,7 +84,4 @@ bool SearchBoard::probe_dtz(chess::Move& move){
         move.setScore(0);
     }
     return true;
-    #else
-    return false;
-    #endif
 }
