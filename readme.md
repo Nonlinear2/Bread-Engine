@@ -21,6 +21,8 @@ Besides the main engine build, you can also build some utility code to:
 - tune some engine parameters
 - run tests
 - benchmark the engine
+- run a search for a given fen
+
 These can all be built using cmake.
 
 # Technical details
@@ -47,7 +49,7 @@ in this section we provide an overview of the search algorithm, and the main eng
 A chess engine is only just a program that takes a chess position and returns the corresponding best move to play. To play a full game of chess, you can just give the engine the positions that arise on the board one after the other.
 
 ### Minimax
-Quantifiying what a "good move" is in chess is tricky, it is easier to tell who has the advantage on a given position.
+A "good move" in chess can be defined as a move which "improves your position".
 
 So let's say you wrote a function that takes a chess position and returns a score that is positive if white has the advantage, and negative if black has the advantage. A very basic implementation would be to count the white pieces, and subtract the number of black pieces.
 The associated score is usually in centipawns, but the measure is arbitrary, the important is that the evaluation is coherent: if the position A is better than B for white, then f(A) > f(B).
@@ -194,7 +196,7 @@ void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
 
 # Notable games
 nnue without quantization vs nnue with quantization 0-1: 
-1. d4 Nf6 2. c4 c5 3. d5 e6 4. Nc3 exd5 5. cxd5 d6 6. e4 g6 7. Bf4 a6 8. Bd3 b5 9. Nge2 Bg7 10. a3 O-O 11. O-O Nh5 12. Bc1 Nd7 13. h3 Ne5 14. Bc2 Nf3+ 15. gxf3 Bxh3 16. Ng3 Qh4 17. Nce2 Rae8 18. Re1 Bd4 19. Nxd4 Nxg3 20. Ne2 Nxe2+ 21. Qxe2 f5 22. Bd2 f4 23. Bxf4 Rxf4 24. Kh2 Bf5+ 25. Kg2 Qg5+ 26. Kf1 Bh3# 0-1
+1\. d4 Nf6 2. c4 c5 3. d5 e6 4. Nc3 exd5 5. cxd5 d6 6. e4 g6 7. Bf4 a6 8. Bd3 b5 9. Nge2 Bg7 10. a3 O-O 11. O-O Nh5 12. Bc1 Nd7 13. h3 Ne5 14. Bc2 Nf3+ 15. gxf3 Bxh3 16. Ng3 Qh4 17. Nce2 Rae8 18. Re1 Bd4 19. Nxd4 Nxg3 20. Ne2 Nxe2+ 21. Qxe2 f5 22. Bd2 f4 23. Bxf4 Rxf4 24. Kh2 Bf5+ 25. Kg2 Qg5+ 26. Kf1 Bh3# 0-1
 
 # Acknowledgements
 [lichess's open database](https://database.lichess.org/) for training data for the neural network.

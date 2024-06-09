@@ -200,7 +200,7 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(std::string fen){
     for (int i = 0; i < search_depth; i++){
         bool is_hit;
         TEntry* transposition = transposition_table.probe(is_hit, pv_visitor.hash());
-        if (!is_hit || transposition->best_move == NO_MOVE){
+        if ((!is_hit) || (transposition->best_move == NO_MOVE)){
             break;
         }
         if (i == 1){
@@ -341,6 +341,10 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
                 beta = std::min(beta, transposition->evaluation);
                 break;
         }
+        // we need to do a cutoff check because we updated alpha/beta.
+        if (beta <= alpha){
+            return transposition->evaluation;
+        }
     }
 
     if (depth == 0){
@@ -358,10 +362,10 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
     if (legal_moves.empty()){ // avoid calling expensive try_outcome_eval function
         max_eval = get_outcome_eval(depth);
 
-        // what depth to store is hard to choose, as we know this eval will be exact at any depth, but 
-        // we also don't want this eval to pollute the transposition table. We want it replaced at some point.
-        // this is why we stick to the "depth". 
-        transposition_table.store(zobrist_hash, max_eval, depth, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+        // we know this eval is exact at any depth, but 
+        // we also don't want this eval to pollute the transposition table.
+        // the full move number will make sure it is replaced at some point.
+        transposition_table.store(zobrist_hash, max_eval, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
         return max_eval;
     }
 
@@ -374,14 +378,14 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
     for (int i = 0; i < legal_moves.size(); i++){
         move = legal_moves[i];
 
+        bool is_capture = inner_board.isCapture(move);
         inner_board.update_state(move);
 
         // depth > 2 is to make sure the new depth is not less than 0.
         // (!inner_board.inCheck()) is to see if the move gives check. 
         // (we already updated the inner board so we only need to check if it is check)
-        if ((i > 3) & (depth > 2) & (inner_board.at(move.to()) == chess::Piece::NONE)
-                    & (!inner_board.inCheck())){
-            new_depth--;
+        if ((i > 3) & (depth > 2) & (!is_capture) & (!inner_board.inCheck())){
+            new_depth = depth-2;
             lmr = true;
         }
 
@@ -452,7 +456,7 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
-        if (transposition->depth == 0){ // careful, we use the fact that outcomes are stored at depth 3 here.
+        if (transposition->depth == 0){ // careful, we use the fact that outcomes are stored at depth 255 here.
             stand_pat = transposition->evaluation;
 
             // we can already check for cutoff
@@ -481,8 +485,7 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
         if (legal_captures.empty()){
             float outcome_eval;
             if (try_outcome_eval(outcome_eval)){ // only generate non captures?
-                transposition_table.store(zobrist_hash, outcome_eval, 3, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-                // higher depth stored because is exact at any depth.
+                transposition_table.store(zobrist_hash, outcome_eval, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
                 return outcome_eval;
             }
         }

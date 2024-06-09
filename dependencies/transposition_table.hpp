@@ -2,6 +2,7 @@
 
 #include "chess.hpp"
 #include <vector>
+#include <fstream>
 
 enum class TFlag: std::uint8_t {
     NO_FLAG,
@@ -39,6 +40,9 @@ class TranspositionTable {
     void clear();
 
     int hashfull();
+
+    void save_to_file(std::string file);
+    void load_from_file(std::string file);
 
     private:
     std::vector<TEntry> entries;

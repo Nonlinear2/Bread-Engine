@@ -88,3 +88,8 @@ bread_configure(generate_neural_net_header SOURCES
     ${bread_SOURCE}
     ${bread_UTILS}/generate_nn_header.cpp
 )
+
+bread_configure(search_position SOURCES
+    ${bread_SOURCE}
+    ${bread_UTILS}/run_search.cpp
+)

@@ -71,3 +71,30 @@ int TranspositionTable::hashfull(){
     }
     return used;
 }
+
+void TranspositionTable::save_to_file(std::string file){
+    std::ofstream ofs = std::ofstream(file, std::ios::binary | std::ios::out);
+    if (!ofs) {
+        std::cout << "Could not open file for writing." << std::endl;
+        return;
+    }
+
+    for (const auto& entry : entries) {
+        ofs.write(reinterpret_cast<const char*>(&entry), sizeof(TEntry));
+    }
+
+    ofs.close();
+}
+
+
+void TranspositionTable::load_from_file(std::string file){
+    std::ifstream ifs(file, std::ios::binary | std::ios::in);
+    if (!ifs) {
+        std::cout << "Could not open file for reading." << std::endl;
+    }
+    for (size_t i = 0; i < entries.size(); ++i) {
+        ifs.read(reinterpret_cast<char*>(&entries[i]), sizeof(TEntry));
+    }
+
+    ifs.close();
+}
