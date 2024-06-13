@@ -9,6 +9,9 @@
 #define SEARCH_BOARD NnueBoard
 
 #define NO_MOVE chess::Move::NO_MOVE
+#define ENGINE_MAX_DEPTH 25
+#define BEST_MOVE_SCORE 1000
+#define WORST_MOVE_SCORE -1000
 
 // shorter name
 inline std::chrono::time_point<std::chrono::high_resolution_clock> now(){
@@ -28,7 +31,7 @@ const std::vector<int> piece_value = {
 class CircularBuffer3 {
     public:
     int curr_idx = 0;
-    std::vector<uint16_t> data = std::vector<uint16_t>(3);
+    std::array<uint16_t, 3> data;
 
     void add_move(chess::Move move);
 
@@ -70,29 +73,27 @@ class Engine {
 
     void update_run_time();
 
-    chess::Move search(int time_limit_, int min_depth_, int max_depth_);
-    chess::Move search(std::string fen, int time_limit_, int min_depth_, int max_depth_);
+    chess::Move search(int time_limit, int min_depth, int max_depth);
+    chess::Move search(std::string fen, int time_limit, int min_depth, int max_depth);
 
     void set_interrupt_flag();
     void unset_interrupt_flag();
 
-    chess::Move iterative_deepening(int time_limit_, int min_depth_, int max_depth_);
+    chess::Move iterative_deepening(int time_limit, int min_depth, int max_depth);
 
     private:
     friend class UCIAgent;
-    
+
     int engine_color;
-    size_t engine_max_depth = 20;
     std::atomic<bool> interrupt_flag = false;
     PieceSquareMaps psm = PieceSquareMaps();
-    std::vector<CircularBuffer3> killer_moves{engine_max_depth};
+    std::vector<CircularBuffer3> killer_moves{ENGINE_MAX_DEPTH};
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 
     float get_outcome_eval(int depth);
     bool can_return();
     std::pair<std::string, std::string> get_pv_pmove(std::string fen);
     std::pair<chess::Move, TFlag> minimax_root(int depth, int color, float alpha, float beta);
-    // chess::Move aspiration_search(int depth, int color, float prev_eval);
     float negamax(int depth, int color, float alpha, float beta);
     float qsearch(float alpha, float beta, int color, int depth);
 };

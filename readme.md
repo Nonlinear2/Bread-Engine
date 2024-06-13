@@ -1,6 +1,6 @@
 # Overview
 Bread engine is a chess engine written in c++. I started working on it in 2021, and only just finished. There is still a lot of room for improvement, but the engine is quite strong (for humans, at least). It uses NNUE (efficiently updatable neural network) to evaluate positions, as well as minimax search.
-Bread engine does not have a GUI built in, however it supports the uci protocol, you can therefore run it on any chess GUI.
+Bread engine does not have a GUI built in, however it supports the uci protocol, you can therefore run it on any chess GUI, such as [cute chess](https://github.com/cutechess/cutechess) or [arena](http://www.playwitharena.de/).
 
 # Installation
 For windows, you can find the precompiled binary in the release section. 
@@ -159,7 +159,7 @@ inline __m256i _mm256_add8x256_epi32(__m256i* inputs){ // horizontal add 8 int32
 template<int in_size, int out_size>
 void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
 
-    __m256i output_chunks[int32_per_reg]; // these will be accumulated in ont register later
+    __m256i output_chunks[int32_per_reg];
     const __m256i one = _mm256_set1_epi16(1);
 
     for (int j = 0; j < num_output_chunks; j++){
@@ -171,7 +171,6 @@ void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
                     input_chunk,
                     _mm256_loadu_epi8(&this->weights[(j*int32_per_reg+k) * this->input_size + i*int8_per_reg])
                 );
-                // j*output_chunk_size+k is the j*8+k-th row, to that offset horizontally by i*32.
                 output_chunks[k] = _mm256_madd_epi16(output_chunks[k], one); // hadd pairs to int32
             }
             result = _mm256_add_epi32(result, _mm256_add8x256_epi32(output_chunks));

@@ -8,7 +8,8 @@ void CircularBuffer3::add_move(chess::Move move){
 }
 
 bool CircularBuffer3::in_buffer(chess::Move move){
-    return std::find(data.begin(), data.end(), move.move()) != data.end();
+    uint16_t move_val = move.move();
+    return (data[0] == move_val) || (data[1] == move_val) || (data[2] == move_val);
 }
 
 // set move score to be sorted later
@@ -58,7 +59,7 @@ void Engine::order_moves(chess::Movelist& moves, uint64_t zobrist_hash, int dept
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit & transposition->best_move != NO_MOVE){
-        moves[moves.find(transposition->best_move)].setScore(1000);
+        moves[moves.find(transposition->best_move)].setScore(BEST_MOVE_SCORE);
         // makes sure this move is searched first, regardless of depth of search.
     }
     // sort in descending order
@@ -131,7 +132,6 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
                 best_move = transposition->best_move;
                 best_move.setScore(transposition->evaluation);
                 return {best_move, TFlag::EXACT};
-                break;
         }
     }
 
@@ -178,6 +178,7 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
 
     return {best_move, node_type};
 }
+
 float Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
     float target;
     float move_num = num_moves_out_of_book < 10 ? static_cast<float>(num_moves_out_of_book) : 10;
@@ -212,16 +213,16 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(std::string fen){
     return std::pair(pv, ponder_move);
 }
 
-chess::Move Engine::search(std::string fen, int time_limit_, int min_depth_, int max_depth_){
+chess::Move Engine::search(std::string fen, int time_limit, int min_depth, int max_depth){
     inner_board.setFen(fen);
-    return iterative_deepening(time_limit_, min_depth_, max_depth_);
+    return iterative_deepening(time_limit, min_depth, max_depth);
 };
 
-chess::Move Engine::search(int time_limit_, int min_depth_, int max_depth_){
-    return iterative_deepening(time_limit_, min_depth_, max_depth_);
+chess::Move Engine::search(int time_limit, int min_depth, int max_depth){
+    return iterative_deepening(time_limit, min_depth, max_depth);
 };
 
-chess::Move Engine::iterative_deepening(int time_limit_, int min_depth_=4, int max_depth_=4){
+chess::Move Engine::iterative_deepening(int time_limit, int min_depth=4, int max_depth=4){
     std::string initial_fen = inner_board.getFen();
 
     std::string pv;
@@ -229,10 +230,10 @@ chess::Move Engine::iterative_deepening(int time_limit_, int min_depth_=4, int m
 
     chess::Move best_move;
 
-    time_limit = time_limit_;
+    this->time_limit = time_limit;
     start_time = now();
-    min_depth = min_depth_;
-    max_depth = max_depth_;
+    this->min_depth = min_depth;
+    this->max_depth = max_depth;
 
     std::fill(killer_moves.begin(), killer_moves.end(), CircularBuffer3());
 
@@ -270,7 +271,7 @@ chess::Move Engine::iterative_deepening(int time_limit_, int min_depth_=4, int m
         if ((best_move.score() >= 1) || // checkmate
             (best_move.score() <= -1) || // checkmate
             (current_depth >= max_depth) ||
-            (current_depth >= engine_max_depth)){break;}
+            (current_depth >= ENGINE_MAX_DEPTH)){break;}
         
         current_depth++;
     }
@@ -333,7 +334,6 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
                     break;
                 }
                 return transposition->evaluation;
-                break;
             case TFlag::LOWER_BOUND:
                 alpha = std::max(alpha, transposition->evaluation);
                 break;
@@ -352,7 +352,6 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
     }
     
     float max_eval = -100;
-
     chess::Move best_move;
 
     chess::Movelist legal_moves;
@@ -392,7 +391,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         pos_eval = -negamax(new_depth, -color, -beta, -alpha);
 
         if (lmr & (pos_eval > alpha)){
-            // do full search at original depth - 1.
+            // do full search
             pos_eval = -negamax(depth-1, -color, -beta, -alpha);
         }
 
@@ -421,6 +420,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         return max_eval;
         // we fall through without storing the eval in the TT.
     };
+
     TFlag node_type;
     if (beta <= alpha){ // this means there was a cutoff. So true eval is equal or higher
         node_type = TFlag::LOWER_BOUND;

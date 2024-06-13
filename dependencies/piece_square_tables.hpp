@@ -1,9 +1,9 @@
 #pragma once
 
 #include "chess.hpp"
-#include <vector>
+#include <array>
 
-inline std::vector<int> black_scores = {
+constexpr std::array<int, 64> black_scores = {
                 11, 11, 11, 7, 7, 9, 9, 9,
                 11, 11, 11, 7, 7, 9, 9, 9,
                 10, 10, 10, 7, 7, 8, 8, 8,
@@ -13,7 +13,7 @@ inline std::vector<int> black_scores = {
                 1,  1,  1,  5, 5, 3, 3, 3,
                 1,  1,  1,  5, 5, 3, 3, 3};
 
-inline std::vector<int> white_scores = {
+constexpr std::array<int, 64> white_scores = {
                  1,  1,  1, 5, 5, 3, 3, 3,
                  1,  1,  1, 5, 5, 3, 3, 3,
                  2,  2,  2, 5, 5, 4, 4, 4, 
@@ -23,7 +23,7 @@ inline std::vector<int> white_scores = {
                 11, 11, 11, 7, 7, 9, 9, 9, 
                 11, 11, 11, 7, 7, 9, 9, 9};
 
-inline std::vector<int> pawn_map_b = {
+constexpr std::array<int, 64> pawn_map_b = {
               9,  9,  9,  9,  9,  9,  9,  9,
               7,  7,  7,  7,  7,  7,  7,  7,
               2,  2,  3,  5,  5,  3,  2,  2,
@@ -33,7 +33,7 @@ inline std::vector<int> pawn_map_b = {
               0,  0,  0,  0,  0,  0,  0,  0,
               0,  0,  0,  0,  0,  0,  0,  0};
 
-inline std::vector<int> pawn_map_w = {
+constexpr std::array<int, 64> pawn_map_w = {
               0,  0,  0,  0,  0,  0,  0,  0,
               0,  0,  0,  0,  0,  0,  0,  0,
               1, -1, -2,  0,  0, -2, -1,  1,
@@ -43,7 +43,7 @@ inline std::vector<int> pawn_map_w = {
               7,  7,  7,  7,  7,  7,  7,  7,
               9,  9,  9,  9,  9,  9,  9,  9};
 
-inline std::vector<int> knight_map_b = {
+constexpr std::array<int, 64> knight_map_b = {
                 -1,  0,  1,  1,  1,  1,  0, -1,
                  0,  2,  4,  4,  4,  4,  2,  0,
                  1,  4,  6,  7,  7,  6,  4,  1,
@@ -53,7 +53,7 @@ inline std::vector<int> knight_map_b = {
                  0,  2,  4,  5,  5,  4,  2,  0,
                 -1,  0,  1,  1,  1,  1,  0, -1};
 
-inline std::vector<int> knight_map_w = {
+constexpr std::array<int, 64> knight_map_w = {
                 -1,  0,  1,  1,  1,  1,  0, -1,
                  0,  2,  4,  5,  5,  4,  2,  0,
                  1,  5,  6,  7,  7,  6,  5,  1,
@@ -63,7 +63,7 @@ inline std::vector<int> knight_map_w = {
                  0,  2,  4,  4,  4,  4,  2,  0,
                 -1,  0,  1,  1,  1,  1,  0, -1};
 
-inline std::vector<int> bishop_map_b = {
+constexpr std::array<int, 64> bishop_map_b = {
                 4, 5, 5, 5, 5, 5, 5, 4,
                 5, 6, 6, 6, 6, 6, 6, 5,
                 5, 6, 7, 8, 8, 7, 6, 5,
@@ -73,7 +73,7 @@ inline std::vector<int> bishop_map_b = {
                 5, 7, 6, 6, 6, 6, 7, 5,
                 4, 5, 5, 5, 5, 5, 5, 4};
 
-inline std::vector<int> bishop_map_w = {
+constexpr std::array<int, 64> bishop_map_w = {
                 4, 5, 5, 5, 5, 5, 5, 4,
                 5, 7, 6, 6, 6, 6, 7, 5,
                 5, 8, 8, 8, 8, 8, 8, 5,
@@ -83,7 +83,7 @@ inline std::vector<int> bishop_map_w = {
                 5, 6, 6, 6, 6, 6, 6, 5,
                 4, 5, 5, 5, 5, 5, 5, 4};
 
-inline std::vector<int> rook_map_b = {
+constexpr std::array<int, 64> rook_map_b = {
                6,  6,  6,  6,  6,  6,  6,  6,
               11, 12, 12, 12, 12, 12, 12, 11,
                4,  6,  6,  6,  6,  6,  6,  4,
@@ -93,7 +93,7 @@ inline std::vector<int> rook_map_b = {
                4,  6,  6,  6,  6,  6,  6,  4,
                6,  6,  6,  8,  8,  6,  6,  6};
 
-inline std::vector<int> rook_map_w = {
+constexpr std::array<int, 64> rook_map_w = {
                6,  6,  6,  8,  8,  6,  6,  6,
                4,  6,  6,  6,  6,  6,  6,  4,
                4,  6,  6,  6,  6,  6,  6,  4,
@@ -103,7 +103,7 @@ inline std::vector<int> rook_map_w = {
               11, 12, 12, 12, 12, 12, 12, 11,
                6,  6,  6,  6,  6,  6,  6,  6};
 
-inline std::vector<int> queen_map_b = {
+constexpr std::array<int, 64> queen_map_b = {
                2, 3, 3, 4, 4, 3, 3, 2,
                3, 5, 5, 5, 5, 5, 5, 3,
                3, 5, 7, 7, 7, 7, 5, 3,
@@ -113,7 +113,7 @@ inline std::vector<int> queen_map_b = {
                3, 5, 7, 5, 5, 5, 5, 3,
                2, 3, 3, 4, 4, 3, 3, 2};
 
-inline std::vector<int> queen_map_w = {
+constexpr std::array<int, 64> queen_map_w = {
                2, 3, 3, 4, 4, 3, 3, 2,
                3, 5, 7, 5, 5, 5, 5, 3,
                3, 7, 7, 7, 7, 7, 5, 3,
@@ -124,7 +124,7 @@ inline std::vector<int> queen_map_w = {
                2, 3, 3, 4, 4, 3, 3, 2};
 
 
-inline std::vector<float> king_map_mg_b = { // middle game
+constexpr std::array<float, 64> king_map_mg_b = { // middle game
                 -0.3, -0.4, -0.4, -0.5, -0.5, -0.4, -0.4, -0.3,
                 -0.3, -0.4, -0.4, -0.5, -0.5, -0.4, -0.4, -0.3,
                 -0.3, -0.4, -0.4, -0.5, -0.5, -0.4, -0.4, -0.3,
@@ -134,7 +134,7 @@ inline std::vector<float> king_map_mg_b = { // middle game
                  0.5,  0.5,  0.0,  0.0,  0.0,  0.0,  0.5,  0.5,
                  0.6,  0.7,  0.5,  0.0,  0.0,  0.5,  0.7,  0.6};
 
-inline std::vector<float> king_map_mg_w = { // middle game
+constexpr std::array<float, 64> king_map_mg_w = { // middle game
                 0.6,  0.7,  0.5,  0.0,  0.0,  0.5,  0.7,  0.6,  
                 0.5,  0.5,  0.0,  0.0,  0.0,  0.0,  0.5,  0.5,
                -0.1, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.1,
@@ -144,7 +144,7 @@ inline std::vector<float> king_map_mg_w = { // middle game
                -0.3, -0.4, -0.4, -0.5, -0.5, -0.4, -0.4, -0.3,
                -0.3, -0.4, -0.4, -0.5, -0.5, -0.4, -0.4, -0.3};
 
-inline std::vector<float> king_map_eg_b = { // end game
+constexpr std::array<float, 64> king_map_eg_b = { // end game
                    -0.4, -0.3, -0.2, -0.1, -0.1, -0.2, -0.3,   -0.4,
                    -0.2, -0.1,  0.0,  0.1,  0.1,  0.0, -0.1,   -0.2,
                    -0.2,  0.0,  0.3,  0.4,  0.4,  0.3,  0.0,   -0.2,
@@ -154,7 +154,7 @@ inline std::vector<float> king_map_eg_b = { // end game
                    -0.2, -0.2,  0.1,  0.1,  0.1,  0.1, -0.2,   -0.2,
                    -0.4, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2,   -0.4};
 
-inline std::vector<float> king_map_eg_w = { // end game
+constexpr std::array<float, 64> king_map_eg_w = { // end game
                  -0.4, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.4,
                  -0.2, -0.2,  0.1,  0.1,  0.1,  0.1, -0.2, -0.2,
                  -0.2,  0.0,  0.3,  0.4,  0.4,  0.3,  0.0, -0.2,
@@ -165,16 +165,16 @@ inline std::vector<float> king_map_eg_w = { // end game
                  -0.4, -0.3, -0.2, -0.1, -0.1, -0.2, -0.3, -0.4};
 
 struct PieceSquareMaps {
-    std::vector<int> all_psm = std::vector<int>(640); // 10 psm of 64 squares
-    std::vector<std::vector<int>> psms = {
+    std::array<int, 640> all_psm;// 10 psm of 64 squares
+    std::array<std::array<int, 64>, 10> psms = {
         pawn_map_w, knight_map_w, bishop_map_w, rook_map_w, queen_map_w,
         pawn_map_b, knight_map_b, bishop_map_b, rook_map_b, queen_map_b,
     };
 
-    std::vector<float> all_ksm = std::vector<float>(4*64); // wking/bking eg/not eg;
+    std::array<float, 4*64> all_ksm; // wking/bking, eg/not eg;
 
 
-    PieceSquareMaps(){
+    constexpr PieceSquareMaps(){
         for (int i = 0; i < 10; i++){
             std::copy(psms[i].begin(), psms[i].end(), &all_psm[i*64]);
         }
@@ -186,13 +186,13 @@ struct PieceSquareMaps {
 
     }
 
-    int get_psm(chess::Piece piece, chess::Square from_sq, chess::Square to_sq){
+    constexpr int get_psm(chess::Piece piece, chess::Square from_sq, chess::Square to_sq) const {
         int piece_idx = static_cast<int>(piece);
         piece_idx = (piece_idx-(piece_idx > 5))*64;
         return all_psm[piece_idx + to_sq.index()] - all_psm[piece_idx + from_sq.index()];
     }
 
-    float get_ksm(chess::Piece king, bool is_endgame, chess::Square from_sq, chess::Square to_sq){
+    constexpr float get_ksm(chess::Piece king, bool is_endgame, chess::Square from_sq, chess::Square to_sq) const {
         int piece_idx = 128*(king == chess::Piece::BLACKKING) + 64*is_endgame; 
         return all_ksm[piece_idx + to_sq.index()] - all_ksm[piece_idx + from_sq.index()];
     }

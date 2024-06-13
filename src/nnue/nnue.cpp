@@ -69,7 +69,7 @@ inline __m256i _mm256_add8x256_epi32(__m256i* inputs){ // 8 256 avx registers wi
 template<int in_size, int out_size>
 void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
 
-    __m256i output_chunks[int32_per_reg]; // these will be accumulated in ont register later
+    __m256i output_chunks[int32_per_reg];
     const __m256i one = _mm256_set1_epi16(1);
 
     for (int j = 0; j < num_output_chunks; j++){
@@ -81,7 +81,6 @@ void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
                     input_chunk,
                     _mm256_loadu_epi8(&this->weights[(j*int32_per_reg+k) * this->input_size + i*int8_per_reg])
                 );
-                // j*output_chunk_size+k is the j*8+k-th row, to that offset horizontally by i*32.
                 output_chunks[k] = _mm256_madd_epi16(output_chunks[k], one); // hadd pairs to int32
             }
             result = _mm256_add_epi32(result, _mm256_add8x256_epi32(output_chunks));
@@ -138,11 +137,8 @@ void NNUE::load_model(std::string path){
 };
 
 void NNUE::compute_accumulator(const std::vector<int> active_features, bool color){
-    // we have 256 int16 to process.
-    // there are 16 avx registers, and each can hold 16 int16.
-    // therefore we need to do 256/16*16 = 1 pass to the registers.
-
-    // number of floats processed each chunk
+    // we have 256 int16 to process, and there are 16 avx registers which can hold 16 int16.
+    // therefore we need only one pass to the registers.
 
     __m256i avx_regs[num_avx_registers];
 
@@ -153,14 +149,14 @@ void NNUE::compute_accumulator(const std::vector<int> active_features, bool colo
 
     for (const int &a: active_features){
         for (int i = 0; i < num_avx_registers; i++){
-            // a*acc size is to get the a column. We then add the correct weights.
+            // a*acc size is the index of the a-th row. We then accumulate the weights.
             avx_regs[i] = _mm256_add_epi16(
                 avx_regs[i],
                 _mm256_loadu_epi16(&feature_transformer.weights[a*acc_size + i*int16_per_reg])
                 );
         }
     }
-    //store the result in the accumulator
+    // store the result in the accumulator
     for (int i = 0; i < num_avx_registers; i++){
         _mm256_storeu_epi16(&accumulator[color][i*int16_per_reg], avx_regs[i]);
     }
@@ -169,6 +165,7 @@ void NNUE::compute_accumulator(const std::vector<int> active_features, bool colo
 void NNUE::update_accumulator(const modified_features m_features, bool color){
 
     __m256i avx_regs[num_avx_registers];
+
     // load the accumulator
     for (int i = 0; i < num_avx_registers; i++){
         avx_regs[i] = _mm256_loadu_epi16(&accumulator[color][i*int16_per_reg]);
@@ -176,13 +173,13 @@ void NNUE::update_accumulator(const modified_features m_features, bool color){
 
     // added feature
     for (int i = 0; i < num_avx_registers; i++){
-        // r*acc size is to get the r column. We then add the correct weights.
+        // m_features.added*acc_size is the index of the added featured row. We then accumulate the weights.
         avx_regs[i] = _mm256_add_epi16(
             avx_regs[i],
             _mm256_loadu_epi16(&feature_transformer.weights[m_features.added*acc_size + i*int16_per_reg])
             );
     }
-    // removed 
+    // removed feature
     for (int i = 0; i < num_avx_registers; i++){
         // m_features.removed*acc_size is to get the right column.
         avx_regs[i] = _mm256_sub_epi16(

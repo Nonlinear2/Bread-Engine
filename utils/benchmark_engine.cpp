@@ -78,45 +78,16 @@ void benchmark_nn(){
     std::cout << "============================== \n";
 }
 
-template<typename E>
-void benchmark_engine(E& engine, int depth){
+void benchmark_engine(int depth){
+    Engine engine = Engine();
+
     std::vector<float> times;
-    // std::vector<std::string> fens = {
-    //     "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2Q2/PPPP1PPP/R1B1K1NR b KQkq - 7 5",
-    //     "r2q1rk1/pp1bbppp/2pp1nn1/3Pp3/2P1P3/2NB1N1P/PP3PP1/R1BQR1K1 w - - 2 11",
-    //     "r2q1rk1/pp1bbpp1/2pp1nn1/3Pp3/P1P1P1Pp/2NB1P2/1P6/R1BQR1K1 b - - 0 16",
-    //     "r2q1rk1/pp2bpp1/2pp2n1/3Pp3/P1P1P1Qp/2NB4/1P6/R1B1R1K1 b - - 0 18",
-    //     "6k1/7p/6p1/8/p1r5/P2RK3/6PP/8 w - - 0 38",
-    //     "r2qk2r/pp1bbp1p/2n1pnp1/1B1p4/5P2/4BN2/PPP1N1PP/R2Q1RK1 b kq - 3 12",
-    //     "3k3r/p1r2p2/1qpbpPpp/3p2P1/1PbP4/B1P1QN2/5P1P/R3K2R b KQ - 2 24",
-    //     "R3Rbk1/5q2/4p1p1/2pp4/8/8/4KP2/8 w - - 0 51",
-    //     "r3kb1r/pp2nppp/bqn1p3/2ppP3/B2P4/P1P2N2/1P3PPP/R1BQKN1R w KQkq - 1 11",
-    //     "r2qkb1r/ppp1pppp/2n2n2/1B1p1b2/8/1P2PN2/PBPP1PPP/RN1QK2R b KQkq - 6 5",
-    //     "3r1rk1/1p4pp/p1q1p3/4Qp2/3Pp3/2P1R3/PP3PPP/R5K1 b - - 3 18",
-    //     "5Qqk/7p/p7/1p6/8/2P5/P5PK/4q3 w - - 2 39",
-    //     "rnbqkb1r/pppp1ppp/5n2/4N3/4P3/8/PPPP1PPP/RNBQKB1R b KQkq - 0 3",
-    // };
-    // std::vector<float> correct_evals_in_persp = {
-    //     0.95,
-    //     0.40,
-    //     4.46,
-    //     -0.95,
-    //     0.00,
-    //     -0.95,
-    //     1.16,
-    //     -4.67,
-    //     -0.22,
-    //     0.26,
-    //     0.00,
-    //     -0.22,
-    // };
-    
     std::vector<std::string> bests; 
     chess::Move best;
 
     chess::Board cb = chess::Board();
-    for (auto fen: fens){
 
+    for (auto fen: fens){
         std::chrono::time_point<std::chrono::high_resolution_clock> start_time = now();
         best = engine.search(fen, 1'000, depth, depth);
         times.push_back(std::chrono::duration<float, std::milli>(now() - start_time).count());
@@ -144,8 +115,9 @@ void benchmark_engine(E& engine, int depth){
     std::cout << "============================== \n";
 }
 
-template<typename E>
-void benchmark_engine_nodes(E& engine, int depth){
+void benchmark_engine_nodes(int depth){
+    Engine engine = Engine();
+
     std::vector<float> nodes;
     std::vector<std::string> bests; 
     chess::Move best;
@@ -153,7 +125,7 @@ void benchmark_engine_nodes(E& engine, int depth){
     chess::Board cb = chess::Board();
     for (auto fen: fens){
 
-        best = engine.iterative_deepening(fen, 1'000, depth, depth);
+        best = engine.search(fen, 1'000, depth, depth);
         nodes.push_back(engine.nodes);
 
         cb.setFen(fen);
@@ -178,8 +150,8 @@ void benchmark_engine_nodes(E& engine, int depth){
 }
 
 int main(){
-    Engine engine = Engine();
-
-    benchmark_engine(engine, 7);
+    benchmark_engine_nodes(9);
     return 0;
 }
+
+// average nodes: 5.54152e+06
