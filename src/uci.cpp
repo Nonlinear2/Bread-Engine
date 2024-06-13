@@ -102,7 +102,12 @@ void UCIAgent::process_position(std::vector<std::string> command){
 }
 
 void UCIAgent::process_go(std::vector<std::string> command){
-    bool exact_movetime = false;
+    if (command[1] == "ponder"){
+        main_search_thread = std::thread(&Engine::iterative_deepening, &engine, INT32_MAX, 0, 25); // infinite search time
+        return;
+    }
+    num_moves_out_of_book++;
+
     int wtime = -1;
     int btime = -1;
     int inc = 0;
@@ -117,35 +122,30 @@ void UCIAgent::process_go(std::vector<std::string> command){
             inc = std::stoi(command[i+1]);
         } else if (token == "movestogo"){
             movestogo = std::stoi(command[i+1]);
-            // normally, handle depth, node, mate, movetime command now
+        
         } else if (token == "movetime"){
-            exact_movetime = true;
-            think_time = std::stoi(command[i+1]);
-            break;
+            main_search_thread = std::thread(&Engine::iterative_deepening, &engine, std::stoi(command[i+1]), 0, ENGINE_MAX_DEPTH);
+            return;
+        } else if (token == "depth"){
+            int depth = std::stoi(command[i+1]);
+            main_search_thread = std::thread(&Engine::iterative_deepening, &engine, INT32_MAX, depth, depth);
+            return;
         } else if (token == "infinite"){
-            exact_movetime = true;
-            think_time = INT32_MAX;
-            break;
+            main_search_thread = std::thread(&Engine::iterative_deepening, &engine, INT32_MAX, 0, ENGINE_MAX_DEPTH);
+            return;
         }
     }
-    if (!exact_movetime){
-        if ((wtime == -1) || (btime == -1)){
-            std::cout << "no time specified\n";
-            return;
-        };
-        int engine_time_left = (engine.inner_board.sideToMove() == chess::Color::WHITE) ? wtime: btime;
-
-        think_time = static_cast<int>(engine.get_think_time(engine_time_left, num_moves_out_of_book, movestogo, inc));
-    }
     
-    if (command[1] == "ponder"){
-        main_search_thread = std::thread(&Engine::iterative_deepening, 
-                                         &engine, INT32_MAX, 0, 25); // infinite search time
-    } else {
-        num_moves_out_of_book++;
-        main_search_thread = std::thread(&Engine::iterative_deepening, 
-                                         &engine, think_time, 0, 25);
-    }
+    if ((wtime == -1) || (btime == -1)){
+        std::cout << "no time specified\n";
+        return;
+    };
+    int engine_time_left = (engine.inner_board.sideToMove() == chess::Color::WHITE) ? wtime: btime;
+
+    think_time = static_cast<int>(engine.get_think_time(engine_time_left, num_moves_out_of_book, movestogo, inc));
+    
+    main_search_thread = std::thread(&Engine::iterative_deepening, &engine, think_time, 0, ENGINE_MAX_DEPTH);
+    
 }
 
 void UCIAgent::interrupt_if_searching(){
