@@ -18,7 +18,7 @@ struct TEntry {
     float evaluation = 0; // 4 bytes
     uint8_t depth = 0; // 1 byte
     TFlag flag = TFlag::NO_FLAG; // 1 byte
-    uint8_t move_number = 0;
+    uint8_t move_number = 0; // 1 byte
     // 1 padding byte
     // ==============
     // ----> total = 8 + 8 + 8 = 24 bytes

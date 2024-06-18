@@ -155,3 +155,10 @@ int main(){
 }
 
 // average nodes: 5.54152e+06
+// depth 9: average time: 2613.78
+
+// with improved pst: average nodes: 5.76197e+06
+
+// 5.76678e+06
+
+// 5.6313e+06

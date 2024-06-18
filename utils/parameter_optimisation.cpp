@@ -75,33 +75,53 @@ float benchmark_engine_nodes(E& engine, int depth){
     return avg_nodes;
 }
 
-void optimize_parameters(std::vector<int> params, int num_iter){
-    int depth = 5;
+void optimize_parameters(std::vector<float> params, int num_iter){
+    int depth = 7;
     Engine engine = Engine();
 
-    float best_nodes = benchmark_engine_nodes(engine, depth);
+    Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::KILLER_SCORE = params[0];
+    Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::MATERIAL_CHANGE_MULTIPLIER = params[1];
+    Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::ENDGAME_PIECE_COUNT = params[2];
 
-    std::vector<int> best_params = params;
+    Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::PAWN_SCALE = params[3];
+    Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::BISHOP_SCALE = params[4];
+    Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::KNIGHT_SCALE = params[5];
+    Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::ROOK_SCALE = params[6];
+    Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::QUEEN_SCALE = params[7];
+    Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::ENDGAME_SCALE = params[8];
+    Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::MIDDLEGAME_SCALE = params[9];
+
+    float best_nodes = benchmark_engine_nodes(engine, depth);
+    float initial_nodes = best_nodes;
+    std::vector<float> best_params = params;
 
     float node;
     for (int i = 0; i < num_iter; i++){
         engine.transposition_table.clear();
 
         for (int j = 0; j < best_params.size(); j++){
-            int r = rand()%4;
+            float r = rand()%4;
             if ((r == 0)||(r == 1)){
                 r=0;
             } else if (r == 2){
-                r=1;
+                r=0.1;
             } else if (r == 3){
-                r=-1;
+                r=-0.1;
             }
-            params[j] = std::max(best_params[j] + r, 0);
+            params[j] = std::max(best_params[j] + r, 0.0F);
         }
+        Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::KILLER_SCORE = params[0];
+        Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::MATERIAL_CHANGE_MULTIPLIER = params[1];
+        Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::ENDGAME_PIECE_COUNT = params[2];
 
-        engine.KILLER_SCORE = params[0];
-        engine.MATERIAL_CHANGE_MULTIPLIER = params[1];
-        engine.ENDGAME_PIECE_COUNT = params[2];
+        Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::PAWN_SCALE = params[3];
+        Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::BISHOP_SCALE = params[4];
+        Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::KNIGHT_SCALE = params[5];
+        Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::ROOK_SCALE = params[6];
+        Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::QUEEN_SCALE = params[7];
+        Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::ENDGAME_SCALE = params[8];
+        Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::MIDDLEGAME_SCALE = params[9];
+
 
         std::cout << "============================\n";
         std::cout << "new params: ";
@@ -126,15 +146,57 @@ void optimize_parameters(std::vector<int> params, int num_iter){
         std::cout << "============================\n";
     }
 
+    std::cout << "initial nodes: " << initial_nodes << std::endl;
     std::cout << "final best nodes: " << best_nodes << "\n";
     std::cout << "final best params: ";
     for (auto it: best_params){
-        std::cout << it << " ";
+        std::cout << it << ", ";
     }
     std::cout << "\n";
 }
 
 int main(){
     srand(114);
-    optimize_parameters({9, 1, 6}, 20);
+    optimize_parameters({15.1, 12, 1.7, 2.3, 2, 1, 0.4, 0.8, 4.5, 0.5}, 100);
 }
+
+// initial nodes: 165571
+// final best nodes: 156914
+// final best params: 9.9 6.2 11.5 1.1 1.3 0.6 0.4 1.1 1.1 1
+
+// initial nodes: 165571
+// final best nodes: 156120
+// final best params: 9.9, 6.4, 11.4, 0.9, 1.4, 0.6, 0.4, 0.8, 1.3, 0.6,
+
+// initial nodes: 155894
+// final best nodes: 155868
+// final best params: 9.8, 6.4, 11.3, 0.9, 1.4, 0.6, 0.4, 0.8, 1.3, 0.5,
+
+// initial nodes: 155886
+// final best nodes: 154075
+// final best params: 10.3, 6.9, 12.3, 0.4, 1.4, 0.6, 0, 0.8, 3.3, 1,
+
+// initial nodes: 155645
+// final best nodes: 153546
+// final best params: 10.5, 7.3, 13.1, 0.4, 1.4, 0.6, 0.2, 0.8, 3.3, 1.6,
+
+// initial nodes: 166302
+// final best nodes: 166037
+// final best params: 10.6, 7.3, 13.1, 0.5, 1.4, 0.5, 0.2, 0.8, 3.2, 1.7,
+
+// initial nodes: 165522
+// final best nodes: 165395
+// final best params: 15.2, 12.1, 1.6, 2.1, 1.9, 0.9, 0.8, 0.9, 4.9, 1,
+
+//depth 7
+// initial nodes: 505647
+// final best nodes: 463794
+// final best params: 14.2, 12.1, 2.6, 1.1, 3.9, 0.9, 1, 0, 2.9, 1
+
+// initial nodes: 505647
+// final best nodes: 485726
+// final best params: 15.1, 12, 1.7, 2.3, 2, 1, 0.4, 0.8, 4.5, 0.5
+
+// initial nodes: 485839
+// final best nodes: 482332
+// final best params: 14.9, 11.9, 1.6, 2.8, 1.9, 1, 0.4, 0.8, 4.5, 0.4,

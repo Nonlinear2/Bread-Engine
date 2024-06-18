@@ -9,7 +9,7 @@ int main(){
     for (int i = 0; i < fens.size(); i++){
         chess::Move best;
         std::cout << fens[i] << "\n";
-        best = engine.search(fens[i], 13878, 7, 7);
+        best = engine.search(fens[i], 13878, 11, 11);
         std::cout << "best move " << best << "\n";
         std::cout << "eval " << best.score() << std::endl;
         std::cout << engine.search_depth << std::endl;

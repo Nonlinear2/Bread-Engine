@@ -10,8 +10,12 @@
 
 #define NO_MOVE chess::Move::NO_MOVE
 #define ENGINE_MAX_DEPTH 25
+
 #define BEST_MOVE_SCORE 1000
 #define WORST_MOVE_SCORE -1000
+
+#define WORST_EVAL -100
+#define BEST_EVAL 100
 
 // shorter name
 inline std::chrono::time_point<std::chrono::high_resolution_clock> now(){
@@ -53,19 +57,7 @@ class Engine {
 
     SEARCH_BOARD inner_board = SEARCH_BOARD();
 
-    int KILLER_SCORE = 10;
-    int MATERIAL_CHANGE_MULTIPLIER = 6;
-    int ENDGAME_PIECE_COUNT = 11;
-
     const int QSEARCH_MAX_DEPTH = 6;
-
-    void set_move_score(chess::Move& move, int depth);
-
-    void set_capture_score(chess::Move& move);
-
-    void order_moves(chess::Movelist& moves, uint64_t zobrist_hash, int depth);
-
-    void order_captures(chess::Movelist& moves);
 
     bool try_outcome_eval(float& eval);
 
@@ -81,13 +73,37 @@ class Engine {
 
     chess::Move iterative_deepening(int time_limit, int min_depth, int max_depth);
 
+    template<chess::movegen::MoveGenType MoveGenType>
+    class SortedMoveGen {
+        public:
+        static constexpr PieceSquareMaps psm = PieceSquareMaps();
+        static inline float KILLER_SCORE = 14.9;
+        static inline float MATERIAL_CHANGE_MULTIPLIER = 11.9;
+        static inline float ENDGAME_PIECE_COUNT = 11;
+
+        static std::array<CircularBuffer3, ENGINE_MAX_DEPTH> killer_moves;
+
+        NnueBoard& board;
+
+        SortedMoveGen(NnueBoard& board);
+        void generate_moves();
+        void set_scores(int depth, chess::Move tt_move);
+        void set_scores();
+        void set_score(chess::Move& move, int depth); // for all moves
+        void set_score(chess::Move& move); // for capture moves
+        bool next(chess::Move& move);
+        bool is_empty();
+        int index();
+        static void clear_killer_moves();
+        chess::Movelist legal_moves;
+        private:
+        int move_idx = -1;
+    };
     private:
     friend class UCIAgent;
 
     int engine_color;
     std::atomic<bool> interrupt_flag = false;
-    PieceSquareMaps psm = PieceSquareMaps();
-    std::vector<CircularBuffer3> killer_moves{ENGINE_MAX_DEPTH};
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 
     float get_outcome_eval(int depth);
