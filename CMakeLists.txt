@@ -9,7 +9,6 @@ set(bread_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 set(bread_DEPENDENCIES ${CMAKE_CURRENT_SOURCE_DIR}/dependencies)
 set(bread_NEURAL_NETWORKS ${CMAKE_CURRENT_SOURCE_DIR}/neural_networks)
 
-# this path is relative to the executable. It can be changed if needed
 set(bread_NNUE_MODEL_PATH
     "${bread_NEURAL_NETWORKS}/model_NNUE_2-40960_2x256_32_32_1_quant_layers"
 )
@@ -47,8 +46,6 @@ function(bread_configure bread_TARGET)
     target_compile_definitions(${bread_TARGET} PRIVATE bread_VERSION="${CMAKE_PROJECT_VERSION}")
 
     target_compile_definitions(${bread_TARGET} PRIVATE bread_USE_TB=$<BOOL:${bread_USE_TB}>)
-    
-    target_compile_definitions(${bread_TARGET} PRIVATE bread_EMBED_NN=$<BOOL:${bread_EMBED_NN}>)
     
     if (TARGET generate_neural_net_header)
         target_compile_definitions(${bread_TARGET} PRIVATE bread_EMBED_NN=false)

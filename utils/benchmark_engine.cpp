@@ -150,7 +150,7 @@ void benchmark_engine_nodes(int depth){
 }
 
 int main(){
-    benchmark_engine_nodes(9);
+    benchmark_engine(9);
     return 0;
 }
 
@@ -162,3 +162,6 @@ int main(){
 // 5.76678e+06
 
 // 5.6313e+06
+
+// clang: average time: 2462.3
+// msvc: average time: 2662.35

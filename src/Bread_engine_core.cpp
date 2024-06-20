@@ -23,25 +23,6 @@ void Engine::SortedMoveGen<MoveGenType>::generate_moves(){
     chess::movegen::legalmoves<MoveGenType>(legal_moves, board);
 }
 
-template <>
-void Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_scores(int depth, chess::Move tt_move){
-    for (auto& move: legal_moves){
-        set_score(move, depth);
-    }
-
-    // makes sure this move is searched first, regardless of depth of search.
-    if (tt_move != NO_MOVE){
-        legal_moves[legal_moves.find(tt_move)].setScore(BEST_MOVE_SCORE);
-    }
-}
-
-template <>
-void Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::set_scores(){
-    for (auto& move: legal_moves){
-        set_score(move);
-    }
-}
-
 // set move score to be sorted later
 template <>
 void Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_score(chess::Move& move, int depth){
@@ -52,7 +33,7 @@ void Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_score(chess::M
     const chess::Piece to_piece = board.at(to);
     float score = 0;
 
-    if ((piece != chess::Piece::WHITEKING) & (piece != chess::Piece::BLACKKING)){
+    if ((piece != chess::Piece::WHITEKING) && (piece != chess::Piece::BLACKKING)){
         score += psm.get_psm(piece, from, to);
     } else {
         bool is_endgame = board.occ().count() <= ENDGAME_PIECE_COUNT;
@@ -80,6 +61,29 @@ template <>
 void Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::set_score(chess::Move& move){
     move.setScore(piece_value[static_cast<int>(board.at(move.to()).type())] - 
                   piece_value[static_cast<int>(board.at(move.from()).type())]);
+}
+
+template <>
+void Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_scores(int depth, chess::Move tt_move){
+    for (auto& move: legal_moves){
+        set_score(move, depth);
+    }
+
+    // makes sure this move is searched first, regardless of depth of search.
+    if (tt_move != NO_MOVE){
+        auto move = std::find(legal_moves.begin(), legal_moves.end(), tt_move);
+        // if there is a zobrist key collision, move might not be legal
+        if (move != legal_moves.end()) {
+            move->setScore(BEST_MOVE_SCORE);
+        }
+    }
+}
+
+template <>
+void Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::set_scores(){
+    for (auto& move: legal_moves){
+        set_score(move);
+    }
 }
 
 // legal_moves must not be empty
@@ -119,22 +123,9 @@ bool Engine::SortedMoveGen<MoveGenType>::is_empty(){return legal_moves.empty(); 
 template<chess::movegen::MoveGenType MoveGenType>
 inline int Engine::SortedMoveGen<MoveGenType>::index(){return move_idx; }
 
+template <>
 void Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::clear_killer_moves(){
     std::fill(killer_moves.begin(), killer_moves.end(), CircularBuffer3());
-}
-
-// should only be used when there are no legal moves on the board.
-// It means there is either checkmate or stalemate on the board.
-float Engine::get_outcome_eval(int depth){
-    float eval;
-    if (inner_board.inCheck()){ // this is checkmate
-        // to make the engine prefer faster checkmates instead of stalling,
-        // we decrease the eval if the checkmate is higher in the search tree.
-        eval = -(1+depth); 
-    } else { // if there are no legal moves and it's not check, it is stalemate
-        eval = 0;
-    }
-    return eval;
 }
 
 bool Engine::try_outcome_eval(float& eval){
@@ -156,11 +147,8 @@ bool Engine::try_outcome_eval(float& eval){
     chess::movegen::legalmoves(movelist, inner_board);
 
     if (movelist.empty()){
-        if (inner_board.inCheck()){ // checkmate
-            eval = -1;
-        } else { // stalemate
-            eval = 0;
-        }
+        // checkmate/stalemate.
+        eval = inner_board.inCheck() ? -1 : 0;
         return true;
     }
     return false;
@@ -176,13 +164,13 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
-        if ((transposition->depth >= depth) & (!inner_board.isRepetition(1)) & (transposition->flag == TFlag::EXACT)){
+        if ((transposition->depth >= depth) && (!inner_board.isRepetition(1)) && (transposition->flag == TFlag::EXACT)){
             best_move = transposition->best_move;
             best_move.setScore(transposition->evaluation);
             return {best_move, TFlag::EXACT};
         }
 
-        if (transposition->best_move != NO_MOVE){tt_move = transposition->best_move; }
+        if (transposition->best_move != NO_MOVE) tt_move = transposition->best_move;
     }
 
     SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board);
@@ -321,7 +309,7 @@ chess::Move Engine::iterative_deepening(int time_limit, int min_depth=4, int max
         if ((best_move.score() >= 1) || // checkmate
             (best_move.score() <= -1) || // checkmate
             (current_depth >= max_depth) ||
-            (current_depth >= ENGINE_MAX_DEPTH)){break;}
+            (current_depth >= ENGINE_MAX_DEPTH)) break;
         
         current_depth++;
     }
@@ -340,11 +328,7 @@ bool Engine::can_return(){
         return true;
     }
     update_run_time();
-    
-    if ((search_depth > min_depth) & (run_time > time_limit)){
-        return true;
-    }
-    return false;
+    return (search_depth > min_depth) && (run_time > time_limit);
 }
 
 void Engine::set_interrupt_flag(){
@@ -374,7 +358,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
-        if ((transposition->depth >= depth) & (!inner_board.isRepetition(1))){
+        if ((transposition->depth >= depth) && (!inner_board.isRepetition(1))){
             // if is repetition(1), danger of repetition so TT is unreliable
             switch (transposition->flag){
                 case TFlag::EXACT:
@@ -416,8 +400,11 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
     float max_eval = WORST_EVAL;
 
     if (sorted_move_gen.is_empty()){ // avoid calling expensive try_outcome_eval function
-        max_eval = get_outcome_eval(depth);
-
+        // If board is in check, it is checkmate
+        // to make the engine prefer faster checkmates instead of stalling,
+        // we decrease the eval if the checkmate is higher in the search tree.
+        // if there are no legal moves and it's not check, it is stalemate so eval is 0
+        max_eval = inner_board.inCheck() ? -(1+depth) : 0;
         // we know this eval is exact at any depth, but 
         // we also don't want this eval to pollute the transposition table.
         // the full move number will make sure it is replaced at some point.
@@ -439,7 +426,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         // depth > 2 is to make sure the new depth is not less than 0.
         // (!inner_board.inCheck()) is to see if the move gives check. 
         // (we already updated the inner board so we only need to check if it is check)
-        if ((sorted_move_gen.index() > 3) & (depth > 2) & (!is_capture) & (!inner_board.inCheck())){
+        if ((sorted_move_gen.index() > 3) && (depth > 2) && (!is_capture) && (!inner_board.inCheck())){
             new_depth = depth-2;
             lmr = true;
         } else {
@@ -449,7 +436,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
 
         pos_eval = -negamax(new_depth, -color, -beta, -alpha);
 
-        if (lmr & (pos_eval > alpha)){
+        if (lmr && (pos_eval > alpha)){
             // do full search
             pos_eval = -negamax(depth-1, -color, -beta, -alpha);
         }
@@ -468,14 +455,14 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         }
     }
 
-    if ((max_eval == 0) & (inner_board.isRepetition(1))){
-        // if max eval was obtained because of a threefold repetition,
-        // the eval should not be stored in the transposition table, as
-        // this is a history dependent evaluation.
-        // what if max eval was not obtained because of a threefold? in this case we loose
-        // one TT entry which is completely fine.
-        // what about evaluations higher in the tree where inner_board.isRepetition(1) is false?
-        // these evals are not history dependent as they mean that one side can force a draw.
+    // if max eval was obtained because of a threefold repetition,
+    // the eval should not be stored in the transposition table, as
+    // this is a history dependent evaluation.
+    // what if max eval was not obtained because of a threefold? in this case we loose
+    // one TT entry which is completely fine.
+    // what about evaluations higher in the tree where inner_board.isRepetition(1) is false?
+    // these evals are not history dependent as they mean that one side can force a draw.
+    if ((max_eval == 0) && (inner_board.isRepetition(1))){
         return max_eval;
         // we fall through without storing the eval in the TT.
     };
@@ -542,18 +529,15 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
     if (!is_hit){
         // if it is hit, no need to check for outcome, as it wouldn't be stored in the
         // transposition table at a 0 depth. 
-        if (sorted_capture_gen.is_empty()){
-            float outcome_eval;
-            if (try_outcome_eval(outcome_eval)){ // only generate non captures?
-                transposition_table.store(zobrist_hash, outcome_eval, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-                return outcome_eval;
-            }
+        float outcome_eval;
+        if (sorted_capture_gen.is_empty() && try_outcome_eval(outcome_eval)){ // only generate non captures?
+            transposition_table.store(zobrist_hash, outcome_eval, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+            return outcome_eval;
         }
 
         stand_pat = inner_board.evaluate();
         transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
         if (stand_pat >= beta){
-            // return stand_pat;
             return beta;
         }
     }
@@ -571,8 +555,8 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
     while (sorted_capture_gen.next(move)){
         // delta pruning
         // move.score() is calculated with set_capture_score which is material difference.
+        // 0.8 is the equivalent of a queen, as a safety margin
         if (stand_pat + move.score()/10 + 0.8 < alpha){ // division by 10 is to convert from pawn to "engine" centipawns.
-            // 0.8 is the equivalent of a queen, as a safety margin
             continue;
         }
 

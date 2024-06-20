@@ -6,20 +6,16 @@
 #include <string>
 #include <cmath>
 #include <chess.hpp>
+#include <immintrin.h>
 
 #if bread_EMBED_NN
 #include "neural_network.hpp"
 #endif
 
-#ifdef _MSC_VER
-    #include <immintrin.h>
-    constexpr int num_avx_registers = 16;
-    constexpr int int32_per_reg = 8;
-    constexpr int int16_per_reg = 16;
-    constexpr int int8_per_reg = 32;
-#else
-    #error Unsupported compiler. Please use MSVC.
-#endif
+constexpr int num_avx_registers = 16;
+constexpr int int32_per_reg = 8;
+constexpr int int16_per_reg = 16;
+constexpr int int8_per_reg = 32;
 
 enum LayerName {FEATURE_TRANSFORMER, LAYER_1, LAYER_2, LAYER_3};
 

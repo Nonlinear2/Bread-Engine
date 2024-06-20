@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <chrono>
+#include <atomic>
 #include "chess.hpp"
 #include "transposition_table.hpp"
 
@@ -106,7 +107,6 @@ class Engine {
     std::atomic<bool> interrupt_flag = false;
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 
-    float get_outcome_eval(int depth);
     bool can_return();
     std::pair<std::string, std::string> get_pv_pmove(std::string fen);
     std::pair<chess::Move, TFlag> minimax_root(int depth, int color, float alpha, float beta);

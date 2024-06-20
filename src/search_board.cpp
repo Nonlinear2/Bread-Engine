@@ -12,33 +12,38 @@ bool SearchBoard::probe_wdl(float& eval){
             halfMoveClock(), castlingRights().has(sideToMove()),
             enpassantSq().index(), sideToMove() == chess::Color::WHITE
     );
-
-    if (TB_hit == TB_WIN){
-        eval = 1;
-        return true;
+    switch(TB_hit){
+        case TB_WIN:
+            eval = 1;
+            return true;
+        case TB_LOSS:
+            eval = -1;
+            return true;
+        case TB_DRAW:
+        case TB_CURSED_WIN:
+        case TB_BLESSED_LOSS:
+            eval = 0;
+            return true;
+        default:
+            return false;
     }
-    if (TB_hit == TB_LOSS){
-        eval = -1;
-        return true;
-    }
-    if ((TB_hit == TB_DRAW) || (TB_hit == TB_CURSED_WIN) || (TB_hit == TB_BLESSED_LOSS)){
-        eval = 0;
-        return true;
-    }
-    return false;
 }
 
 bool SearchBoard::probe_dtz(chess::Move& move){
     if (occ().count() > TB_LARGEST){
         return false;
     }
+
+    unsigned int ep_square = enpassantSq().index();
+    if (ep_square == 64) ep_square = 0;
+
     unsigned int TB_hit = tb_probe_root(
             us(chess::Color::WHITE).getBits(), us(chess::Color::BLACK).getBits(), 
             pieces(chess::PieceType::KING).getBits(), pieces(chess::PieceType::QUEEN).getBits(),
             pieces(chess::PieceType::ROOK).getBits(), pieces(chess::PieceType::BISHOP).getBits(),
             pieces(chess::PieceType::KNIGHT).getBits(), pieces(chess::PieceType::PAWN).getBits(),
             halfMoveClock(), castlingRights().has(sideToMove()),
-            enpassantSq().index(), sideToMove() == chess::Color::WHITE,
+            ep_square, sideToMove() == chess::Color::WHITE,
             NULL
     );
 
@@ -73,15 +78,16 @@ bool SearchBoard::probe_dtz(chess::Move& move){
             static_cast<chess::Square>(TB_GET_TO(TB_hit)),
             promotion_type);
     }
-    
-    unsigned wdl = TB_GET_WDL(TB_hit);
-
-    if (wdl == TB_WIN){
-        move.setScore(5);
-    } else if (wdl == TB_LOSS){
-        move.setScore(-5);
-    } else if ((wdl == TB_DRAW) || (wdl == TB_CURSED_WIN) || (wdl == TB_BLESSED_LOSS)){
-        move.setScore(0);
+    switch(TB_GET_WDL(TB_hit)){
+        case TB_WIN:
+            move.setScore(1000);
+            break;
+        case TB_LOSS:
+            move.setScore(-1000);
+            break;
+        default: // TB_DRAW, TB_CURSED_WIN, TB_BLESSED_LOSS
+            move.setScore(0);
+            break;
     }
     return true;
 }
