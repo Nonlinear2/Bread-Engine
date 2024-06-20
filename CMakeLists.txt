@@ -58,6 +58,10 @@ function(bread_configure bread_TARGET)
     target_compile_definitions(${bread_TARGET} PRIVATE bread_NN_HEADER_PATH="${bread_NN_HEADER_PATH}")
 
     target_compile_definitions(${bread_TARGET} PRIVATE bread_NNUE_MODEL_PATH="${bread_NNUE_MODEL_PATH}")
+
+    if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
+        target_compile_options(${bread_TARGET} PRIVATE -march=native)
+    endif()
 endfunction(bread_configure)
 
 bread_configure(release SOURCES
