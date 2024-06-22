@@ -80,24 +80,10 @@ class NNLayer {
 
     out_type* bias;
 
-    void load_from_header(LayerName name);
     void load_from_binary(std::string path);
+    void load_from_header(LayerName name);
     void weights_to_header(std::ofstream& file);
     void bias_to_header(std::ofstream& file);
-};
-
-template<typename in_type, int in_size, typename out_type, int out_size>
-void NNLayer<in_type, in_size, out_type, out_size>::weights_to_header(std::ofstream& file){
-    for (int i = 0; i < input_size*output_size; i++){
-        file << static_cast<int>(weights[i]) << ", ";
-    }
-};
-
-template<typename in_type, int in_size, typename out_type, int out_size>
-void NNLayer<in_type, in_size, out_type, out_size>::bias_to_header(std::ofstream& file){
-    for (int i = 0; i < output_size; i++){
-        file << static_cast<int>(bias[i]) << ", ";
-    }
 };
 
 class FeatureTransformer: public NNLayer<int16_t, HKP_size, int16_t, acc_size> {};

@@ -1,5 +1,9 @@
 #include "bread_engine_core.hpp"
 
+//TODO sparse matrix multiplication
+//TODO fix crashes
+//TODO test asp search again
+
 // This is a circular buffer to implement FIFO for killer moves
 void CircularBuffer3::add_move(chess::Move move){
     data[curr_idx] = move.move();

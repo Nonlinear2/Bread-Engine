@@ -1,7 +1,7 @@
 #include "nnue.hpp"
 
 /*************
-NN Layers
+NNLayer
 *************/
 
 template<typename in_type, int in_size, typename out_type, int out_size>
@@ -50,6 +50,35 @@ void NNLayer<in_type, in_size, out_type, out_size>::load_from_header(LayerName n
     #endif
 };
 
+template<typename in_type, int in_size, typename out_type, int out_size>
+void NNLayer<in_type, in_size, out_type, out_size>::weights_to_header(std::ofstream& file){
+    for (int i = 0; i < input_size*output_size; i++){
+        file << static_cast<int>(weights[i]) << ", ";
+    }
+};
+
+template<typename in_type, int in_size, typename out_type, int out_size>
+void NNLayer<in_type, in_size, out_type, out_size>::bias_to_header(std::ofstream& file){
+    for (int i = 0; i < output_size; i++){
+        file << static_cast<int>(bias[i]) << ", ";
+    }
+};
+
+// feature_transformer
+template class NNLayer<int16_t, HKP_size, int16_t, acc_size>;
+
+// hidden layers
+template class NNLayer<int8_t, 512, int32_t, 32>;
+template class NNLayer<int8_t, 32, int32_t, 32>;
+
+// output layer
+template class NNLayer<int8_t, 32, int16_t, 1>;
+
+
+/*************
+HiddenLayer
+*************/
+
 inline __m256i _mm256_add8x256_epi32(__m256i* inputs){ // 8 256 avx registers with contents to hadd.
     inputs[0] = _mm256_hadd_epi32(inputs[0], inputs[1]);
     inputs[2] = _mm256_hadd_epi32(inputs[2], inputs[3]);
@@ -73,7 +102,7 @@ void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
     const __m256i one = _mm256_set1_epi16(1);
 
     for (int j = 0; j < num_output_chunks; j++){
-        __m256i result = _mm256_set1_epi32(0);
+        __m256i result = _mm256_loadu_si256((const __m256i*)&this->bias[j*int32_per_reg]);
         for (int i = 0; i < num_input_chunks; i++){
             __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]); // load int8
             for (int k = 0; k < int32_per_reg; k++){
@@ -85,11 +114,20 @@ void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
             }
             result = _mm256_add_epi32(result, _mm256_add8x256_epi32(output_chunks));
         }
-        result = _mm256_add_epi32(result, _mm256_loadu_si256((const __m256i*)&this->bias[j*int32_per_reg])); // load int32
         result = _mm256_srai_epi32(result, 6); // this integer divides the result by 64 which is the scale.
         _mm256_storeu_si256((__m256i*)&output[j*int32_per_reg], result); // store int32
-    }     
+    }
 };
+
+// layer 2
+template class HiddenLayer<512, 32>;
+
+// layer 3
+template class HiddenLayer<32, 32>;
+
+/*************
+OutputLayer
+*************/
 
 int16_t OutputLayer::run(int8_t* input){
 
@@ -108,6 +146,7 @@ int16_t OutputLayer::run(int8_t* input){
     return out_ptr[0] + out_ptr[1] + out_ptr[8] + out_ptr[9] + bias[0];
 
 };
+
 /****************
 Accumulator class
 ****************/
