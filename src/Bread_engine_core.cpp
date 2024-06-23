@@ -377,6 +377,8 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
                 case TFlag::UPPER_BOUND:
                     beta = std::min(beta, transposition->evaluation);
                     break;
+                default:
+                    break;
             }
             // we need to do a cutoff check because we updated alpha/beta.
             if (beta <= alpha){

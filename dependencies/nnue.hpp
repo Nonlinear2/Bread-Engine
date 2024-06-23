@@ -8,7 +8,7 @@
 #include <chess.hpp>
 #include <immintrin.h>
 
-#if bread_EMBED_NN
+#ifdef bread_EMBED_NN
 #include "neural_network.hpp"
 #endif
 

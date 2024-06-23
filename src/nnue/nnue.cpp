@@ -1,5 +1,10 @@
 #include "nnue.hpp"
 
+#if defined bread_EMBED_NN && !defined NN_HEADER_GENERATED
+#error "Please run the generate_neural_net_header build configuration before other builds"
+#undef bread_EMBED_NN
+#endif
+
 /*************
 NNLayer
 *************/
@@ -40,7 +45,7 @@ void NNLayer<in_type, in_size, out_type, out_size>::load_from_binary(std::string
 
 template<typename in_type, int in_size, typename out_type, int out_size>
 void NNLayer<in_type, in_size, out_type, out_size>::load_from_header(LayerName name){
-    #if bread_EMBED_NN
+    #ifdef bread_EMBED_NN
     for (int i = 0; i < input_size*output_size; i++){
         weights[i] = nn_data::weights[name][i];
     }
@@ -162,7 +167,7 @@ NNUE::NNUE(std::string model_path){
 };
 
 void NNUE::load_model(std::string path){
-    #if bread_EMBED_NN
+    #ifdef bread_EMBED_NN
     feature_transformer.load_from_header(FEATURE_TRANSFORMER);
     layer_2.load_from_header(LAYER_1);
     layer_3.load_from_header(LAYER_2);

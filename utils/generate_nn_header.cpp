@@ -11,6 +11,7 @@ int main(){
     output_file << "#pragma once\n";
     output_file << "#include <cstdint>\n";
     output_file << "#include <vector>\n";
+    output_file << "#define NN_HEADER_GENERATED 1\n";
     output_file << "// this file has been auto generated. Please do not modify it by hand.\n\n";
 
     output_file << "namespace nn_data {\n";
