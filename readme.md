@@ -6,9 +6,11 @@ Bread engine does not have a GUI built in, however it supports the uci protocol,
 
 Please note that the engine requires a cpu with AVX2 support.
 
-- **For windows**, you can find the precompiled binary in the release section.
+- **For windows**, you can find the precompiled binary in the release section. You can also build the project yourself using cmake: clone the repository, open a command line, navigate to the project's root directory and type `mkdir build`, `cd build`, `cmake ..`, `cmake --build . --target release --config release`. This will generate a build folder with the executable.
 
-- **For linux, or if you want to build the project yourself**: If you don't have cmake, you install it from [here](https://cmake.org/download/). Then, clone the repository, open a command line, navigate to the project's root directory and type `cmake .` followed by `make release`. This will generate a build folder with the executable. The build has been tested using compilers MSVC 19.38, Clang 17.0 and GCC 13.1.
+- **For linux**: There are no precompiled binaries, so you need to build the project using cmake: clone the repository, open a command line, navigate to the project's root directory and type `mkdir build`, `cd build`, `cmake . -DCMAKE_BUILD_TYPE=Release`, `make release`. This will generate a build folder with the executable. 
+
+The build has been tested using compilers MSVC 19.38, Clang 17.0 and GCC 13.1.
 
 Once you have the engine installed, you can run the executable, and write the following commands one after the other:
 
