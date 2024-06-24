@@ -7,10 +7,7 @@
 #include <cmath>
 #include <chess.hpp>
 #include <immintrin.h>
-
-#ifdef bread_EMBED_NN
 #include "neural_network.hpp"
-#endif
 
 constexpr int num_avx_registers = 16;
 constexpr int int32_per_reg = 8;
@@ -80,10 +77,7 @@ class NNLayer {
 
     out_type* bias;
 
-    void load_from_binary(std::string path);
     void load_from_header(LayerName name);
-    void weights_to_header(std::ofstream& file);
-    void bias_to_header(std::ofstream& file);
 };
 
 class FeatureTransformer: public NNLayer<int16_t, HKP_size, int16_t, acc_size> {};

@@ -1,10 +1,5 @@
 #include "nnue.hpp"
 
-#if defined bread_EMBED_NN && !defined NN_HEADER_GENERATED
-#error "Please run the generate_neural_net_header build configuration before other builds"
-#undef bread_EMBED_NN
-#endif
-
 /*************
 NNLayer
 *************/
@@ -22,50 +17,12 @@ NNLayer<in_type, in_size, out_type, out_size>::~NNLayer(){
 }
 
 template<typename in_type, int in_size, typename out_type, int out_size>
-void NNLayer<in_type, in_size, out_type, out_size>::load_from_binary(std::string path){
-    std::string weights_path = path + "/weights.bin";
-    std::string bias_path = path + "/bias.bin";
-    std::ifstream weights_stream;
-    weights_stream.open(weights_path, std::ios::binary);
-    if (weights_stream.is_open()){
-        weights_stream.read(reinterpret_cast<char*>(weights), 
-                            input_size*output_size*sizeof(in_type));        
-    } else {
-        std::cout << "error loading weights \n";
-    }
-
-    std::ifstream bias_stream;
-    bias_stream.open(bias_path, std::ios::binary);
-    if (bias_stream.is_open()){
-        bias_stream.read(reinterpret_cast<char*>(bias), output_size*sizeof(out_type));        
-    } else {
-        std::cout << "error loading bias \n";
-    }
-};
-
-template<typename in_type, int in_size, typename out_type, int out_size>
 void NNLayer<in_type, in_size, out_type, out_size>::load_from_header(LayerName name){
-    #ifdef bread_EMBED_NN
     for (int i = 0; i < input_size*output_size; i++){
         weights[i] = nn_data::weights[name][i];
     }
     for (int i = 0; i < output_size; i++){
         bias[i] = nn_data::bias[name][i];
-    }
-    #endif
-};
-
-template<typename in_type, int in_size, typename out_type, int out_size>
-void NNLayer<in_type, in_size, out_type, out_size>::weights_to_header(std::ofstream& file){
-    for (int i = 0; i < input_size*output_size; i++){
-        file << static_cast<int>(weights[i]) << ", ";
-    }
-};
-
-template<typename in_type, int in_size, typename out_type, int out_size>
-void NNLayer<in_type, in_size, out_type, out_size>::bias_to_header(std::ofstream& file){
-    for (int i = 0; i < output_size; i++){
-        file << static_cast<int>(bias[i]) << ", ";
     }
 };
 
@@ -167,17 +124,10 @@ NNUE::NNUE(std::string model_path){
 };
 
 void NNUE::load_model(std::string path){
-    #ifdef bread_EMBED_NN
     feature_transformer.load_from_header(FEATURE_TRANSFORMER);
     layer_2.load_from_header(LAYER_1);
     layer_3.load_from_header(LAYER_2);
     layer_4.load_from_header(LAYER_3);
-    #else
-    feature_transformer.load_from_binary(path + "/feature_transformer");
-    layer_2.load_from_binary(path + "/layer_2");
-    layer_3.load_from_binary(path + "/layer_3");
-    layer_4.load_from_binary(path + "/layer_4");
-    #endif
 };
 
 void NNUE::compute_accumulator(const std::vector<int> active_features, bool color){

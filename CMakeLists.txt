@@ -8,22 +8,18 @@ set(bread_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(bread_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 set(bread_DEPENDENCIES ${CMAKE_CURRENT_SOURCE_DIR}/dependencies)
 set(bread_NEURAL_NETWORKS ${CMAKE_CURRENT_SOURCE_DIR}/neural_networks)
+set(bread_NN_HEADER_DIR ${CMAKE_BINARY_DIR}/gen)
+set(bread_NN_HEADER_PATH ${bread_NN_HEADER_DIR}/neural_network.hpp)
 
-set(bread_NNUE_MODEL_PATH
-    "${bread_NEURAL_NETWORKS}/model_NNUE_2-40960_2x256_32_32_1_quant_layers"
-)
-
-set(bread_NN_HEADER_PATH
-    "${bread_DEPENDENCIES}/neural_network.hpp"
-)
+set(bread_NNUE_MODEL_PATH "${bread_NEURAL_NETWORKS}/model_NNUE_2-40960_2x256_32_32_1_quant_layers")
 
 set(bread_INCLUDE_DIRS
     ${bread_DEPENDENCIES}
     ${bread_DEPENDENCIES}/extern
     ${bread_DEPENDENCIES}/unit_tests
     ${bread_DEPENDENCIES}/extern/Fathom/src
+    ${bread_NN_HEADER_DIR}
 )
-
 
 set(bread_SOURCE
     ${bread_SRC}/search_board.cpp
@@ -43,6 +39,19 @@ if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL 
     )
 endif()
 
+add_executable(generate_neural_net_header ${bread_UTILS}/generate_nn_header.cpp)
+target_compile_definitions(generate_neural_net_header PRIVATE bread_NN_HEADER_PATH="${bread_NN_HEADER_PATH}")
+target_compile_definitions(generate_neural_net_header PRIVATE bread_NNUE_MODEL_PATH="${bread_NNUE_MODEL_PATH}")
+
+# add custom target that generates the header when needed
+add_custom_command(
+    OUTPUT ${bread_NN_HEADER_PATH}
+    COMMENT "generating neural network"
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${bread_NN_HEADER_DIR}
+    COMMAND $<TARGET_FILE:generate_neural_net_header>
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_custom_target(run_generate_neural_net_header DEPENDS ${bread_NN_HEADER_PATH})
 
 function(bread_configure bread_TARGET)
     cmake_parse_arguments(bread "" "" "SOURCES" ${ARGN})
@@ -50,20 +59,20 @@ function(bread_configure bread_TARGET)
     add_executable(${bread_TARGET} ${bread_SOURCES})
 
     target_include_directories(${bread_TARGET} PRIVATE ${bread_INCLUDE_DIRS})
-
+    
     target_compile_definitions(${bread_TARGET} PRIVATE bread_VERSION="${CMAKE_PROJECT_VERSION}")
 
-    target_compile_definitions(${bread_TARGET} PRIVATE bread_USE_TB=$<BOOL:${bread_USE_TB}>)
-    
-    if (NOT TARGET generate_neural_net_header)
-        target_compile_definitions(${bread_TARGET} PRIVATE bread_EMBED_NN=1)
-    endif()
+    add_dependencies(${bread_TARGET} run_generate_neural_net_header)
 
     target_compile_definitions(${bread_TARGET} PRIVATE bread_TB_PATH="${bread_TB_PATH}")
 
     target_compile_definitions(${bread_TARGET} PRIVATE bread_NN_HEADER_PATH="${bread_NN_HEADER_PATH}")
 
     target_compile_definitions(${bread_TARGET} PRIVATE bread_NNUE_MODEL_PATH="${bread_NNUE_MODEL_PATH}")
+
+    if (TARGET release)
+        set_target_properties(release PROPERTIES OUTPUT_NAME "bread_engine_${CMAKE_PROJECT_VERSION}")
+    endif()
 
     if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
         target_compile_options(${bread_TARGET} PRIVATE -march=native)
@@ -89,11 +98,6 @@ bread_configure(tests SOURCES
 bread_configure(parameter_tuning SOURCES
     ${bread_SOURCE}
     ${bread_UTILS}/parameter_optimisation.cpp
-)
-
-bread_configure(generate_neural_net_header SOURCES
-    ${bread_SOURCE}
-    ${bread_UTILS}/generate_nn_header.cpp
 )
 
 bread_configure(search_position SOURCES
