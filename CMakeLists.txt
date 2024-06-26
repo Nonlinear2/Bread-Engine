@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(bread_engine VERSION 0.0.5)
+project(bread_engine VERSION 0.0.6)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -46,7 +46,7 @@ target_compile_definitions(generate_neural_net_header PRIVATE bread_NNUE_MODEL_P
 # add custom target that generates the header when needed
 add_custom_command(
     OUTPUT ${bread_NN_HEADER_PATH}
-    COMMENT "generating neural network"
+    COMMENT "generating neural network header"
     COMMAND ${CMAKE_COMMAND} -E make_directory ${bread_NN_HEADER_DIR}
     COMMAND $<TARGET_FILE:generate_neural_net_header>
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

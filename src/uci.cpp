@@ -38,7 +38,7 @@ bool UCIAgent::process_uci_command(std::string command){
         return 0;
 
     } else {
-        std::cout << "unrecognized" << command << "\n";
+        std::cout << "unrecognized command: " << command << "\n";
     }
 
     return true;

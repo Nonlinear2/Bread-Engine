@@ -41,19 +41,34 @@ template class NNLayer<int8_t, 32, int16_t, 1>;
 HiddenLayer
 *************/
 
-inline __m256i _mm256_add8x256_epi32(__m256i* inputs){ // 8 256 avx registers with contents to hadd.
-    inputs[0] = _mm256_hadd_epi32(inputs[0], inputs[1]);
-    inputs[2] = _mm256_hadd_epi32(inputs[2], inputs[3]);
-    inputs[4] = _mm256_hadd_epi32(inputs[4], inputs[5]);
-    inputs[6] = _mm256_hadd_epi32(inputs[6], inputs[7]);
+inline __m256i _mm256_add8x256_epi32(__m256i* inputs){
 
-    inputs[0] = _mm256_hadd_epi32(inputs[0], inputs[2]);
-    inputs[4] = _mm256_hadd_epi32(inputs[4], inputs[6]);
+    inputs[1] = _mm256_castps_si256(_mm256_permute_ps(_mm256_castsi256_ps(inputs[1]), 0b00111001));
+    inputs[2] = _mm256_castps_si256(_mm256_permute_ps(_mm256_castsi256_ps(inputs[2]), 0b01001110));
+    inputs[3] = _mm256_castps_si256(_mm256_permute_ps(_mm256_castsi256_ps(inputs[3]), 0b10010011));
 
+    inputs[5] = _mm256_castps_si256(_mm256_permute_ps(_mm256_castsi256_ps(inputs[5]), 0b00111001));
+    inputs[6] = _mm256_castps_si256(_mm256_permute_ps(_mm256_castsi256_ps(inputs[6]), 0b01001110));
+    inputs[7] = _mm256_castps_si256(_mm256_permute_ps(_mm256_castsi256_ps(inputs[7]), 0b10010011));
+
+    // alternative:
+    // inputs[0] = _mm256_add_epi32(inputs[0], inputs[1]);
+    // inputs[0] = _mm256_add_epi32(inputs[0], inputs[2]);
+    // inputs[0] = _mm256_add_epi32(inputs[0], inputs[3]);
+
+    inputs[0] = _mm256_add_epi32(inputs[0], inputs[1]);
+    inputs[2] = _mm256_add_epi32(inputs[2], inputs[3]);
+    inputs[0] = _mm256_add_epi32(inputs[0], inputs[2]);
+
+    
+    inputs[4] = _mm256_add_epi32(inputs[4], inputs[5]);
+    inputs[6] = _mm256_add_epi32(inputs[6], inputs[7]);
+    inputs[4] = _mm256_add_epi32(inputs[4], inputs[6]);
+    
     return _mm256_add_epi32(
-        // swap lanes of the two regs
-        _mm256_permute2x128_si256(inputs[0], inputs[4], 0b00110001),
-        _mm256_permute2x128_si256(inputs[0], inputs[4], 0b00100000)
+        inputs[0],
+        // swap lanes of the second register
+        _mm256_castps_si256(_mm256_permute2f128_ps(_mm256_castsi256_ps(inputs[4]), _mm256_castsi256_ps(inputs[4]), 1))
     );
 };
 

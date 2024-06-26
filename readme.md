@@ -1,18 +1,14 @@
 # Overview
 Bread engine is a chess engine written in c++. I started working on it in 2021, and only just finished. There is still a lot of room for improvement, but the engine is quite strong (for humans, at least). It uses NNUE (efficiently updatable neural network) to evaluate positions, as well as minimax search.
-Bread engine does not have a GUI built in, however it supports the uci protocol, you can therefore run it on any chess GUI, such as [cute chess](https://github.com/cutechess/cutechess) or [arena](http://www.playwitharena.de/).
+Bread engine does not have a graphical interface built in, however it supports the uci protocol, you can therefore run it on any chess graphical interface, such as [cute chess](https://github.com/cutechess/cutechess) or [arena](http://www.playwitharena.de/).
 
 # Installation
 
-Please note that the engine requires a cpu with AVX2 support.
+**You can download precompiled binaries for Windows in the release section.**
 
-- **For windows**, you can find the precompiled binary in the release section. You can also build the project yourself using cmake: clone the repository, open a command line, navigate to the project's root directory and type `mkdir build`, `cd build`, `cmake ..`, `cmake --build . --target release --config release`. This will generate a build folder with the executable.
+*Please note that the engine requires a cpu with AVX2 support.*
 
-- **For linux**: There are no precompiled binaries, so you need to build the project using cmake: clone the repository, open a command line, navigate to the project's root directory and type `mkdir build`, `cd build`, `cmake . -DCMAKE_BUILD_TYPE=Release`, `make release`. This will generate a build folder with the executable. 
-
-The build has been tested using compilers MSVC 19.38, Clang 17.0 and GCC 13.1.
-
-Once you have the engine installed, you can run the executable, and write the following commands one after the other:
+If you want to check whether everything is working properly, you can run the executable and write the following commands one after the other:
 
 ```console
 uci
@@ -20,15 +16,29 @@ position startpos
 go movetime 5000
 ```
 
-and the engine will return the best move. You can find more details on the [uci protocol](https://www.wbec-ridderkerk.nl/html/UCIProtocol.html) webpage. Please note that only the main commands are supported.
+and the engine will return the best move. You can find more details on the [uci protocol](https://www.wbec-ridderkerk.nl/html/UCIProtocol.html) webpage.
 
-Besides the main engine build, you can also build some utility code to:
-- tune some engine parameters
-- benchmark the engine
-- run a search for a given fen
-- run tests
+## Run the engine on a chess graphical interface:
+### Cute chess
+You can download cute chess [here](https://github.com/cutechess/cutechess/releases).
+To add the engine select: tools -> settings -> engines -> + -> command, and choose the engine's executable.
 
-These can all be built using cmake.
+To play a game against the engine, select: game -> new and choose the settings you want.
+
+
+## Build the project yourself
+
+***You need Cmake and a C++ compiler installed.***
+
+The build has been tested using compilers MSVC 19.38, Clang 17.0 and GCC 13.1.
+
+### Windows
+
+To build the project yourself, you can use cmake: clone the repository, open a command line, navigate to the project's root directory and type `mkdir build`, `cd build`, `cmake ..`, `cmake --build . --target release --config release`. This will generate a build folder with the executable.
+
+### Linux
+
+Run the script `compile_script_for_linux.sh`. The executable will be generated in the `build` folder.
 
 # Technical details
 in this section we provide an overview of the search algorithm, and the main engine features. The explanations are very high level, so feel free to search more details on other resources.
@@ -142,8 +152,8 @@ For the second layer, weights are multiplied by 64 and stored in int8, and bias 
 To be able to store weights in int8, we need to make sure that weights * 64 < 127, so a weight can't exceed 127/64 = 1.98. This is the price to pay for full integer quantization. After this layer, the output is
 `layer_2_quant_output = quant_input @ (64*weights) + 127*64*bias = 127*64*(input @ weights + bias) = 127*64*true_output`. Therefore, we need to divide the quantized output by 64 before applying the clipped relu (this is done using bitshifts as 64 is a power of 2. We lose at most 1/127 = 0.0078 of precision by doing this).
 Layers 3 and 4 are similar. Layer 4 is small enough that we can accumulate outputs in in16.
-Here is the relevant code in Bread Engine:
 
+Here is some code to run the hidden layers (this was used until Bread Engine 0.0.6):
 ```c++
 inline __m256i _mm256_add8x256_epi32(__m256i* inputs){ // horizontal add 8 int32 avx registers.
     inputs[0] = _mm256_hadd_epi32(inputs[0], inputs[1]);
@@ -186,6 +196,91 @@ void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
     }
 };
 ```
+
+### optimized matrix multiplication
+*The following method is original, it may or may not be a good approach.*
+
+To optimize the matrix multiplication code above, one can note that in the `_mm256_add8x256_epi32` function, we use `_mm256_hadd_epi32` for horizontal accumulation. However, we would like to use `_mm256_add_epi32` which is faster, but does vertical accumulation. To achieve this we can shuffle vertically the weights in the neural network, to have the weights that need to be added together on different rows. After the multiplication, we can shuffle the weights horizontally so they align, and add them vertically.
+
+```c++
+inline __m256i _mm256_add8x256_epi32(__m256i* inputs){
+
+    inputs[1] = _mm256_castps_si256(_mm256_permute_ps(_mm256_castsi256_ps(inputs[1]), 0b00111001));
+    inputs[2] = _mm256_castps_si256(_mm256_permute_ps(_mm256_castsi256_ps(inputs[2]), 0b01001110));
+    inputs[3] = _mm256_castps_si256(_mm256_permute_ps(_mm256_castsi256_ps(inputs[3]), 0b10010011));
+
+    inputs[5] = _mm256_castps_si256(_mm256_permute_ps(_mm256_castsi256_ps(inputs[5]), 0b00111001));
+    inputs[6] = _mm256_castps_si256(_mm256_permute_ps(_mm256_castsi256_ps(inputs[6]), 0b01001110));
+    inputs[7] = _mm256_castps_si256(_mm256_permute_ps(_mm256_castsi256_ps(inputs[7]), 0b10010011));
+
+    inputs[0] = _mm256_add_epi32(inputs[0], inputs[1]);
+    inputs[2] = _mm256_add_epi32(inputs[2], inputs[3]);
+    inputs[0] = _mm256_add_epi32(inputs[0], inputs[2]);
+
+    
+    inputs[4] = _mm256_add_epi32(inputs[4], inputs[5]);
+    inputs[6] = _mm256_add_epi32(inputs[6], inputs[7]);
+    inputs[4] = _mm256_add_epi32(inputs[4], inputs[6]);
+    
+    return _mm256_add_epi32(
+        inputs[0],
+        // swap lanes of the second register
+        _mm256_castps_si256(_mm256_permute2f128_ps(_mm256_castsi256_ps(inputs[4]), _mm256_castsi256_ps(inputs[4]), 1))
+    );
+};
+```
+In the following representation, same digits need to be added together.
+
+- Previous `_mm256_add8x256_epi32` function:
+
+| input 1: | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+|----------|---|---|---|---|---|---|---|---|
+| input 2: | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| input 3: | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 
+| input 4: | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
+| input 5: | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 4 |
+| input 6: | 5 | 5 | 5 | 5 | 5 | 5 | 5 | 5 |
+| input 7: | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 |
+| input 8: | 7 | 7 | 7 | 7 | 7 | 7 | 7 | 7 |
+
+| output register: | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|------------------|---|---|---|---|---|---|---|---|
+
+- New `_mm256_add8x256_epi32` function (takes vertically shuffled input):
+
+| input 0: | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|----------|---|---|---|---|---|---|---|---|
+| input 1: | 3 | 0 | 1 | 2 | 7 | 4 | 5 | 6 |
+| input 2: | 2 | 3 | 0 | 1 | 6 | 7 | 4 | 5 |
+| input 3: | 1 | 2 | 3 | 0 | 5 | 6 | 7 | 4 |
+| input 4: | 4 | 5 | 6 | 7 | 0 | 1 | 2 | 3 |
+| input 5: | 7 | 4 | 5 | 6 | 3 | 0 | 1 | 2 |
+| input 6: | 6 | 7 | 4 | 5 | 2 | 3 | 0 | 1 |
+| input 7: | 5 | 6 | 7 | 4 | 1 | 2 | 3 | 0 |
+
+intermediate result using `_mm256_permute_ps`:
+
+| register 0: | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|-------------|---|---|---|---|---|---|---|---|
+| register 1: | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+| register 2: | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+| register 3: | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+| register 4: | 4 | 5 | 6 | 7 | 0 | 1 | 2 | 3 |
+| register 5: | 4 | 5 | 6 | 7 | 0 | 1 | 2 | 3 |
+| register 6: | 4 | 5 | 6 | 7 | 0 | 1 | 2 | 3 |
+| register 7: | 4 | 5 | 6 | 7 | 0 | 1 | 2 | 3 |
+
+vertical sum of the 4 first and last registers:
+
+| register 0: | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|-------------|---|---|---|---|---|---|---|---|
+| register 1: | 4 | 5 | 6 | 7 | 0 | 1 | 2 | 3 |
+
+swap lanes of the second register and vertical sum:
+
+| output register: | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|------------------|---|---|---|---|---|---|---|---|
+
 
 # Learning resources
 [chess programming wiki](https://www.chessprogramming.org/Main_Page)
