@@ -166,3 +166,8 @@ int main(){
 // GCC: average time: 2800.05, average time: 2820.78
 // clang: average time: 2462.3, average time: 2386.76
 // msvc: average time: 2662.35, average time: 2694.83
+
+
+// msvc new avx add:  2730.59,  2633.28
+
+// clang average time: 2266
