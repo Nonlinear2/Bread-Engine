@@ -171,3 +171,9 @@ int main(){
 // msvc new avx add:  2730.59,  2633.28
 
 // clang average time: 2266
+
+// tt improvements: clang average time 2048, 2065
+
+// no tt imrpveements: average time: 2083.56, average time: 2037.84
+
+// less probe calls when at boundary between negamax and qsearch
