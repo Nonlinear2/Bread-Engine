@@ -6,7 +6,7 @@ int main(){
     std::vector<std::string> fens = {
         "r2qkbnr/1pp2ppp/p1p5/4p3/4P1b1/5N1P/PPPP1PP1/RNBQ1RK1 b kq - 0 6",
     };
-
+    // engine.transposition_table.info();
     for (int i = 0; i < fens.size(); i++){
         chess::Move best;
         std::cout << fens[i] << "\n";

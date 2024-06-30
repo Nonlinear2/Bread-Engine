@@ -168,7 +168,7 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
-        if ((transposition->depth >= depth) && (!inner_board.isRepetition(1)) && (transposition->flag == TFlag::EXACT)){
+        if ((transposition->depth() >= depth) && (!inner_board.isRepetition(1)) && (transposition->flag() == TFlag::EXACT)){
             best_move = transposition->best_move;
             best_move.setScore(transposition->evaluation);
             return {best_move, TFlag::EXACT};
@@ -354,22 +354,27 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         return 0;
     }
 
+    // transpositions will be checked inside of qsearch
+    // if isRepetition(1), qsearch will not consider the danger of draw as it searches captures.
+    if (depth == 0){
+        // we check can_return only at depth 0 to avoid doing it at all nodes
+        if (can_return()){
+            throw TerminateSearch();
+        }
+        return qsearch(alpha, beta, color, QSEARCH_MAX_DEPTH);
+    }
+
     const float initial_alpha = alpha;
-    // if depth == 0, gets recomputed in qsearch but minor performance loss.
     uint64_t zobrist_hash = inner_board.hash();
 
     chess::Move tt_move = NO_MOVE;
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
-        if ((transposition->depth >= depth) && (!inner_board.isRepetition(1))){
+        if ((transposition->depth() >= depth) && (!inner_board.isRepetition(1))){
             // if is repetition(1), danger of repetition so TT is unreliable
-            switch (transposition->flag){
+            switch (transposition->flag()){
                 case TFlag::EXACT:
-                    // avoid using static evaluation instead of quiescence search:
-                    if (transposition->depth == 0){
-                        break;
-                    }
                     return transposition->evaluation;
                 case TFlag::LOWER_BOUND:
                     alpha = std::max(alpha, transposition->evaluation);
@@ -390,14 +395,6 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         if (transposition->best_move != NO_MOVE){
             tt_move = transposition->best_move;
         }
-    }
-
-    if (depth == 0){
-        // we check can_return only at depth 0 to avoid doing it at all nodes
-        if (can_return()){
-            throw TerminateSearch();
-        }
-        return qsearch(alpha, beta, color, QSEARCH_MAX_DEPTH);
     }
     
     SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board);
@@ -508,21 +505,32 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
-        if (transposition->depth == 0){ // careful, we use the fact that outcomes are stored at depth 255 here.
-            stand_pat = transposition->evaluation;
-
-            // we can already check for cutoff
-            if (stand_pat >= beta){
-                // return stand_pat;
-                return beta;
-            }
-        } else if (transposition->flag == TFlag::EXACT){
-            // this means that it is either a higher depth search, in which case we can return,
-            // as this is a better evaluation than the qsearch
-            // or it can mean that it is outcome, in which case we can return too.
-            return transposition->evaluation;
-        } else {
-            is_hit = false; // hit wasn't used, so later it should not be considered that there was a hit.
+        switch (transposition->flag()){
+            case TFlag::EXACT:
+                if (transposition->depth() == 0){ // outcomes are stored at depth 255
+                    stand_pat = transposition->evaluation;
+                    // we can already check for cutoff
+                    if (stand_pat >= beta) return stand_pat;
+                } else {
+                    return transposition->evaluation;
+                }
+                break;
+            case TFlag::LOWER_BOUND:
+                if (depth == QSEARCH_MAX_DEPTH){
+                    alpha = std::max(alpha, transposition->evaluation);
+                    if (beta <= alpha) return transposition->evaluation;
+                    is_hit = false;
+                }
+                break;
+            case TFlag::UPPER_BOUND:
+                if (depth == QSEARCH_MAX_DEPTH){
+                    beta = std::min(beta, transposition->evaluation);
+                    if (beta <= alpha) return transposition->evaluation;
+                    is_hit = false;
+                }
+                break;
+            default:
+                break;
         }
     }
 
@@ -543,10 +551,10 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
 
         stand_pat = inner_board.evaluate();
         transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-        if (stand_pat >= beta){
-            return beta;
+        if (stand_pat >= beta) {
+            return stand_pat;
         }
-    }
+    }   
 
     if (depth == 0){
         return stand_pat;
@@ -556,6 +564,7 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
 
     alpha = std::max(alpha, stand_pat);
 
+    float max_eval = stand_pat;
     float pos_eval;
     chess::Move move;
     while (sorted_capture_gen.next(move)){
@@ -569,14 +578,104 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
         inner_board.update_state(move);
         pos_eval = -qsearch(-beta, -alpha, -color, depth-1);
         inner_board.restore_state(move);
-        
-        if (pos_eval > alpha){
-            alpha = pos_eval;
-            if (alpha >= beta){ // only check for cutoffs when alpha gets updated.
-                // return alpha;
-                return beta;
-            }
+
+        if (pos_eval > max_eval){
+            max_eval = pos_eval;
+        }
+        alpha = std::max(alpha, pos_eval);
+        if (alpha >= beta){ // only check for cutoffs when alpha gets updated.
+            return max_eval;
         }
     }
-    return alpha;
+    return max_eval;
 }
+
+
+// Score of bread_engine_0.0.7 vs bread_engine_0.0.6: 9 - 12 - 9  [0.450] 30
+// ...      bread_engine_0.0.7 playing White: 5 - 5 - 5  [0.500] 15
+// ...      bread_engine_0.0.7 playing Black: 4 - 7 - 4  [0.400] 15
+// ...      White vs Black: 12 - 9 - 9  [0.550] 30
+// Elo difference: -34.9 +/- 107.6, LOS: 25.6 %, DrawRatio: 30.0 %
+
+
+// Score of bread_engine_0.0.7 vs bread_engine_0.0.6: 12 - 13 - 5  [0.483] 30
+// ...      bread_engine_0.0.7 playing White: 8 - 5 - 2  [0.600] 15
+// ...      bread_engine_0.0.7 playing Black: 4 - 8 - 3  [0.367] 15
+// ...      White vs Black: 16 - 9 - 5  [0.617] 30
+// Elo difference: -11.6 +/- 117.7, LOS: 42.1 %, DrawRatio: 16.7 %
+// SPRT: llr -0.0507 (-1.7%), lbound -2.94, ubound 2.94
+
+
+
+
+
+// Score of bread_engine_0.0.7 vs bread_engine_0.0.6: 1044 - 927 - 511  [0.524] 2482
+// ...      bread_engine_0.0.7 playing White: 654 - 336 - 252  [0.628] 1242
+// ...      bread_engine_0.0.7 playing Black: 390 - 591 - 259  [0.419] 1240
+// ...      White vs Black: 1245 - 726 - 511  [0.605] 2482
+// Elo difference: 16.4 +/- 12.2, LOS: 99.6 %, DrawRatio: 20.6 %
+// SPRT: llr 2.95 (100.1%), lbound -2.94, ubound 2.94 - H1 was accepted
+
+// Player: bread_engine_0.0.7
+//    "Draw by 3-fold repetition": 404
+//    "Draw by fifty moves rule": 52
+//    "Draw by insufficient mating material": 52
+//    "Draw by stalemate": 3
+//    "Loss: Black mates": 336
+//    "Loss: White mates": 591
+//    "No result": 5
+//    "Win: Black mates": 390
+//    "Win: White mates": 654
+// Player: bread_engine_0.0.6
+//    "Draw by 3-fold repetition": 404
+//    "Draw by fifty moves rule": 52
+//    "Draw by insufficient mating material": 52
+//    "Draw by stalemate": 3
+//    "Loss: Black mates": 390
+//    "Loss: White mates": 654
+//    "No result": 5
+//    "Win: Black mates": 336
+//    "Win: White mates": 591
+// Finished match
+
+
+// Score of bread_engine_0.0.7 vs bread_engine_0.0.6: 1646 - 1519 - 795  [0.516] 3960
+// ...      bread_engine_0.0.7 playing White: 1048 - 535 - 397  [0.630] 1980
+// ...      bread_engine_0.0.7 playing Black: 598 - 984 - 398  [0.403] 1980
+// ...      White vs Black: 2032 - 1133 - 795  [0.614] 3960
+// Elo difference: 11.1 +/- 9.7, LOS: 98.8 %, DrawRatio: 20.1 %
+// SPRT: llr 2.52 (85.6%), lbound -2.94, ubound 2.94
+
+
+// current version:
+
+// Score of bread_engine_0.0.7 vs bread_engine_0.0.6: 529 - 429 - 221  [0.542] 1179
+// ...      bread_engine_0.0.7 playing White: 328 - 157 - 105  [0.645] 590
+// ...      bread_engine_0.0.7 playing Black: 201 - 272 - 116  [0.440] 589
+// ...      White vs Black: 600 - 358 - 221  [0.603] 1179
+// Elo difference: 29.5 +/- 17.9, LOS: 99.9 %, DrawRatio: 18.7 %
+// SPRT: llr 2.95 (100.1%), lbound -2.94, ubound 2.94 - H1 was accepted
+
+// Player: bread_engine_0.0.7
+//    "Draw by 3-fold repetition": 176
+//    "Draw by fifty moves rule": 22
+//    "Draw by insufficient mating material": 23
+//    "Loss: Black mates": 157
+//    "Loss: White mates": 272
+//    "No result": 5
+//    "Win: Black loses on time": 1
+//    "Win: Black mates": 200
+//    "Win: White loses on time": 1
+//    "Win: White mates": 327
+// Player: bread_engine_0.0.6
+//    "Draw by 3-fold repetition": 176
+//    "Draw by fifty moves rule": 22
+//    "Draw by insufficient mating material": 23
+//    "Loss: Black loses on time": 1
+//    "Loss: Black mates": 200
+//    "Loss: White loses on time": 1
+//    "Loss: White mates": 327
+//    "No result": 5
+//    "Win: Black mates": 157
+//    "Win: White mates": 272
+// Finished match

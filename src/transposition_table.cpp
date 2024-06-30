@@ -19,41 +19,35 @@ void TranspositionTable::info(){
 }
 
 void TranspositionTable::allocateMB(int new_size){
+    assert((new_size & (new_size - 1)) == 0); // make sure the size is a power of 2
+
     new_size = std::max(new_size, 0);
     new_size = std::min(new_size, max_size_mb);
 
     size_mb = new_size;
 
-    int num_entries = (size_mb * 1e6)/sizeof(TEntry);
+    // closest power of 2 to 1'000'000 / 16 is 2^16 = 65536
+    assert(sizeof(TEntry) == 16);
+    constexpr int entries_in_one_mb = 65536;
+    int num_entries = size_mb * entries_in_one_mb;
+
     entries.resize(num_entries, TEntry());
 }
-
-void TranspositionTable::allocateKB(int new_size){
-    new_size = std::max(new_size, 0);
-    new_size = std::min(new_size, max_size_mb*1'000);
-
-    size_mb = new_size/1000;
-
-    int num_entries = (new_size * 1e3)/sizeof(TEntry);
-    entries.resize(num_entries, TEntry());
-}
-
 
 void TranspositionTable::store(uint64_t zobrist, float eval, int depth, chess::Move best, TFlag flag, uint8_t move_number){
     // no need to store the side to move, as it is in the zobrist hash.
-    TEntry* entry = &entries[zobrist % entries.size()];
-    if (entry->zobrist_hash != zobrist || flag == TFlag::EXACT || depth > entry->depth || move_number > entry->move_number){
-        entry->best_move = best;
-        entry->depth = static_cast<uint8_t>(depth);
-        entry->evaluation = eval;
-        entry->flag = flag;
+    TEntry* entry = &entries[zobrist & (entries.size() - 1)];
+    if (entry->zobrist_hash != zobrist || flag == TFlag::EXACT || depth > entry->depth() || move_number > entry->move_number){
         entry->zobrist_hash = zobrist;
+        entry->evaluation = eval;
+        entry->best_move = best.move();
+        entry->depth_tflag = (static_cast<uint8_t>(depth) << 2) | (static_cast<uint8_t>(flag));
         entry->move_number = move_number;
     };
 }
 
 TEntry* TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
-    TEntry* entry = &entries[zobrist % entries.size()];
+    TEntry* entry = &entries[zobrist & (entries.size() - 1)];
     is_hit = (entry->zobrist_hash == zobrist);
     return entry;
 }
@@ -97,4 +91,32 @@ void TranspositionTable::load_from_file(std::string file){
     }
 
     ifs.close();
+}
+
+
+EvalTable::EvalTable(){
+    // eval table is always 16 mb
+    constexpr int size_mb = 16;
+    // closest power of 2 to 1'000'000 / 8 is 2^17 = 131072
+    assert(sizeof(EvalEntry) == 8);
+    constexpr int entries_in_one_mb = 131072;
+    int num_entries = size_mb * entries_in_one_mb;
+    entries.resize(num_entries, EvalEntry());
+}
+
+void EvalTable::store(uint64_t zobrist, float eval){
+    // no need to store the side to move, as it is in the zobrist hash.
+    EvalEntry* entry = &entries[zobrist & (entries.size() - 1)];
+    entry->zobrist_hash = zobrist; // low 32 bits are stored
+    entry->evaluation = eval;
+}
+
+float EvalTable::probe(bool& is_hit, uint64_t zobrist){
+    EvalEntry* entry = &entries[zobrist & (entries.size() - 1)];
+    is_hit = (entry->zobrist_hash == (uint32_t)zobrist);
+    if (is_hit){
+        return entry->evaluation;
+    } else {
+        return 0;
+    }
 }
