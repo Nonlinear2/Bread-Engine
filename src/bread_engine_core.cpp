@@ -516,18 +516,10 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
                 }
                 break;
             case TFlag::LOWER_BOUND:
-                if (depth == QSEARCH_MAX_DEPTH){
-                    alpha = std::max(alpha, transposition->evaluation);
-                    if (beta <= alpha) return transposition->evaluation;
-                    is_hit = false;
-                }
+                if ((transposition->evaluation > alpha) && (beta <= transposition->evaluation)) return transposition->evaluation;
                 break;
             case TFlag::UPPER_BOUND:
-                if (depth == QSEARCH_MAX_DEPTH){
-                    beta = std::min(beta, transposition->evaluation);
-                    if (beta <= alpha) return transposition->evaluation;
-                    is_hit = false;
-                }
+                if ((transposition->evaluation < beta) && (transposition->evaluation <= alpha)) return transposition->evaluation;
                 break;
             default:
                 break;
@@ -550,13 +542,14 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
         }
 
         stand_pat = inner_board.evaluate();
-        transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
         if (stand_pat >= beta) {
+            transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
             return stand_pat;
         }
-    }   
+    }
 
     if (depth == 0){
+        transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
         return stand_pat;
     }
 
@@ -567,6 +560,7 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
     float max_eval = stand_pat;
     float pos_eval;
     chess::Move move;
+    chess::Move best_move = NO_MOVE;
     while (sorted_capture_gen.next(move)){
         // delta pruning
         // move.score() is calculated with set_capture_score which is material difference.
@@ -581,11 +575,14 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
 
         if (pos_eval > max_eval){
             max_eval = pos_eval;
+            best_move = move;
         }
         alpha = std::max(alpha, pos_eval);
         if (alpha >= beta){ // only check for cutoffs when alpha gets updated.
+            transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
             return max_eval;
         }
     }
+    transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
     return max_eval;
 }
