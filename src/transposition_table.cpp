@@ -4,8 +4,40 @@ TranspositionTable::TranspositionTable(){allocateMB(256);};
 
 void TranspositionTable::info(){
     int used = 0;
+
+    int num_move = 0;
+
+    int num_depth_zero = 0;
+
+    int num_exact = 0;
+    int num_upper = 0;
+    int num_lower = 0;
+    int num_noflag = 0;
+
     for (int i = 0; i < entries.size(); i++){
-        used += (entries[i].zobrist_hash != 0);
+        TEntry entry = entries[i];
+        if (entry.zobrist_hash != 0){
+            used++;
+
+            num_move += (entry.best_move != chess::Move::NO_MOVE);
+
+            num_depth_zero += (entry.depth() == 0);
+
+            switch (entry.flag()){
+                case TFlag::EXACT:
+                    num_exact++;
+                    break;
+                case TFlag::UPPER_BOUND:
+                    num_upper++;
+                    break;
+                case TFlag::LOWER_BOUND:
+                    num_lower++;
+                    break;
+                default:
+                    num_noflag++;
+                    break;
+            }
+        }
     }
     int used_percentage = used*100/entries.size();
 
@@ -15,6 +47,14 @@ void TranspositionTable::info(){
     std::cout << "number of entries " << entries.size() << std::endl;
     std::cout << "used entries " << used << std::endl;
     std::cout << "used percentage " << used_percentage << "%" << std::endl;
+    if (used != 0){
+        std::cout << "following percentages are relative to used entries." << std::endl;
+        std::cout << "depth zero percentage " << (num_depth_zero*100)/used << "%" << std::endl;
+        std::cout << "has move percentage " << (num_move*100)/used << "%" << std::endl;
+        std::cout << "exact eval percentage " << (num_exact*100)/used << "%" << std::endl;
+        std::cout << "lower bound eval percentage " << (num_lower*100)/used << "%" << std::endl;
+        std::cout << "upper bound eval percentage " << (num_upper*100)/used << "%" << std::endl;
+    }
     std::cout << "====================" << std::endl;
 }
 
@@ -91,32 +131,4 @@ void TranspositionTable::load_from_file(std::string file){
     }
 
     ifs.close();
-}
-
-
-EvalTable::EvalTable(){
-    // eval table is always 16 mb
-    constexpr int size_mb = 16;
-    // closest power of 2 to 1'000'000 / 8 is 2^17 = 131072
-    assert(sizeof(EvalEntry) == 8);
-    constexpr int entries_in_one_mb = 131072;
-    int num_entries = size_mb * entries_in_one_mb;
-    entries.resize(num_entries, EvalEntry());
-}
-
-void EvalTable::store(uint64_t zobrist, float eval){
-    // no need to store the side to move, as it is in the zobrist hash.
-    EvalEntry* entry = &entries[zobrist & (entries.size() - 1)];
-    entry->zobrist_hash = zobrist; // low 32 bits are stored
-    entry->evaluation = eval;
-}
-
-float EvalTable::probe(bool& is_hit, uint64_t zobrist){
-    EvalEntry* entry = &entries[zobrist & (entries.size() - 1)];
-    is_hit = (entry->zobrist_hash == (uint32_t)zobrist);
-    if (is_hit){
-        return entry->evaluation;
-    } else {
-        return 0;
-    }
 }

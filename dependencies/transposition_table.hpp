@@ -53,26 +53,3 @@ class TranspositionTable {
     int size_mb;
     int max_size_mb = 1024;
 };
-
-
-// side to move is not stored in the transposition table as it is in the zobrist hash
-struct EvalEntry {
-    uint32_t zobrist_hash = 0; // 8 bytes  -> hash has been cropped to 32 bits
-    float evaluation = 0; // 4 bytes
-    // ==============
-    // ----> total = 4 + 4 = 8 bytes
-};
-
-class EvalTable {
-    public:
-    EvalTable();
-
-    void allocateMB(int new_size);
-
-    void store(uint64_t zobrist, float eval);
-
-    float probe(bool& is_hit, uint64_t zobrist);
-
-    private:
-    std::vector<EvalEntry> entries;
-};
