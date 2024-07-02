@@ -77,7 +77,7 @@ void TranspositionTable::allocateMB(int new_size){
 void TranspositionTable::store(uint64_t zobrist, float eval, int depth, chess::Move move, TFlag flag, uint8_t move_number){
     // no need to store the side to move, as it is in the zobrist hash.
     TEntry* entry = &entries[zobrist & (entries.size() - 1)];
-    if (entry->zobrist_hash != zobrist || flag == TFlag::EXACT || depth > entry->depth() || move_number > entry->move_number){
+    if (entry->zobrist_hash != zobrist || ((depth != 0) && (flag == TFlag::EXACT)) || depth > entry->depth() || move_number > entry->move_number + 5){
         entry->zobrist_hash = zobrist;
         entry->evaluation = eval;
         entry->best_move = move.move();

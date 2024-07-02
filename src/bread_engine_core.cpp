@@ -131,7 +131,6 @@ bool Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::next(chess::Mo
 
     move_idx++;
     if (move_idx == 0){
-        chess::movegen::legalmoves<chess::movegen::MoveGenType::CAPTURE>(legal_moves, board);
         for (auto& move: legal_moves){
             set_score(move);
         }
@@ -522,20 +521,12 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
 }
 
 float Engine::qsearch(float alpha, float beta, int color, int depth){
-    auto result = qsearch_(alpha, beta, color, depth);
-    if (result.second.flag() != TFlag::NO_FLAG){
-        transposition_table.store(result.second);
-    }
-    return result.first;
-}
-
-std::pair<float, TEntry> Engine::qsearch_(float alpha, float beta, int color, int depth){
     nodes++;
 
     // tablebase probe
     float wdl_eval;
     if (inner_board.probe_wdl(wdl_eval)){
-        return {wdl_eval, TEntry()};
+        return wdl_eval;
     }
 
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
@@ -554,21 +545,17 @@ std::pair<float, TEntry> Engine::qsearch_(float alpha, float beta, int color, in
                 if (transposition->depth() == 0){ // outcomes are stored at depth 255
                     stand_pat = transposition->evaluation;
                     // we can already check for cutoff
-                    if (stand_pat >= beta) return {stand_pat, TEntry()};
+                    if (stand_pat >= beta) return stand_pat;
                 } else {
-                    return {transposition->evaluation, TEntry()};
+                    return transposition->evaluation;
                 }
                 break;
             case TFlag::LOWER_BOUND:
-                if ((transposition->evaluation > alpha) && (beta <= transposition->evaluation)){
-                    return {transposition->evaluation, TEntry()};
-                }
+                if ((transposition->evaluation > alpha) && (beta <= transposition->evaluation)) return transposition->evaluation;
                 is_hit = false;
                 break;
             case TFlag::UPPER_BOUND:
-                if ((transposition->evaluation < beta) && (transposition->evaluation <= alpha)){
-                    return {transposition->evaluation, TEntry()};
-                }
+                if ((transposition->evaluation < beta) && (transposition->evaluation <= alpha)) return transposition->evaluation;
                 is_hit = false;
                 break;
             default:
@@ -585,18 +572,20 @@ std::pair<float, TEntry> Engine::qsearch_(float alpha, float beta, int color, in
         // if it is hit, no need to check for outcome, as it wouldn't be stored in the
         // transposition table at a 0 depth. 
         if (sorted_capture_gen.is_empty() && try_outcome_eval(stand_pat)){ // only generate non captures?
-            return {stand_pat, TEntry(zobrist_hash, stand_pat, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
+            transposition_table.store(zobrist_hash, stand_pat, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+            return stand_pat;
         }
 
         stand_pat = inner_board.evaluate();
-        if (stand_pat >= beta) {
-            return {stand_pat, TEntry(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
+        if (stand_pat >= beta){
+            transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+            return stand_pat;
         }
     }
 
     if (depth == 0){
-        // transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-        return {stand_pat, TEntry(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
+        transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+        return stand_pat;
     }
 
     alpha = std::max(alpha, stand_pat);
@@ -623,167 +612,10 @@ std::pair<float, TEntry> Engine::qsearch_(float alpha, float beta, int color, in
         }
         alpha = std::max(alpha, pos_eval);
         if (alpha >= beta){ // only check for cutoffs when alpha gets updated.
-            // transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-            return {max_eval, TEntry(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
+            transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+            return max_eval;
         }
     }
-    // transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-    return {max_eval, TEntry(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
-
+    transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+    return max_eval;
 }
-
-// no upper/lower bound usage in qsearch, moves from qsearch stored using "qsearch_" TEntry return and axilliary "qsearch" function.
-// ====================
-// transposition table:
-// size 256 MB
-// number of entries 16777216
-// used entries 16336244
-// used percentage 97%
-// following percentages are relative to used entries.
-// depth zero percentage 84%
-// has move percentage 25%
-// exact eval percentage 84%
-// lower bound eval percentage 13%
-// upper bound eval percentage 1%
-// ====================
-// ==============================
-// average time: 2548.59
-
-// upper/lower bound usage to ajust alpha/beta if depth == QSEARCH_MAX_DEPTH, moves from qsearch stored using "qsearch_" TEntry return and axilliary "qsearch" function.
-// ====================
-// transposition table:
-// size 256 MB
-// number of entries 16777216
-// used entries 16166348
-// used percentage 96%
-// following percentages are relative to used entries.
-// depth zero percentage 83%
-// has move percentage 26%
-// exact eval percentage 83%
-// lower bound eval percentage 14%
-// upper bound eval percentage 1%
-// ====================
-// ==============================
-// average time: 2303.31
-
-// upper/lower bound usage to ajust cutoff only, moves from qsearch stored using "qsearch_" TEntry return and axilliary "qsearch" function.
-// ====================
-// transposition table:
-// size 256 MB
-// number of entries 16777216
-// used entries 16069935
-// used percentage 95%
-// following percentages are relative to used entries.
-// depth zero percentage 83%
-// has move percentage 26%
-// exact eval percentage 83%
-// lower bound eval percentage 14%
-// upper bound eval percentage 1%
-// ====================
-// ==============================
-// average time: 2232.5
-
-// both QSEARCH_MAX_DEPTH alpha/beta updates and cutoffs for other dpeths.  moves from qsearch stored using "qsearch_" TEntry return and axilliary "qsearch" function.
-// ====================
-// transposition table:
-// size 256 MB
-// number of entries 16777216
-// used entries 16073156
-// used percentage 95%
-// following percentages are relative to used entries.
-// depth zero percentage 83%
-// has move percentage 26%
-// exact eval percentage 83%
-// lower bound eval percentage 14%
-// upper bound eval percentage 1%
-// ====================
-// ==============================
-// average time: 2420.68
-
-
-// both QSEARCH_MAX_DEPTH alpha/beta updates and cutoffs for other dpeths. no moves stored
-// ====================
-// transposition table:
-// size 256 MB
-// number of entries 16777216
-// used entries 15982487
-// used percentage 95%
-// following percentages are relative to used entries.
-// depth zero percentage 83%
-// has move percentage 16%
-// exact eval percentage 83%
-// lower bound eval percentage 14%
-// upper bound eval percentage 1%
-// ====================
-// ==============================
-// average time: 2201.83
-
-// upper/lower bound usage to ajust cutoff only
-// ====================
-// transposition table:
-// size 256 MB
-// number of entries 16777216
-// used entries 15981855
-// used percentage 95%
-// following percentages are relative to used entries.
-// depth zero percentage 83%
-// has move percentage 16%
-// exact eval percentage 83%
-// lower bound eval percentage 14%
-// upper bound eval percentage 1%
-// ====================
-// ==============================
-// average time: 2171.36
-
-// upper/lower bound usage to ajust alpha/beta if depth == QSEARCH_MAX_DEPTH, no moves stored
-// ====================
-// transposition table:
-// size 256 MB
-// number of entries 16777216
-// used entries 16035034
-// used percentage 95%
-// following percentages are relative to used entries.
-// depth zero percentage 83%
-// has move percentage 16%
-// exact eval percentage 83%
-// lower bound eval percentage 14%
-// upper bound eval percentage 1%
-// ====================
-// ==============================
-// average time: 2209.09
-
-// original with multiple stores everywhere
-// ====================
-// transposition table:
-// size 256 MB
-// number of entries 16777216
-// used entries 16008817
-// used percentage 95%
-// following percentages are relative to used entries.
-// depth zero percentage 83%
-// has move percentage 26%
-// exact eval percentage 83%
-// lower bound eval percentage 14%
-// upper bound eval percentage 1%
-// ====================
-// ==============================
-// average time: 2175.15
-
-
-// test stores everywhere vs no stores:
-// stores: 2181.28   2189.22
-// no sto: 2134.56   2130.62
-
-// smaller tt 128: 2527.01
-
-// tt 512: 2086.7
-
-// store qsearch only at root depth attempt: 2625.36
-
-// use and store qsearch moves: 2352.9   2445.36
-
-// no store move qsearch:  2299.18
-
-
-// current version:
-// 2187.42   2322.14    2322.14
