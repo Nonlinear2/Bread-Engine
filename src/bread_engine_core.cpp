@@ -121,8 +121,17 @@ bool Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::next(chess::Move& 
 
 template<>
 bool Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::next(chess::Move& move){
+    if (checked_tt_move == false){
+        checked_tt_move = true;
+        if ((tt_move != NO_MOVE) && (board.isCapture(tt_move))){
+            move = tt_move;
+            return true;
+        }
+    }
+
     move_idx++;
     if (move_idx == 0){
+        chess::movegen::legalmoves<chess::movegen::MoveGenType::CAPTURE>(legal_moves, board);
         for (auto& move: legal_moves){
             set_score(move);
         }
@@ -513,12 +522,20 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
 }
 
 float Engine::qsearch(float alpha, float beta, int color, int depth){
+    auto result = qsearch_(alpha, beta, color, depth);
+    if (result.second.flag() != TFlag::NO_FLAG){
+        transposition_table.store(result.second);
+    }
+    return result.first;
+}
+
+std::pair<float, TEntry> Engine::qsearch_(float alpha, float beta, int color, int depth){
     nodes++;
 
     // tablebase probe
     float wdl_eval;
     if (inner_board.probe_wdl(wdl_eval)){
-        return wdl_eval;
+        return {wdl_eval, TEntry()};
     }
 
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
@@ -528,6 +545,7 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
 
     // first we check for transposition. If it is outcome, it should have already been stored
     // with an exact flag, so the stand pat will be correct anyways.
+    SortedMoveGen sorted_capture_gen = SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>(inner_board);
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
@@ -536,25 +554,28 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
                 if (transposition->depth() == 0){ // outcomes are stored at depth 255
                     stand_pat = transposition->evaluation;
                     // we can already check for cutoff
-                    if (stand_pat >= beta) return stand_pat;
+                    if (stand_pat >= beta) return {stand_pat, TEntry()};
                 } else {
-                    return transposition->evaluation;
+                    return {transposition->evaluation, TEntry()};
                 }
                 break;
             case TFlag::LOWER_BOUND:
-                if ((transposition->evaluation > alpha) && (beta <= transposition->evaluation)) return transposition->evaluation;
+                if ((transposition->evaluation > alpha) && (beta <= transposition->evaluation)){
+                    return {transposition->evaluation, TEntry()};
+                }
                 is_hit = false;
                 break;
             case TFlag::UPPER_BOUND:
-                if ((transposition->evaluation < beta) && (transposition->evaluation <= alpha)) return transposition->evaluation;
+                if ((transposition->evaluation < beta) && (transposition->evaluation <= alpha)){
+                    return {transposition->evaluation, TEntry()};
+                }
                 is_hit = false;
                 break;
             default:
                 break;
         }
+        if (transposition->best_move != NO_MOVE) sorted_capture_gen.set_tt_move(transposition->best_move);
     }
-
-    SortedMoveGen sorted_capture_gen = SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>(inner_board);
 
     if (depth != 0){
         sorted_capture_gen.generate_moves();
@@ -564,19 +585,18 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
         // if it is hit, no need to check for outcome, as it wouldn't be stored in the
         // transposition table at a 0 depth. 
         if (sorted_capture_gen.is_empty() && try_outcome_eval(stand_pat)){ // only generate non captures?
-            transposition_table.store(zobrist_hash, stand_pat, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-            return stand_pat;
+            return {stand_pat, TEntry(zobrist_hash, stand_pat, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
         }
 
         stand_pat = inner_board.evaluate();
-        transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
         if (stand_pat >= beta) {
-            return stand_pat;
+            return {stand_pat, TEntry(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
         }
     }
 
     if (depth == 0){
-        return stand_pat;
+        // transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+        return {stand_pat, TEntry(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
     }
 
     alpha = std::max(alpha, stand_pat);
@@ -603,10 +623,12 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
         }
         alpha = std::max(alpha, pos_eval);
         if (alpha >= beta){ // only check for cutoffs when alpha gets updated.
-            return max_eval;
+            // transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+            return {max_eval, TEntry(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
         }
     }
-    return max_eval;
+    // transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+    return {max_eval, TEntry(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
 
 }
 
@@ -763,16 +785,5 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
 // no store move qsearch:  2299.18
 
 
-// use and store tt in qsearch using external qsearch_
+// current version:
 // 2187.42   2322.14    2322.14
-
-// same without external qsearch_
-// 2273.79   2311.27    2422.5
-
-// No qsearch move storing, but using tt moves.
-// 2214.31   2136.56    2234.35
-
-// no qsearch move storing and using:
-// 2076.47   2052.62    2034.23
-
-// 2289.7    2157.54    2040.48

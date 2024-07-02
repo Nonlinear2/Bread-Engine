@@ -115,4 +115,5 @@ class Engine {
     std::pair<chess::Move, TFlag> minimax_root(int depth, int color, float alpha, float beta);
     float negamax(int depth, int color, float alpha, float beta);
     float qsearch(float alpha, float beta, int color, int depth);
+    std::pair<float, TEntry> qsearch_(float alpha, float beta, int color, int depth);
 };
