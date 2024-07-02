@@ -87,18 +87,21 @@ class Engine {
         NnueBoard& board;
 
         SortedMoveGen(NnueBoard& board);
+        SortedMoveGen(NnueBoard& board, int depth);
         void generate_moves();
-        void set_scores(int depth, chess::Move tt_move);
-        void set_scores();
         void set_score(chess::Move& move, int depth); // for all moves
         void set_score(chess::Move& move); // for capture moves
+        void set_tt_move(chess::Move move);
         bool next(chess::Move& move);
         bool is_empty();
         int index();
         static void clear_killer_moves();
         chess::Movelist legal_moves;
         private:
+        int depth;
         int move_idx = -1;
+        bool checked_tt_move = false;
+        chess::Move tt_move = NO_MOVE;
     };
     private:
     friend class UCIAgent;
@@ -112,4 +115,5 @@ class Engine {
     std::pair<chess::Move, TFlag> minimax_root(int depth, int color, float alpha, float beta);
     float negamax(int depth, int color, float alpha, float beta);
     float qsearch(float alpha, float beta, int color, int depth);
+    std::pair<float, TEntry> qsearch_(float alpha, float beta, int color, int depth);
 };

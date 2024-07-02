@@ -100,8 +100,8 @@ void benchmark_engine(int depth){
         std::cout << "best move " << best << "\n";
         std::cout << "eval " << best.score()*11.11 << std::endl;
         std::cout << engine.search_depth << std::endl;
-        engine.transposition_table.info();
     }
+    engine.transposition_table.info();
 
     std::cout << "============================== \n";
 
@@ -135,8 +135,8 @@ void benchmark_engine_nodes(int depth){
         std::cout << "best move " << best << "\n";
         std::cout << "eval " << best.score()*11.11 << std::endl;
         std::cout << engine.search_depth << std::endl;
-        engine.transposition_table.info();
     }
+    engine.transposition_table.info();
     float avg_nodes = sum(nodes)/fens.size();
     std::cout << "============================== \n";
     std::cout << "average nodes: " << avg_nodes << "\n";

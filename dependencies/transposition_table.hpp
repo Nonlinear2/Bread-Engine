@@ -28,6 +28,15 @@ struct TEntry {
     TFlag flag(){
         return static_cast<TFlag>(depth_tflag & 0b00000011);
     };
+
+    TEntry(){};
+
+    TEntry(uint64_t zobrist, float eval, int depth, chess::Move move, TFlag flag, uint8_t move_number):
+            zobrist_hash(zobrist),
+            evaluation(eval),
+            best_move(move.move()),
+            depth_tflag((static_cast<uint8_t>(depth) << 2) | (static_cast<uint8_t>(flag))),
+            move_number(move_number) {};
 };
 
 class TranspositionTable {
@@ -37,7 +46,8 @@ class TranspositionTable {
 
     void allocateMB(int new_size);
 
-    void store(uint64_t zobrist, float eval, int depth, chess::Move best, TFlag flag, uint8_t move_number);
+    void store(uint64_t zobrist, float eval, int depth, chess::Move move, TFlag flag, uint8_t move_number);
+    void store(TEntry entry);
 
     TEntry* probe(bool& is_hit, uint64_t zobrist);
 

@@ -19,8 +19,11 @@ bool CircularBuffer3::in_buffer(chess::Move move){
 template<chess::movegen::MoveGenType MoveGenType>
 std::array<CircularBuffer3, 25> Engine::SortedMoveGen<MoveGenType>::killer_moves = {};
 
-template<chess::movegen::MoveGenType MoveGenType>
-Engine::SortedMoveGen<MoveGenType>::SortedMoveGen(NnueBoard& board): board(board) {};
+template<>
+Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::SortedMoveGen(NnueBoard& board, int depth): board(board), depth(depth) {};
+
+template<>
+Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::SortedMoveGen(NnueBoard& board): board(board) {};
 
 template<chess::movegen::MoveGenType MoveGenType>
 void Engine::SortedMoveGen<MoveGenType>::generate_moves(){
@@ -67,35 +70,75 @@ void Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::set_score(ches
                   piece_value[static_cast<int>(board.at(move.from()).type())]);
 }
 
-template <>
-void Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_scores(int depth, chess::Move tt_move){
-    for (auto& move: legal_moves){
-        set_score(move, depth);
-    }
+template<chess::movegen::MoveGenType MoveGenType>
+void Engine::SortedMoveGen<MoveGenType>::set_tt_move(chess::Move move){
+    tt_move = move;
+}
 
-    // makes sure this move is searched first, regardless of depth of search.
-    if (tt_move != NO_MOVE){
-        auto move = std::find(legal_moves.begin(), legal_moves.end(), tt_move);
-        // if there is a zobrist key collision, move might not be legal
-        if (move != legal_moves.end()) {
-            move->setScore(BEST_MOVE_SCORE);
+template<>
+bool Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::next(chess::Move& move){
+    if (checked_tt_move == false){
+        checked_tt_move = true;
+        if (tt_move != NO_MOVE){
+            move = tt_move;
+            return true;
         }
     }
-}
 
-template <>
-void Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::set_scores(){
-    for (auto& move: legal_moves){
-        set_score(move);
+    move_idx++;
+    if (move_idx == 0){
+        for (auto& move: legal_moves){
+            set_score(move, depth);
+        }
     }
-}
-
-// legal_moves must not be empty
-template<chess::movegen::MoveGenType MoveGenType>
-bool Engine::SortedMoveGen<MoveGenType>::next(chess::Move& move){
     // to implement element removal from a movelist object,
     // the movelist is split into an unseen part first, and a seen part.
+    int move_list_size = legal_moves.size()-move_idx;
+    if (move_list_size == 0){
+        return false;
+    }
+    float score;
+    int best_move_idx;
+    float best_score = WORST_MOVE_SCORE;
+    for (int i = 0; i < move_list_size; i++){
+        score = legal_moves[i].score();
+        if (score > best_score){
+            best_score = score;
+            best_move_idx = i;
+        }
+    }
+    // pop best_move from move_list
+    if (best_move_idx != move_list_size-1){
+        chess::Move swap = legal_moves[best_move_idx];
+        legal_moves[best_move_idx] = legal_moves[move_list_size-1];
+        legal_moves[move_list_size-1] = swap;
+    }
+
+    move = legal_moves[move_list_size-1];
+    return true;
+}
+
+
+template<>
+bool Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::next(chess::Move& move){
+    if (checked_tt_move == false){
+        checked_tt_move = true;
+        if ((tt_move != NO_MOVE) && (board.isCapture(tt_move))){
+            move = tt_move;
+            return true;
+        }
+    }
+
     move_idx++;
+    if (move_idx == 0){
+        chess::movegen::legalmoves<chess::movegen::MoveGenType::CAPTURE>(legal_moves, board);
+        for (auto& move: legal_moves){
+            set_score(move);
+        }
+    }
+
+    // to implement element removal from a movelist object,
+    // the movelist is split into an unseen part first, and a seen part.
     int move_list_size = legal_moves.size()-move_idx;
     if (move_list_size == 0){
         return false;
@@ -164,7 +207,7 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
     uint64_t zobrist_hash = inner_board.hash();
     inner_board.synchronize();
 
-    chess::Move tt_move = NO_MOVE;
+    SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board, depth);
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
@@ -174,12 +217,10 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
             return {best_move, TFlag::EXACT};
         }
 
-        if (transposition->best_move != NO_MOVE) tt_move = transposition->best_move;
+        if (transposition->best_move != NO_MOVE) sorted_move_gen.set_tt_move(transposition->best_move);
     }
 
-    SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board);
     sorted_move_gen.generate_moves();
-    sorted_move_gen.set_scores(depth, tt_move);
     
     float pos_eval;
     float max_eval = WORST_EVAL;
@@ -367,7 +408,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
     const float initial_alpha = alpha;
     uint64_t zobrist_hash = inner_board.hash();
 
-    chess::Move tt_move = NO_MOVE;
+    SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board, depth);
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
@@ -392,14 +433,10 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
             }
         }
 
-        if (transposition->best_move != NO_MOVE){
-            tt_move = transposition->best_move;
-        }
+        if (transposition->best_move != NO_MOVE) sorted_move_gen.set_tt_move(transposition->best_move);
     }
-    
-    SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board);
-    sorted_move_gen.generate_moves();
 
+    sorted_move_gen.generate_moves();    
     float max_eval = WORST_EVAL;
 
     if (sorted_move_gen.is_empty()){ // avoid calling expensive try_outcome_eval function
@@ -414,8 +451,6 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         transposition_table.store(zobrist_hash, max_eval, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
         return max_eval;
     }
-
-    sorted_move_gen.set_scores(depth, tt_move);
 
     bool lmr = false;
     chess::Move best_move;
@@ -487,12 +522,20 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
 }
 
 float Engine::qsearch(float alpha, float beta, int color, int depth){
+    auto result = qsearch_(alpha, beta, color, depth);
+    if (result.second.flag() != TFlag::NO_FLAG){
+        transposition_table.store(result.second);
+    }
+    return result.first;
+}
+
+std::pair<float, TEntry> Engine::qsearch_(float alpha, float beta, int color, int depth){
     nodes++;
 
     // tablebase probe
     float wdl_eval;
     if (inner_board.probe_wdl(wdl_eval)){
-        return wdl_eval;
+        return {wdl_eval, TEntry()};
     }
 
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
@@ -502,6 +545,7 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
 
     // first we check for transposition. If it is outcome, it should have already been stored
     // with an exact flag, so the stand pat will be correct anyways.
+    SortedMoveGen sorted_capture_gen = SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>(inner_board);
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
@@ -510,23 +554,28 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
                 if (transposition->depth() == 0){ // outcomes are stored at depth 255
                     stand_pat = transposition->evaluation;
                     // we can already check for cutoff
-                    if (stand_pat >= beta) return stand_pat;
+                    if (stand_pat >= beta) return {stand_pat, TEntry()};
                 } else {
-                    return transposition->evaluation;
+                    return {transposition->evaluation, TEntry()};
                 }
                 break;
             case TFlag::LOWER_BOUND:
-                if ((transposition->evaluation > alpha) && (beta <= transposition->evaluation)) return transposition->evaluation;
+                if ((transposition->evaluation > alpha) && (beta <= transposition->evaluation)){
+                    return {transposition->evaluation, TEntry()};
+                }
+                is_hit = false;
                 break;
             case TFlag::UPPER_BOUND:
-                if ((transposition->evaluation < beta) && (transposition->evaluation <= alpha)) return transposition->evaluation;
+                if ((transposition->evaluation < beta) && (transposition->evaluation <= alpha)){
+                    return {transposition->evaluation, TEntry()};
+                }
+                is_hit = false;
                 break;
             default:
                 break;
         }
+        if (transposition->best_move != NO_MOVE) sorted_capture_gen.set_tt_move(transposition->best_move);
     }
-
-    SortedMoveGen sorted_capture_gen = SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>(inner_board);
 
     if (depth != 0){
         sorted_capture_gen.generate_moves();
@@ -535,25 +584,20 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
     if (!is_hit){
         // if it is hit, no need to check for outcome, as it wouldn't be stored in the
         // transposition table at a 0 depth. 
-        float outcome_eval;
-        if (sorted_capture_gen.is_empty() && try_outcome_eval(outcome_eval)){ // only generate non captures?
-            transposition_table.store(zobrist_hash, outcome_eval, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-            return outcome_eval;
+        if (sorted_capture_gen.is_empty() && try_outcome_eval(stand_pat)){ // only generate non captures?
+            return {stand_pat, TEntry(zobrist_hash, stand_pat, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
         }
 
         stand_pat = inner_board.evaluate();
         if (stand_pat >= beta) {
-            transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-            return stand_pat;
+            return {stand_pat, TEntry(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
         }
     }
 
     if (depth == 0){
-        transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-        return stand_pat;
+        // transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+        return {stand_pat, TEntry(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
     }
-
-    sorted_capture_gen.set_scores();
 
     alpha = std::max(alpha, stand_pat);
 
@@ -579,10 +623,167 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
         }
         alpha = std::max(alpha, pos_eval);
         if (alpha >= beta){ // only check for cutoffs when alpha gets updated.
-            transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-            return max_eval;
+            // transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+            return {max_eval, TEntry(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
         }
     }
-    transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-    return max_eval;
+    // transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+    return {max_eval, TEntry(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()))};
+
 }
+
+// no upper/lower bound usage in qsearch, moves from qsearch stored using "qsearch_" TEntry return and axilliary "qsearch" function.
+// ====================
+// transposition table:
+// size 256 MB
+// number of entries 16777216
+// used entries 16336244
+// used percentage 97%
+// following percentages are relative to used entries.
+// depth zero percentage 84%
+// has move percentage 25%
+// exact eval percentage 84%
+// lower bound eval percentage 13%
+// upper bound eval percentage 1%
+// ====================
+// ==============================
+// average time: 2548.59
+
+// upper/lower bound usage to ajust alpha/beta if depth == QSEARCH_MAX_DEPTH, moves from qsearch stored using "qsearch_" TEntry return and axilliary "qsearch" function.
+// ====================
+// transposition table:
+// size 256 MB
+// number of entries 16777216
+// used entries 16166348
+// used percentage 96%
+// following percentages are relative to used entries.
+// depth zero percentage 83%
+// has move percentage 26%
+// exact eval percentage 83%
+// lower bound eval percentage 14%
+// upper bound eval percentage 1%
+// ====================
+// ==============================
+// average time: 2303.31
+
+// upper/lower bound usage to ajust cutoff only, moves from qsearch stored using "qsearch_" TEntry return and axilliary "qsearch" function.
+// ====================
+// transposition table:
+// size 256 MB
+// number of entries 16777216
+// used entries 16069935
+// used percentage 95%
+// following percentages are relative to used entries.
+// depth zero percentage 83%
+// has move percentage 26%
+// exact eval percentage 83%
+// lower bound eval percentage 14%
+// upper bound eval percentage 1%
+// ====================
+// ==============================
+// average time: 2232.5
+
+// both QSEARCH_MAX_DEPTH alpha/beta updates and cutoffs for other dpeths.  moves from qsearch stored using "qsearch_" TEntry return and axilliary "qsearch" function.
+// ====================
+// transposition table:
+// size 256 MB
+// number of entries 16777216
+// used entries 16073156
+// used percentage 95%
+// following percentages are relative to used entries.
+// depth zero percentage 83%
+// has move percentage 26%
+// exact eval percentage 83%
+// lower bound eval percentage 14%
+// upper bound eval percentage 1%
+// ====================
+// ==============================
+// average time: 2420.68
+
+
+// both QSEARCH_MAX_DEPTH alpha/beta updates and cutoffs for other dpeths. no moves stored
+// ====================
+// transposition table:
+// size 256 MB
+// number of entries 16777216
+// used entries 15982487
+// used percentage 95%
+// following percentages are relative to used entries.
+// depth zero percentage 83%
+// has move percentage 16%
+// exact eval percentage 83%
+// lower bound eval percentage 14%
+// upper bound eval percentage 1%
+// ====================
+// ==============================
+// average time: 2201.83
+
+// upper/lower bound usage to ajust cutoff only
+// ====================
+// transposition table:
+// size 256 MB
+// number of entries 16777216
+// used entries 15981855
+// used percentage 95%
+// following percentages are relative to used entries.
+// depth zero percentage 83%
+// has move percentage 16%
+// exact eval percentage 83%
+// lower bound eval percentage 14%
+// upper bound eval percentage 1%
+// ====================
+// ==============================
+// average time: 2171.36
+
+// upper/lower bound usage to ajust alpha/beta if depth == QSEARCH_MAX_DEPTH, no moves stored
+// ====================
+// transposition table:
+// size 256 MB
+// number of entries 16777216
+// used entries 16035034
+// used percentage 95%
+// following percentages are relative to used entries.
+// depth zero percentage 83%
+// has move percentage 16%
+// exact eval percentage 83%
+// lower bound eval percentage 14%
+// upper bound eval percentage 1%
+// ====================
+// ==============================
+// average time: 2209.09
+
+// original with multiple stores everywhere
+// ====================
+// transposition table:
+// size 256 MB
+// number of entries 16777216
+// used entries 16008817
+// used percentage 95%
+// following percentages are relative to used entries.
+// depth zero percentage 83%
+// has move percentage 26%
+// exact eval percentage 83%
+// lower bound eval percentage 14%
+// upper bound eval percentage 1%
+// ====================
+// ==============================
+// average time: 2175.15
+
+
+// test stores everywhere vs no stores:
+// stores: 2181.28   2189.22
+// no sto: 2134.56   2130.62
+
+// smaller tt 128: 2527.01
+
+// tt 512: 2086.7
+
+// store qsearch only at root depth attempt: 2625.36
+
+// use and store qsearch moves: 2352.9   2445.36
+
+// no store move qsearch:  2299.18
+
+
+// current version:
+// 2187.42   2322.14    2322.14
