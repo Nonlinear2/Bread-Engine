@@ -14,7 +14,7 @@ int main(){
         std::cout << "best move " << best << "\n";
         std::cout << "eval " << best.score() << std::endl;
         std::cout << engine.search_depth << std::endl;
-        engine.transposition_table.info();
+        // engine.transposition_table.info();
     }
     return 0;
 }

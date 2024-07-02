@@ -19,8 +19,11 @@ bool CircularBuffer3::in_buffer(chess::Move move){
 template<chess::movegen::MoveGenType MoveGenType>
 std::array<CircularBuffer3, 25> Engine::SortedMoveGen<MoveGenType>::killer_moves = {};
 
-template<chess::movegen::MoveGenType MoveGenType>
-Engine::SortedMoveGen<MoveGenType>::SortedMoveGen(NnueBoard& board): board(board) {};
+template<>
+Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::SortedMoveGen(NnueBoard& board, int depth): board(board), depth(depth) {};
+
+template<>
+Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::SortedMoveGen(NnueBoard& board): board(board) {};
 
 template<chess::movegen::MoveGenType MoveGenType>
 void Engine::SortedMoveGen<MoveGenType>::generate_moves(){
@@ -67,35 +70,74 @@ void Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::set_score(ches
                   piece_value[static_cast<int>(board.at(move.from()).type())]);
 }
 
-template <>
-void Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_scores(int depth, chess::Move tt_move){
-    for (auto& move: legal_moves){
-        set_score(move, depth);
-    }
+template<chess::movegen::MoveGenType MoveGenType>
+void Engine::SortedMoveGen<MoveGenType>::set_tt_move(chess::Move move){
+    tt_move = move;
+}
 
-    // makes sure this move is searched first, regardless of depth of search.
-    if (tt_move != NO_MOVE){
-        auto move = std::find(legal_moves.begin(), legal_moves.end(), tt_move);
-        // if there is a zobrist key collision, move might not be legal
-        if (move != legal_moves.end()) {
-            move->setScore(BEST_MOVE_SCORE);
+template<>
+bool Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::next(chess::Move& move){
+    if (checked_tt_move == false){
+        checked_tt_move = true;
+        if (tt_move != NO_MOVE){
+            move = tt_move;
+            return true;
         }
     }
-}
 
-template <>
-void Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::set_scores(){
-    for (auto& move: legal_moves){
-        set_score(move);
+    move_idx++;
+    if (move_idx == 0){
+        for (auto& move: legal_moves){
+            set_score(move, depth);
+        }
     }
-}
-
-// legal_moves must not be empty
-template<chess::movegen::MoveGenType MoveGenType>
-bool Engine::SortedMoveGen<MoveGenType>::next(chess::Move& move){
     // to implement element removal from a movelist object,
     // the movelist is split into an unseen part first, and a seen part.
+    int move_list_size = legal_moves.size()-move_idx;
+    if (move_list_size == 0){
+        return false;
+    }
+    float score;
+    int best_move_idx;
+    float best_score = WORST_MOVE_SCORE;
+    for (int i = 0; i < move_list_size; i++){
+        score = legal_moves[i].score();
+        if (score > best_score){
+            best_score = score;
+            best_move_idx = i;
+        }
+    }
+    // pop best_move from move_list
+    if (best_move_idx != move_list_size-1){
+        chess::Move swap = legal_moves[best_move_idx];
+        legal_moves[best_move_idx] = legal_moves[move_list_size-1];
+        legal_moves[move_list_size-1] = swap;
+    }
+
+    move = legal_moves[move_list_size-1];
+    return true;
+}
+
+
+template<>
+bool Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::next(chess::Move& move){
+    if (checked_tt_move == false){
+        checked_tt_move = true;
+        if ((tt_move != NO_MOVE) && (board.isCapture(tt_move))){
+            move = tt_move;
+            return true;
+        }
+    }
+
     move_idx++;
+    if (move_idx == 0){
+        for (auto& move: legal_moves){
+            set_score(move);
+        }
+    }
+
+    // to implement element removal from a movelist object,
+    // the movelist is split into an unseen part first, and a seen part.
     int move_list_size = legal_moves.size()-move_idx;
     if (move_list_size == 0){
         return false;
@@ -164,7 +206,7 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
     uint64_t zobrist_hash = inner_board.hash();
     inner_board.synchronize();
 
-    chess::Move tt_move = NO_MOVE;
+    SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board, depth);
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
@@ -174,12 +216,10 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
             return {best_move, TFlag::EXACT};
         }
 
-        if (transposition->best_move != NO_MOVE) tt_move = transposition->best_move;
+        if (transposition->best_move != NO_MOVE) sorted_move_gen.set_tt_move(transposition->best_move);
     }
 
-    SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board);
     sorted_move_gen.generate_moves();
-    sorted_move_gen.set_scores(depth, tt_move);
     
     float pos_eval;
     float max_eval = WORST_EVAL;
@@ -367,7 +407,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
     const float initial_alpha = alpha;
     uint64_t zobrist_hash = inner_board.hash();
 
-    chess::Move tt_move = NO_MOVE;
+    SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board, depth);
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
@@ -392,14 +432,10 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
             }
         }
 
-        if (transposition->best_move != NO_MOVE){
-            tt_move = transposition->best_move;
-        }
+        if (transposition->best_move != NO_MOVE) sorted_move_gen.set_tt_move(transposition->best_move);
     }
-    
-    SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board);
-    sorted_move_gen.generate_moves();
 
+    sorted_move_gen.generate_moves();    
     float max_eval = WORST_EVAL;
 
     if (sorted_move_gen.is_empty()){ // avoid calling expensive try_outcome_eval function
@@ -414,8 +450,6 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         transposition_table.store(zobrist_hash, max_eval, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
         return max_eval;
     }
-
-    sorted_move_gen.set_scores(depth, tt_move);
 
     bool lmr = false;
     chess::Move best_move;
@@ -502,6 +536,7 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
 
     // first we check for transposition. If it is outcome, it should have already been stored
     // with an exact flag, so the stand pat will be correct anyways.
+    SortedMoveGen sorted_capture_gen = SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>(inner_board);
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
@@ -517,16 +552,17 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
                 break;
             case TFlag::LOWER_BOUND:
                 if ((transposition->evaluation > alpha) && (beta <= transposition->evaluation)) return transposition->evaluation;
+                is_hit = false;
                 break;
             case TFlag::UPPER_BOUND:
                 if ((transposition->evaluation < beta) && (transposition->evaluation <= alpha)) return transposition->evaluation;
+                is_hit = false;
                 break;
             default:
                 break;
         }
+        if (transposition->best_move != NO_MOVE) sorted_capture_gen.set_tt_move(transposition->best_move);
     }
-
-    SortedMoveGen sorted_capture_gen = SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>(inner_board);
 
     if (depth != 0){
         sorted_capture_gen.generate_moves();
@@ -535,14 +571,13 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
     if (!is_hit){
         // if it is hit, no need to check for outcome, as it wouldn't be stored in the
         // transposition table at a 0 depth. 
-        float outcome_eval;
-        if (sorted_capture_gen.is_empty() && try_outcome_eval(outcome_eval)){ // only generate non captures?
-            transposition_table.store(zobrist_hash, outcome_eval, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-            return outcome_eval;
+        if (sorted_capture_gen.is_empty() && try_outcome_eval(stand_pat)){ // only generate non captures?
+            transposition_table.store(zobrist_hash, stand_pat, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+            return stand_pat;
         }
 
         stand_pat = inner_board.evaluate();
-        if (stand_pat >= beta) {
+        if (stand_pat >= beta){
             transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
             return stand_pat;
         }
@@ -552,8 +587,6 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
         transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
         return stand_pat;
     }
-
-    sorted_capture_gen.set_scores();
 
     alpha = std::max(alpha, stand_pat);
 
