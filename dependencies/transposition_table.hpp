@@ -4,6 +4,8 @@
 #include <vector>
 #include <fstream>
 
+#define NO_MOVE chess::Move::NO_MOVE
+
 enum class TFlag: uint8_t {
     NO_FLAG,
     EXACT,

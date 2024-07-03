@@ -89,8 +89,7 @@ class Engine {
         SortedMoveGen(NnueBoard& board);
         SortedMoveGen(NnueBoard& board, int depth);
         void generate_moves();
-        void set_score(chess::Move& move, int depth); // for all moves
-        void set_score(chess::Move& move); // for capture moves
+        void set_score(chess::Move& move);
         void set_tt_move(chess::Move move);
         bool next(chess::Move& move);
         bool is_empty();
@@ -102,6 +101,7 @@ class Engine {
         int move_idx = -1;
         bool checked_tt_move = false;
         chess::Move tt_move = NO_MOVE;
+        bool is_valid_move(chess::Move move);
     };
     private:
     friend class UCIAgent;

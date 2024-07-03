@@ -19,7 +19,7 @@ void TranspositionTable::info(){
         if (entry.zobrist_hash != 0){
             used++;
 
-            num_move += (entry.best_move != chess::Move::NO_MOVE);
+            num_move += (entry.best_move != NO_MOVE);
 
             num_depth_zero += (entry.depth() == 0);
 
@@ -77,10 +77,25 @@ void TranspositionTable::allocateMB(int new_size){
 void TranspositionTable::store(uint64_t zobrist, float eval, int depth, chess::Move move, TFlag flag, uint8_t move_number){
     // no need to store the side to move, as it is in the zobrist hash.
     TEntry* entry = &entries[zobrist & (entries.size() - 1)];
-    if (entry->zobrist_hash != zobrist || ((depth != 0) && (flag == TFlag::EXACT)) || depth > entry->depth() || move_number > entry->move_number + 5){
+
+    // we replace the old entry if:
+    // - the old entry is not refering to the same position.
+    // - the old entry is more than 5 moves older than the recent entry
+    // - the new depth is greater than the old depth
+    // - the new depth is nonzero and an exact entry
+    if (entry->depth_tflag == 0 ||
+        move_number > entry->move_number + 4 ||
+        depth > entry->depth() ||
+        ((depth != 0) && (flag == TFlag::EXACT)))
+    {
+        // add move if the new move is better
+        if (entry->zobrist_hash != zobrist ||
+            (move != NO_MOVE && (entry->best_move == NO_MOVE || depth > entry->depth())))
+        {
+            entry->best_move = move.move();
+        }
         entry->zobrist_hash = zobrist;
         entry->evaluation = eval;
-        entry->best_move = move.move();
         entry->depth_tflag = (static_cast<uint8_t>(depth) << 2) | (static_cast<uint8_t>(flag));
         entry->move_number = move_number;
     };

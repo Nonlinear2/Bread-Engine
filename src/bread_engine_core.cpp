@@ -32,7 +32,7 @@ void Engine::SortedMoveGen<MoveGenType>::generate_moves(){
 
 // set move score to be sorted later
 template <>
-void Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_score(chess::Move& move, int depth){
+void Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_score(chess::Move& move){
     
     const chess::Square from = move.from();
     const chess::Square to = move.to();
@@ -76,54 +76,20 @@ void Engine::SortedMoveGen<MoveGenType>::set_tt_move(chess::Move move){
 }
 
 template<>
-bool Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::next(chess::Move& move){
-    if (checked_tt_move == false){
-        checked_tt_move = true;
-        if (tt_move != NO_MOVE){
-            move = tt_move;
-            return true;
-        }
-    }
-
-    move_idx++;
-    if (move_idx == 0){
-        for (auto& move: legal_moves){
-            set_score(move, depth);
-        }
-    }
-    // to implement element removal from a movelist object,
-    // the movelist is split into an unseen part first, and a seen part.
-    int move_list_size = legal_moves.size()-move_idx;
-    if (move_list_size == 0){
-        return false;
-    }
-    float score;
-    int best_move_idx;
-    float best_score = WORST_MOVE_SCORE;
-    for (int i = 0; i < move_list_size; i++){
-        score = legal_moves[i].score();
-        if (score > best_score){
-            best_score = score;
-            best_move_idx = i;
-        }
-    }
-    // pop best_move from move_list
-    if (best_move_idx != move_list_size-1){
-        chess::Move swap = legal_moves[best_move_idx];
-        legal_moves[best_move_idx] = legal_moves[move_list_size-1];
-        legal_moves[move_list_size-1] = swap;
-    }
-
-    move = legal_moves[move_list_size-1];
-    return true;
+bool Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::is_valid_move(chess::Move move){
+    return (move != NO_MOVE);
 }
 
-
 template<>
-bool Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::next(chess::Move& move){
+bool Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::is_valid_move(chess::Move move){
+    return ((move != NO_MOVE) && (board.isCapture(move)));
+}
+
+template<chess::movegen::MoveGenType MoveGenType>
+bool Engine::SortedMoveGen<MoveGenType>::next(chess::Move& move){
     if (checked_tt_move == false){
         checked_tt_move = true;
-        if ((tt_move != NO_MOVE) && (board.isCapture(tt_move))){
+        if (is_valid_move(tt_move)){
             move = tt_move;
             return true;
         }
@@ -135,7 +101,6 @@ bool Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::next(chess::Mo
             set_score(move);
         }
     }
-
     // to implement element removal from a movelist object,
     // the movelist is split into an unseen part first, and a seen part.
     int move_list_size = legal_moves.size()-move_idx;
@@ -619,3 +584,23 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
     transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
     return max_eval;
 }
+
+// version 0.0.7 benchmark: 
+
+// average time: 2138.04    2106.22    2009.98
+
+// ====================
+// transposition table:
+// size 256 MB
+// number of entries 16777216
+// used entries 16228186
+// used percentage 96%
+// following percentages are relative to used entries.
+// depth zero percentage 83%
+// has move percentage 26%
+// exact eval percentage 83%
+// lower bound eval percentage 14%
+// upper bound eval percentage 1%
+// ====================
+
+// no store no nothing 2055.11
