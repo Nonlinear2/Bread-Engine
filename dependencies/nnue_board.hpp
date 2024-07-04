@@ -2,11 +2,12 @@
 
 #include <stack>
 
-#include "search_board.hpp"
+#include "chess.hpp"
+#include "tbprobe.hpp"
 #include "piece_square_tables.hpp"
 #include "nnue.hpp"
 
-class NnueBoard: public SearchBoard {
+class NnueBoard: public chess::Board {
     public:
     NNUE nnue_ = NNUE(bread_NNUE_MODEL_PATH);
 
@@ -15,18 +16,21 @@ class NnueBoard: public SearchBoard {
     NnueBoard();
     NnueBoard(std::string_view fen);
     
-    void synchronize() override;
+    void synchronize();
 
     std::vector<int> get_HKP(bool color);
 
     modified_features get_modified_features(chess::Move move, bool color);
 
-    void update_state(chess::Move move) override;
+    void update_state(chess::Move move);
 
-    void restore_state(chess::Move move) override;
+    void restore_state(chess::Move move);
 
-    bool is_basic_move(chess::Move move) override;
+    bool is_basic_move(chess::Move move);
     
-    float evaluate() override;
+    float evaluate();
 
+    bool probe_wdl(float& eval);
+
+    bool probe_dtz(chess::Move& move);
 };

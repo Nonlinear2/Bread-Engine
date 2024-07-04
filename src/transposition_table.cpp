@@ -79,8 +79,8 @@ void TranspositionTable::store(uint64_t zobrist, float eval, int depth, chess::M
     TEntry* entry = &entries[zobrist & (entries.size() - 1)];
 
     // we replace the old entry if:
-    // - the old entry is not refering to the same position.
-    // - the old entry is more than 5 moves older than the recent entry
+    // - the old entry is empty
+    // - the old entry is more than 4 moves older than the recent entry
     // - the new depth is greater than the old depth
     // - the new depth is nonzero and an exact entry
     if (entry->depth_tflag == 0 ||
@@ -88,7 +88,7 @@ void TranspositionTable::store(uint64_t zobrist, float eval, int depth, chess::M
         depth > entry->depth() ||
         ((depth != 0) && (flag == TFlag::EXACT)))
     {
-        // add move if the new move is better
+        // add move if the old entry didn't hold the same position or if the new move is better
         if (entry->zobrist_hash != zobrist ||
             (move != NO_MOVE && (entry->best_move == NO_MOVE || depth > entry->depth())))
         {

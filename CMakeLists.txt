@@ -22,7 +22,6 @@ set(bread_INCLUDE_DIRS
 )
 
 set(bread_SOURCE
-    ${bread_SRC}/search_board.cpp
     ${bread_SRC}/nnue/nnue.cpp
     ${bread_SRC}/nnue/nnue_board.cpp
     ${bread_SRC}/transposition_table.cpp
