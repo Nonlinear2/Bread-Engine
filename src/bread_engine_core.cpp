@@ -27,7 +27,7 @@ Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::SortedMoveGen(NnueB
 
 template<chess::movegen::MoveGenType MoveGenType>
 void Engine::SortedMoveGen<MoveGenType>::generate_moves(){
-    chess::movegen::legalmoves<MoveGenType>(legal_moves, board);
+    chess::movegen::legalmoves<MoveGenType>(*this, board);
 }
 
 // set move score to be sorted later
@@ -87,49 +87,64 @@ bool Engine::SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::is_valid_move(
 
 template<chess::movegen::MoveGenType MoveGenType>
 bool Engine::SortedMoveGen<MoveGenType>::next(chess::Move& move){
+    move_idx++;
+
     if (checked_tt_move == false){
         checked_tt_move = true;
         if (is_valid_move(tt_move)){
-            move = tt_move;
+            move = pop_move(std::find(begin(), end(), tt_move) - begin());
             return true;
         }
     }
 
-    move_idx++;
-    if (move_idx == 0){
-        for (auto& move: legal_moves){
-            set_score(move);
+    if (assigned_scores == false){
+        assigned_scores = true;
+        for (int i = 0; i < size_; i++){
+            set_score(moves_[i]);
         }
     }
     // to implement element removal from a movelist object,
     // the movelist is split into an unseen part first, and a seen part.
-    int move_list_size = legal_moves.size()-move_idx;
-    if (move_list_size == 0){
+    if (size() == 0){
         return false;
     }
-    float score;
-    int best_move_idx;
-    float best_score = WORST_MOVE_SCORE;
-    for (int i = 0; i < move_list_size; i++){
-        score = legal_moves[i].score();
-        if (score > best_score){
-            best_score = score;
-            best_move_idx = i;
-        }
-    }
-    // pop best_move from move_list
-    if (best_move_idx != move_list_size-1){
-        chess::Move swap = legal_moves[best_move_idx];
-        legal_moves[best_move_idx] = legal_moves[move_list_size-1];
-        legal_moves[move_list_size-1] = swap;
-    }
 
-    move = legal_moves[move_list_size-1];
+    move = pop_best_score();
+
     return true;
 }
 
 template<chess::movegen::MoveGenType MoveGenType>
-bool Engine::SortedMoveGen<MoveGenType>::is_empty(){return legal_moves.empty(); }
+chess::Move Engine::SortedMoveGen<MoveGenType>::pop_move(int move_idx){
+    // if the move is not in the last position, move it there.
+    if (move_idx != size_-1){
+        chess::Move swap = moves_[move_idx];
+        moves_[move_idx] = moves_[size_-1];
+        moves_[size_-1] = swap;
+    }
+
+    size_--;
+    return moves_[size_];
+}
+
+template<chess::movegen::MoveGenType MoveGenType>
+chess::Move Engine::SortedMoveGen<MoveGenType>::pop_best_score(){
+    float score;
+    int best_move_idx;
+    float best_move_score = WORST_MOVE_SCORE;
+    for (int i = 0; i < size_; i++){
+        score = moves_[i].score();
+        if (score > best_move_score){
+            best_move_score = score;
+            best_move_idx = i;
+        }
+    }
+
+    return pop_move(best_move_idx);
+}
+
+template<chess::movegen::MoveGenType MoveGenType>
+bool Engine::SortedMoveGen<MoveGenType>::is_empty(){return empty(); }
 
 template<chess::movegen::MoveGenType MoveGenType>
 inline int Engine::SortedMoveGen<MoveGenType>::index(){return move_idx; }
@@ -175,12 +190,28 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
-        if ((transposition->depth() >= depth) && (!inner_board.isRepetition(1)) && (transposition->flag() == TFlag::EXACT)){
-            best_move = transposition->best_move;
-            best_move.setScore(transposition->evaluation);
-            return {best_move, TFlag::EXACT};
+        if ((transposition->depth() >= depth) && (!inner_board.isRepetition(1))){
+            // if is repetition(1), danger of repetition so TT is unreliable
+            switch (transposition->flag()){
+                case TFlag::EXACT:
+                    best_move = transposition->best_move;
+                    best_move.setScore(transposition->evaluation);
+                    return {best_move, TFlag::EXACT};
+                // case TFlag::LOWER_BOUND:
+                //     alpha = std::max(alpha, transposition->evaluation);
+                //     break;
+                // case TFlag::UPPER_BOUND:
+                //     beta = std::min(beta, transposition->evaluation);
+                //     break;
+                default:
+                    break;
+            }
+            // we need to do a cutoff check because we updated alpha/beta.
+            // if (beta <= alpha){
+            //     // no need to store in transposition table as is already there.
+            //     return {transposition->evaluation, TFlag::LOWER_BOUND};
+            // }
         }
-
         if (transposition->best_move != NO_MOVE) sorted_move_gen.set_tt_move(transposition->best_move);
     }
 
@@ -245,7 +276,7 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(std::string fen){
 
     pv_visitor.setFen(fen);
 
-    for (int i = 0; i < search_depth; i++){
+    for (int i = 0; i < current_depth; i++){
         bool is_hit;
         TEntry* transposition = transposition_table.probe(is_hit, pv_visitor.hash());
         if ((!is_hit) || (transposition->best_move == NO_MOVE)){
@@ -275,7 +306,7 @@ chess::Move Engine::iterative_deepening(int time_limit, int min_depth=4, int max
     std::string pv;
     std::string ponder_move = "";
 
-    chess::Move best_move;
+    chess::Move best_move = NO_MOVE;
 
     this->time_limit = time_limit;
     start_time = now();
@@ -286,7 +317,7 @@ chess::Move Engine::iterative_deepening(int time_limit, int min_depth=4, int max
 
     nodes = 0;
 
-    int current_depth = 1;
+    current_depth = 1;
 
     engine_color = (inner_board.sideToMove() == chess::Color::WHITE) ? 1: -1;
 
@@ -297,9 +328,8 @@ chess::Move Engine::iterative_deepening(int time_limit, int min_depth=4, int max
     };
 
     while (true){
-        search_depth = current_depth;
         try {
-            best_move = minimax_root(search_depth, engine_color).first;
+            best_move = minimax_root(current_depth, engine_color).first;
         } catch (TerminateSearch& e){
             break;
         }
@@ -337,7 +367,7 @@ bool Engine::can_return(){
         return true;
     }
     update_run_time();
-    return (search_depth > min_depth) && (run_time > time_limit);
+    return (current_depth > min_depth) && (run_time > time_limit);
 }
 
 void Engine::set_interrupt_flag(){
@@ -400,7 +430,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         if (transposition->best_move != NO_MOVE) sorted_move_gen.set_tt_move(transposition->best_move);
     }
 
-    sorted_move_gen.generate_moves();    
+    sorted_move_gen.generate_moves();
     float max_eval = WORST_EVAL;
 
     if (sorted_move_gen.is_empty()){ // avoid calling expensive try_outcome_eval function
@@ -416,30 +446,23 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         return max_eval;
     }
 
-    bool lmr = false;
     chess::Move best_move;
     chess::Move move;
     float pos_eval;
-    int new_depth;
     while (sorted_move_gen.next(move)){
         bool is_capture = inner_board.isCapture(move);
         inner_board.update_state(move);
-
+        
+        // late move reductions:
         // depth > 2 is to make sure the new depth is not less than 0.
         // (!inner_board.inCheck()) is to see if the move gives check. 
         // (we already updated the inner board so we only need to check if it is check)
         if ((sorted_move_gen.index() > 3) && (depth > 2) && (!is_capture) && (!inner_board.inCheck())){
-            new_depth = depth-2;
-            lmr = true;
+            pos_eval = -negamax(depth-2, -color, -beta, -alpha);
+            if (pos_eval > alpha){
+                pos_eval = -negamax(depth-1, -color, -beta, -alpha);
+            }
         } else {
-            new_depth = depth-1;
-            lmr = false;
-        }
-
-        pos_eval = -negamax(new_depth, -color, -beta, -alpha);
-
-        if (lmr && (pos_eval > alpha)){
-            // do full search
             pos_eval = -negamax(depth-1, -color, -beta, -alpha);
         }
 

@@ -49,7 +49,7 @@ class TerminateSearch: public std::exception {};
 class Engine {
     public:
     int nodes = 0;
-    int search_depth = 0; // current search depth
+    int current_depth = 0;
     int min_depth = 0;
     int max_depth = 0;
     std::atomic<int> time_limit; // milliseconds
@@ -75,7 +75,7 @@ class Engine {
     chess::Move iterative_deepening(int time_limit, int min_depth, int max_depth);
 
     template<chess::movegen::MoveGenType MoveGenType>
-    class SortedMoveGen {
+    class SortedMoveGen: public chess::Movelist {
         public:
         static constexpr PieceSquareMaps psm = PieceSquareMaps();
         static inline float KILLER_SCORE = 14.9;
@@ -89,19 +89,23 @@ class Engine {
         SortedMoveGen(NnueBoard& board);
         SortedMoveGen(NnueBoard& board, int depth);
         void generate_moves();
-        void set_score(chess::Move& move);
         void set_tt_move(chess::Move move);
         bool next(chess::Move& move);
         bool is_empty();
         int index();
         static void clear_killer_moves();
-        chess::Movelist legal_moves;
+
         private:
         int depth;
         int move_idx = -1;
+        int num_remaining_moves;
         bool checked_tt_move = false;
+        bool assigned_scores = false;
         chess::Move tt_move = NO_MOVE;
+        void set_score(chess::Move& move);
         bool is_valid_move(chess::Move move);
+        chess::Move pop_move(int move_idx);
+        chess::Move pop_best_score();
     };
     private:
     friend class UCIAgent;
@@ -112,6 +116,7 @@ class Engine {
 
     bool can_return();
     std::pair<std::string, std::string> get_pv_pmove(std::string fen);
+    chess::Move aspiration_search(int depth, int color, float prev_eval);
     std::pair<chess::Move, TFlag> minimax_root(int depth, int color, float alpha, float beta);
     float negamax(int depth, int color, float alpha, float beta);
     float qsearch(float alpha, float beta, int color, int depth);
