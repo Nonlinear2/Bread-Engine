@@ -66,7 +66,7 @@ void benchmark_nn(){
     std::cout << "============================== \n";
     std::cout << "evaluation function benchmark: \n";
 
-    SEARCH_BOARD board = SEARCH_BOARD();
+    NnueBoard board = NnueBoard();
 
     auto start = std::chrono::high_resolution_clock::now();
     int num_iter = 10'000;

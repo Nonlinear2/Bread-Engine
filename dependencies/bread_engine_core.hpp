@@ -5,58 +5,25 @@
 #include <atomic>
 #include "chess.hpp"
 #include "transposition_table.hpp"
-
+#include "misc.hpp"
 #include "nnue_board.hpp"
-#define SEARCH_BOARD NnueBoard
-
-#define NO_MOVE chess::Move::NO_MOVE
-#define ENGINE_MAX_DEPTH 25
-
-#define BEST_MOVE_SCORE 1000
-#define WORST_MOVE_SCORE -1000
-
-#define WORST_EVAL -100
-#define BEST_EVAL 100
+#include "sorted_move_gen.hpp"
 
 // shorter name
 inline std::chrono::time_point<std::chrono::high_resolution_clock> now(){
     return std::chrono::high_resolution_clock::now();
 }
 
-const std::vector<int> piece_value = {
-    1, // pawn
-    3, // knight
-    3, // bishop
-    5, // rook
-    9, // queen
-    2, // king
-    0, // none
-};
-
-class CircularBuffer3 {
-    public:
-    int curr_idx = 0;
-    std::array<uint16_t, 3> data;
-
-    void add_move(chess::Move move);
-
-    bool in_buffer(chess::Move move);
-};
-
-class TerminateSearch: public std::exception {};
-
-
 class Engine {
     public:
     int nodes = 0;
     int current_depth = 0;
-    int min_depth = 0;
-    int max_depth = 0;
-    std::atomic<int> time_limit; // milliseconds
+    std::atomic<SearchLimit> limit;
+
     std::atomic<float> run_time;
     TranspositionTable transposition_table;
 
-    SEARCH_BOARD inner_board = SEARCH_BOARD();
+    NnueBoard inner_board = NnueBoard();
 
     const int QSEARCH_MAX_DEPTH = 6;
 
@@ -66,47 +33,14 @@ class Engine {
 
     void update_run_time();
 
-    chess::Move search(int time_limit, int min_depth, int max_depth);
-    chess::Move search(std::string fen, int time_limit, int min_depth, int max_depth);
+    chess::Move search(std::string fen, SearchLimit limit);
+    chess::Move search(SearchLimit limit);
 
     void set_interrupt_flag();
     void unset_interrupt_flag();
 
-    chess::Move iterative_deepening(int time_limit, int min_depth, int max_depth);
+    chess::Move iterative_deepening(SearchLimit limit);
 
-    template<chess::movegen::MoveGenType MoveGenType>
-    class SortedMoveGen: public chess::Movelist {
-        public:
-        static constexpr PieceSquareMaps psm = PieceSquareMaps();
-        static inline float KILLER_SCORE = 14.9;
-        static inline float MATERIAL_CHANGE_MULTIPLIER = 11.9;
-        static inline float ENDGAME_PIECE_COUNT = 11;
-
-        static std::array<CircularBuffer3, ENGINE_MAX_DEPTH> killer_moves;
-
-        NnueBoard& board;
-
-        SortedMoveGen(NnueBoard& board);
-        SortedMoveGen(NnueBoard& board, int depth);
-        void generate_moves();
-        void set_tt_move(chess::Move move);
-        bool next(chess::Move& move);
-        bool is_empty();
-        int index();
-        static void clear_killer_moves();
-
-        private:
-        int depth;
-        int move_idx = -1;
-        int num_remaining_moves;
-        bool checked_tt_move = false;
-        bool assigned_scores = false;
-        chess::Move tt_move = NO_MOVE;
-        void set_score(chess::Move& move);
-        bool is_valid_move(chess::Move move);
-        chess::Move pop_move(int move_idx);
-        chess::Move pop_best_score();
-    };
     private:
     friend class UCIAgent;
 
@@ -116,7 +50,6 @@ class Engine {
 
     bool can_return();
     std::pair<std::string, std::string> get_pv_pmove(std::string fen);
-    chess::Move aspiration_search(int depth, int color, float prev_eval);
     std::pair<chess::Move, TFlag> minimax_root(int depth, int color, float alpha, float beta);
     float negamax(int depth, int color, float alpha, float beta);
     float qsearch(float alpha, float beta, int color, int depth);

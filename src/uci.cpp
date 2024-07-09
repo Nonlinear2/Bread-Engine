@@ -27,7 +27,7 @@ bool UCIAgent::process_uci_command(std::string command){
         process_go(parsed_command);
 
     } else if (first == "ponderhit"){
-        engine.time_limit = think_time;
+        engine.limit.store(SearchLimit(LimitType::Time, cached_think_time));
 
     } else if (first == "stop"){
         interrupt_if_searching();
@@ -102,15 +102,44 @@ void UCIAgent::process_position(std::vector<std::string> command){
 }
 
 void UCIAgent::process_go(std::vector<std::string> command){
-    if (command[1] == "ponder"){
-        main_search_thread = std::thread(&Engine::iterative_deepening, &engine, INT32_MAX, 0, 25); // infinite search time
+    if (command.size() < 3){
+        std::cout << "incorrect go syntax" << std::endl;
         return;
     }
+
+    std::string go_type = command[1];
+
+    if (go_type == "ponder"){
+        cached_think_time = get_think_time_from_go_command(command);
+        if (cached_think_time == -1) return; // error occured
+        main_search_thread = std::thread(&Engine::iterative_deepening, &engine, SearchLimit(LimitType::Depth, ENGINE_MAX_DEPTH));
+        return;
+    } else if (go_type == "movetime"){
+        main_search_thread = std::thread(&Engine::iterative_deepening, &engine, SearchLimit(LimitType::Time, std::stoi(command[2])));
+        return;
+    } else if (go_type == "depth"){
+        main_search_thread = std::thread(&Engine::iterative_deepening, &engine, SearchLimit(LimitType::Depth, std::stoi(command[2])));
+        return;
+    } else if (go_type == "nodes"){
+        main_search_thread = std::thread(&Engine::iterative_deepening, &engine, SearchLimit(LimitType::Nodes, std::stoi(command[2])));
+        return;
+    } else if (go_type == "infinite"){
+        main_search_thread = std::thread(&Engine::iterative_deepening, &engine, SearchLimit(LimitType::Depth, ENGINE_MAX_DEPTH));
+        return;
+    } else {
+        int think_time = get_think_time_from_go_command(command);
+        if (think_time == -1) return; // error occured
+        main_search_thread = std::thread(&Engine::iterative_deepening, &engine, SearchLimit(LimitType::Time, think_time));
+    }
+}
+
+int UCIAgent::get_think_time_from_go_command(std::vector<std::string> command){
     num_moves_out_of_book++;
 
     int wtime = -1;
     int btime = -1;
-    int inc = 0;
+    int winc = 0;
+    int binc = 0;
     int movestogo = 0;
     for (int i=1; i < command.size(); i++){
         std::string token = command[i];
@@ -118,34 +147,25 @@ void UCIAgent::process_go(std::vector<std::string> command){
             wtime = std::stoi(command[i+1]);
         } else if (token == "btime"){
             btime = std::stoi(command[i+1]);
-        } else if ((token == "winc") | (token == "binc")){
-            inc = std::stoi(command[i+1]);
+        } else if (token == "winc"){
+            winc = std::stoi(command[i+1]);
+        } else if (token == "binc"){
+            binc = std::stoi(command[i+1]);
         } else if (token == "movestogo"){
             movestogo = std::stoi(command[i+1]);
-        
-        } else if (token == "movetime"){
-            main_search_thread = std::thread(&Engine::iterative_deepening, &engine, std::stoi(command[i+1]), 0, ENGINE_MAX_DEPTH);
-            return;
-        } else if (token == "depth"){
-            int depth = std::stoi(command[i+1]);
-            main_search_thread = std::thread(&Engine::iterative_deepening, &engine, INT32_MAX, depth, depth);
-            return;
-        } else if (token == "infinite"){
-            main_search_thread = std::thread(&Engine::iterative_deepening, &engine, INT32_MAX, 0, ENGINE_MAX_DEPTH);
-            return;
         }
-    }
-    
+    };
+
     if ((wtime == -1) || (btime == -1)){
         std::cout << "no time specified\n";
-        return;
-    };
-    int engine_time_left = (engine.inner_board.sideToMove() == chess::Color::WHITE) ? wtime: btime;
+        return -1;
+    }
 
-    think_time = static_cast<int>(engine.get_think_time(engine_time_left, num_moves_out_of_book, movestogo, inc));
-    
-    main_search_thread = std::thread(&Engine::iterative_deepening, &engine, think_time, 0, ENGINE_MAX_DEPTH);
-    
+    bool engine_color = (engine.inner_board.sideToMove() == chess::Color::WHITE);
+    return engine.get_think_time(engine_color ? wtime: btime, 
+                                 num_moves_out_of_book,
+                                 movestogo,
+                                 engine_color ? winc: binc);
 }
 
 void UCIAgent::interrupt_if_searching(){

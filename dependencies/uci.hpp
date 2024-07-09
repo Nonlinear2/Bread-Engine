@@ -17,7 +17,7 @@ class UCIAgent {
     bool process_uci_command(std::string command);
 
     private:
-    int think_time;
+    int cached_think_time;
     
     std::vector<std::string> split_string(std::string str);
 
@@ -26,6 +26,8 @@ class UCIAgent {
     void process_position(std::vector<std::string> command);
 
     void process_go(std::vector<std::string> command);
+
+    int get_think_time_from_go_command(std::vector<std::string> command);
 
     void interrupt_if_searching();
 };
