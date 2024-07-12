@@ -329,7 +329,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         // depth > 2 is to make sure the new depth is not less than 0.
         // (!inner_board.inCheck()) is to see if the move gives check. 
         // (we already updated the inner board so we only need to check if it is check)
-        if ((sorted_move_gen.index() > 3) && (depth > 2) && (!is_capture) && (!inner_board.inCheck())){
+        if ((sorted_move_gen.index() > 1) && (depth > 2) && (!is_capture) && (!inner_board.inCheck())){
             pos_eval = -negamax(depth-2, -color, -beta, -alpha);
             if (pos_eval > alpha){
                 pos_eval = -negamax(depth-1, -color, -beta, -alpha);
@@ -481,3 +481,40 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
     transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
     return max_eval;
 }
+
+
+// no (move_index > 3) before lmr
+
+// Score of bread_engine_0.0.9 vs bread_engine_0.0.8: 309 - 304 - 217  [0.503] 830
+// ...      bread_engine_0.0.9 playing White: 212 - 101 - 102  [0.634] 415
+// ...      bread_engine_0.0.9 playing Black: 97 - 203 - 115  [0.372] 415
+// ...      White vs Black: 415 - 198 - 217  [0.631] 830
+// Elo difference: 2.1 +/- 20.3, LOS: 58.0 %, DrawRatio: 26.1 %
+// SPRT: llr -0.271 (-9.2%), lbound -2.94, ubound 2.94
+
+// Player: bread_engine_0.0.9
+//    "Draw by 3-fold repetition": 163
+//    "Draw by fifty moves rule": 29
+//    "Draw by insufficient mating material": 23
+//    "Draw by stalemate": 2
+//    "Loss: Black mates": 101
+//    "Loss: White mates": 203
+//    "No result": 6
+//    "Win: Black mates": 97
+//    "Win: White mates": 212
+// Player: bread_engine_0.0.8
+//    "Draw by 3-fold repetition": 163
+//    "Draw by fifty moves rule": 29
+//    "Draw by insufficient mating material": 23
+//    "Draw by stalemate": 2
+//    "Loss: Black mates": 97
+//    "Loss: White mates": 212
+//    "No result": 6
+//    "Win: Black mates": 101
+//    "Win: White mates": 203
+// Finished match
+
+// move index > 2
+// -> no real difference on 50 games
+
+// PVS no improvement after 100 games

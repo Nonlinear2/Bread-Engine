@@ -1,10 +1,11 @@
 # Overview
-Bread engine is a chess engine written in c++. I started working on it in 2021, and only just finished. There is still a lot of room for improvement, but the engine is quite strong (for humans, at least). It uses NNUE (efficiently updatable neural network) to evaluate positions, as well as minimax search.
-Bread engine does not have a graphical interface built in, however it supports the uci protocol, you can therefore run it on any chess graphical interface, such as [cute chess](https://github.com/cutechess/cutechess) or [arena](http://www.playwitharena.de/).
+Bread engine is a chess engine written in c++. I started working on it in 2021 and only just finished. There is still a lot of room for improvement, but the engine is quite strong (for humans, at least). It uses minimax search with NNUE (efficiently updatable neural network) as an evaluation function.
+
+Bread engine does not have a graphical interface built in. However it supports the uci protocol, you can therefore run it on any chess graphical interface, such as [cute chess](https://github.com/cutechess/cutechess) or [arena](http://www.playwitharena.de/).
 
 # Installation
 
-**You can download precompiled binaries for Windows in the release section.**
+***You can download precompiled binaries for Windows in the release section.***
 
 *Please note that the engine requires a cpu with AVX2 support.*
 
@@ -28,7 +29,7 @@ To play a game against the engine, select: game -> new and choose the settings y
 
 ## Build the project yourself
 
-***You need Cmake and a C++ compiler installed.***
+**You need Cmake and a C++ compiler installed.**
 
 The build has been tested using compilers MSVC 19.38, Clang 17.0 and GCC 13.1.
 
@@ -62,7 +63,7 @@ in this section we provide an overview of the search algorithm, and the main eng
   - [optimized matrix multiplication](#optimized-matrix-multiplication)
 
 ## Search Algorithm
-A chess engine is only just a program that takes a chess position and returns the corresponding best move to play. To play a full game of chess, you can just give the engine the positions that arise on the board one after the other.
+A chess engine is just a program that takes a chess position and returns the corresponding best move to play. To play a full game of chess, you can just give the engine the positions that arise on the board one after the other.
 
 ### Minimax
 A "good move" in chess can be defined as a move which "improves your position".
