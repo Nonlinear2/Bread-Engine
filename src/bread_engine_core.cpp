@@ -1,9 +1,5 @@
 #include "bread_engine_core.hpp"
 
-//TODO test asp search again
-// for now, we are keeping unused asp search relative code in minimax_root
-// if asp search still doesn't work, remove this code
-
 bool Engine::try_outcome_eval(float& eval){
     // chess::GameResult outcome = inner_board.isGameOver().second;
     
@@ -30,9 +26,10 @@ bool Engine::try_outcome_eval(float& eval){
     return false;
 }
 
-std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float alpha = WORST_EVAL, float beta = BEST_EVAL){
+chess::Move Engine::minimax_root(int depth, int color){
+    float alpha = WORST_EVAL;
+    float beta = BEST_EVAL;
     chess::Move best_move = NO_MOVE;
-    const float initial_alpha = alpha;
     uint64_t zobrist_hash = inner_board.hash();
     inner_board.synchronize();
 
@@ -46,23 +43,10 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
                 case TFlag::EXACT:
                     best_move = transposition->best_move;
                     best_move.setScore(transposition->evaluation);
-                    return {best_move, TFlag::EXACT};
-                // case TFlag::LOWER_BOUND:
-                //     alpha = std::max(alpha, transposition->evaluation);
-                //     break;
-                // case TFlag::UPPER_BOUND:
-                //     beta = std::min(beta, transposition->evaluation);
-                //     break;
+                    return best_move;
                 default:
                     break;
             }
-            // we need to do a cutoff check because we updated alpha/beta.
-            // if (beta <= alpha){
-            //     // no need to store in transposition table as is already there.
-                // best_move = transposition->best_move;
-                // best_move.setScore(transposition->evaluation);
-            //     return {best_move, TFlag::LOWER_BOUND};
-            // }
         }
         if (transposition->best_move != NO_MOVE){
             // in case the search breaks early, initialize best_move.
@@ -85,10 +69,10 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
 
         if (interrupt_flag){
             if (best_move != NO_MOVE){
-                return {best_move, TFlag::EXACT}; 
+                return best_move; 
             } else { // this means no move was ever recorded
                 std::cerr << "error: the engine didn't complete any search." << std::endl;
-                return {NO_MOVE, TFlag::EXACT};
+                return NO_MOVE;
             }
         }
         
@@ -105,21 +89,9 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
         }
     }
 
-    TFlag node_type;
-    if (beta <= alpha){ // this means there was a cutoff. So true eval is equal or higher
-        node_type = TFlag::LOWER_BOUND;
-    } else if (max_eval <= initial_alpha){ 
-        // this means that the evals were all lower than best option for us
-        // so it is possible there was a beta cutoff. So eval is equal or lower
-        node_type = TFlag::UPPER_BOUND;
-    } else {
-        // eval is between initial alpha and beta. so search was completed without cutoffs, and is exact
-        node_type = TFlag::EXACT;
-    }
+    transposition_table.store(zobrist_hash, max_eval, depth, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
 
-    transposition_table.store(zobrist_hash, max_eval, depth, best_move, node_type, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-
-    return {best_move, node_type};
+    return best_move;
 }
 
 float Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
@@ -192,7 +164,7 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
     };
 
     while (true){
-        best_move = minimax_root(current_depth, engine_color).first;
+        best_move = minimax_root(current_depth, engine_color);
         if (interrupt_flag){
             interrupt_flag = false;
             break;
