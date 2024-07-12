@@ -89,7 +89,7 @@ void benchmark_engine(int depth){
 
     for (auto fen: fens){
         std::chrono::time_point<std::chrono::high_resolution_clock> start_time = now();
-        best = engine.search(fen, 1'000, depth, depth);
+        best = engine.search(fen, SearchLimit(LimitType::Depth, depth));
         times.push_back(std::chrono::duration<float, std::milli>(now() - start_time).count());
         
 
@@ -125,7 +125,7 @@ void benchmark_engine_nodes(int depth){
     chess::Board cb = chess::Board();
     for (auto fen: fens){
 
-        best = engine.search(fen, 1'000, depth, depth);
+        best = engine.search(fen, SearchLimit(LimitType::Depth, depth));
         nodes.push_back(engine.nodes);
 
         cb.setFen(fen);

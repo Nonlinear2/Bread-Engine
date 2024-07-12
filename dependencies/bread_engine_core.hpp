@@ -19,6 +19,7 @@ class Engine {
     int nodes = 0;
     int current_depth = 0;
     std::atomic<SearchLimit> limit;
+    std::atomic<bool> interrupt_flag = false;
 
     std::atomic<float> run_time;
     TranspositionTable transposition_table;
@@ -36,19 +37,15 @@ class Engine {
     chess::Move search(std::string fen, SearchLimit limit);
     chess::Move search(SearchLimit limit);
 
-    void set_interrupt_flag();
-    void unset_interrupt_flag();
-
     chess::Move iterative_deepening(SearchLimit limit);
 
     private:
     friend class UCIAgent;
 
     int engine_color;
-    std::atomic<bool> interrupt_flag = false;
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 
-    bool can_return();
+    bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove(std::string fen);
     std::pair<chess::Move, TFlag> minimax_root(int depth, int color, float alpha, float beta);
     float negamax(int depth, int color, float alpha, float beta);

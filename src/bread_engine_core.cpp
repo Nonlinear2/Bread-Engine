@@ -1,8 +1,8 @@
 #include "bread_engine_core.hpp"
 
-//TODO sparse matrix multiplication
-//TODO fix crashes
 //TODO test asp search again
+// for now, we are keeping unused asp search relative code in minimax_root
+// if asp search still doesn't work, remove this code
 
 bool Engine::try_outcome_eval(float& eval){
     // chess::GameResult outcome = inner_board.isGameOver().second;
@@ -31,7 +31,7 @@ bool Engine::try_outcome_eval(float& eval){
 }
 
 std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float alpha = WORST_EVAL, float beta = BEST_EVAL){
-    chess::Move best_move;
+    chess::Move best_move = NO_MOVE;
     const float initial_alpha = alpha;
     uint64_t zobrist_hash = inner_board.hash();
     inner_board.synchronize();
@@ -59,10 +59,17 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
             // we need to do a cutoff check because we updated alpha/beta.
             // if (beta <= alpha){
             //     // no need to store in transposition table as is already there.
-            //     return {transposition->evaluation, TFlag::LOWER_BOUND};
+                // best_move = transposition->best_move;
+                // best_move.setScore(transposition->evaluation);
+            //     return {best_move, TFlag::LOWER_BOUND};
             // }
         }
-        if (transposition->best_move != NO_MOVE) sorted_move_gen.set_tt_move(transposition->best_move);
+        if (transposition->best_move != NO_MOVE){
+            // in case the search breaks early, initialize best_move.
+            best_move = transposition->best_move;
+            best_move.setScore(transposition->evaluation);
+            sorted_move_gen.set_tt_move(transposition->best_move);
+        }
     }
 
     sorted_move_gen.generate_moves();
@@ -73,8 +80,17 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
     while(sorted_move_gen.next(move)){
 
         inner_board.update_state(move);
-        
         pos_eval = -negamax(depth-1, -color, -beta, -alpha);
+        inner_board.restore_state(move);
+
+        if (interrupt_flag){
+            if (best_move != NO_MOVE){
+                return {best_move, TFlag::EXACT}; 
+            } else { // this means no move was ever recorded
+                std::cerr << "error: the engine didn't complete any search." << std::endl;
+                return {NO_MOVE, TFlag::EXACT};
+            }
+        }
         
         move.setScore(pos_eval);
 
@@ -82,7 +98,6 @@ std::pair<chess::Move, TFlag> Engine::minimax_root(int depth, int color, float a
             best_move = move;
             max_eval = pos_eval;
         }
-        inner_board.restore_state(move);
 
         alpha = std::max(alpha, pos_eval);
         if (beta <= alpha){
@@ -177,9 +192,9 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
     };
 
     while (true){
-        try {
-            best_move = minimax_root(current_depth, engine_color).first;
-        } catch (TerminateSearch& e){
+        best_move = minimax_root(current_depth, engine_color).first;
+        if (interrupt_flag){
+            interrupt_flag = false;
             break;
         }
 
@@ -191,6 +206,7 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
 
         std::cout << "info depth " << current_depth;
         std::cout << " nodes " << nodes;
+        update_run_time();
         std::cout << " nps " << static_cast<int>(nodes/run_time*1000) << std::endl;
         
         std::cout << "info hashfull " << transposition_table.hashfull() << std::endl;
@@ -208,7 +224,7 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
     update_run_time();
     std::cout << "info time " << static_cast<int>(run_time);
     std::cout << " nodes " << nodes << std::endl;
-
+    std::cout << "info pv" << pv << " score cp " << static_cast<int>(best_move.score()*1111) << std::endl;
     std::cout << "bestmove " << chess::uci::moveToUci(best_move);
     if (ponder_move.size() > 0){
         std::cout << " ponder " << ponder_move;
@@ -217,28 +233,21 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
     return best_move;
 }
 
-bool Engine::can_return(){
-    if (interrupt_flag){
-        return true;
-    }
+bool Engine::update_interrupt_flag(){
     SearchLimit limit_ = limit.load();
     switch (limit_.type){
         case LimitType::Time:
             update_run_time();
-            return (run_time >= limit_.value);
+            interrupt_flag = (run_time >= limit_.value);
+            break;
         case LimitType::Nodes:
-            return (nodes >= limit_.value);
+            interrupt_flag = (nodes >= limit_.value);
+            break;
         default:
-            return false;
+            interrupt_flag = false;
+            break;
     }
-}
-
-void Engine::set_interrupt_flag(){
-    interrupt_flag = true;
-}
-
-void Engine::unset_interrupt_flag(){
-    interrupt_flag = false;
+    return interrupt_flag;
 }
 
 void Engine::update_run_time(){
@@ -247,6 +256,10 @@ void Engine::update_run_time(){
 
 float Engine::negamax(int depth, int color, float alpha, float beta){
     nodes++;
+    // we check can_return only at depth 5 or higher to avoid doing it at all nodes
+    if (interrupt_flag || ((depth >= 5) && update_interrupt_flag())){
+        return 0; // the value doesn't matter, it won't be used.
+    }
 
     if (inner_board.isRepetition(2)){ // there are no such checks in qsearch as captures can never lead to repetition.
         return 0;
@@ -255,10 +268,6 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
     // transpositions will be checked inside of qsearch
     // if isRepetition(1), qsearch will not consider the danger of draw as it searches captures.
     if (depth == 0){
-        // we check can_return only at depth 0 to avoid doing it at all nodes
-        if (can_return()){
-            throw TerminateSearch();
-        }
         return qsearch(alpha, beta, color, QSEARCH_MAX_DEPTH);
     }
 
@@ -331,6 +340,8 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
 
         inner_board.restore_state(move);
         
+        if (interrupt_flag) return 0;
+
         if (pos_eval > max_eval){
             max_eval = pos_eval;
             best_move = move;
@@ -358,7 +369,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
     TFlag node_type;
     if (beta <= alpha){ // this means there was a cutoff. So true eval is equal or higher
         node_type = TFlag::LOWER_BOUND;
-    } else if (max_eval <= initial_alpha){ 
+    } else if (max_eval <= initial_alpha){
         // this means that the evals were all lower than best option for us
         // so it is possible there was a beta cutoff. So eval is equal or lower
         node_type = TFlag::UPPER_BOUND;
@@ -470,23 +481,3 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
     transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
     return max_eval;
 }
-
-// version 0.0.7 benchmark: 
-
-// average time: 2138.04    2106.22    2009.98
-
-// ====================
-// transposition table:
-// size 256 MB
-// number of entries 16777216
-// used entries 16228186
-// used percentage 96%
-// following percentages are relative to used entries.
-// depth zero percentage 83%
-// has move percentage 26%
-// exact eval percentage 83%
-// lower bound eval percentage 14%
-// upper bound eval percentage 1%
-// ====================
-
-// no store no nothing 2055.11

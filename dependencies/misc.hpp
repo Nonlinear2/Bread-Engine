@@ -22,9 +22,6 @@ class CircularBuffer3 {
     bool in_buffer(chess::Move move);
 };
 
-class TerminateSearch: public std::exception {};
-
-
 enum LimitType {
     Time,
     Depth,

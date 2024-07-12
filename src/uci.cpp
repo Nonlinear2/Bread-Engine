@@ -170,8 +170,8 @@ int UCIAgent::get_think_time_from_go_command(std::vector<std::string> command){
 
 void UCIAgent::interrupt_if_searching(){
     if (main_search_thread.joinable()){
-        engine.set_interrupt_flag();
+        engine.interrupt_flag = true;
         main_search_thread.join();
-        engine.unset_interrupt_flag();
+        engine.interrupt_flag = false;
     }
 }
