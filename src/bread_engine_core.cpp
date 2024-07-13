@@ -301,12 +301,13 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         // depth > 2 is to make sure the new depth is not less than 0.
         // (!inner_board.inCheck()) is to see if the move gives check. 
         // (we already updated the inner board so we only need to check if it is check)
-        if ((sorted_move_gen.index() > 1) && (depth > 2) && (!is_capture) && (!inner_board.inCheck())){
-            pos_eval = -negamax(depth-2, -color, -beta, -alpha);
-            if (pos_eval > alpha){
-                pos_eval = -negamax(depth-1, -color, -beta, -alpha);
-            }
-        } else {
+        int new_depth = depth-1;
+        new_depth += inner_board.inCheck();
+        new_depth -= ((sorted_move_gen.index() > 1) && (depth > 2) && (!is_capture) && (!inner_board.inCheck()));
+
+        pos_eval = -negamax(new_depth, -color, -beta, -alpha);
+
+        if ((new_depth < depth-1) && (pos_eval > alpha)){
             pos_eval = -negamax(depth-1, -color, -beta, -alpha);
         }
 
