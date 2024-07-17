@@ -59,7 +59,6 @@ chess::Move Engine::minimax_root(int depth, int color){
     sorted_move_gen.generate_moves();
     
     float pos_eval;
-    float max_eval = WORST_EVAL;
     chess::Move move;
     while(sorted_move_gen.next(move)){
 
@@ -78,18 +77,12 @@ chess::Move Engine::minimax_root(int depth, int color){
         
         move.setScore(pos_eval);
 
-        if (pos_eval > max_eval){
+        if (pos_eval > alpha){
             best_move = move;
-            max_eval = pos_eval;
-        }
-
-        alpha = std::max(alpha, pos_eval);
-        if (beta <= alpha){
-            break;
+            alpha = pos_eval;
         }
     }
-
-    transposition_table.store(zobrist_hash, max_eval, depth, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+    transposition_table.store(zobrist_hash, alpha, depth, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
 
     return best_move;
 }
@@ -233,7 +226,8 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         return 0; // the value doesn't matter, it won't be used.
     }
 
-    if (inner_board.isRepetition(2)){ // there are no such checks in qsearch as captures can never lead to repetition.
+    // there are no repetition checks in qsearch as captures can never lead to repetition.
+    if (inner_board.isRepetition(2)){
         return 0;
     }
 
@@ -290,6 +284,8 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         return max_eval;
     }
 
+    if (inner_board.isHalfMoveDraw()) return 0;
+
     chess::Move best_move;
     chess::Move move;
     float pos_eval;
@@ -334,7 +330,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
     // one TT entry which is completely fine.
     // what about evaluations higher in the tree where inner_board.isRepetition(1) is false?
     // these evals are not history dependent as they mean that one side can force a draw.
-    if ((max_eval == 0) && (inner_board.isRepetition(1))){
+    if (((max_eval == 0) && (inner_board.isRepetition(1))) || (inner_board.halfMoveClock() + depth >= 100)){
         return max_eval;
         // we fall through without storing the eval in the TT.
     };
@@ -411,6 +407,8 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
             return stand_pat;
         }
 
+        if (inner_board.isHalfMoveDraw()) return 0;
+
         stand_pat = inner_board.evaluate();
         if (stand_pat >= beta){
             transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
@@ -447,47 +445,12 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
         }
         alpha = std::max(alpha, pos_eval);
         if (alpha >= beta){ // only check for cutoffs when alpha gets updated.
+            if (inner_board.halfMoveClock() + depth >= 100) return max_eval; // avoid storing history dependant evals.
             transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
             return max_eval;
         }
     }
+    if (inner_board.halfMoveClock() + depth >= 100) return max_eval; // avoid storing history dependant evals.
     transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
     return max_eval;
 }
-
-
-// no (move_index > 3) before lmr
-
-// Score of bread_engine_0.0.9 vs bread_engine_0.0.8: 309 - 304 - 217  [0.503] 830
-// ...      bread_engine_0.0.9 playing White: 212 - 101 - 102  [0.634] 415
-// ...      bread_engine_0.0.9 playing Black: 97 - 203 - 115  [0.372] 415
-// ...      White vs Black: 415 - 198 - 217  [0.631] 830
-// Elo difference: 2.1 +/- 20.3, LOS: 58.0 %, DrawRatio: 26.1 %
-// SPRT: llr -0.271 (-9.2%), lbound -2.94, ubound 2.94
-
-// Player: bread_engine_0.0.9
-//    "Draw by 3-fold repetition": 163
-//    "Draw by fifty moves rule": 29
-//    "Draw by insufficient mating material": 23
-//    "Draw by stalemate": 2
-//    "Loss: Black mates": 101
-//    "Loss: White mates": 203
-//    "No result": 6
-//    "Win: Black mates": 97
-//    "Win: White mates": 212
-// Player: bread_engine_0.0.8
-//    "Draw by 3-fold repetition": 163
-//    "Draw by fifty moves rule": 29
-//    "Draw by insufficient mating material": 23
-//    "Draw by stalemate": 2
-//    "Loss: Black mates": 97
-//    "Loss: White mates": 212
-//    "No result": 6
-//    "Win: Black mates": 101
-//    "Win: White mates": 203
-// Finished match
-
-// move index > 2
-// -> no real difference on 50 games
-
-// PVS no improvement after 100 games

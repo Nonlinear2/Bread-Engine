@@ -5,9 +5,17 @@ Bread engine does not have a graphical interface built in. However it supports t
 
 # Installation
 
+*Please note that the engine requires a cpu with AVX2 support.*
+
+### Windows
+
 ***You can download precompiled binaries for Windows in the release section.***
 
-*Please note that the engine requires a cpu with AVX2 support.*
+### Linux
+
+To use the engine on linux, you need to build the project yourself. You can find more details on how to do this below.
+
+---
 
 If you want to check whether everything is working properly, you can run the executable and write the following commands one after the other:
 
@@ -63,15 +71,15 @@ in this section we provide an overview of the search algorithm, and the main eng
   - [optimized matrix multiplication](#optimized-matrix-multiplication)
 
 ## Search Algorithm
-A chess engine is just a program that takes a chess position and returns the corresponding best move to play. To play a full game of chess, you can just give the engine the positions that arise on the board one after the other.
+A chess engine is just a program that takes a chess position and returns the corresponding best move to play. To play a full game of chess, you can give the engine the positions that arise on the board one after the other.
 
 ### Minimax
 A "good move" in chess can be defined as a move which "improves your position".
 
 So let's say you wrote a function that takes a chess position and returns a score that is positive if white has the advantage, and negative if black has the advantage. A very basic implementation would be to count the white pieces, and subtract the number of black pieces.
-The associated score is usually in centipawns, but the measure is arbitrary, the important is that the evaluation is coherent: if the position A is better than B for white, then f(A) > f(B).
+The associated score is usually in centipawns but the measure is arbitrary, the important is that the evaluation is coherent: if the position A is better than B for white, then f(A) > f(B).
 
-Now that we have an evaluation function, we can use it to find moves: For a given chess position, we can look at every legal move, and choose the one that increases the evaluation function the most if it is white's turn to play, and decreases the evaluation the most if it is black's turn to play.
+Now that we have an "evaluation function", we can use it to find moves: For a given chess position, we can look at every legal move, and choose the one that increases the evaluation function the most if it is white's turn to play, and decreases the evaluation the most if it is black's turn to play.
 However, this is not enough to make a strong chess engine. The issue is that the evaluation function is never perfect, so the engine will make mistakes. If we use the "piece count" evaluation function, our engine may take a defended pawn with a queen, and loose it on the next move. 
 Therefore, what we need to do is consider the opponent's responses to our moves. So when the engine thinks, after queen takes pawn, it will look at all the opponent's legal moves and evaluate these using the evaluation function. The opponent wants to minimize the score so it will pick the lowest evaluation. Now we can update the queen takes pawn position to be bad for us.
 
@@ -98,14 +106,14 @@ Moreover, iterative deepening takes care of the following problem: how to know a
 ### Quiescence search
 An issue with minimax is the horizon effect. We saw it in action when looking at the depth 1 example: the engine can see queen takes pawn, but not pawn takes queen on the next move. This issue was never resolved on leaf nodes. To mitigate positional misunderstanding by the AI, we can run a "quiescence search" instead of directly evaluating leaf nodes. The quiescence search is similar to minimax, but it only searches through captures (and checks) until the position becomes "quiet". At this point the evaluation function is more likely to give an accurate result.
 
-### pondering
+### Pondering
 When the opponent is thinking, the engine can run a search on the move that it thinks is the best for the opponent. If the opponent plays the move, we call it a ponderhit, and the engine can play faster as it has already spent time searching for the position. If the opponent plays another move, the engine just searches for the position normally.
 
-### aspiration windows
+### Aspiration windows
 After a deep enough search, we do not expect the evaluation to fluctuate a lot. At this point, we can use a "search window" on the root, and prune more branches that are outside the window. However, if the search falls low/high, we need to perform the search again.
 This optimisation turned out to decrease the engine strength due to search instabilities and was therefore removed.
 
-### other optimizations
+### Other optimizations
 the following optimizations are also implemented in bread engine:
 - [late move reductions](https://www.chessprogramming.org/Late_Move_Reductions)
 - [killer moves](https://www.chessprogramming.org/Killer_Move)
@@ -114,7 +122,7 @@ the following optimizations are also implemented in bread engine:
 - [futility pruning](https://www.chessprogramming.org/Futility_Pruning)
 
 
-### threefold repetition
+### Threefold repetition
 The first idea that comes to mind to implement threefold repetition is to have something like 
 ```c++
 if (inner_board.isthreefoldrepetition()){
@@ -122,7 +130,6 @@ if (inner_board.isthreefoldrepetition()){
 }
 ```
 in the minimax function. However, care must be taken for the transposition table, as the evaluation of 0 is "history dependent". In another variation of the search, this position might be winning or losing, and reusing an evaluation of 0 would lead to engine blunders. Therefore, Bread Engine doesn't store positions that started repeating and were evaluated as 0. This way, the problematic positions aren't reused, but higher in the tree, the possibility of forcing a draw is taken into account.
-Currently, the fifty-move rule isn't supported by Bread Engine.
 
 ## Neural Network
 ### Neural network types
@@ -133,11 +140,11 @@ Bread Engine's NNUE is heavily inspired by the approach described by [stockfish]
 
 When evaluating leaf nodes during minimax search, one can note that the positions encountered are very similar. Therefore, instead of running the whole neural network from scratch, the first layer output is cached and reused.
 
-Let's consider a simple deep neural network, taking 768 inputs corresponding to each piece type on each possible square (so 12 * 64 in total). Suppose we have already run the neural network on the starting position, and that we cached the first layer output before applying the activation function (this is called the "accumulator"). If we move a pawn from e2 to e4, we effectively turn off the input neuron number n corresponding to "white pawn on e2" and turn on the input neuron m corresponding to "white pawn on e4". Recall that computing a dense layer output before applying bias and activation is just matrix multiplication. Therefore to update the accumulator, we need to subtract the n-th row of weights from the accumulator, and add the m-th row of weights. The effect of changing the two input neurons on further layers is non trivial, and these need to be recomputed. Therefore, it is advantageous to have a large input layer, and small hidden layers.
+Let's consider a simple deep neural network, taking 768 inputs corresponding to each piece type on each possible square (so 12 * 64 in total). Suppose we have already run the neural network on the starting position, and that we cached the first layer output before applying the activation function (this is called the "accumulator"). If we move a pawn from e2 to e4, we turn off the input neuron number n corresponding to "white pawn on e2" and turn on the input neuron m corresponding to "white pawn on e4". Recall that computing a dense layer output before applying bias and activation is just matrix multiplication. Therefore to update the accumulator, we need to subtract the n-th row of weights from the accumulator, and add the m-th row of weights. The effect of changing the two input neurons on further layers is non trivial, and these need to be recomputed. Therefore, it is advantageous to have a large input layer, and small hidden layers.
 
-### the halfKP feature set
+### The halfKP feature set
 There are many different choices for the input feature representation, but 
-> HalfKP is the most common feature set and other successful ones build on top of it. It fits in a sweet spot of being just the right size, and requiring very few updates per move on average. [Link](https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#halfkp)
+> \[HalfKP\] fits in a sweet spot of being just the right size, and requiring very few updates per move on average. [Link](https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#halfkp)
 
 This board representation works with two components: the perspective of the side to move, and the other perspective.
 Each perspective consists of a board representation similar to before, but with separate features for each friendly king square.
@@ -146,14 +153,14 @@ This overparametrisation from the intuitive 768 to 40960 input neurons helps to 
 In the case of Bread Engine, the two perspectives are each run through the same set of weights 40960->256 and concatenated into a vector of size 512, with the side to move perspective first, and the other second.
 Here are the full [network specs](./images/NNUE%20specs.png?raw=true) (Relu is actually clipped relu between 0 and 1).
 
-### quantization
+### Quantization
 An important way to speed up the neural network is to use quantization with SIMD vectorization on the cpu (unfortunately, gpu's aren't usually suited for chess engines as minimax is difficult to paralellize because of alpha beta pruning (see [ybwf](https://www.chessprogramming.org/Young_Brothers_Wait_Concept) or [lazy SMP](https://www.chessprogramming.org/Lazy_SMP)). Also, the data transfer latency between cpu and gpu is too high).
 
 The first layer weights and biases are multiplied by a scale of 127 and stored in int16. Accumulation also happens in int16.  With a maximum of 30 active input features (all pieces on the board), there won't be any integer overflow unless (sum of 30 weights) + bias > 32767, which is most definitely not the case. We then apply clipped relu while converting to int8. Now `layer_1_quant_output = input @ (127*weights) + 127*bias = 127*(input @ weights + bias) = 127*true_output`.
 For the second layer, weights are multiplied by 64 and stored in int8, and bias is multiplied by 127 * 64 and stored in int32.
 To be able to store weights in int8, we need to make sure that weights * 64 < 127, so a weight can't exceed 127/64 = 1.98. This is the price to pay for full integer quantization. After this layer, the output is
 `layer_2_quant_output = quant_input @ (64*weights) + 127*64*bias = 127*64*(input @ weights + bias) = 127*64*true_output`. Therefore, we need to divide the quantized output by 64 before applying the clipped relu (this is done using bitshifts as 64 is a power of 2. We lose at most 1/127 = 0.0078 of precision by doing this).
-Layers 3 and 4 are similar. Layer 4 is small enough that we can accumulate outputs in in16.
+Layers 3 and 4 are similar. Layer 4 is small enough that we can accumulate outputs in int16.
 
 Here is some code to run the hidden layers (this was used until Bread Engine 0.0.6):
 ```c++
@@ -199,7 +206,7 @@ void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
 };
 ```
 
-### optimized matrix multiplication
+### Optimized matrix multiplication
 *The following method is original, it may or may not be a good approach.*
 
 To optimize the matrix multiplication code above, one can note that in the `_mm256_add8x256_epi32` function, we use `_mm256_hadd_epi32` for horizontal accumulation. However, we would like to use `_mm256_add_epi32` which is faster, but does vertical accumulation. To achieve this we can shuffle vertically the weights in the neural network, to have the weights that need to be added together on different rows. After the multiplication, we can shuffle the weights horizontally so they align, and add them vertically.
@@ -292,9 +299,8 @@ swap lanes of the second register and vertical sum:
 [intel intrinsics guide](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html#ig_expand=140,92,83)
 
 # Notable games
-- Bread Engine 0.0.6 vs chess.com's Magnus Carlsen bot 1-0:
-
-1.\ d4 d5 2. Nf3 Nf6 3. c4 c6 4. e3 Bf5 5. Nc3 a6 6. Qb3 Ra7 7. Nh4 Be6 8. Nf3 Bf5 9. Nh4 Bg6 10. g4 e5 11. g5 dxc4 12. Bxc4 b5 13. Be2 Nfd7 14. f4 exd4 15. exd4 Be7 16. O-O Nb6 17. Kh1 Qxd4 18. f5 Qxh4 19. fxg6 Bd6 20. gxf7+ Kf8 21. Bf4 Bxf4 22. Qb4+ c5 23. Qxc5+ Re7 24. Rxf4 Qxf4 25. Qxb6 Qc7 26. Qf2 Rxf7 27. Bf3 Qe5 28. Re1 Qf5 29. Re3 Nd7 30. Qd2 Kg8 31. Ne4 Qh3 32. Ng3 Nf8 33. Bd5 Qd7 34. Qd3 h6 35. Nf5 g6 36. Nd6 Rh7 37. gxh6 Qc7 38. Nxf7 Qc1+ 39. Kg2 Qxb2+ 40. Re2 Qb4 41. Qf3 Ne6 42. Ng5 Qe4 43. Bxe6+ Rf7 44. Rxe4 a5 45. Qxf7+ Kh8 46. Qf6# 1-0
+- Bread Engine 0.0.9 vs chess.com's Magnus Carlsen bot 1-0:
+1\. d4 Nf6 2. Nf3 d5 3. c4 e6 4. Nc3 Be7 5. cxd5 exd5 6. Bf4 O-O 7. e3 Nh5 8. Be5 Nc6 9. h3 Be6 10. Bh2 Nf6 11. Bd3 Nb4 12. Bb1 c5 13. dxc5 Bxc5 14. O-O Nc6 15. Bc2 Rc8 16. Rc1 a6 17. Bg3 Ba7 18. Qe2 d4 19. Rfd1 Re8 20. Bh4 b5 21. Ne4 Bc4 22. Qe1 Bxa2 23. b3 Bb6 24. Qe2 Rxe4 25. Bxe4 Bxb3 26. Bxh7+ Kh8 27. Bc2 Bc4 28. Bd3 Bb3 29. Bc2 Bc4 30. Bd3 Bb3 31. Bf5 Bxd1 32. Qxd1 Rc7 33. Bg3 Ne7 34. Bxc7 Bxc7 35. Qxd4 Kg8 36. Qa7 Ne8 37. Bc2 a5 38. Qc5 Nd6 39. Rd1 Qd7 40. Nd4 Nec8 41. Qh5 g6 42. Bxg6 fxg6 43. Qxg6+ Kf8 44. e4 b4 45. Rd3 Qe8 46. Qh6+ Ke7 47. e5 Bb6 48. Nf5+ Kd8 49. Nxd6 Bxf2+ 50. Kxf2 Nxd6 51. Qxd6+ Kc8 52. Qa6+ Kb8 53. Rd6 Qf7+ 54. Kg1 Qc7 55. Rb6+ Qxb6+ 56. Qxb6+ Kc8 57. Qxa5 b3 58. Qc3+ Kd7 59. Qxb3 Ke8 60. Qe6+ Kf8 61. Qf6+ Ke8 62. h4 Kd7 63. e6+ Kd6 64. e7+ Kd7 65. Qf8 Kc6 66. e8=Q+ Kd5 67. Qf5+ Kd4 68. Qee4+ Kc3 69. Qc5+ Kb2 70. Qec2+ Ka1 71. Qa3#
 
 - Bread Engine 0.0.4 vs chess.com's Hikaru Nakamura bot 1-0:
 

@@ -9,6 +9,7 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "id author Nonlinear" << std::endl;
         std::cout << std::endl;
         std::cout << "option name SyzygyPath type string default <empty>" << std::endl;
+        std::cout << "option name hash type spin default 256 min 2 max 4096" << std::endl;
         std::cout << "uciok" << std::endl;
     } else if (first == "setoption"){
         process_setoption(parsed_command);
@@ -72,6 +73,15 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
         } else {
             std::cout << "info string tablebase loaded" << std::endl;
         }
+    } else if (option_name == "hash"){
+        int size = std::stoi(command[4]);
+        if ((size & (size - 1)) == 0){
+            size = std::clamp(size, 2, 4096);
+            engine.transposition_table.allocateMB(size);
+            std::cout << "info string hash size set to " << size << std::endl;
+        } else {
+            std::cout << "info string hash size must be a power of 2" << std::endl;
+        }
     }
 }
 
@@ -103,7 +113,7 @@ void UCIAgent::process_position(std::vector<std::string> command){
 
 void UCIAgent::process_go(std::vector<std::string> command){
     if (command.size() < 3){
-        std::cout << "incorrect go syntax" << std::endl;
+        std::cout << "incorrect syntax" << std::endl;
         return;
     }
 
