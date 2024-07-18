@@ -48,6 +48,10 @@ class Engine {
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove(std::string fen);
     chess::Move minimax_root(int depth, int color);
+
+    template<bool pv>
     float negamax(int depth, int color, float alpha, float beta);
+
+    template<bool pv>
     float qsearch(float alpha, float beta, int color, int depth);
 };

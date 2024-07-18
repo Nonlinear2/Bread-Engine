@@ -61,9 +61,23 @@ chess::Move Engine::minimax_root(int depth, int color){
     float pos_eval;
     chess::Move move;
     while(sorted_move_gen.next(move)){
+        bool is_capture = inner_board.isCapture(move);
 
         inner_board.update_state(move);
-        pos_eval = -negamax(depth-1, -color, -beta, -alpha);
+
+        int new_depth = depth-1;
+        new_depth += inner_board.inCheck();
+        new_depth -= ((sorted_move_gen.index() > 1) && (depth > 5) && (!is_capture) && (!inner_board.inCheck()));
+
+        if (sorted_move_gen.index() == 0){
+            pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha);
+        } else {
+            pos_eval = -negamax<false>(new_depth, -color, -beta, -alpha);
+            if ((new_depth < depth-1) && (pos_eval > alpha)){
+                pos_eval = -negamax<false>(depth-1, -color, -beta, -alpha);
+            }
+        }
+
         inner_board.restore_state(move);
 
         if (interrupt_flag){
@@ -219,6 +233,7 @@ void Engine::update_run_time(){
     run_time = std::chrono::duration<float, std::milli>(now() - start_time).count();
 };
 
+template<bool pv>
 float Engine::negamax(int depth, int color, float alpha, float beta){
     nodes++;
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
@@ -234,7 +249,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
     // transpositions will be checked inside of qsearch
     // if isRepetition(1), qsearch will not consider the danger of draw as it searches captures.
     if (depth == 0){
-        return qsearch(alpha, beta, color, QSEARCH_MAX_DEPTH);
+        return qsearch<pv>(alpha, beta, color, QSEARCH_MAX_DEPTH);
     }
 
     const float initial_alpha = alpha;
@@ -301,10 +316,13 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         new_depth += inner_board.inCheck();
         new_depth -= ((sorted_move_gen.index() > 1) && (depth > 2) && (!is_capture) && (!inner_board.inCheck()));
 
-        pos_eval = -negamax(new_depth, -color, -beta, -alpha);
-
-        if ((new_depth < depth-1) && (pos_eval > alpha)){
-            pos_eval = -negamax(depth-1, -color, -beta, -alpha);
+        if (pv && (sorted_move_gen.index() == 0)){
+            pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha);
+        } else {
+            pos_eval = -negamax<false>(new_depth, -color, -beta, -alpha);
+            if ((new_depth < depth-1) && (pos_eval > alpha)){
+                pos_eval = -negamax<false>(depth-1, -color, -beta, -alpha);
+            }
         }
 
         inner_board.restore_state(move);
@@ -351,7 +369,9 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
     return max_eval;
 }
 
+template<bool pv>
 float Engine::qsearch(float alpha, float beta, int color, int depth){
+    // assert(pv || ((alpha - (beta-1e-6) < 1e-6) && (alpha - (beta-1e-6) > -1e-6)));
     nodes++;
 
     // tablebase probe
@@ -382,15 +402,19 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
                 }
                 break;
             case TFlag::LOWER_BOUND:
-                if ((transposition->evaluation > alpha) && (beta <= transposition->evaluation)) return transposition->evaluation;
+                if (!pv) alpha = std::max(alpha, transposition->evaluation);
                 is_hit = false;
                 break;
             case TFlag::UPPER_BOUND:
-                if ((transposition->evaluation < beta) && (transposition->evaluation <= alpha)) return transposition->evaluation;
+                if (!pv) beta = std::min(beta, transposition->evaluation); 
                 is_hit = false;
                 break;
             default:
                 break;
+        }
+        if (beta <= alpha){
+            // no need to store in transposition table as is already there.
+            return transposition->evaluation;
         }
         if (transposition->best_move != NO_MOVE) sorted_capture_gen.set_tt_move(transposition->best_move);
     }
@@ -436,7 +460,7 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
         }
 
         inner_board.update_state(move);
-        pos_eval = -qsearch(-beta, -alpha, -color, depth-1);
+        pos_eval = -qsearch<pv>(-beta, -alpha, -color, depth-1);
         inner_board.restore_state(move);
 
         if (pos_eval > max_eval){
