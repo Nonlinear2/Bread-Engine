@@ -1,5 +1,5 @@
 # Overview
-Bread engine is a chess engine written in c++. I started working on it in 2021 and only just finished. There is still a lot of room for improvement, but the engine is quite strong (for humans, at least). It uses minimax search with NNUE (efficiently updatable neural network) as an evaluation function.
+Bread engine is a chess engine written in c++. There is still a lot of room for improvement, but the engine is quite strong (for humans, at least). It uses minimax search with NNUE (efficiently updatable neural network) as an evaluation function.
 
 Bread engine does not have a graphical interface built in. However it supports the uci protocol, you can therefore run it on any chess graphical interface, such as [cute chess](https://github.com/cutechess/cutechess) or [arena](http://www.playwitharena.de/).
 
@@ -27,14 +27,6 @@ go movetime 5000
 
 and the engine will return the best move. You can find more details on the [uci protocol](https://www.wbec-ridderkerk.nl/html/UCIProtocol.html) webpage.
 
-## Run the engine on a chess graphical interface:
-### Cute chess
-You can download cute chess [here](https://github.com/cutechess/cutechess/releases).
-To add the engine select: tools -> settings -> engines -> + -> command, and choose the engine's executable.
-
-To play a game against the engine, select: game -> new and choose the settings you want.
-
-
 ## Build the project yourself
 
 **You need Cmake and a C++ compiler installed.**
@@ -48,6 +40,13 @@ Clone the repository, open a command line, navigate to the project's root direct
 ### Linux
 
 Run the script `compile_script_for_linux.sh`. The executable will be generated in the `build` folder.
+
+## Run the engine on a chess graphical interface:
+### Cute chess
+You can download cute chess [here](https://github.com/cutechess/cutechess/releases).
+To add the engine select: tools -> settings -> engines -> + -> command, and choose the engine's executable.
+
+To play a game against the engine, select: game -> new and choose the settings you want.
 
 # Technical details
 in this section we provide an overview of the search algorithm, and the main engine features. The explanations are very high level, so feel free to search more details on other resources.
