@@ -283,6 +283,11 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         if (transposition->best_move != NO_MOVE) sorted_move_gen.set_tt_move(transposition->best_move);
     }
 
+    // reverse futility pruning
+    if (!(pv) && (depth < 5) && (inner_board.evaluate() - static_cast<float>(depth)/10 - 0.2 >= beta)){
+        return beta;
+    }
+
     sorted_move_gen.generate_moves();
     float max_eval = WORST_EVAL;
 
