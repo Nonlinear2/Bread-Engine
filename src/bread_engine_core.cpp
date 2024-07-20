@@ -160,7 +160,7 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
 
     nodes = 0;
 
-    current_depth = 1;
+    current_depth = 0;
 
     engine_color = (inner_board.sideToMove() == chess::Color::WHITE) ? 1: -1;
 
@@ -171,11 +171,9 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
     };
 
     while (true){
+        current_depth++;
+
         best_move = minimax_root(current_depth, engine_color);
-        if (interrupt_flag){
-            interrupt_flag = false;
-            break;
-        }
 
         std::pair<std::string, std::string> pv_pmove = get_pv_pmove(initial_fen);
         pv = pv_pmove.first;
@@ -183,32 +181,32 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
             ponder_move = pv_pmove.second;
         }
 
-        std::cout << "info depth " << current_depth;
-        std::cout << " nodes " << nodes;
         update_run_time();
-        std::cout << " nps " << static_cast<int>(nodes/run_time*1000) << std::endl;
+        // do not count interrupted searches in depth
+        std::cout << "info depth " << current_depth - interrupt_flag;
+        std::cout << " score cp " << static_cast<int>(best_move.score()*1111);
+        std::cout << " nodes " << nodes;
+        std::cout << " nps " << static_cast<int>(nodes/run_time*1000);
+        std::cout << " time " << static_cast<int>(run_time);
+        std::cout << " hashfull " << transposition_table.hashfull();
+        std::cout << " pv" << pv << std::endl;
         
-        std::cout << "info hashfull " << transposition_table.hashfull() << std::endl;
-        std::cout << "info pv" << pv << " score cp " << static_cast<int>(best_move.score()*1111) << std::endl;
 
         // should the search really stop if there is a mate for the oponent?
-        if ((best_move.score() >= 1) || // checkmate
+        if ((interrupt_flag) ||
+            (best_move.score() >= 1) || // checkmate
             (best_move.score() <= -1) || // checkmate
             ((limit.type == LimitType::Depth) && (current_depth == limit.value)) ||
             (current_depth == ENGINE_MAX_DEPTH)) break;
         
-        current_depth++;
     }
 
-    update_run_time();
-    std::cout << "info time " << static_cast<int>(run_time);
-    std::cout << " nodes " << nodes << std::endl;
-    std::cout << "info pv" << pv << " score cp " << static_cast<int>(best_move.score()*1111) << std::endl;
     std::cout << "bestmove " << chess::uci::moveToUci(best_move);
     if (ponder_move.size() > 0){
         std::cout << " ponder " << ponder_move;
     }
     std::cout << std::endl;
+    interrupt_flag = false;
     return best_move;
 }
 
@@ -284,7 +282,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
     }
 
     // reverse futility pruning
-    if (!(pv) && (depth < 5) && (inner_board.evaluate() - static_cast<float>(depth)/10 - 0.2 >= beta)){
+    if (!pv && (depth < 5) && (inner_board.evaluate() - static_cast<float>(depth)/10 - 0.2 >= beta)){
         return beta;
     }
 

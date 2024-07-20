@@ -100,7 +100,7 @@ void NnueBoard::update_state(chess::Move move){
 
     accumulator_stack.push(nnue_.accumulator);
 
-    if (is_basic_move(move)){
+    if (is_updatable_move(move)){
         // white
         modified_features mod_features = get_modified_features(move, true);
         nnue_.update_accumulator(mod_features, true);
@@ -122,7 +122,7 @@ void NnueBoard::restore_state(chess::Move move){
     accumulator_stack.pop();
 }
 
-bool NnueBoard::is_basic_move(chess::Move move){
+bool NnueBoard::is_updatable_move(chess::Move move){
     return ((move.typeOf() == chess::Move::NORMAL) && (kingSq(sideToMove()) != move.from()));
 }
 

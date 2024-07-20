@@ -26,7 +26,7 @@ class NnueBoard: public chess::Board {
 
     void restore_state(chess::Move move);
 
-    bool is_basic_move(chess::Move move);
+    bool is_updatable_move(chess::Move move);
     
     float evaluate();
 

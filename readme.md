@@ -1,5 +1,5 @@
 # Overview
-Bread engine is a chess engine written in c++. There is still a lot of room for improvement, but the engine is quite strong (for humans, at least). It uses minimax search with NNUE (efficiently updatable neural network) as an evaluation function.
+Bread engine is a chess engine written in c++. There is still a lot of room for improvement, but the engine is quite strong (for humans, at least). It uses minimax search with NNUE (efficiently updatable neural network) as an evaluation function. The neural network is homemade and trained using lichess's open database with evaluated games.
 
 Bread engine does not have a graphical interface built in. However it supports the uci protocol, you can therefore run it on any chess graphical interface, such as [cute chess](https://github.com/cutechess/cutechess) or [arena](http://www.playwitharena.de/).
 
@@ -299,6 +299,7 @@ swap lanes of the second register and vertical sum:
 
 # Notable games
 - Bread Engine 0.0.9 vs chess.com's Magnus Carlsen bot 1-0:
+
 1\. d4 Nf6 2. Nf3 d5 3. c4 e6 4. Nc3 Be7 5. cxd5 exd5 6. Bf4 O-O 7. e3 Nh5 8. Be5 Nc6 9. h3 Be6 10. Bh2 Nf6 11. Bd3 Nb4 12. Bb1 c5 13. dxc5 Bxc5 14. O-O Nc6 15. Bc2 Rc8 16. Rc1 a6 17. Bg3 Ba7 18. Qe2 d4 19. Rfd1 Re8 20. Bh4 b5 21. Ne4 Bc4 22. Qe1 Bxa2 23. b3 Bb6 24. Qe2 Rxe4 25. Bxe4 Bxb3 26. Bxh7+ Kh8 27. Bc2 Bc4 28. Bd3 Bb3 29. Bc2 Bc4 30. Bd3 Bb3 31. Bf5 Bxd1 32. Qxd1 Rc7 33. Bg3 Ne7 34. Bxc7 Bxc7 35. Qxd4 Kg8 36. Qa7 Ne8 37. Bc2 a5 38. Qc5 Nd6 39. Rd1 Qd7 40. Nd4 Nec8 41. Qh5 g6 42. Bxg6 fxg6 43. Qxg6+ Kf8 44. e4 b4 45. Rd3 Qe8 46. Qh6+ Ke7 47. e5 Bb6 48. Nf5+ Kd8 49. Nxd6 Bxf2+ 50. Kxf2 Nxd6 51. Qxd6+ Kc8 52. Qa6+ Kb8 53. Rd6 Qf7+ 54. Kg1 Qc7 55. Rb6+ Qxb6+ 56. Qxb6+ Kc8 57. Qxa5 b3 58. Qc3+ Kd7 59. Qxb3 Ke8 60. Qe6+ Kf8 61. Qf6+ Ke8 62. h4 Kd7 63. e6+ Kd6 64. e7+ Kd7 65. Qf8 Kc6 66. e8=Q+ Kd5 67. Qf5+ Kd4 68. Qee4+ Kc3 69. Qc5+ Kb2 70. Qec2+ Ka1 71. Qa3#
 
 - Bread Engine 0.0.4 vs chess.com's Hikaru Nakamura bot 1-0:
