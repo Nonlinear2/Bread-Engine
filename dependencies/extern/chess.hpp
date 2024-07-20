@@ -1673,9 +1673,9 @@ class Zobrist {
     /// @return
     [[nodiscard]] static U64 castlingIndex(int idx) noexcept { return RANDOM_ARRAY[768 + idx]; }
 
+   public:
     [[nodiscard]] static U64 sideToMove() noexcept { return RANDOM_ARRAY[780]; }
 
-   public:
     friend class Board;
 };
 

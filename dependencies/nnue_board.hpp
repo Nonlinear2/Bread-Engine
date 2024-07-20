@@ -22,6 +22,8 @@ class NnueBoard: public chess::Board {
 
     modified_features get_modified_features(chess::Move move, bool color);
 
+    bool last_move_null();
+
     void update_state(chess::Move move);
 
     void restore_state(chess::Move move);

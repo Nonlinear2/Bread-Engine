@@ -72,6 +72,7 @@ void TranspositionTable::allocateMB(int new_size){
     int num_entries = size_mb * entries_in_one_mb;
 
     entries.resize(num_entries, TEntry());
+    entries.shrink_to_fit();
 }
 
 void TranspositionTable::store(uint64_t zobrist, float eval, int depth, chess::Move move, TFlag flag, uint8_t move_number){

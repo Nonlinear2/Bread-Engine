@@ -96,6 +96,10 @@ modified_features NnueBoard::get_modified_features(chess::Move move, bool color)
     return modified_features(added, removed, captured);
 }
 
+bool NnueBoard::last_move_null(){
+    return (prev_states_.back().hash == (hash()^chess::Zobrist::sideToMove()));
+}
+
 void NnueBoard::update_state(chess::Move move){
 
     accumulator_stack.push(nnue_.accumulator);
