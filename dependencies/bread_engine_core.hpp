@@ -9,11 +9,6 @@
 #include "nnue_board.hpp"
 #include "sorted_move_gen.hpp"
 
-// shorter name
-inline std::chrono::time_point<std::chrono::high_resolution_clock> now(){
-    return std::chrono::high_resolution_clock::now();
-}
-
 class Engine {
     public:
     int nodes = 0;
@@ -21,22 +16,22 @@ class Engine {
     std::atomic<SearchLimit> limit;
     std::atomic<bool> interrupt_flag = false;
 
-    std::atomic<float> run_time;
+    std::atomic<int> run_time;
     TranspositionTable transposition_table;
 
     NnueBoard inner_board = NnueBoard();
 
     const int QSEARCH_MAX_DEPTH = 6;
 
-    bool try_outcome_eval(float& eval);
+    bool try_outcome_eval(int& eval);
 
-    float increment_mate_ply(float eval);
+    int increment_mate_ply(int eval);
 
-    bool is_mate(float eval);
+    bool is_mate(int eval);
 
-    bool is_win(float eval);
+    bool is_win(int eval);
 
-    float get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control, int increment);
+    int get_think_time(int time_left, int num_moves_out_of_book, int num_moves_until_time_control, int increment);
 
     void update_run_time();
 
@@ -56,8 +51,8 @@ class Engine {
     chess::Move minimax_root(int depth, int color);
 
     template<bool pv>
-    float negamax(int depth, int color, float alpha, float beta);
+    int negamax(int depth, int color, int alpha, int beta);
 
     template<bool pv>
-    float qsearch(float alpha, float beta, int color, int depth);
+    int qsearch(int alpha, int beta, int color, int depth);
 };

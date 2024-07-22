@@ -54,8 +54,8 @@ inline std::vector<std::string> correct_best_moves = {
     "f4",
 };
 
-float sum(std::vector<float> values){
-    float total = 0;
+int sum(std::vector<int> values){
+    int total = 0;
     for (auto v: values){
         total += v;
     }
@@ -73,7 +73,7 @@ void benchmark_nn(){
     for (int i = 0; i < num_iter; i++){
         board.evaluate();
     }
-    float mean = std::chrono::duration<float, std::micro>(std::chrono::high_resolution_clock::now() - start).count()/num_iter;
+    int mean = std::chrono::duration<int, std::micro>(std::chrono::high_resolution_clock::now() - start).count()/num_iter;
     std::cout << "time taken: " << mean << " microseconds per call";
     std::cout << "============================== \n";
 }
@@ -81,16 +81,16 @@ void benchmark_nn(){
 void benchmark_engine(int depth){
     Engine engine = Engine();
 
-    std::vector<float> times;
+    std::vector<int> times;
     std::vector<std::string> bests; 
     chess::Move best;
 
     chess::Board cb = chess::Board();
 
     for (auto fen: fens){
-        std::chrono::time_point<std::chrono::high_resolution_clock> start_time = now();
+        std::chrono::time_point<std::chrono::high_resolution_clock> start_time = std::chrono::high_resolution_clock::now();
         best = engine.search(fen, SearchLimit(LimitType::Depth, depth));
-        times.push_back(std::chrono::duration<float, std::milli>(now() - start_time).count());
+        times.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time).count());
         
 
         cb.setFen(fen);
@@ -106,7 +106,7 @@ void benchmark_engine(int depth){
     std::cout << "============================== \n";
 
     std::cout << "average time: " << sum(times)/fens.size() << "\n";
-    float correct = 0;
+    int correct = 0;
     for (int i = 0; i < fens.size(); i++){
         std::cout << "returned: " << bests[i] << " // correct: " << correct_best_moves[i] << "\n";
         correct += (correct_best_moves[i] == bests[i]);
@@ -118,7 +118,7 @@ void benchmark_engine(int depth){
 void benchmark_engine_nodes(int depth){
     Engine engine = Engine();
 
-    std::vector<float> nodes;
+    std::vector<int> nodes;
     std::vector<std::string> bests; 
     chess::Move best;
     
@@ -137,10 +137,10 @@ void benchmark_engine_nodes(int depth){
         std::cout << engine.current_depth << std::endl;
     }
     engine.transposition_table.info();
-    float avg_nodes = sum(nodes)/fens.size();
+    int avg_nodes = sum(nodes)/fens.size();
     std::cout << "============================== \n";
     std::cout << "average nodes: " << avg_nodes << "\n";
-    float correct = 0;
+    int correct = 0;
     for (int i = 0; i < fens.size(); i++){
         std::cout << "returned: " << bests[i] << " // correct: " << correct_best_moves[i] << "\n";
         correct += (correct_best_moves[i] == bests[i]);

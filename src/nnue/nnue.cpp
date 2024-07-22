@@ -256,7 +256,7 @@ void NNUE::crelu32(int32_t *input, int8_t *output, int size){
     }
 };
 
-float NNUE::run_cropped_nn(bool color){
+int NNUE::run_cropped_nn(bool color){
     crelu16(accumulator[color], &ft_clipped_output[0], acc_size);
     crelu16(accumulator[!color], &ft_clipped_output[acc_size], acc_size);
 
@@ -267,7 +267,7 @@ float NNUE::run_cropped_nn(bool color){
     crelu32(layer_3_unclipped_output, layer_3_clipped_output, layer_3.output_size);
 
     int16_t output = layer_4.run(layer_3_clipped_output);
-    return std::tanh(static_cast<float>(output)/(64*127));
+    return output;
 
 };
 

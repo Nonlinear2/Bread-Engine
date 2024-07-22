@@ -84,8 +84,6 @@ TEST_SUITE("Nnue Board"){
     }
 
     TEST_CASE("update_state"){
-        float accepted_error = 0.0001;
-
         std::cout << "update state\n";
         NnueBoard cb = NnueBoard();
         chess::Movelist legal_moves;
@@ -104,12 +102,12 @@ TEST_SUITE("Nnue Board"){
             computed_acc = cb.nnue_.accumulator;
             cb.synchronize();
 
-            bool is_similar = true;
+            bool is_same = true;
             for (int i = 0; i<256; i++){
-                is_similar &= std::abs(computed_acc[true][i] - cb.nnue_.accumulator[true][i]) < accepted_error;
-                is_similar &= std::abs(computed_acc[false][i] - cb.nnue_.accumulator[false][i]) < accepted_error;
+                is_same &= (computed_acc[true][i] == cb.nnue_.accumulator[true][i]);
+                is_same &= (computed_acc[false][i] == cb.nnue_.accumulator[false][i]);
             }
-            CHECK(is_similar);
+            CHECK(is_same);
 
             positions++;
         }
@@ -117,8 +115,6 @@ TEST_SUITE("Nnue Board"){
     }
 
     TEST_CASE("restore_state"){
-        float accepted_error = 0.0001;
-
         NnueBoard cb = NnueBoard();
         chess::Movelist legal_moves;
         int random_number;
@@ -144,12 +140,12 @@ TEST_SUITE("Nnue Board"){
             computed_acc = cb.nnue_.accumulator;
             cb.synchronize();
             
-            bool is_similar = true;
+            bool is_same = true;
             for (int i = 0; i<256; i++){
-                is_similar &= std::abs(computed_acc[true][i] - cb.nnue_.accumulator[true][i]) < accepted_error;
-                is_similar &= std::abs(computed_acc[false][i] - cb.nnue_.accumulator[false][i]) < accepted_error;
+                is_same &= (computed_acc[true][i] == cb.nnue_.accumulator[true][i]);
+                is_same &= (computed_acc[false][i] == cb.nnue_.accumulator[false][i]);
             }
-            CHECK(is_similar);
+            CHECK(is_same);
             positions++;
         }
 

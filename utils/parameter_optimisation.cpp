@@ -54,8 +54,8 @@ inline std::vector<std::string> correct_best_moves = {
     "f4",
 };
 
-float sum(std::vector<float> values){
-    float total = 0;
+int sum(std::vector<int> values){
+    int total = 0;
     for (auto v: values){
         total += v;
     }
@@ -63,19 +63,19 @@ float sum(std::vector<float> values){
 }
 
 template<typename E>
-float benchmark_engine_nodes(E& engine, int depth){
-    std::vector<float> nodes;
+int benchmark_engine_nodes(E& engine, int depth){
+    std::vector<int> nodes;
     
     for (auto fen: fens){
         engine.search(fen, 1'000, depth, depth);
         nodes.push_back(engine.nodes);
     }
-    float avg_nodes = sum(nodes)/fens.size();
+    int avg_nodes = sum(nodes)/fens.size();
     std::cout << "average nodes: " << avg_nodes << "\n";
     return avg_nodes;
 }
 
-void optimize_parameters(std::vector<float> params, int num_iter){
+void optimize_parameters(std::vector<int> params, int num_iter){
     int depth = 7;
     Engine engine = Engine();
 
@@ -91,16 +91,16 @@ void optimize_parameters(std::vector<float> params, int num_iter){
     Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::ENDGAME_SCALE = params[8];
     Engine::SortedMoveGen<chess::movegen::MoveGenType::ALL>::MIDDLEGAME_SCALE = params[9];
 
-    float best_nodes = benchmark_engine_nodes(engine, depth);
-    float initial_nodes = best_nodes;
-    std::vector<float> best_params = params;
+    int best_nodes = benchmark_engine_nodes(engine, depth);
+    int initial_nodes = best_nodes;
+    std::vector<int> best_params = params;
 
-    float node;
+    int node;
     for (int i = 0; i < num_iter; i++){
         engine.transposition_table.clear();
 
         for (int j = 0; j < best_params.size(); j++){
-            float r = rand()%4;
+            int r = rand()%4;
             if ((r == 0)||(r == 1)){
                 r=0;
             } else if (r == 2){

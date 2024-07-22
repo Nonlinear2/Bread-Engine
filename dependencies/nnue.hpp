@@ -146,8 +146,6 @@ class NNUE {
     OutputLayer layer_4 = OutputLayer(); // 32 -> 1
     // output is not scaled back by 64, so scale is 64*127 times true output.
 
-    // convert to float, then divide by 64*127 and apply tanh.
-
     void crelu16(int16_t *input, int8_t *output, int size);
     void crelu32(int32_t *input, int8_t *output, int size);
 
@@ -159,5 +157,5 @@ class NNUE {
 
     void update_accumulator(const modified_features m_features, bool color);
 
-    float run_cropped_nn(bool color);
+    int run_cropped_nn(bool color);
 };

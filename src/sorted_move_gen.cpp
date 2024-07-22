@@ -19,7 +19,7 @@ void SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_score(chess::Move& mov
     const chess::Square to = move.to();
     const chess::Piece piece = board.at(from);
     const chess::Piece to_piece = board.at(to);
-    float score = 0;
+    int score = 0;
 
     if ((piece != chess::Piece::WHITEKING) && (piece != chess::Piece::BLACKKING)){
         score += psm.get_psm(piece, from, to);
@@ -110,9 +110,9 @@ chess::Move SortedMoveGen<MoveGenType>::pop_move(int move_idx){
 
 template<chess::movegen::MoveGenType MoveGenType>
 chess::Move SortedMoveGen<MoveGenType>::pop_best_score(){
-    float score;
+    int score;
     int best_move_idx;
-    float best_move_score = WORST_MOVE_SCORE;
+    int best_move_score = WORST_MOVE_SCORE;
     for (int i = 0; i < size_; i++){
         score = moves_[i].score();
         if (score > best_move_score){

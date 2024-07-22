@@ -30,9 +30,9 @@ class NnueBoard: public chess::Board {
 
     bool is_updatable_move(chess::Move move);
     
-    float evaluate();
+    int evaluate();
 
-    bool probe_wdl(float& eval);
+    bool probe_wdl(int& eval);
 
     bool probe_dtz(chess::Move& move);
 };

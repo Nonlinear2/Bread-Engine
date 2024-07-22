@@ -75,7 +75,7 @@ void TranspositionTable::allocateMB(int new_size){
     entries.shrink_to_fit();
 }
 
-void TranspositionTable::store(uint64_t zobrist, float eval, int depth, chess::Move move, TFlag flag, uint8_t move_number){
+void TranspositionTable::store(uint64_t zobrist, int eval, int depth, chess::Move move, TFlag flag, uint8_t move_number){
     // no need to store the side to move, as it is in the zobrist hash.
     TEntry* entry = &entries[zobrist & (entries.size() - 1)];
 

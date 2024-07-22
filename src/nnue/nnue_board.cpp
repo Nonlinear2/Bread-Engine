@@ -130,11 +130,11 @@ bool NnueBoard::is_updatable_move(chess::Move move){
     return ((move.typeOf() == chess::Move::NORMAL) && (kingSq(sideToMove()) != move.from()));
 }
 
-float NnueBoard::evaluate(){
+int NnueBoard::evaluate(){
     return nnue_.run_cropped_nn(sideToMove() == chess::Color::WHITE);
 }
 
-bool NnueBoard::probe_wdl(float& eval){
+bool NnueBoard::probe_wdl(int& eval){
     if (occ().count() > 5){
         return false;
     }

@@ -12,7 +12,7 @@ TEST_SUITE("Transposition Table"){
                                              chess::Square(chess::Square::underlying::SQ_E4),
                                              chess::PieceType::PAWN);
         for (int zobrist = 0; zobrist < 1'000; zobrist++){
-            tt.store(zobrist, static_cast<float>(zobrist)/1'000, zobrist, best, TFlag::EXACT, 10);
+            tt.store(zobrist, zobrist/1'000, zobrist, best, TFlag::EXACT, 10);
         }
 
         bool is_hit;
@@ -20,7 +20,7 @@ TEST_SUITE("Transposition Table"){
             TEntry* transposition = tt.probe(is_hit, zobrist);
             if (is_hit){
                 CHECK(transposition->best_move == best);
-                CHECK(transposition->evaluation == static_cast<float>(zobrist)/1'000);
+                CHECK(transposition->evaluation == zobrist/1'000);
                 CHECK(transposition->depth == static_cast<uint8_t>(zobrist));
             }
         }

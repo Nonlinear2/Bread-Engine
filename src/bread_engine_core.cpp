@@ -1,6 +1,6 @@
 #include "bread_engine_core.hpp"
 
-bool Engine::try_outcome_eval(float& eval){
+bool Engine::try_outcome_eval(int& eval){
     // chess::GameResult outcome = inner_board.isGameOver().second;
     
     // we dont want history dependent data to be stored in the TT.
@@ -27,8 +27,8 @@ bool Engine::try_outcome_eval(float& eval){
 }
 
 chess::Move Engine::minimax_root(int depth, int color){
-    float alpha = WORST_EVAL;
-    float beta = BEST_EVAL;
+    int alpha = WORST_EVAL;
+    int beta = BEST_EVAL;
     chess::Move best_move = NO_MOVE;
     uint64_t zobrist_hash = inner_board.hash();
     inner_board.synchronize();
@@ -58,7 +58,7 @@ chess::Move Engine::minimax_root(int depth, int color){
 
     sorted_move_gen.generate_moves();
     
-    float pos_eval;
+    int pos_eval;
     chess::Move move;
     while(sorted_move_gen.next(move)){
         bool is_capture = inner_board.isCapture(move);
@@ -89,7 +89,7 @@ chess::Move Engine::minimax_root(int depth, int color){
             }
         }
         
-        if (is_win(pos_eval)) pos_eval = increment_mate_ply(pos_eval);
+        if (is_mate(pos_eval)) pos_eval = increment_mate_ply(pos_eval);
 
         move.setScore(pos_eval);
 
@@ -107,28 +107,28 @@ chess::Move Engine::minimax_root(int depth, int color){
 // to make the engine prefer faster checkmates instead of stalling,
 // we decrease the eval if the checkmate is deeper in the search tree.
 
-float Engine::increment_mate_ply(float eval){
+int Engine::increment_mate_ply(int eval){
     return (is_win(eval) ? 1 : -1)*(std::abs(eval) - 1);
 }
 
-bool Engine::is_mate(float eval){
-    return (std::abs(eval) >= 1);
+bool Engine::is_mate(int eval){
+    return (std::abs(eval) >= 80'000);
 }
 
-bool Engine::is_win(float eval){
-    return (eval >= 1);
+bool Engine::is_win(int eval){
+    return (eval >= 80'000);
 }
 
-float Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
+int Engine::get_think_time(int time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
     float target;
     float move_num = num_moves_out_of_book < 10 ? static_cast<float>(num_moves_out_of_book) : 10;
     float factor = 2 -  move_num / 10;
     if (num_moves_until_time_control == 0){
-        target = time_left / 30;
+        target = static_cast<float>(time_left) / 30;
     } else {
-        target = time_left / (num_moves_until_time_control+5);
+        target = static_cast<float>(time_left) / (num_moves_until_time_control+5);
     }
-    return factor*target + 0.9F*increment;
+    return static_cast<int>(factor*target + 0.9F*increment);
 }
 
 std::pair<std::string, std::string> Engine::get_pv_pmove(std::string fen){
@@ -165,7 +165,7 @@ chess::Move Engine::search(SearchLimit limit){
 chess::Move Engine::iterative_deepening(SearchLimit limit){
     
     this->limit = limit;
-    start_time = now();
+    start_time = std::chrono::high_resolution_clock::now();
 
     std::string initial_fen = inner_board.getFen();
 
@@ -199,18 +199,18 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
             ponder_move = pv_pmove.second;
         }
         update_run_time();
+        if (run_time == 0) run_time = 1; // avoid division by 0;
         // do not count interrupted searches in depth
-        current_depth -= interrupt_flag;
-        std::cout << "info depth " << current_depth;
+        std::cout << "info depth " << current_depth - interrupt_flag;
         if (is_mate(best_move.score())){
             int ply = -std::abs(best_move.score()) + MATE_EVAL;
             std::cout << " score mate " << (is_win(best_move.score()) ? 1: -1)*(ply/2 + (ply%2 != 0)); 
         } else {
-            std::cout << " score cp " << static_cast<int>(best_move.score()*1111);
+            std::cout << " score cp " << static_cast<int>(std::tanh(static_cast<float>(best_move.score())/(64*127))*1111);
         }
         std::cout << " nodes " << nodes;
-        std::cout << " nps " << static_cast<int>(nodes/run_time*1000);
-        std::cout << " time " << static_cast<int>(run_time);
+        std::cout << " nps " << nodes*1000/run_time;
+        std::cout << " time " << run_time;
         std::cout << " hashfull " << transposition_table.hashfull();
         std::cout << " pv" << pv << std::endl;
         
@@ -250,11 +250,11 @@ bool Engine::update_interrupt_flag(){
 }
 
 void Engine::update_run_time(){
-    run_time = std::chrono::duration<float, std::milli>(now() - start_time).count();
+    run_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time).count();
 };
 
 template<bool pv>
-float Engine::negamax(int depth, int color, float alpha, float beta){
+int Engine::negamax(int depth, int color, int alpha, int beta){
     assert((alpha < BEST_EVAL) && (beta > WORST_EVAL));
     nodes++;
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
@@ -273,7 +273,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         return qsearch<pv>(alpha, beta, color, QSEARCH_MAX_DEPTH);
     }
 
-    const float initial_alpha = alpha;
+    const int initial_alpha = alpha;
     uint64_t zobrist_hash = inner_board.hash();
 
     SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board, depth);
@@ -304,15 +304,15 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         if (transposition->best_move != NO_MOVE) sorted_move_gen.set_tt_move(transposition->best_move);
     }
 
-    float static_eval = inner_board.evaluate();
+    int static_eval = inner_board.evaluate();
     // reverse futility pruning
-    if (!pv && (depth < 5) && (static_eval - static_cast<float>(depth)/10 - 0.2 >= beta)){
+    if (!pv && (depth < 5) && (static_eval - depth*733 - 1479 >= beta)){
         return beta;
     }
 
     // null move pruning
     // maybe check for zugzwang?
-    float null_move_eval;
+    int null_move_eval;
     if (!pv && 
         (depth > 4) &&
         !inner_board.inCheck() && 
@@ -321,13 +321,13 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
     {
         int R = 2 + (static_eval >= beta);
         inner_board.makeNullMove();
-        null_move_eval = -negamax<false>(depth - R, -color, -beta, -beta+1e-6);
+        null_move_eval = -negamax<false>(depth - R, -color, -beta, -beta+1);
         inner_board.unmakeNullMove();
         if (null_move_eval >= beta) return beta;
     }
 
     sorted_move_gen.generate_moves();
-    float max_eval = WORST_EVAL;
+    int max_eval = WORST_EVAL;
 
     if (sorted_move_gen.is_empty()){ // avoid calling expensive try_outcome_eval function
         // If board is in check, it is checkmate
@@ -344,7 +344,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
 
     chess::Move best_move;
     chess::Move move;
-    float pos_eval;
+    int pos_eval;
     while (sorted_move_gen.next(move)){
         bool is_capture = inner_board.isCapture(move);
         inner_board.update_state(move);
@@ -412,20 +412,19 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
 }
 
 template<bool pv>
-float Engine::qsearch(float alpha, float beta, int color, int depth){
+int Engine::qsearch(int alpha, int beta, int color, int depth){
     // assert(pv || ((alpha - (beta-1e-6) < 1e-6) && (alpha - (beta-1e-6) > -1e-6)));
     nodes++;
 
+    int stand_pat;
+    
     // tablebase probe
-    float wdl_eval;
-    if (inner_board.probe_wdl(wdl_eval)){
-        return wdl_eval;
+    if (inner_board.probe_wdl(stand_pat)){
+        return stand_pat;
     }
 
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = inner_board.hash();
-
-    float stand_pat;
 
     // first we check for transposition. If it is outcome, it should have already been stored
     // with an exact flag, so the stand pat will be correct anyways.
@@ -489,15 +488,15 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
 
     alpha = std::max(alpha, stand_pat);
 
-    float max_eval = stand_pat;
-    float pos_eval;
+    int max_eval = stand_pat;
+    int pos_eval;
     chess::Move move;
     chess::Move best_move = NO_MOVE;
     while (sorted_capture_gen.next(move)){
         // delta pruning
         // move.score() is calculated with set_capture_score which is material difference.
         // 0.8 is the equivalent of a queen, as a safety margin
-        if (stand_pat + move.score()/10 + 0.8 < alpha){ // division by 10 is to convert from pawn to "engine" centipawns.
+        if (stand_pat + move.score()*733 + 7300 < alpha){ // division by 10 is to convert from pawn to "engine" centipawns.
             continue;
         }
 
