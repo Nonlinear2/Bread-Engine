@@ -30,6 +30,12 @@ class Engine {
 
     bool try_outcome_eval(float& eval);
 
+    float increment_mate_ply(float eval);
+
+    bool is_mate(float eval);
+
+    bool is_win(float eval);
+
     float get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control, int increment);
 
     void update_run_time();

@@ -20,7 +20,7 @@ bool Engine::try_outcome_eval(float& eval){
 
     if (movelist.empty()){
         // checkmate/stalemate.
-        eval = inner_board.inCheck() ? -1 : 0;
+        eval = inner_board.inCheck() ? -MATE_EVAL : 0;
         return true;
     }
     return false;
@@ -89,6 +89,8 @@ chess::Move Engine::minimax_root(int depth, int color){
             }
         }
         
+        if (is_win(pos_eval)) pos_eval = increment_mate_ply(pos_eval);
+
         move.setScore(pos_eval);
 
         if (pos_eval > alpha){
@@ -96,9 +98,25 @@ chess::Move Engine::minimax_root(int depth, int color){
             alpha = pos_eval;
         }
     }
+    
     transposition_table.store(zobrist_hash, alpha, depth, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
 
     return best_move;
+}
+
+// to make the engine prefer faster checkmates instead of stalling,
+// we decrease the eval if the checkmate is deeper in the search tree.
+
+float Engine::increment_mate_ply(float eval){
+    return (is_win(eval) ? 1 : -1)*(std::abs(eval) - 1);
+}
+
+bool Engine::is_mate(float eval){
+    return (std::abs(eval) >= 1);
+}
+
+bool Engine::is_win(float eval){
+    return (eval >= 1);
 }
 
 float Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
@@ -180,11 +198,16 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
         if (pv_pmove.second.size() > 0){
             ponder_move = pv_pmove.second;
         }
-
         update_run_time();
         // do not count interrupted searches in depth
-        std::cout << "info depth " << current_depth - interrupt_flag;
-        std::cout << " score cp " << static_cast<int>(best_move.score()*1111);
+        current_depth -= interrupt_flag;
+        std::cout << "info depth " << current_depth;
+        if (is_mate(best_move.score())){
+            int ply = -std::abs(best_move.score()) + MATE_EVAL;
+            std::cout << " score mate " << (is_win(best_move.score()) ? 1: -1)*(ply/2 + (ply%2 != 0)); 
+        } else {
+            std::cout << " score cp " << static_cast<int>(best_move.score()*1111);
+        }
         std::cout << " nodes " << nodes;
         std::cout << " nps " << static_cast<int>(nodes/run_time*1000);
         std::cout << " time " << static_cast<int>(run_time);
@@ -194,8 +217,7 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
 
         // should the search really stop if there is a mate for the oponent?
         if ((interrupt_flag) ||
-            (best_move.score() >= 1) || // checkmate
-            (best_move.score() <= -1) || // checkmate
+            (is_mate(best_move.score())) ||
             ((limit.type == LimitType::Depth) && (current_depth == limit.value)) ||
             (current_depth == ENGINE_MAX_DEPTH)) break;
         
@@ -233,6 +255,7 @@ void Engine::update_run_time(){
 
 template<bool pv>
 float Engine::negamax(int depth, int color, float alpha, float beta){
+    assert((alpha < BEST_EVAL) && (beta > WORST_EVAL));
     nodes++;
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
     if (interrupt_flag || ((depth >= 5) && update_interrupt_flag())){
@@ -308,10 +331,8 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
 
     if (sorted_move_gen.is_empty()){ // avoid calling expensive try_outcome_eval function
         // If board is in check, it is checkmate
-        // to make the engine prefer faster checkmates instead of stalling,
-        // we decrease the eval if the checkmate is higher in the search tree.
         // if there are no legal moves and it's not check, it is stalemate so eval is 0
-        max_eval = inner_board.inCheck() ? -(1+depth) : 0;
+        max_eval = inner_board.inCheck() ? -MATE_EVAL : 0;
         // we know this eval is exact at any depth, but 
         // we also don't want this eval to pollute the transposition table.
         // the full move number will make sure it is replaced at some point.
@@ -384,6 +405,7 @@ float Engine::negamax(int depth, int color, float alpha, float beta){
         // eval is between initial alpha and beta. so search was completed without cutoffs, and is exact
         node_type = TFlag::EXACT;
     }
+    if (is_mate(max_eval)) max_eval = increment_mate_ply(max_eval);
     transposition_table.store(zobrist_hash, max_eval, depth, best_move, node_type, static_cast<uint8_t>(inner_board.fullMoveNumber()));
 
     return max_eval;
@@ -413,12 +435,12 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
     if (is_hit){
         switch (transposition->flag()){
             case TFlag::EXACT:
+                stand_pat = transposition->evaluation;
                 if (transposition->depth() == 0){ // outcomes are stored at depth 255
-                    stand_pat = transposition->evaluation;
                     // we can already check for cutoff
                     if (stand_pat >= beta) return stand_pat;
                 } else {
-                    return transposition->evaluation;
+                    return stand_pat;
                 }
                 break;
             case TFlag::LOWER_BOUND:
@@ -489,12 +511,12 @@ float Engine::qsearch(float alpha, float beta, int color, int depth){
         }
         alpha = std::max(alpha, pos_eval);
         if (alpha >= beta){ // only check for cutoffs when alpha gets updated.
-            if (inner_board.halfMoveClock() + depth >= 100) return max_eval; // avoid storing history dependant evals.
-            transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-            return max_eval;
+            break;
         }
     }
     if (inner_board.halfMoveClock() + depth >= 100) return max_eval; // avoid storing history dependant evals.
     transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+    
+    if (is_mate(max_eval)) max_eval = increment_mate_ply(max_eval);
     return max_eval;
 }

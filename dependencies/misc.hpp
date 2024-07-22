@@ -9,8 +9,10 @@
 #define BEST_MOVE_SCORE 1000
 #define WORST_MOVE_SCORE -1000
 
-#define WORST_EVAL -100
-#define BEST_EVAL 100
+#define MATE_EVAL 100
+
+#define WORST_EVAL -1000
+#define BEST_EVAL 1000
 
 class CircularBuffer3 {
     public:
