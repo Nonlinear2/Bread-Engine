@@ -214,14 +214,13 @@ bool NnueBoard::probe_dtz(chess::Move& move){
     }
     switch(TB_GET_WDL(TB_hit)){
         case TB_WIN:
-            move.setScore(1000);
+            move.setScore(TB_EVAL);
             break;
         case TB_LOSS:
-            move.setScore(-1000);
+            move.setScore(-TB_EVAL);
             break;
         default: // TB_DRAW, TB_CURSED_WIN, TB_BLESSED_LOSS
             move.setScore(0);
-            break;
     }
     return true;
 }

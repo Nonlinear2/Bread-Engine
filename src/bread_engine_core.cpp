@@ -119,6 +119,11 @@ bool Engine::is_win(int eval){
     return (eval >= 80'000);
 }
 
+int Engine::get_mate_in_moves(int eval){
+    int ply = -std::abs(eval) + MATE_EVAL;
+    return (is_win(eval) ? 1: -1)*(ply/2 + (ply%2 != 0)); 
+}
+
 int Engine::get_think_time(int time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
     float target;
     float move_num = num_moves_out_of_book < 10 ? static_cast<float>(num_moves_out_of_book) : 10;
@@ -184,6 +189,13 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
 
     chess::Move tb_move;
     if (inner_board.probe_dtz(tb_move)){
+        update_run_time();
+        std::cout << "info depth 0";
+        std::cout << " score cp " << tb_move.score();
+        std::cout << " nodes 0 nps 0";
+        std::cout << " time " << run_time;
+        std::cout << " hashfull " << transposition_table.hashfull();
+        std::cout << " pv " << chess::uci::moveToUci(tb_move) << std::endl;
         std::cout << "bestmove " << chess::uci::moveToUci(tb_move) << std::endl;
         return tb_move;
     };
@@ -203,8 +215,7 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
         // do not count interrupted searches in depth
         std::cout << "info depth " << current_depth - interrupt_flag;
         if (is_mate(best_move.score())){
-            int ply = -std::abs(best_move.score()) + MATE_EVAL;
-            std::cout << " score mate " << (is_win(best_move.score()) ? 1: -1)*(ply/2 + (ply%2 != 0)); 
+            std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
         } else {
             std::cout << " score cp " << static_cast<int>(std::tanh(static_cast<float>(best_move.score())/(64*127))*1111);
         }

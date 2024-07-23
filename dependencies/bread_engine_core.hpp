@@ -31,6 +31,8 @@ class Engine {
 
     bool is_win(int eval);
 
+    int get_mate_in_moves(int eval);
+    
     int get_think_time(int time_left, int num_moves_out_of_book, int num_moves_until_time_control, int increment);
 
     void update_run_time();

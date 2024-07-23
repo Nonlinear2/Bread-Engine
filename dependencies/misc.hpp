@@ -9,6 +9,8 @@
 #define BEST_MOVE_SCORE 1000
 #define WORST_MOVE_SCORE -1000
 
+#define TB_EVAL 50'000
+
 #define MATE_EVAL 90'000
 
 #define WORST_EVAL -100'000

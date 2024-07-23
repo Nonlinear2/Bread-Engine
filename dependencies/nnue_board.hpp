@@ -6,6 +6,7 @@
 #include "tbprobe.hpp"
 #include "piece_square_tables.hpp"
 #include "nnue.hpp"
+#include "misc.hpp"
 
 class NnueBoard: public chess::Board {
     public:
