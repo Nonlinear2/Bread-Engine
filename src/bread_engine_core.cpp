@@ -304,9 +304,9 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         if (transposition->best_move != NO_MOVE) sorted_move_gen.set_tt_move(transposition->best_move);
     }
 
-    int static_eval = inner_board.evaluate();
+    int static_eval = is_hit ? transposition->evaluation : inner_board.evaluate();
     // reverse futility pruning
-    if (!pv && (depth < 5) && (static_eval - depth*733 - 1479 >= beta)){
+    if (!pv && (depth < 5) && (static_eval - depth*800 - 1500 >= beta)){
         return beta;
     }
 
@@ -356,6 +356,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         int new_depth = depth-1;
         new_depth += inner_board.inCheck();
         new_depth -= ((sorted_move_gen.index() > 1) && (depth > 2) && (!is_capture) && (!inner_board.inCheck()));
+        new_depth -= (depth > 5) && (!is_hit); // IIR
 
         if (pv && (sorted_move_gen.index() == 0)){
             pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha);
@@ -413,7 +414,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
 
 template<bool pv>
 int Engine::qsearch(int alpha, int beta, int color, int depth){
-    // assert(pv || ((alpha - (beta-1e-6) < 1e-6) && (alpha - (beta-1e-6) > -1e-6)));
+    // assert(pv || ((alpha == (beta-1)) && (alpha == (beta-1))));
     nodes++;
 
     int stand_pat;
@@ -495,8 +496,8 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
     while (sorted_capture_gen.next(move)){
         // delta pruning
         // move.score() is calculated with set_capture_score which is material difference.
-        // 0.8 is the equivalent of a queen, as a safety margin
-        if (stand_pat + move.score()*733 + 7300 < alpha){ // division by 10 is to convert from pawn to "engine" centipawns.
+        // 7300 is the equivalent of a queen, as a safety margin
+        if (stand_pat + move.score()*800 + 8000 < alpha){ // multiplication by 733 is to convert from pawn to "engine" centipawns.
             continue;
         }
 

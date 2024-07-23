@@ -73,7 +73,7 @@ void benchmark_nn(){
     for (int i = 0; i < num_iter; i++){
         board.evaluate();
     }
-    int mean = std::chrono::duration<int, std::micro>(std::chrono::high_resolution_clock::now() - start).count()/num_iter;
+    int mean = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count()/num_iter;
     std::cout << "time taken: " << mean << " microseconds per call";
     std::cout << "============================== \n";
 }
@@ -145,7 +145,7 @@ void benchmark_engine_nodes(int depth){
         std::cout << "returned: " << bests[i] << " // correct: " << correct_best_moves[i] << "\n";
         correct += (correct_best_moves[i] == bests[i]);
     }
-    std::cout << "correct moves: " << correct << "/" << fens.size() << " // " << correct/fens.size() * 100 << "%\n";
+    std::cout << "correct moves: " << correct << "/" << fens.size() << " // " << static_cast<float>(correct)/fens.size() * 100 << "%\n";
     std::cout << "============================== \n";
 }
 
