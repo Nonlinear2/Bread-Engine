@@ -26,6 +26,7 @@ class SortedMoveGen: public chess::Movelist {
     static inline int ENDGAME_PIECE_COUNT = 11;
 
     static inline std::array<CircularBuffer3, ENGINE_MAX_DEPTH> killer_moves = {};
+    // static inline History history = History();
 
     NnueBoard& board;
 

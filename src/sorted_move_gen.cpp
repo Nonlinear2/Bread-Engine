@@ -42,6 +42,8 @@ void SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_score(chess::Move& mov
     if (killer_moves[depth].in_buffer(move)){
         score += KILLER_SCORE;
     }
+
+    // score += history.get_history_bonus(from.index(), to.index(), board.sideToMove() == chess::Color::WHITE)/55;
     move.setScore(score);
 }
 

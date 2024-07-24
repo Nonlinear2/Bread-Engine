@@ -16,6 +16,8 @@
 #define WORST_EVAL -100'000
 #define BEST_EVAL 100'000
 
+#define MAX_HISTORY_BONUS 10'000
+
 class CircularBuffer3 {
     public:
     int curr_idx = 0;
@@ -40,3 +42,13 @@ class SearchLimit {
     LimitType type;
     int value;
 };
+
+// class History {
+//     public:
+//     void update(chess::Move move, int depth, bool color);
+//     void clear();
+//     int get_history_bonus(int from, int to, bool color);
+
+//     private:
+//     std::array<std::array<int, 64*64>, 2> history = {};
+// };

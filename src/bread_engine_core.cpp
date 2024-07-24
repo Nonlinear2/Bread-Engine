@@ -180,6 +180,8 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
     chess::Move best_move = NO_MOVE;
 
     SortedMoveGen<chess::movegen::MoveGenType::ALL>::clear_killer_moves();
+    // SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.clear();
+
 
     nodes = 0;
 
@@ -364,10 +366,11 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         // depth > 2 is to make sure the new depth is not less than 0.
         // (!inner_board.inCheck()) is to see if the move gives check. 
         // (we already updated the inner board so we only need to check if it is check)
+        bool is_killer = SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
         int new_depth = depth-1;
         new_depth += inner_board.inCheck();
-        new_depth -= ((sorted_move_gen.index() > 1) && (depth > 2) && (!is_capture) && (!inner_board.inCheck()));
-        new_depth -= (depth > 5) && (!is_hit); // IIR
+        new_depth -= ((sorted_move_gen.index() > 1) && (depth > 2) && (!is_capture) && (!inner_board.inCheck())) && (!is_killer));
+        new_depth -= (depth > 5) && (!is_hit) && (!is_killer); // IIR
 
         if (pv && (sorted_move_gen.index() == 0)){
             pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha);
@@ -389,6 +392,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
 
         alpha = std::max(alpha, pos_eval);
         if (beta <= alpha){
+            // if (!is_capture) SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.update(move, depth, color);
             SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].add_move(move);
             break;
         }

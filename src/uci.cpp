@@ -19,6 +19,7 @@ bool UCIAgent::process_uci_command(std::string command){
 
     } else if (first == "ucinewgame"){
         engine.transposition_table.clear();
+        // SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.clear();
         
     } else if (first == "position"){
         process_position(parsed_command);
@@ -37,7 +38,12 @@ bool UCIAgent::process_uci_command(std::string command){
         interrupt_if_searching();
         tb_free();
         return 0;
-
+    // } else if (first == "displayhistory"){
+    //     std::cout << SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.get_history_bonus(static_cast<int>(chess::Square::underlying::SQ_E2), static_cast<int>(chess::Square::underlying::SQ_E4), true) << std::endl;
+    //     std::cout << SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.get_history_bonus(static_cast<int>(chess::Square::underlying::SQ_A2), static_cast<int>(chess::Square::underlying::SQ_G4), true) << std::endl;
+    //     std::cout << SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.get_history_bonus(static_cast<int>(chess::Square::underlying::SQ_C4), static_cast<int>(chess::Square::underlying::SQ_B3), true) << std::endl;
+    //     std::cout << SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.get_history_bonus(static_cast<int>(chess::Square::underlying::SQ_A1), static_cast<int>(chess::Square::underlying::SQ_B1), true) << std::endl;
+    //     std::cout << SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.get_history_bonus(static_cast<int>(chess::Square::underlying::SQ_E1), static_cast<int>(chess::Square::underlying::SQ_G1), true) << std::endl;
     } else {
         std::cout << "unrecognized command: " << command << "\n";
     }

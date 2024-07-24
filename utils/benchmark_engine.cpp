@@ -111,7 +111,7 @@ void benchmark_engine(int depth){
         std::cout << "returned: " << bests[i] << " // correct: " << correct_best_moves[i] << "\n";
         correct += (correct_best_moves[i] == bests[i]);
     }
-    std::cout << "correct moves: " << correct << "/" << fens.size() << " // " << correct/fens.size() * 100 << "%\n";
+    std::cout << "correct moves: " << correct << "/" << fens.size() << " // " << static_cast<float>(correct)/fens.size() * 100 << "%\n";
     std::cout << "============================== \n";
 }
 
@@ -150,7 +150,7 @@ void benchmark_engine_nodes(int depth){
 }
 
 int main(){
-    benchmark_engine(9);
+    benchmark_engine(10);
     return 0;
 }
 
