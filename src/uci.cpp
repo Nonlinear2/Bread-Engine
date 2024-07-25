@@ -19,7 +19,7 @@ bool UCIAgent::process_uci_command(std::string command){
 
     } else if (first == "ucinewgame"){
         engine.transposition_table.clear();
-        // SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.clear();
+        SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.clear();
         
     } else if (first == "position"){
         process_position(parsed_command);

@@ -3,7 +3,6 @@
 // This is a circular buffer to implement FIFO for killer moves
 void CircularBuffer3::add_move(chess::Move move){
     if (data[curr_idx] != move.move()) data[curr_idx] = move.move(); // avoid storing the same move multiple times.
-    // data[curr_idx] = move.move();
     curr_idx++;
     curr_idx %= 3;
 }

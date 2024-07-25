@@ -180,8 +180,6 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
     chess::Move best_move = NO_MOVE;
 
     SortedMoveGen<chess::movegen::MoveGenType::ALL>::clear_killer_moves();
-    // SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.clear();
-
 
     nodes = 0;
 
@@ -318,6 +316,12 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     }
 
     int static_eval = is_hit ? transposition->evaluation : inner_board.evaluate();
+    // razoring
+    if ((!pv) && (depth < 5) && static_eval + depth*800 + 1500 < alpha){ 
+        static_eval = qsearch<false>(alpha, beta, color, QSEARCH_MAX_DEPTH); // we update static eval to the better qsearch eval. //? tweak depth?
+        if (static_eval <= alpha) return static_eval;
+    }
+
     // reverse futility pruning
     if (!pv && (depth < 5) && (static_eval - depth*800 - 1500 >= beta)){
         return beta;
