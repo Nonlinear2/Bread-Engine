@@ -21,12 +21,12 @@ template<chess::movegen::MoveGenType MoveGenType>
 class SortedMoveGen: public chess::Movelist {
     public:
     static constexpr PieceSquareMaps psm = PieceSquareMaps();
-    static inline int KILLER_SCORE = 159;
+    static inline int KILLER_SCORE = 149;
     static inline int MATERIAL_CHANGE_MULTIPLIER = 119;
     static inline int ENDGAME_PIECE_COUNT = 11;
 
     static inline std::array<CircularBuffer3, ENGINE_MAX_DEPTH> killer_moves = {};
-    // static inline History history = History();
+    static inline History history = History();
 
     NnueBoard& board;
 
@@ -38,8 +38,10 @@ class SortedMoveGen: public chess::Movelist {
     bool is_empty();
     int index();
     static void clear_killer_moves();
+    void update_history(chess::Move move, int depth, bool color);
 
     private:
+    int initial_size;
     int depth;
     int move_idx = -1;
     int num_remaining_moves;

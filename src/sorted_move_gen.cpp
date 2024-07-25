@@ -9,6 +9,7 @@ SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::SortedMoveGen(NnueBoard& bo
 template<chess::movegen::MoveGenType MoveGenType>
 void SortedMoveGen<MoveGenType>::generate_moves(){
     chess::movegen::legalmoves<MoveGenType>(*this, board);
+    initial_size = size_;
 }
 
 // set move score to be sorted later
@@ -43,7 +44,7 @@ void SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_score(chess::Move& mov
         score += KILLER_SCORE;
     }
 
-    // score += history.get_history_bonus(from.index(), to.index(), board.sideToMove() == chess::Color::WHITE)/55;
+    score += history.get_history_bonus(from.index(), to.index(), board.sideToMove() == chess::Color::WHITE)/100; // cant be less than worst move score
     move.setScore(score);
 }
 
@@ -135,6 +136,18 @@ inline int SortedMoveGen<MoveGenType>::index(){return move_idx; }
 template<>
 void SortedMoveGen<chess::movegen::MoveGenType::ALL>::clear_killer_moves(){
     std::fill(killer_moves.begin(), killer_moves.end(), CircularBuffer3());
+}
+
+template<>
+void SortedMoveGen<chess::movegen::MoveGenType::ALL>::update_history(chess::Move move, int depth, bool color){
+    int bonus = std::min(depth*depth*32 + 20, 1000);
+    for (int i = 0; i < initial_size; i++){
+        if (moves_[i] == move){
+            history.history[color][move.from().index()*64 + move.to().index()] += (bonus - history.history[color][move.from().index()*64 + move.to().index()] * std::abs(bonus) / MAX_HISTORY_BONUS);
+        } else {
+            if (!board.isCapture(moves_[i])) history.history[color][moves_[i].from().index()*64 + moves_[i].to().index()] += -bonus/initial_size - history.history[color][moves_[i].from().index()*64 + moves_[i].to().index()] * std::abs(bonus/initial_size) / MAX_HISTORY_BONUS;
+        }
+    }
 }
 
 template class SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>;

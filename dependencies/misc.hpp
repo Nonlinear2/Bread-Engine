@@ -43,12 +43,10 @@ class SearchLimit {
     int value;
 };
 
-// class History {
-//     public:
-//     void update(chess::Move move, int depth, bool color);
-//     void clear();
-//     int get_history_bonus(int from, int to, bool color);
+class History {
+    public:
+    void clear();
+    int get_history_bonus(int from, int to, bool color);
 
-//     private:
-//     std::array<std::array<int, 64*64>, 2> history = {};
-// };
+    std::array<std::array<int, 64*64>, 2> history = {};
+};

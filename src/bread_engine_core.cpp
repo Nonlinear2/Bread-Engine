@@ -369,8 +369,8 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         bool is_killer = SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
         int new_depth = depth-1;
         new_depth += inner_board.inCheck();
-        new_depth -= ((sorted_move_gen.index() > 1) && (depth > 2) && (!is_capture) && (!inner_board.inCheck())) && (!is_killer));
-        new_depth -= (depth > 5) && (!is_hit) && (!is_killer); // IIR
+        new_depth -= ((sorted_move_gen.index() > 1) && (depth > 2) && (!is_capture) && (!inner_board.inCheck()) && (!is_killer));
+        new_depth -= (depth > 5) && (!is_hit) && (!is_killer); // IIR /// depth > 3
 
         if (pv && (sorted_move_gen.index() == 0)){
             pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha);
@@ -392,7 +392,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
 
         alpha = std::max(alpha, pos_eval);
         if (beta <= alpha){
-            // if (!is_capture) SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.update(move, depth, color);
+            if (!is_capture) sorted_move_gen.update_history(move, depth, color);
             SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].add_move(move);
             break;
         }
