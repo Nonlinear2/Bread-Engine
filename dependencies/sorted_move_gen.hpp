@@ -7,16 +7,6 @@
 #include "misc.hpp"
 #include "chess.hpp"
 
-const std::vector<int> piece_value = {
-    1, // pawn
-    3, // knight
-    3, // bishop
-    5, // rook
-    9, // queen
-    2, // king
-    0, // none
-};
-
 template<chess::movegen::MoveGenType MoveGenType>
 class SortedMoveGen: public chess::Movelist {
     public:

@@ -18,6 +18,18 @@
 
 #define MAX_HISTORY_BONUS 10'000
 
+#define SEE_KING_VALUE 1'000
+
+const std::vector<int> piece_value = {
+    1, // pawn
+    3, // knight
+    3, // bishop
+    5, // rook
+    9, // queen
+    2, // king
+    0, // none
+};
+
 class CircularBuffer3 {
     public:
     int curr_idx = 0;
@@ -50,3 +62,8 @@ class History {
 
     std::array<std::array<int, 64*64>, 2> history = {};
 };
+
+namespace SEE {
+bool evaluate(const chess::Board& board, chess::Move move, int threshold);
+chess::PieceType pop_lva(const chess::Board& board, chess::Bitboard& occupied, const chess::Bitboard& attackers, chess::Color color);
+} // namespace SEE

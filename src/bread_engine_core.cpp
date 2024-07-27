@@ -1,30 +1,7 @@
 #include "bread_engine_core.hpp"
 
-bool Engine::try_outcome_eval(int& eval){
-    // chess::GameResult outcome = inner_board.isGameOver().second;
-    
-    // we dont want history dependent data to be stored in the TT.
-    // the evaluation stored in the TT should only depend on the
-    // position on the board and not how we got there, otherwise these evals would be reused
-    // incorrectly.
-    // here, threefold repetition is already handled and resulting evals
-    // are not stored in the TT.
-    // the fifty move rule is not yet supported
-    if (inner_board.isInsufficientMaterial()){
-        eval = 0;
-        return true;
-    }
-
-    chess::Movelist movelist;
-    chess::movegen::legalmoves(movelist, inner_board);
-
-    if (movelist.empty()){
-        // checkmate/stalemate.
-        eval = inner_board.inCheck() ? -MATE_EVAL : 0;
-        return true;
-    }
-    return false;
-}
+// TODO: tweak qsearch depth:
+// try qsearch depth reductions and search depth extensions when in check
 
 chess::Move Engine::minimax_root(int depth, int color){
     int alpha = WORST_EVAL;
@@ -364,16 +341,16 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     int pos_eval;
     while (sorted_move_gen.next(move)){
         bool is_capture = inner_board.isCapture(move);
+        bool is_killer = SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
+        
         inner_board.update_state(move);
         
-        // late move reductions:
-        // depth > 2 is to make sure the new depth is not less than 0.
-        // (!inner_board.inCheck()) is to see if the move gives check. 
-        // (we already updated the inner board so we only need to check if it is check)
-        bool is_killer = SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
+        bool in_check = inner_board.inCheck();
+
+        // late move reductions
         int new_depth = depth-1;
-        new_depth += inner_board.inCheck();
-        new_depth -= ((sorted_move_gen.index() > 1) && (depth > 2) && (!is_capture) && (!inner_board.inCheck()) && (!is_killer));
+        new_depth += in_check;
+        new_depth -= ((sorted_move_gen.index() > 1) && (depth > 2) && (!is_capture) && (!in_check) && (!is_killer));
         new_depth -= (depth > 5) && (!is_hit) && (!is_killer); // IIR /// depth > 3
 
         if (pv && (sorted_move_gen.index() == 0)){
@@ -487,7 +464,7 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
     if (!is_hit){
         // if it is hit, no need to check for outcome, as it wouldn't be stored in the
         // transposition table at a 0 depth. 
-        if (sorted_capture_gen.is_empty() && try_outcome_eval(stand_pat)){ // only generate non captures?
+        if (sorted_capture_gen.is_empty() && inner_board.try_outcome_eval(stand_pat)){ // only generate non captures?
             transposition_table.store(zobrist_hash, stand_pat, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
             return stand_pat;
         }
@@ -515,10 +492,12 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
     while (sorted_capture_gen.next(move)){
         // delta pruning
         // move.score() is calculated with set_capture_score which is material difference.
-        // 7300 is the equivalent of a queen, as a safety margin
-        if (stand_pat + move.score()*800 + 8000 < alpha){ // multiplication by 733 is to convert from pawn to "engine" centipawns.
-            continue;
-        }
+        // 8000 is the equivalent of a queen, as a safety margin
+        if (stand_pat + move.score()*800 + 8000 < alpha) continue; // multiplication by 800 is to convert from pawn to "engine centipawns".
+
+        // SEE pruning
+        if (!SEE::evaluate(inner_board, move, (alpha-stand_pat)/800 - 3)) continue;
+
 
         inner_board.update_state(move);
         pos_eval = -qsearch<pv>(-beta, -alpha, -color, depth-1);

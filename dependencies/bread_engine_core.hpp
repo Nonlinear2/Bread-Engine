@@ -23,8 +23,6 @@ class Engine {
 
     const int QSEARCH_MAX_DEPTH = 6;
 
-    bool try_outcome_eval(int& eval);
-
     int increment_mate_ply(int eval);
 
     bool is_mate(int eval);
