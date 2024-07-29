@@ -135,16 +135,18 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(std::string fen){
     return std::pair(pv, ponder_move);
 }
 
-chess::Move Engine::search(std::string fen, SearchLimit limit){
+void Engine::search(std::string fen, SearchLimit limit){
     inner_board.setFen(fen);
-    return iterative_deepening(limit);
+    iterative_deepening(limit);
 };
 
-chess::Move Engine::search(SearchLimit limit){
-    return iterative_deepening(limit);
+void Engine::search(SearchLimit limit){
+    iterative_deepening(limit);
 };
 
-chess::Move Engine::iterative_deepening(SearchLimit limit){
+void Engine::iterative_deepening(SearchLimit limit){
+    if (is_nonsense) srand((unsigned int)time(NULL));
+    if (is_nonsense && nonsense.should_bongcloud(inner_board.hash(), inner_board.fullMoveNumber())){ nonsense.play_bongcloud(); return; }
     
     this->limit = limit;
     start_time = std::chrono::high_resolution_clock::now();
@@ -165,16 +167,18 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
     engine_color = (inner_board.sideToMove() == chess::Color::WHITE) ? 1: -1;
 
     chess::Move tb_move;
-    if (inner_board.probe_dtz(tb_move)){
+    chess::Movelist tb_moves;
+    if (inner_board.probe_root_dtz(tb_move, tb_moves, is_nonsense)){
         update_run_time();
         std::cout << "info depth 0";
         std::cout << " score cp " << tb_move.score();
         std::cout << " nodes 0 nps 0";
         std::cout << " time " << run_time;
         std::cout << " hashfull " << transposition_table.hashfull();
+        if (is_nonsense && (tb_move.score() == TB_EVAL)){ nonsense.play_worst_winning_move(tb_move, tb_moves); return; }
         std::cout << " pv " << chess::uci::moveToUci(tb_move) << std::endl;
         std::cout << "bestmove " << chess::uci::moveToUci(tb_move) << std::endl;
-        return tb_move;
+        return;
     };
 
     while (true){
@@ -210,14 +214,14 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
             (current_depth == ENGINE_MAX_DEPTH)) break;
         
     }
-
+    if (is_nonsense) nonsense.display_info();
     std::cout << "bestmove " << chess::uci::moveToUci(best_move);
     if (ponder_move.size() > 0){
         std::cout << " ponder " << ponder_move;
     }
     std::cout << std::endl;
     interrupt_flag = false;
-    return best_move;
+    return;
 }
 
 bool Engine::update_interrupt_flag(){

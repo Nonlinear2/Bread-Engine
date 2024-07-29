@@ -10,7 +10,7 @@
 
 class NnueBoard: public chess::Board {
     public:
-    NNUE nnue_ = NNUE(bread_NNUE_MODEL_PATH);
+    NNUE nnue_ = NNUE();
 
     NnueBoard();
     NnueBoard(std::string_view fen);
@@ -27,10 +27,14 @@ class NnueBoard: public chess::Board {
 
     bool try_outcome_eval(int& eval);
 
+
     bool probe_wdl(int& eval);
 
-    bool probe_dtz(chess::Move& move);
 
+    bool probe_root_dtz(chess::Move& move, chess::Movelist& moves, bool generate_moves);
+
+    chess::Move tb_result_to_move(unsigned int tb_result);
+    
     private:
     std::stack<Accumulator> accumulator_stack;
 

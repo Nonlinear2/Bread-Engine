@@ -10,6 +10,7 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << std::endl;
         std::cout << "option name SyzygyPath type string default <empty>" << std::endl;
         std::cout << "option name hash type spin default 256 min 2 max 4096" << std::endl;
+        std::cout << "option name nonsense type check default false" << std::endl;
         std::cout << "uciok" << std::endl;
     } else if (first == "setoption"){
         process_setoption(parsed_command);
@@ -38,12 +39,6 @@ bool UCIAgent::process_uci_command(std::string command){
         interrupt_if_searching();
         tb_free();
         return 0;
-    // } else if (first == "displayhistory"){
-    //     std::cout << SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.get_history_bonus(static_cast<int>(chess::Square::underlying::SQ_E2), static_cast<int>(chess::Square::underlying::SQ_E4), true) << std::endl;
-    //     std::cout << SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.get_history_bonus(static_cast<int>(chess::Square::underlying::SQ_A2), static_cast<int>(chess::Square::underlying::SQ_G4), true) << std::endl;
-    //     std::cout << SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.get_history_bonus(static_cast<int>(chess::Square::underlying::SQ_C4), static_cast<int>(chess::Square::underlying::SQ_B3), true) << std::endl;
-    //     std::cout << SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.get_history_bonus(static_cast<int>(chess::Square::underlying::SQ_A1), static_cast<int>(chess::Square::underlying::SQ_B1), true) << std::endl;
-    //     std::cout << SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.get_history_bonus(static_cast<int>(chess::Square::underlying::SQ_E1), static_cast<int>(chess::Square::underlying::SQ_G1), true) << std::endl;
     } else {
         std::cout << "unrecognized command: " << command << "\n";
     }
@@ -55,7 +50,7 @@ std::vector<std::string> UCIAgent::split_string(std::string str){
     std::vector<std::string> split;
     int head = 0;
     for (int i = 0; i < str.length()+1; i++){
-        if ((str[i] == ' ') | (i == str.length())){
+        if ((str[i] == ' ') || (i == str.length())){
             split.push_back(str.substr(head, i-head));
             head = i + 1;
         }
@@ -88,6 +83,10 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
         } else {
             std::cout << "info string hash size must be a power of 2" << std::endl;
         }
+    } else if (option_name == "nonsense"){
+        bool value = (command[4] == "true");
+        engine.is_nonsense = value;
+        std::cout << "info string nonsense " << (value ? "activated" : "deactivated") << std::endl;
     }
 }
 

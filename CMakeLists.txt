@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(bread_engine VERSION 1.0.8)
+project(bread_engine VERSION 1.1.0)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -22,6 +22,7 @@ set(bread_INCLUDE_DIRS
 )
 
 set(bread_SOURCE
+    ${bread_SRC}/nonsense.cpp
     ${bread_SRC}/misc.cpp
     ${bread_SRC}/sorted_move_gen.cpp
     ${bread_SRC}/nnue/nnue.cpp

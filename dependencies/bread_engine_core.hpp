@@ -6,6 +6,7 @@
 #include "chess.hpp"
 #include "transposition_table.hpp"
 #include "misc.hpp"
+#include "nonsense.hpp"
 #include "nnue_board.hpp"
 #include "sorted_move_gen.hpp"
 
@@ -35,16 +36,19 @@ class Engine {
 
     void update_run_time();
 
-    chess::Move search(std::string fen, SearchLimit limit);
-    chess::Move search(SearchLimit limit);
+    void search(std::string fen, SearchLimit limit);
+    void search(SearchLimit limit);
 
-    chess::Move iterative_deepening(SearchLimit limit);
+    void iterative_deepening(SearchLimit limit);
 
+    std::atomic<bool> is_nonsense = false;
     private:
     friend class UCIAgent;
 
     int engine_color;
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
+
+    Nonsense nonsense = Nonsense();
 
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove(std::string fen);

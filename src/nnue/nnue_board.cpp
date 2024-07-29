@@ -67,23 +67,27 @@ bool NnueBoard::try_outcome_eval(int& eval){
 }
 
 bool NnueBoard::probe_wdl(int& eval){
-    if (occ().count() > 5){
+    if (occ().count() > TB_LARGEST){
         return false;
     }
+
+    unsigned int ep_square = enpassantSq().index();
+    if (ep_square == 64) ep_square = 0;
+
     unsigned int TB_hit = tb_probe_wdl(
             us(chess::Color::WHITE).getBits(), us(chess::Color::BLACK).getBits(), 
             pieces(chess::PieceType::KING).getBits(), pieces(chess::PieceType::QUEEN).getBits(),
             pieces(chess::PieceType::ROOK).getBits(), pieces(chess::PieceType::BISHOP).getBits(),
             pieces(chess::PieceType::KNIGHT).getBits(), pieces(chess::PieceType::PAWN).getBits(),
             halfMoveClock(), castlingRights().has(sideToMove()),
-            enpassantSq().index(), sideToMove() == chess::Color::WHITE
+            ep_square, sideToMove() == chess::Color::WHITE
     );
     switch(TB_hit){
         case TB_WIN:
-            eval = 1;
+            eval = TB_EVAL;
             return true;
         case TB_LOSS:
-            eval = -1;
+            eval = -TB_EVAL;
             return true;
         case TB_DRAW:
         case TB_CURSED_WIN:
@@ -95,13 +99,15 @@ bool NnueBoard::probe_wdl(int& eval){
     }
 }
 
-bool NnueBoard::probe_dtz(chess::Move& move){
+bool NnueBoard::probe_root_dtz(chess::Move& move, chess::Movelist& moves, bool generate_moves){
     if (occ().count() > TB_LARGEST){
         return false;
     }
 
     unsigned int ep_square = enpassantSq().index();
     if (ep_square == 64) ep_square = 0;
+
+    unsigned int tb_moves[TB_MAX_MOVES];
 
     unsigned int TB_hit = tb_probe_root(
             us(chess::Color::WHITE).getBits(), us(chess::Color::BLACK).getBits(), 
@@ -110,21 +116,36 @@ bool NnueBoard::probe_dtz(chess::Move& move){
             pieces(chess::PieceType::KNIGHT).getBits(), pieces(chess::PieceType::PAWN).getBits(),
             halfMoveClock(), castlingRights().has(sideToMove()),
             ep_square, sideToMove() == chess::Color::WHITE,
-            NULL
+            generate_moves ? tb_moves : NULL
     );
 
     if ((TB_hit == TB_RESULT_CHECKMATE) || (TB_hit == TB_RESULT_STALEMATE) || (TB_hit == TB_RESULT_FAILED)){
         return false;
     }
 
-    if (TB_GET_PROMOTES(TB_hit) == TB_PROMOTES_NONE){
+    move = tb_result_to_move(TB_hit);
+
+    if (generate_moves){
+        chess::Move current_move;
+        for (int i = 0; i < TB_MAX_MOVES; i++){
+            if (tb_moves[i] == TB_RESULT_FAILED) break;
+            current_move = tb_result_to_move(tb_moves[i]);
+            moves.add(current_move);
+        }
+    }
+    return true;
+}
+
+chess::Move NnueBoard::tb_result_to_move(unsigned int tb_result){
+    chess::Move move;
+    if (TB_GET_PROMOTES(tb_result) == TB_PROMOTES_NONE){
         move = chess::Move::make(
-            static_cast<chess::Square>(TB_GET_FROM(TB_hit)),
-            static_cast<chess::Square>(TB_GET_TO(TB_hit)));
+            static_cast<chess::Square>(TB_GET_FROM(tb_result)),
+            static_cast<chess::Square>(TB_GET_TO(tb_result)));
     } else {
         chess::PieceType promotion_type;
 
-        switch (TB_GET_PROMOTES(TB_hit)){
+        switch (TB_GET_PROMOTES(tb_result)){
         case TB_PROMOTES_QUEEN:
             promotion_type = chess::PieceType::QUEEN;
             break;
@@ -140,11 +161,12 @@ bool NnueBoard::probe_dtz(chess::Move& move){
         }
 
         move = chess::Move::make<chess::Move::PROMOTION>(
-            static_cast<chess::Square>(TB_GET_FROM(TB_hit)),
-            static_cast<chess::Square>(TB_GET_TO(TB_hit)),
+            static_cast<chess::Square>(TB_GET_FROM(tb_result)),
+            static_cast<chess::Square>(TB_GET_TO(tb_result)),
             promotion_type);
     }
-    switch(TB_GET_WDL(TB_hit)){
+
+    switch(TB_GET_WDL(tb_result)){
         case TB_WIN:
             move.setScore(TB_EVAL);
             break;
@@ -154,7 +176,8 @@ bool NnueBoard::probe_dtz(chess::Move& move){
         default: // TB_DRAW, TB_CURSED_WIN, TB_BLESSED_LOSS
             move.setScore(0);
     }
-    return true;
+
+    return move;
 }
 
 std::vector<int> NnueBoard::get_HKP(bool color){

@@ -12,7 +12,6 @@ void TranspositionTable::info(){
     int num_exact = 0;
     int num_upper = 0;
     int num_lower = 0;
-    int num_noflag = 0;
 
     for (int i = 0; i < entries.size(); i++){
         TEntry entry = entries[i];
@@ -34,7 +33,6 @@ void TranspositionTable::info(){
                     num_lower++;
                     break;
                 default:
-                    num_noflag++;
                     break;
             }
         }

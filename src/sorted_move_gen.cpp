@@ -45,6 +45,10 @@ void SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_score(chess::Move& mov
     }
 
     score += history.get_history_bonus(from.index(), to.index(), board.sideToMove() == chess::Color::WHITE)/100; // cant be less than worst move score
+    
+    assert(score < BEST_MOVE_SCORE);
+    assert(score > WORST_MOVE_SCORE);
+    
     move.setScore(score);
 }
 

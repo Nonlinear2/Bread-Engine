@@ -149,9 +149,9 @@ class NNUE {
     void crelu16(int16_t *input, int8_t *output, int size);
     void crelu32(int32_t *input, int8_t *output, int size);
 
-    NNUE(std::string model_path);
+    NNUE();
 
-    void load_model(std::string path);
+    void load_model();
 
     void compute_accumulator(const std::vector<int> active_features, bool color);
 

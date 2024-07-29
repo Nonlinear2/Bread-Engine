@@ -6,8 +6,8 @@
 #define NO_MOVE chess::Move::NO_MOVE
 #define ENGINE_MAX_DEPTH 25
 
-#define BEST_MOVE_SCORE 1000
-#define WORST_MOVE_SCORE -1000
+#define BEST_MOVE_SCORE 1'000'000
+#define WORST_MOVE_SCORE -1'000'000
 
 #define TB_EVAL 50'000
 

@@ -134,11 +134,11 @@ int16_t* Accumulator::operator[](bool color){
 NNUE class
 *********/
 
-NNUE::NNUE(std::string model_path){
-    load_model(model_path);
+NNUE::NNUE(){
+    load_model();
 };
 
-void NNUE::load_model(std::string path){
+void NNUE::load_model(){
     feature_transformer.load_from_header(FEATURE_TRANSFORMER);
     layer_2.load_from_header(LAYER_1);
     layer_3.load_from_header(LAYER_2);
