@@ -346,6 +346,10 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     while (sorted_move_gen.next(move)){
         bool is_capture = inner_board.isCapture(move);
         bool is_killer = SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
+        bool was_in_check = inner_board.inCheck();
+
+        // lmp
+        if ((!pv) && (!was_in_check) && (!is_capture) && (sorted_move_gen.index() > 3 + depth) && (!is_hit) && (static_eval < alpha)) continue;
         
         inner_board.update_state(move);
         
