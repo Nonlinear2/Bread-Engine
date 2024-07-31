@@ -27,33 +27,6 @@ inline std::vector<std::string> fens = {
     "r2qnrnk/p2b2b1/1p1p2pp/2pPpp2/1PP1P3/PRNBB3/3QNPPP/5RK1 w - -",
 };
 
-inline std::vector<std::string> correct_best_moves = {
-    "Qd1+",
-    "d5",
-    "f5",
-    "e6",
-    "Nd5",
-    "g6",
-    "Nf6",
-    "f5",
-    "f5",
-    "Ne5",
-    "f4",
-    "Bf5",
-    "b4",
-    "Qd2 ",
-    "Qxg7+",
-    "Ne4",
-    "h5",
-    "Nb3",
-    "Rxe4",
-    "g4",
-    "Nh6",
-    "Bxe4",
-    "f6",
-    "f4",
-};
-
 int sum(std::vector<int> values){
     int total = 0;
     for (auto v: values){
@@ -82,36 +55,24 @@ void benchmark_engine(int depth){
     Engine engine = Engine();
 
     std::vector<int> times;
-    std::vector<std::string> bests; 
-    chess::Move best;
 
     chess::Board cb = chess::Board();
 
     for (auto fen: fens){
         std::chrono::time_point<std::chrono::high_resolution_clock> start_time = std::chrono::high_resolution_clock::now();
-        best = engine.search(fen, SearchLimit(LimitType::Depth, depth));
+        engine.search(fen, SearchLimit(LimitType::Depth, depth));
         times.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time).count());
         
 
         cb.setFen(fen);
-        bests.push_back(chess::uci::moveToSan(cb, best));
 
         // print info to terminal
-        std::cout << "best move " << best << "\n";
-        std::cout << "eval " << best.score()*11.11 << std::endl;
         std::cout << engine.current_depth << std::endl;
     }
     engine.transposition_table.info();
 
     std::cout << "============================== \n";
-
     std::cout << "average time: " << sum(times)/fens.size() << "\n";
-    int correct = 0;
-    for (int i = 0; i < fens.size(); i++){
-        std::cout << "returned: " << bests[i] << " // correct: " << correct_best_moves[i] << "\n";
-        correct += (correct_best_moves[i] == bests[i]);
-    }
-    std::cout << "correct moves: " << correct << "/" << fens.size() << " // " << static_cast<float>(correct)/fens.size() * 100 << "%\n";
     std::cout << "============================== \n";
 }
 
@@ -119,33 +80,22 @@ void benchmark_engine_nodes(int depth){
     Engine engine = Engine();
 
     std::vector<int> nodes;
-    std::vector<std::string> bests; 
-    chess::Move best;
     
     chess::Board cb = chess::Board();
     for (auto fen: fens){
 
-        best = engine.search(fen, SearchLimit(LimitType::Depth, depth));
+        engine.search(fen, SearchLimit(LimitType::Depth, depth));
         nodes.push_back(engine.nodes);
 
         cb.setFen(fen);
-        bests.push_back(chess::uci::moveToSan(cb, best));
 
         // print info to terminal
-        std::cout << "best move " << best << "\n";
-        std::cout << "eval " << best.score()*11.11 << std::endl;
         std::cout << engine.current_depth << std::endl;
     }
     engine.transposition_table.info();
     int avg_nodes = sum(nodes)/fens.size();
     std::cout << "============================== \n";
     std::cout << "average nodes: " << avg_nodes << "\n";
-    int correct = 0;
-    for (int i = 0; i < fens.size(); i++){
-        std::cout << "returned: " << bests[i] << " // correct: " << correct_best_moves[i] << "\n";
-        correct += (correct_best_moves[i] == bests[i]);
-    }
-    std::cout << "correct moves: " << correct << "/" << fens.size() << " // " << static_cast<float>(correct)/fens.size() * 100 << "%\n";
     std::cout << "============================== \n";
 }
 

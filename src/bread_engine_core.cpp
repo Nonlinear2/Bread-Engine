@@ -305,7 +305,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
 
     // reverse futility pruning
     if (!pv && (depth < 5) && (static_eval - depth*800 - 1500 >= beta)){
-        return beta;
+        return static_eval;
     }
 
     // null move pruning
@@ -321,7 +321,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         inner_board.makeNullMove();
         null_move_eval = -negamax<false>(depth - R, -color, -beta, -beta+1);
         inner_board.unmakeNullMove();
-        if (null_move_eval >= beta) return beta;
+        if (null_move_eval >= beta) return null_move_eval;
     }
 
     sorted_move_gen.generate_moves();
