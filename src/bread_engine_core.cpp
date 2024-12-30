@@ -298,13 +298,13 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
 
     int static_eval = is_hit ? transposition->evaluation : inner_board.evaluate();
     // razoring
-    if ((!pv) && (depth < 5) && static_eval + depth*800 + 1500 < alpha){ 
+    if (!pv && !inner_board.inCheck() && (depth < 6) && static_eval + depth*800 + 1500 < alpha){ 
         static_eval = qsearch<false>(alpha, beta, color, QSEARCH_MAX_DEPTH); // we update static eval to the better qsearch eval. //? tweak depth?
         if (static_eval <= alpha) return static_eval;
     }
 
     // reverse futility pruning
-    if (!pv && (depth < 5) && (static_eval - depth*800 - 1500 >= beta)){
+    if (!pv && !inner_board.inCheck() && (depth < 6) && (static_eval - depth*800 - 1500 >= beta)){
         return static_eval;
     }
 
