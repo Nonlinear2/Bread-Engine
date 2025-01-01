@@ -6,6 +6,7 @@
 #include <sstream>
 #include <thread>
 #include "bread_engine_core.hpp"
+#include "benchmark_engine.hpp"
 
 class UCIAgent {
     public:
@@ -26,6 +27,8 @@ class UCIAgent {
     void process_position(std::vector<std::string> command);
 
     void process_go(std::vector<std::string> command);
+
+    void process_bench(std::vector<std::string> command);
 
     int get_think_time_from_go_command(std::vector<std::string> command);
 

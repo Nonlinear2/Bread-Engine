@@ -24,6 +24,9 @@ bool UCIAgent::process_uci_command(std::string command){
         
     } else if (first == "position"){
         process_position(parsed_command);
+    
+    } else if (first == "bench"){
+        process_bench(parsed_command);
 
     } else if (first == "go"){
         interrupt_if_searching();
@@ -113,6 +116,16 @@ void UCIAgent::process_position(std::vector<std::string> command){
         if (token == "moves"){
             is_movelist = true;
         }
+    }
+}
+
+void UCIAgent::process_bench(std::vector<std::string> command){
+    if (command.size() == 1){
+        Benchmark::benchmark_engine_nodes(BENCHMARK_DEPTH);
+    } else if (command[1] == "nn"){
+        Benchmark::benchmark_nn();
+    } else if (command[1] == "speed"){
+        Benchmark::benchmark_engine(BENCHMARK_DEPTH);
     }
 }
 

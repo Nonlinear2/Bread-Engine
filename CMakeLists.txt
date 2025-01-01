@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(bread_engine VERSION 1.1.3)
+project(bread_engine VERSION 1.1.4)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -29,6 +29,7 @@ set(bread_SOURCE
     ${bread_SRC}/nnue/nnue_board.cpp
     ${bread_SRC}/transposition_table.cpp
     ${bread_SRC}/bread_engine_core.cpp
+    ${bread_SRC}/benchmark_engine.cpp
     ${bread_DEPENDENCIES}/extern/Fathom/src/tbprobe.cpp
 )
 
@@ -85,11 +86,6 @@ bread_configure(release SOURCES
     ${bread_SOURCE}
     ${bread_SRC}/uci.cpp
     ${bread_SRC}/run_uci.cpp
-)
-
-bread_configure(benchmark_engine SOURCES
-    ${bread_SOURCE}
-    ${bread_UTILS}/benchmark_engine.cpp
 )
 
 bread_configure(tests SOURCES

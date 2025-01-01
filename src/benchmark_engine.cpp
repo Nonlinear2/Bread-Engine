@@ -1,4 +1,6 @@
-#include "bread_engine_core.hpp"
+#include "benchmark_engine.hpp"
+
+namespace Benchmark {
 
 inline std::vector<std::string> fens = {
     "1k1r4/pp1b1R2/3q2pp/4p3/2B5/4Q3/PPP2B2/2K5 b - -",
@@ -96,34 +98,8 @@ void benchmark_engine_nodes(int depth){
     int avg_nodes = sum(nodes)/fens.size();
     std::cout << "============================== \n";
     std::cout << "average nodes: " << avg_nodes << "\n";
+    std::cout << "total nodes: " << sum(nodes) << "\n";
     std::cout << "============================== \n";
 }
 
-int main(){
-    benchmark_engine(10);
-    return 0;
-}
-
-// average nodes: 5.54152e+06
-// depth 9: average time: 2613.78
-
-// with improved pst: average nodes: 5.76197e+06
-
-// 5.76678e+06
-
-// 5.6313e+06
-
-// GCC: average time: 2800.05, average time: 2820.78
-// clang: average time: 2462.3, average time: 2386.76
-// msvc: average time: 2662.35, average time: 2694.83
-
-
-// msvc new avx add:  2730.59,  2633.28
-
-// clang average time: 2266
-
-// tt improvements: clang average time 2048, 2065
-
-// no tt imrpveements: average time: 2083.56, average time: 2037.84
-
-// less probe calls when at boundary between negamax and qsearch
+} // namespace Benchmark

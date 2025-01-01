@@ -296,15 +296,17 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         if (transposition->best_move != NO_MOVE) sorted_move_gen.set_tt_move(transposition->best_move);
     }
 
+    bool is_in_check = inner_board.inCheck();
+
     int static_eval = is_hit ? transposition->evaluation : inner_board.evaluate();
     // razoring
-    if (!pv && !inner_board.inCheck() && (depth < 6) && static_eval + depth*800 + 1500 < alpha){ 
+    if (!pv && !is_in_check && (depth < 6) && static_eval + depth*800 + 1500 < alpha){ 
         static_eval = qsearch<false>(alpha, beta, color, QSEARCH_MAX_DEPTH); // we update static eval to the better qsearch eval. //? tweak depth?
         if (static_eval <= alpha) return static_eval;
     }
 
     // reverse futility pruning
-    if (!pv && !inner_board.inCheck() && (depth < 6) && (static_eval - depth*800 - 1500 >= beta)){
+    if (!pv && !is_in_check && (depth < 6) && (static_eval - depth*800 - 1500 >= beta)){
         return static_eval;
     }
 
@@ -313,7 +315,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     int null_move_eval;
     if (!pv && 
         (depth > 4) &&
-        !inner_board.inCheck() && 
+        !is_in_check && 
         !inner_board.last_move_null() && 
         beta != BEST_EVAL)
     {
@@ -343,23 +345,26 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     chess::Move best_move;
     chess::Move move;
     int pos_eval;
+    bool tt_capture = (is_hit && transposition->best_move != NO_MOVE) ? inner_board.isCapture(transposition->best_move) : false;
     while (sorted_move_gen.next(move)){
         bool is_capture = inner_board.isCapture(move);
         bool is_killer = SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
-        bool was_in_check = inner_board.inCheck();
 
         // lmp
-        if ((!pv) && (!was_in_check) && (!is_capture) && (sorted_move_gen.index() > 3 + depth) && (!is_hit) && (static_eval < alpha)) continue;
+        if ((!pv) && (!is_in_check) && (!is_capture) && (sorted_move_gen.index() > 3 + depth) && (!is_hit) && (static_eval < alpha)) continue;
         
         inner_board.update_state(move);
         
-        bool in_check = inner_board.inCheck();
+        bool gives_check = inner_board.inCheck();
 
         // late move reductions
         int new_depth = depth-1;
-        new_depth += in_check;
-        new_depth -= ((sorted_move_gen.index() > 1) && (depth > 2) && (!is_capture) && (!in_check) && (!is_killer));
+        new_depth += gives_check;
+        new_depth -= ((sorted_move_gen.index() > 1) && (!is_capture) && (!gives_check) && (!is_killer));
         new_depth -= (depth > 5) && (!is_hit) && (!is_killer); // IIR /// depth > 3
+        new_depth -= (tt_capture && !is_capture);
+        
+        new_depth = std::clamp(new_depth, 0, depth);
 
         if (pv && (sorted_move_gen.index() == 0)){
             pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha);

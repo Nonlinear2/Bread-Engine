@@ -5,6 +5,7 @@
 
 #define NO_MOVE chess::Move::NO_MOVE
 #define ENGINE_MAX_DEPTH 25
+#define BENCHMARK_DEPTH 9
 
 #define BEST_MOVE_SCORE 1'000'000
 #define WORST_MOVE_SCORE -1'000'000
@@ -19,6 +20,7 @@
 #define MAX_HISTORY_BONUS 10'000
 
 #define SEE_KING_VALUE 1'000
+
 
 const std::vector<int> piece_value = {
     1, // pawn
