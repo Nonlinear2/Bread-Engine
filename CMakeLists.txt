@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(bread_engine VERSION 1.1.4)
+project(bread_engine VERSION 1.2.0)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -43,18 +43,26 @@ if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL 
 endif()
 
 add_executable(generate_neural_net_header ${bread_UTILS}/generate_nn_header.cpp)
-target_compile_definitions(generate_neural_net_header PRIVATE bread_NN_HEADER_PATH="${bread_NN_HEADER_PATH}")
-target_compile_definitions(generate_neural_net_header PRIVATE bread_NNUE_MODEL_PATH="${bread_NNUE_MODEL_PATH}")
+add_executable(clear_neural_net_header ${bread_UTILS}/clear_nn_header.cpp)
 
-# add custom target that generates the header when needed
-add_custom_command(
-    OUTPUT ${bread_NN_HEADER_PATH}
-    COMMENT "generating neural network header"
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${bread_NN_HEADER_DIR}
+target_compile_definitions(
+    generate_neural_net_header PRIVATE bread_NN_HEADER_PATH="${bread_NN_HEADER_PATH}")
+target_compile_definitions(
+    generate_neural_net_header PRIVATE bread_NNUE_MODEL_PATH="${bread_NNUE_MODEL_PATH}")
+
+target_compile_definitions(
+    clear_neural_net_header PRIVATE bread_NN_HEADER_PATH="${bread_NN_HEADER_PATH}")
+target_compile_definitions(
+    clear_neural_net_header PRIVATE bread_NNUE_MODEL_PATH="${bread_NNUE_MODEL_PATH}")
+
+file(MAKE_DIRECTORY ${bread_NN_HEADER_DIR})
+
+add_custom_target(run_generate_nn_header
     COMMAND $<TARGET_FILE:generate_neural_net_header>
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS generate_neural_net_header
+    COMMENT "generating the neural network header"
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
-add_custom_target(run_generate_neural_net_header DEPENDS ${bread_NN_HEADER_PATH})
 
 function(bread_configure bread_TARGET)
     cmake_parse_arguments(bread "" "" "SOURCES" ${ARGN})
@@ -65,7 +73,13 @@ function(bread_configure bread_TARGET)
     
     target_compile_definitions(${bread_TARGET} PRIVATE bread_VERSION="${CMAKE_PROJECT_VERSION}")
 
-    add_dependencies(${bread_TARGET} run_generate_neural_net_header)
+    add_dependencies(${bread_TARGET} run_generate_nn_header)
+
+    add_custom_command(
+        TARGET ${bread_TARGET} POST_BUILD
+        COMMAND $<TARGET_FILE:clear_neural_net_header>
+        COMMENT "clearing the neural network header"
+    )
 
     target_compile_definitions(${bread_TARGET} PRIVATE bread_TB_PATH="${bread_TB_PATH}")
 

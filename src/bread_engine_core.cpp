@@ -296,17 +296,17 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         if (transposition->best_move != NO_MOVE) sorted_move_gen.set_tt_move(transposition->best_move);
     }
 
-    bool is_in_check = inner_board.inCheck();
+    bool in_check = inner_board.inCheck();
 
     int static_eval = is_hit ? transposition->evaluation : inner_board.evaluate();
     // razoring
-    if (!pv && !is_in_check && (depth < 6) && static_eval + depth*800 + 1500 < alpha){ 
+    if (!pv && !in_check && (depth < 6) && static_eval + depth*800 + 1500 < alpha){ 
         static_eval = qsearch<false>(alpha, beta, color, QSEARCH_MAX_DEPTH); // we update static eval to the better qsearch eval. //? tweak depth?
         if (static_eval <= alpha) return static_eval;
     }
 
     // reverse futility pruning
-    if (!pv && !is_in_check && (depth < 6) && (static_eval - depth*800 - 1500 >= beta)){
+    if (!pv && !in_check && (depth < 6) && (static_eval - depth*800 - 1500 >= beta)){
         return static_eval;
     }
 
@@ -315,7 +315,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     int null_move_eval;
     if (!pv && 
         (depth > 4) &&
-        !is_in_check && 
+        !in_check && 
         !inner_board.last_move_null() && 
         beta != BEST_EVAL)
     {
@@ -351,7 +351,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         bool is_killer = SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
 
         // lmp
-        if ((!pv) && (!is_in_check) && (!is_capture) && (sorted_move_gen.index() > 3 + depth) && (!is_hit) && (static_eval < alpha)) continue;
+        if ((!pv) && (!in_check) && (!is_capture) && (sorted_move_gen.index() > 3 + depth) && (!is_hit) && (static_eval < alpha)) continue;
         
         inner_board.update_state(move);
         
@@ -510,7 +510,6 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
 
         // SEE pruning
         if (!SEE::evaluate(inner_board, move, (alpha-stand_pat)/800 - 3)) continue;
-
 
         inner_board.update_state(move);
         pos_eval = -qsearch<pv>(-beta, -alpha, -color, depth-1);

@@ -20,35 +20,51 @@ void SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_score(chess::Move& mov
     const chess::Square to = move.to();
     const chess::Piece piece = board.at(from);
     const chess::Piece to_piece = board.at(to);
+    const int from_value = piece_value[static_cast<int>(piece.type())];
+
+    chess::Bitboard attacked_by_pawn = 0;
+
+    chess::Bitboard pawn_attackers = board.pieces(chess::PieceType::PAWN, ~board.sideToMove());
+
+    while (pawn_attackers)
+        attacked_by_pawn |= chess::attacks::pawn(~board.sideToMove(), pawn_attackers.pop());
+
     int score = 0;
 
     if ((piece != chess::Piece::WHITEKING) && (piece != chess::Piece::BLACKKING)){
-        score += psm.get_psm(piece, from, to);
+        score += 100*psm.get_psm(piece, from, to);
     } else {
         bool is_endgame = board.occ().count() <= ENDGAME_PIECE_COUNT;
-        score += psm.get_ksm(piece, is_endgame, to, from);
+        score += 100*psm.get_ksm(piece, is_endgame, to, from);
     }
     
+    if (piece.type() != chess::PieceType::PAWN){
+        score += bool(attacked_by_pawn & chess::Bitboard::fromSquare(from))
+                 * 40 * from_value * MATERIAL_CHANGE_MULTIPLIER;
+        
+        score -= bool(attacked_by_pawn & chess::Bitboard::fromSquare(to))
+            * 41 * from_value * MATERIAL_CHANGE_MULTIPLIER;
+    }
+
     // captures should be searched early, so
     // to_value = piece_value(to) - piece_value(from) doesn't seem to work.
     // however, find a way to make these captures even better ?
     if (to_piece != chess::Piece::NONE){
-        score += piece_value[static_cast<int>(to_piece.type())] * MATERIAL_CHANGE_MULTIPLIER;
+        score += 100 * piece_value[static_cast<int>(to_piece.type())] * MATERIAL_CHANGE_MULTIPLIER;
     }
 
     if (move.typeOf() == chess::Move::PROMOTION){
-        score += piece_value[static_cast<int>(move.promotionType())] * MATERIAL_CHANGE_MULTIPLIER;
+        score += 100 * piece_value[static_cast<int>(move.promotionType())] * MATERIAL_CHANGE_MULTIPLIER;
     }
     
-    if (killer_moves[depth].in_buffer(move)){
-        score += KILLER_SCORE;
+    if (depth != -1 && killer_moves[depth].in_buffer(move)){
+        score += 100 * KILLER_SCORE;
     }
 
-    score += history.get_history_bonus(from.index(), to.index(), board.sideToMove() == chess::Color::WHITE)/100; // cant be less than worst move score
+    score += history.get_history_bonus(from.index(), to.index(), board.sideToMove() == chess::Color::WHITE); // cant be less than worst move score
     
-    assert(score < BEST_MOVE_SCORE);
-    assert(score > WORST_MOVE_SCORE);
-    
+    score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
+
     move.setScore(score);
 }
 

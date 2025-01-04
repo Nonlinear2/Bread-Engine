@@ -8,7 +8,7 @@
 
 // this functions writes the weights from input_path to output_path with comas separating the values
 template<typename weights_type>
-void parameters_to_header(std::string input_path, int weights_size, std::ofstream& output_path){
+void parameters_to_header(std::string input_path, int weights_size, std::ofstream& output_file){
     std::ifstream weights_stream;
     weights_type* weights = new weights_type[weights_size];
 
@@ -19,7 +19,7 @@ void parameters_to_header(std::string input_path, int weights_size, std::ofstrea
     } else {std::cout << "error loading weights \n";}
 
     for (int i = 0; i < weights_size; i++){
-        output_path << static_cast<int>(weights[i]) << ", ";
+        output_file << static_cast<int>(weights[i]) << ", ";
     }
 };
 

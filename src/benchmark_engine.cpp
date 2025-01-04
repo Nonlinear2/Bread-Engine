@@ -44,12 +44,12 @@ void benchmark_nn(){
     NnueBoard board = NnueBoard();
 
     auto start = std::chrono::high_resolution_clock::now();
-    int num_iter = 10'000;
+    int num_iter = 10'000'000;
     for (int i = 0; i < num_iter; i++){
         board.evaluate();
     }
-    int mean = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count()/num_iter;
-    std::cout << "time taken: " << mean << " microseconds per call";
+    int mean = 1000*std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count()/num_iter;
+    std::cout << "time taken: " << mean << " nanoseconds per call\n";
     std::cout << "============================== \n";
 }
 
@@ -74,7 +74,7 @@ void benchmark_engine(int depth){
     engine.transposition_table.info();
 
     std::cout << "============================== \n";
-    std::cout << "average time: " << sum(times)/fens.size() << "\n";
+    std::cout << "average time: " << sum(times)/fens.size() << " ms\n";
     std::cout << "============================== \n";
 }
 
