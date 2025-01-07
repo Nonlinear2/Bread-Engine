@@ -54,39 +54,21 @@ void benchmark_nn(){
 }
 
 void benchmark_engine(int depth){
+
     Engine engine = Engine();
 
     std::vector<int> times;
-
-    chess::Board cb = chess::Board();
-
-    for (auto fen: fens){
-        std::chrono::time_point<std::chrono::high_resolution_clock> start_time = std::chrono::high_resolution_clock::now();
-        engine.search(fen, SearchLimit(LimitType::Depth, depth));
-        times.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time).count());
-        
-
-        cb.setFen(fen);
-
-        // print info to terminal
-        std::cout << engine.current_depth << std::endl;
-    }
-    engine.transposition_table.info();
-
-    std::cout << "============================== \n";
-    std::cout << "average time: " << sum(times)/fens.size() << " ms\n";
-    std::cout << "============================== \n";
-}
-
-void benchmark_engine_nodes(int depth){
-    Engine engine = Engine();
-
     std::vector<int> nodes;
     
     chess::Board cb = chess::Board();
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
     for (auto fen: fens){
 
+        start_time = std::chrono::high_resolution_clock::now();
+
         engine.search(fen, SearchLimit(LimitType::Depth, depth));
+
+        times.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time).count());
         nodes.push_back(engine.nodes);
 
         cb.setFen(fen);
@@ -95,10 +77,11 @@ void benchmark_engine_nodes(int depth){
         std::cout << engine.current_depth << std::endl;
     }
     engine.transposition_table.info();
-    int avg_nodes = sum(nodes)/fens.size();
     std::cout << "============================== \n";
-    std::cout << "average nodes: " << avg_nodes << "\n";
     std::cout << "total nodes: " << sum(nodes) << "\n";
+    std::cout << "average nodes: " << sum(nodes)/fens.size() << "\n";
+    std::cout << "total time: " << sum(times) << " ms\n";
+    std::cout << "average nodes per second: " << 1000*sum(nodes)/sum(times) << "\n";
     std::cout << "============================== \n";
 }
 

@@ -48,6 +48,14 @@ To add the engine select: tools -> settings -> engines -> + -> command, and choo
 
 To play a game against the engine, select: game -> new and choose the settings you want.
 
+# Custom commands
+
+Bread engine supports the following commands:
+- `bench`: gives the total number of nodes and nodes per seconds on a series of positions.
+- `bench nn`: gives the speed of the neural network inference
+
+Bread engine also has a uci option called `nonsense`, which makes it bongcloud, underpromote to bishops and knights, as well as print lyrics from "never gonna give you up" during search.
+
 # Technical details
 in this section we provide an overview of the search algorithm, and the main engine features. The explanations are very high level, so feel free to search more details on other resources.
 

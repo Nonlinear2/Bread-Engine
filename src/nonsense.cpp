@@ -11,7 +11,7 @@ void Nonsense::display_info(){
 bool Nonsense::should_bongcloud(uint64_t hash, int move_number){
     if (is_bongcloud) is_bongcloud = (move_number == 2); // make sure it is still possible to bongcloud.
 
-    return (is_bongcloud || (rand() % Nonsense::bongcloud_odds == 0) && (hash == starting_pos_hash));
+    return (is_bongcloud || (hash == starting_pos_hash));
 }
 
 void Nonsense::play_bongcloud(){

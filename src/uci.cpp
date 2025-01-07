@@ -121,11 +121,9 @@ void UCIAgent::process_position(std::vector<std::string> command){
 
 void UCIAgent::process_bench(std::vector<std::string> command){
     if (command.size() == 1){
-        Benchmark::benchmark_engine_nodes(BENCHMARK_DEPTH);
+        Benchmark::benchmark_engine(BENCHMARK_DEPTH);
     } else if (command[1] == "nn"){
         Benchmark::benchmark_nn();
-    } else if (command[1] == "speed"){
-        Benchmark::benchmark_engine(BENCHMARK_DEPTH);
     }
 }
 

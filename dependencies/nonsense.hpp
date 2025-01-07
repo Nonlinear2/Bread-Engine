@@ -9,9 +9,7 @@
 
 class Nonsense {
     public:
-    static constexpr int bongcloud_odds = 5;
-
-    static constexpr int rick_astley_odds = 8;
+    static constexpr int rick_astley_odds = 5;
     static constexpr int num_main_lyrics = 6;
 
     static inline std::vector<std::string> rick_astley_lyrics = {
