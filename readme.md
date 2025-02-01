@@ -1,5 +1,5 @@
 # Overview
-Bread engine is a chess engine written in c++. There is still a lot of room for improvement, but the engine is quite strong (for humans, at least). It uses minimax search with NNUE (efficiently updatable neural network) as an evaluation function. The neural network is homemade and trained using lichess's open database with evaluated games.
+Bread engine is a chess engine written in C++. There is still a lot of room for improvement, but Bread is relatively strong (and probably unbeatable by humans). Currently, it is rated 2700 elo on the computer chess rating lists. Bread uses minimax search with NNUE (efficiently updatable neural network) as an evaluation function. The neural network is homemade and trained using lichess's open database with evaluated games.
 
 Bread engine does not have a graphical interface built in. However it supports the uci protocol, you can therefore run it on any chess graphical interface, such as [cute chess](https://github.com/cutechess/cutechess) or [arena](http://www.playwitharena.de/).
 
@@ -150,8 +150,7 @@ When evaluating leaf nodes during minimax search, one can note that the position
 Let's consider a simple deep neural network, taking 768 inputs corresponding to each piece type on each possible square (so 12 * 64 in total). Suppose we have already run the neural network on the starting position, and that we cached the first layer output before applying the activation function (this is called the "accumulator"). If we move a pawn from e2 to e4, we turn off the input neuron number n corresponding to "white pawn on e2" and turn on the input neuron m corresponding to "white pawn on e4". Recall that computing a dense layer output before applying bias and activation is just matrix multiplication. Therefore to update the accumulator, we need to subtract the n-th row of weights from the accumulator, and add the m-th row of weights. The effect of changing the two input neurons on further layers is non trivial, and these need to be recomputed. Therefore, it is advantageous to have a large input layer, and small hidden layers.
 
 ### The halfKP feature set
-There are many different choices for the input feature representation, but 
-> \[HalfKP\] fits in a sweet spot of being just the right size, and requiring very few updates per move on average. [Link](https://github.com/official-stockfish/nnue-pytorch/blob/master/docs/nnue.md#halfkp)
+There are many different choices for the input feature representation, but Bread uses halfKP. Note that modern engines rather rely on halfKA, which is similar to halfKP, but adds features for the opponent's king position. 
 
 This board representation works with two components: the perspective of the side to move, and the other perspective.
 Each perspective consists of a board representation similar to before, but with separate features for each friendly king square.
