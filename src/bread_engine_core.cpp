@@ -4,8 +4,8 @@
 // try qsearch depth reductions and search depth extensions when in check
 
 chess::Move Engine::minimax_root(int depth, int color){
-    int alpha = WORST_EVAL;
-    int beta = BEST_EVAL;
+    int alpha = -INFINITE_VALUE;
+    int beta = INFINITE_VALUE;
     chess::Move best_move = NO_MOVE;
     uint64_t zobrist_hash = inner_board.hash();
     inner_board.synchronize();
@@ -97,7 +97,7 @@ bool Engine::is_win(int eval){
 }
 
 int Engine::get_mate_in_moves(int eval){
-    int ply = -std::abs(eval) + MATE_EVAL;
+    int ply = -std::abs(eval) + MATE_VALUE;
     return (is_win(eval) ? 1: -1)*(ply/2 + (ply%2 != 0)); 
 }
 
@@ -175,7 +175,7 @@ void Engine::iterative_deepening(SearchLimit limit){
         std::cout << " nodes 0 nps 0";
         std::cout << " time " << run_time;
         std::cout << " hashfull " << transposition_table.hashfull();
-        if (is_nonsense && (tb_move.score() == TB_EVAL)){ nonsense.play_worst_winning_move(tb_move, tb_moves); return; }
+        if (is_nonsense && (tb_move.score() == TB_VALUE)){ nonsense.play_worst_winning_move(tb_move, tb_moves); return; }
         std::cout << " pv " << chess::uci::moveToUci(tb_move) << std::endl;
         std::cout << "bestmove " << chess::uci::moveToUci(tb_move) << std::endl;
         return;
@@ -247,7 +247,7 @@ void Engine::update_run_time(){
 
 template<bool pv>
 int Engine::negamax(int depth, int color, int alpha, int beta){
-    assert((alpha < BEST_EVAL) && (beta > WORST_EVAL));
+    assert((alpha < INFINITE_VALUE) && (beta > -INFINITE_VALUE));
     nodes++;
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
     if (interrupt_flag || ((depth >= 5) && update_interrupt_flag())){
@@ -317,7 +317,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         (depth > 4) &&
         !in_check && 
         !inner_board.last_move_null() && 
-        beta != BEST_EVAL)
+        beta != INFINITE_VALUE)
     {
         int R = 2 + (static_eval >= beta);
         inner_board.makeNullMove();
@@ -327,12 +327,12 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     }
 
     sorted_move_gen.generate_moves();
-    int max_eval = WORST_EVAL;
+    int max_eval = -INFINITE_VALUE;
 
     if (sorted_move_gen.is_empty()){ // avoid calling expensive try_outcome_eval function
         // If board is in check, it is checkmate
         // if there are no legal moves and it's not check, it is stalemate so eval is 0
-        max_eval = inner_board.inCheck() ? -MATE_EVAL : 0;
+        max_eval = inner_board.inCheck() ? -MATE_VALUE : 0;
         // we know this eval is exact at any depth, but 
         // we also don't want this eval to pollute the transposition table.
         // the full move number will make sure it is replaced at some point.

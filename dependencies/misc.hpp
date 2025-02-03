@@ -4,23 +4,28 @@
 #include "chess.hpp"
 
 #define NO_MOVE chess::Move::NO_MOVE
-#define ENGINE_MAX_DEPTH 25
-#define BENCHMARK_DEPTH 9
 
-#define BEST_MOVE_SCORE 1'000'000
-#define WORST_MOVE_SCORE -1'000'000
+constexpr int ENGINE_MAX_DEPTH = 25;
+constexpr int QSEARCH_MAX_DEPTH = 6;
 
-#define TB_EVAL 50'000
+constexpr int BENCHMARK_DEPTH = 9;
 
-#define MATE_EVAL 90'000
+// constexpr int DEPTH_UNSEARCHED = -1;
+// constexpr int DEPTH_QSEARCH = 0;
 
-#define WORST_EVAL -100'000
-#define BEST_EVAL 100'000
+constexpr int BEST_MOVE_SCORE = 1'000'000;
+constexpr int WORST_MOVE_SCORE = -1'000'000;
 
-#define MAX_HISTORY_BONUS 10'000
+// constexpr int WORST_VALUE = -31'998;
+// constexpr int BEST_VALUE = 31'998;
+constexpr int TB_VALUE = 50'000; //31'999;
+constexpr int MATE_VALUE = 90'000; // 32'600;
+// constexpr int NO_VALUE = 32'600;
 
-#define SEE_KING_VALUE 1'000
-
+// constexpr int MAX_MATE_PLY = 1'00;
+constexpr int INFINITE_VALUE = 100'000; //32'700;
+constexpr int MAX_HISTORY_BONUS = 10'000;
+constexpr int SEE_KING_VALUE = 1'000;
 
 const std::vector<int> piece_value = {
     1, // pawn

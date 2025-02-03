@@ -39,7 +39,7 @@ void Nonsense::play_bongcloud(){
 void Nonsense::play_worst_winning_move(chess::Move move, chess::Movelist moves){
     chess::Move worst_winning_move = move;
     for (auto move: moves){
-        if (move.score() != TB_EVAL) continue;
+        if (move.score() != TB_VALUE) continue;
 
         if (move.typeOf() == chess::Move::ENPASSANT){
             worst_winning_move = move;

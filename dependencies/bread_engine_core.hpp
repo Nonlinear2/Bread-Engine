@@ -22,8 +22,6 @@ class Engine {
 
     NnueBoard inner_board = NnueBoard();
 
-    const int QSEARCH_MAX_DEPTH = 6;
-
     int increment_mate_ply(int eval);
 
     bool is_mate(int eval);

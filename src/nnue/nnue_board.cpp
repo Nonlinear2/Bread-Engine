@@ -60,7 +60,7 @@ bool NnueBoard::try_outcome_eval(int& eval){
 
     if (movelist.empty()){
         // checkmate/stalemate.
-        eval = inCheck() ? -MATE_EVAL : 0;
+        eval = inCheck() ? -MATE_VALUE : 0;
         return true;
     }
     return false;
@@ -84,10 +84,10 @@ bool NnueBoard::probe_wdl(int& eval){
     );
     switch(TB_hit){
         case TB_WIN:
-            eval = TB_EVAL;
+            eval = TB_VALUE;
             return true;
         case TB_LOSS:
-            eval = -TB_EVAL;
+            eval = -TB_VALUE;
             return true;
         case TB_DRAW:
         case TB_CURSED_WIN:
@@ -168,10 +168,10 @@ chess::Move NnueBoard::tb_result_to_move(unsigned int tb_result){
 
     switch(TB_GET_WDL(tb_result)){
         case TB_WIN:
-            move.setScore(TB_EVAL);
+            move.setScore(TB_VALUE);
             break;
         case TB_LOSS:
-            move.setScore(-TB_EVAL);
+            move.setScore(-TB_VALUE);
             break;
         default: // TB_DRAW, TB_CURSED_WIN, TB_BLESSED_LOSS
             move.setScore(0);
