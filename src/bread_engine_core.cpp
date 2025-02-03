@@ -68,10 +68,9 @@ chess::Move Engine::minimax_root(int depth, int color){
         
         if (is_mate(pos_eval)) pos_eval = increment_mate_ply(pos_eval);
 
-        move.setScore(pos_eval);
-
         if (pos_eval > alpha){
             best_move = move;
+            best_move.setScore(pos_eval);
             alpha = pos_eval;
         }
     }
@@ -94,6 +93,10 @@ bool Engine::is_mate(int eval){
 
 bool Engine::is_win(int eval){
     return (eval >= TB_VALUE);
+}
+
+bool Engine::is_loss(int eval){
+    return (eval <= -TB_VALUE);
 }
 
 int Engine::get_mate_in_moves(int eval){
@@ -272,7 +275,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
-        if ((transposition->depth() >= depth) && (!inner_board.isRepetition(1))){
+        if (transposition->depth() >= depth && !inner_board.isRepetition(1)){
             // if is repetition(1), danger of repetition so TT is unreliable
             switch (transposition->flag()){
                 case TFlag::EXACT:
@@ -345,7 +348,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     chess::Move best_move;
     chess::Move move;
     int pos_eval;
-    bool tt_capture = (is_hit && transposition->best_move != NO_MOVE) ? inner_board.isCapture(transposition->best_move) : false;
+    bool tt_capture = is_hit && transposition->best_move != NO_MOVE && inner_board.isCapture(transposition->best_move);
     while (sorted_move_gen.next(move)){
         bool is_capture = inner_board.isCapture(move);
         bool is_killer = SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);

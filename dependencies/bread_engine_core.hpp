@@ -27,6 +27,7 @@ class Engine {
     bool is_mate(int eval);
 
     bool is_win(int eval);
+    bool is_loss(int eval);
 
     int get_mate_in_moves(int eval);
     
