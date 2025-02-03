@@ -22,13 +22,12 @@ class Engine {
 
     NnueBoard inner_board = NnueBoard();
 
-    const int QSEARCH_MAX_DEPTH = 6;
-
     int increment_mate_ply(int eval);
 
     bool is_mate(int eval);
 
     bool is_win(int eval);
+    bool is_loss(int eval);
 
     int get_mate_in_moves(int eval);
     
@@ -52,7 +51,7 @@ class Engine {
 
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove(std::string fen);
-    chess::Move minimax_root(int depth, int color);
+    chess::Move minimax_root(int depth, int color, chess::Move best_move);
 
     template<bool pv>
     int negamax(int depth, int color, int alpha, int beta);

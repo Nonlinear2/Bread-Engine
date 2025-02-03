@@ -4,22 +4,31 @@
 #include "chess.hpp"
 
 #define NO_MOVE chess::Move::NO_MOVE
-#define ENGINE_MAX_DEPTH 25
-#define BENCHMARK_DEPTH 9
+constexpr int ENGINE_MAX_DEPTH = 25;
+constexpr int QSEARCH_MAX_DEPTH = 6;
 
-#define BEST_MOVE_SCORE 1'000'000
-#define WORST_MOVE_SCORE -1'000'000
+constexpr int BENCHMARK_DEPTH = 9;
 
-#define TB_EVAL 50'000
+constexpr int DEPTH_UNSEARCHED = -QSEARCH_MAX_DEPTH - 1;
+constexpr int DEPTH_QSEARCH = 0;
 
-#define MATE_EVAL 90'000
+constexpr int BEST_MOVE_SCORE = 1'000'000;
+constexpr int WORST_MOVE_SCORE = -1'000'000;
 
-#define WORST_EVAL -100'000
-#define BEST_EVAL 100'000
+constexpr int WORST_VALUE = -31'998;
+constexpr int BEST_VALUE = 31'998;
+constexpr int TB_VALUE = 31'999;
+constexpr int MATE_VALUE = 32'600;
+constexpr int NO_VALUE = 32'600;
 
-#define MAX_HISTORY_BONUS 10'000
 
-#define SEE_KING_VALUE 1'000
+constexpr int MAX_MATE_PLY = 1'00;
+
+constexpr int INFINITE_VALUE = 32'700;
+
+constexpr int MAX_HISTORY_BONUS = 10'000;
+
+constexpr int SEE_KING_VALUE = 1'000;
 
 
 const std::vector<int> piece_value = {
@@ -32,6 +41,20 @@ const std::vector<int> piece_value = {
     0, // none
 };
 
+// struct Stack {
+//     bool in_check;
+//     int num_moves_searched;
+//     chess::Move current_move;
+// };
+
+// class SearchStack {
+//     Stack operator[](int depth){
+//         return ss[depth + QSEARCH_MAX_DEPTH];
+//     }
+//     private:
+//     Stack ss[ENGINE_MAX_DEPTH + QSEARCH_MAX_DEPTH];
+// };
+
 class CircularBuffer3 {
     public:
     int curr_idx = 0;
@@ -40,6 +63,25 @@ class CircularBuffer3 {
     void add_move(chess::Move move);
 
     bool in_buffer(chess::Move move);
+};
+
+class KillerArray {
+    public:
+    bool is_killer(chess::Move move, int depth){
+        return killer_moves[depth + QSEARCH_MAX_DEPTH].in_buffer(move);
+    }
+
+    void add_move(chess::Move move, int depth){
+        killer_moves[depth + QSEARCH_MAX_DEPTH].add_move(move);
+    }
+    
+    void clear(){
+        for (int i = 0; i < ENGINE_MAX_DEPTH + QSEARCH_MAX_DEPTH; i++)
+            killer_moves[i] = CircularBuffer3();
+    }
+
+    private:
+    CircularBuffer3 killer_moves[ENGINE_MAX_DEPTH + QSEARCH_MAX_DEPTH] = {};
 };
 
 enum LimitType {

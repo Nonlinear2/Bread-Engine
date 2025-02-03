@@ -57,7 +57,8 @@ void SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_score(chess::Move& mov
         score += 100 * piece_value[static_cast<int>(move.promotionType())] * MATERIAL_CHANGE_MULTIPLIER;
     }
     
-    if (depth != -1 && killer_moves[depth].in_buffer(move)){
+    assert(depth != DEPTH_UNSEARCHED);
+    if (killer_moves.is_killer(move, depth)){
         score += 100 * KILLER_SCORE;
     }
 
@@ -153,9 +154,9 @@ bool SortedMoveGen<MoveGenType>::is_empty(){return empty(); }
 template<chess::movegen::MoveGenType MoveGenType>
 inline int SortedMoveGen<MoveGenType>::index(){return move_idx; }
 
-template<>
-void SortedMoveGen<chess::movegen::MoveGenType::ALL>::clear_killer_moves(){
-    std::fill(killer_moves.begin(), killer_moves.end(), CircularBuffer3());
+template<chess::movegen::MoveGenType MoveGenType>
+void SortedMoveGen<MoveGenType>::clear_killer_moves(){
+    killer_moves.clear();
 }
 
 template<>

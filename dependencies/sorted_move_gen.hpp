@@ -15,7 +15,7 @@ class SortedMoveGen: public chess::Movelist {
     static inline int MATERIAL_CHANGE_MULTIPLIER = 119;
     static inline int ENDGAME_PIECE_COUNT = 11;
 
-    static inline std::array<CircularBuffer3, ENGINE_MAX_DEPTH> killer_moves = {};
+    static inline KillerArray killer_moves = KillerArray();
     static inline History history = History();
 
     NnueBoard& board;
@@ -32,7 +32,7 @@ class SortedMoveGen: public chess::Movelist {
 
     private:
     int initial_size;
-    int depth = -1;
+    int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
     int num_remaining_moves;
     bool checked_tt_move = false;
