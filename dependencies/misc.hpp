@@ -20,7 +20,7 @@ constexpr int WORST_VALUE = -31'998;
 constexpr int BEST_VALUE = 31'998;
 constexpr int TB_VALUE = 31'999;
 constexpr int MATE_VALUE = 32'600;
-// constexpr int NO_VALUE = 32'600;
+constexpr int NO_VALUE = 32'601;
 
 constexpr int MAX_MATE_PLY = 1'00;
 constexpr int INFINITE_VALUE = 32'700;

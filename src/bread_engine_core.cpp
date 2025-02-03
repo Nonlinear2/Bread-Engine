@@ -19,7 +19,7 @@ chess::Move Engine::minimax_root(int depth, int color){
             switch (transposition->flag()){
                 case TFlag::EXACT:
                     best_move = transposition->best_move;
-                    best_move.setScore(transposition->value);
+                    best_move.setScore(transposition->value());
                     return best_move;
                 default:
                     break;
@@ -28,7 +28,7 @@ chess::Move Engine::minimax_root(int depth, int color){
         if (transposition->best_move != NO_MOVE){
             // in case the search breaks early, initialize best_move.
             best_move = transposition->best_move;
-            best_move.setScore(transposition->value);
+            best_move.setScore(transposition->value());
             sorted_move_gen.set_tt_move(transposition->best_move);
         }
     }
@@ -75,7 +75,7 @@ chess::Move Engine::minimax_root(int depth, int color){
         }
     }
     
-    transposition_table.store(zobrist_hash, alpha, depth, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+    transposition_table.store(zobrist_hash, alpha, NO_VALUE, depth, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
 
     return best_move;
 }
@@ -279,12 +279,12 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
             // if is repetition(1), danger of repetition so TT is unreliable
             switch (transposition->flag()){
                 case TFlag::EXACT:
-                    return transposition->value;
+                    return transposition->value();
                 case TFlag::LOWER_BOUND:
-                    alpha = std::max(alpha, transposition->value);
+                    alpha = std::max(alpha, transposition->value());
                     break;
                 case TFlag::UPPER_BOUND:
-                    beta = std::min(beta, transposition->value);
+                    beta = std::min(beta, transposition->value());
                     break;
                 default:
                     break;
@@ -292,7 +292,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
             // we need to do a cutoff check because we updated alpha/beta.
             if (beta <= alpha){
                 // no need to store in transposition table as is already there.
-                return transposition->value;
+                return transposition->value();
             }
         }
 
@@ -301,7 +301,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
 
     bool in_check = inner_board.inCheck();
 
-    int static_eval = is_hit ? transposition->value : inner_board.evaluate();
+    int static_eval = is_hit ? transposition->value() : inner_board.evaluate();
     // razoring
     if (!pv && !in_check && (depth < 6) && static_eval + depth*800 + 1500 < alpha){ 
         static_eval = qsearch<false>(alpha, beta, color, 0); // we update static eval to the better qsearch eval. //? tweak depth?
@@ -339,7 +339,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         // we know this eval is exact at any depth, but 
         // we also don't want this eval to pollute the transposition table.
         // the full move number will make sure it is replaced at some point.
-        transposition_table.store(zobrist_hash, max_eval, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+        transposition_table.store(zobrist_hash, max_eval, NO_VALUE, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
         return max_eval;
     }
 
@@ -419,7 +419,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         node_type = TFlag::EXACT;
     }
     if (is_mate(max_eval)) max_eval = increment_mate_ply(max_eval);
-    transposition_table.store(zobrist_hash, max_eval, depth, best_move, node_type, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+    transposition_table.store(zobrist_hash, max_eval, NO_VALUE, depth, best_move, node_type, static_cast<uint8_t>(inner_board.fullMoveNumber()));
 
     return max_eval;
 }
@@ -447,8 +447,8 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
     if (is_hit){
         switch (transposition->flag()){
             case TFlag::EXACT:
-                stand_pat = transposition->value;
-                if (transposition->depth() == 0){ // outcomes are stored at depth 255
+                stand_pat = transposition->value();
+                if (transposition->depth() == DEPTH_QSEARCH){ // outcomes are stored at depth 255
                     // we can already check for cutoff
                     if (stand_pat >= beta) return stand_pat;
                 } else {
@@ -456,11 +456,11 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
                 }
                 break;
             case TFlag::LOWER_BOUND:
-                if (!pv) alpha = std::max(alpha, transposition->value);
+                if (!pv) alpha = std::max(alpha, transposition->value());
                 is_hit = false;
                 break;
             case TFlag::UPPER_BOUND:
-                if (!pv) beta = std::min(beta, transposition->value); 
+                if (!pv) beta = std::min(beta, transposition->value());
                 is_hit = false;
                 break;
             default:
@@ -468,7 +468,7 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
         }
         if (beta <= alpha){
             // no need to store in transposition table as is already there.
-            return transposition->value;
+            return transposition->value();
         }
         if (transposition->best_move != NO_MOVE) sorted_capture_gen.set_tt_move(transposition->best_move);
     }
@@ -481,7 +481,7 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
         // if it is hit, no need to check for outcome, as it wouldn't be stored in the
         // transposition table at a 0 depth. 
         if (sorted_capture_gen.is_empty() && inner_board.try_outcome_eval(stand_pat)){ // only generate non captures?
-            transposition_table.store(zobrist_hash, stand_pat, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+            transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
             return stand_pat;
         }
 
@@ -489,13 +489,13 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
 
         stand_pat = inner_board.evaluate();
         if (stand_pat >= beta){
-            transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+            transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
             return stand_pat;
         }
     }
 
     if (depth == -QSEARCH_MAX_DEPTH){
-        transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+        transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
         return stand_pat;
     }
 
@@ -528,7 +528,7 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
         }
     }
     if (inner_board.halfMoveClock() + (depth + QSEARCH_MAX_DEPTH) >= 100) return max_eval; // avoid storing history dependant evals.
-    transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+    transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
     
     if (is_mate(max_eval)) max_eval = increment_mate_ply(max_eval);
     return max_eval;

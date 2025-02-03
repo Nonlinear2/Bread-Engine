@@ -16,7 +16,8 @@ enum class TFlag: uint8_t {
 // side to move is not stored in the transposition table as it is in the zobrist hash
 struct TEntry {
     uint64_t zobrist_hash = 0; // 8 bytes
-    int value = 0; // 4 bytes
+    int16_t value_ = 0; // 2 bytes
+    int16_t eval_ = 0; // 2 bytes
     uint16_t best_move = 0; // 2 bytes
     uint8_t depth_tflag = 0; // 1 byte  -> contains depth: 6 bits (64 values), flag: 2 bits (4 values)
     uint8_t move_number = 0; // 1 byte
@@ -31,11 +32,20 @@ struct TEntry {
         return static_cast<TFlag>(depth_tflag & 0b00000011);
     };
 
+    int value(){
+        return static_cast<int>(value_);
+    };
+
+    int eval(){
+        return static_cast<int>(eval_);
+    };
+
     TEntry(){};
 
-    TEntry(uint64_t zobrist, int value, int depth, chess::Move move, TFlag flag, uint8_t move_number):
+    TEntry(uint64_t zobrist, int value, int eval, int depth, chess::Move move, TFlag flag, uint8_t move_number):
             zobrist_hash(zobrist),
-            value(value),
+            value_(value),
+            eval_(eval),
             best_move(move.move()),
             depth_tflag((static_cast<uint8_t>(depth) << 2) | (static_cast<uint8_t>(flag))),
             move_number(move_number) {};
@@ -48,7 +58,7 @@ class TranspositionTable {
 
     void allocateMB(int new_size);
 
-    void store(uint64_t zobrist, int eval, int depth, chess::Move move, TFlag flag, uint8_t move_number);
+    void store(uint64_t zobrist, int value, int eval, int depth, chess::Move move, TFlag flag, uint8_t move_number);
     void store(TEntry entry);
 
     TEntry* probe(bool& is_hit, uint64_t zobrist);
