@@ -40,7 +40,7 @@ void NnueBoard::restore_state(chess::Move move){
 }
 
 int NnueBoard::evaluate(){
-    return nnue_.run_cropped_nn(sideToMove() == chess::Color::WHITE);
+    return std::clamp(nnue_.run_cropped_nn(sideToMove() == chess::Color::WHITE), -31'998, 31'998);
 }
 
 bool NnueBoard::try_outcome_eval(int& eval){

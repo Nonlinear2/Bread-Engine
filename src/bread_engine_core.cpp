@@ -89,15 +89,15 @@ int Engine::increment_mate_ply(int eval){
 }
 
 bool Engine::is_mate(int eval){
-    return (std::abs(eval) >= 80'000);
+    return (std::abs(eval) >= MATE_VALUE - MAX_MATE_PLY && std::abs(eval) <= MATE_VALUE);
 }
 
 bool Engine::is_win(int eval){
-    return (eval >= 80'000);
+    return (eval >= TB_VALUE);
 }
 
 int Engine::get_mate_in_moves(int eval){
-    int ply = -std::abs(eval) + MATE_VALUE;
+    int ply = MATE_VALUE - std::abs(eval);
     return (is_win(eval) ? 1: -1)*(ply/2 + (ply%2 != 0)); 
 }
 

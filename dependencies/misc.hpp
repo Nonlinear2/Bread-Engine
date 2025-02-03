@@ -18,12 +18,12 @@ constexpr int WORST_MOVE_SCORE = -1'000'000;
 
 // constexpr int WORST_VALUE = -31'998;
 // constexpr int BEST_VALUE = 31'998;
-constexpr int TB_VALUE = 50'000; //31'999;
-constexpr int MATE_VALUE = 90'000; // 32'600;
+constexpr int TB_VALUE = 31'999;
+constexpr int MATE_VALUE = 32'600;
 // constexpr int NO_VALUE = 32'600;
 
-// constexpr int MAX_MATE_PLY = 1'00;
-constexpr int INFINITE_VALUE = 100'000; //32'700;
+constexpr int MAX_MATE_PLY = 1'00;
+constexpr int INFINITE_VALUE = 32'700;
 constexpr int MAX_HISTORY_BONUS = 10'000;
 constexpr int SEE_KING_VALUE = 1'000;
 
