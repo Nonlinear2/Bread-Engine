@@ -84,6 +84,7 @@ chess::Move Engine::minimax_root(int depth, int color){
 // we decrease the eval if the checkmate is deeper in the search tree.
 
 int Engine::increment_mate_ply(int eval){
+    assert(is_mate(eval));
     return (is_win(eval) ? 1 : -1)*(std::abs(eval) - 1);
 }
 
@@ -268,6 +269,8 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         return qsearch<pv>(alpha, beta, color, 0);
     }
 
+    int static_eval = NO_VALUE;
+
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = inner_board.hash();
 
@@ -275,25 +278,38 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
-        if (transposition->depth() >= depth && !inner_board.isRepetition(1)){
-            // if is repetition(1), danger of repetition so TT is unreliable
-            switch (transposition->flag()){
-                case TFlag::EXACT:
+        if (transposition->eval() != NO_VALUE){
+            static_eval = transposition->eval();
+        }
+        switch (transposition->flag()){
+            if (transposition->value() == NO_VALUE)
+                break;
+
+            case TFlag::EXACT:
+                if (transposition->depth() >= depth && !inner_board.isRepetition(1)){
                     return transposition->value();
-                case TFlag::LOWER_BOUND:
+                }
+                static_eval = transposition->value();
+                break;
+            case TFlag::LOWER_BOUND:
+                if (transposition->depth() >= depth && !inner_board.isRepetition(1)){
                     alpha = std::max(alpha, transposition->value());
-                    break;
-                case TFlag::UPPER_BOUND:
+                }
+                static_eval = transposition->value();
+                break;
+            case TFlag::UPPER_BOUND:
+                if (transposition->depth() >= depth && !inner_board.isRepetition(1)){
                     beta = std::min(beta, transposition->value());
-                    break;
-                default:
-                    break;
-            }
+                }
+                static_eval = transposition->value();
+                break;
+            default:
+                break;
+        }
             // we need to do a cutoff check because we updated alpha/beta.
-            if (beta <= alpha){
-                // no need to store in transposition table as is already there.
-                return transposition->value();
-            }
+        if (beta <= alpha){
+            // no need to store in transposition table as is already there.
+            return transposition->value();
         }
 
         if (transposition->best_move != NO_MOVE) sorted_move_gen.set_tt_move(transposition->best_move);
@@ -301,7 +317,9 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
 
     bool in_check = inner_board.inCheck();
 
-    int static_eval = is_hit ? transposition->value() : inner_board.evaluate();
+    if (static_eval == NO_VALUE)
+        static_eval = inner_board.evaluate();
+
     // razoring
     if (!pv && !in_check && (depth < 6) && static_eval + depth*800 + 1500 < alpha){ 
         static_eval = qsearch<false>(alpha, beta, color, 0); // we update static eval to the better qsearch eval. //? tweak depth?
@@ -419,7 +437,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         node_type = TFlag::EXACT;
     }
     if (is_mate(max_eval)) max_eval = increment_mate_ply(max_eval);
-    transposition_table.store(zobrist_hash, max_eval, NO_VALUE, depth, best_move, node_type, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+    transposition_table.store(zobrist_hash, max_eval, static_eval, depth, best_move, node_type, static_cast<uint8_t>(inner_board.fullMoveNumber()));
 
     return max_eval;
 }
@@ -429,7 +447,7 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
     // assert(pv || ((alpha == (beta-1)) && (alpha == (beta-1))));
     nodes++;
 
-    int stand_pat;
+    int stand_pat = NO_VALUE;
     
     // tablebase probe
     if (inner_board.probe_wdl(stand_pat)){
@@ -446,22 +464,20 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
         switch (transposition->flag()){
-            case TFlag::EXACT:
-                stand_pat = transposition->value();
-                if (transposition->depth() == DEPTH_QSEARCH){ // outcomes are stored at depth 255
-                    // we can already check for cutoff
-                    if (stand_pat >= beta) return stand_pat;
-                } else {
-                    return stand_pat;
-                }
+            if (transposition->eval() != NO_VALUE){
+                stand_pat = transposition->eval();
+            }
+            if (transposition->value() == NO_VALUE)
                 break;
+            case TFlag::EXACT:
+                return transposition->value();
             case TFlag::LOWER_BOUND:
                 if (!pv) alpha = std::max(alpha, transposition->value());
-                is_hit = false;
+                stand_pat = std::max(stand_pat, transposition->value());
                 break;
             case TFlag::UPPER_BOUND:
                 if (!pv) beta = std::min(beta, transposition->value());
-                is_hit = false;
+                stand_pat = std::min(stand_pat, transposition->value());
                 break;
             default:
                 break;
@@ -477,11 +493,11 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
         sorted_capture_gen.generate_moves();
     }
 
-    if (!is_hit){
+    if (stand_pat == NO_VALUE){
         // if it is hit, no need to check for outcome, as it wouldn't be stored in the
-        // transposition table at a 0 depth. 
+        // transposition table at a 0 depth.
         if (sorted_capture_gen.is_empty() && inner_board.try_outcome_eval(stand_pat)){ // only generate non captures?
-            transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+            // transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
             return stand_pat;
         }
 
@@ -489,13 +505,13 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
 
         stand_pat = inner_board.evaluate();
         if (stand_pat >= beta){
-            transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+            // transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
             return stand_pat;
         }
     }
 
     if (depth == -QSEARCH_MAX_DEPTH){
-        transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+        // transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
         return stand_pat;
     }
 
@@ -528,8 +544,15 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
         }
     }
     if (inner_board.halfMoveClock() + (depth + QSEARCH_MAX_DEPTH) >= 100) return max_eval; // avoid storing history dependant evals.
-    transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-    
+
+    if (depth == 0){
+        transposition_table.store(zobrist_hash, max_eval,
+            stand_pat,
+            DEPTH_QSEARCH, best_move,
+            max_eval >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
+            static_cast<uint8_t>(inner_board.fullMoveNumber()));
+    }
+
     if (is_mate(max_eval)) max_eval = increment_mate_ply(max_eval);
     return max_eval;
 }
