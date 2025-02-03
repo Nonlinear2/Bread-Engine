@@ -16,9 +16,9 @@ enum class TFlag: uint8_t {
 // side to move is not stored in the transposition table as it is in the zobrist hash
 struct TEntry {
     uint64_t zobrist_hash = 0; // 8 bytes
-    int evaluation = 0; // 4 bytes
+    int value = 0; // 4 bytes
     uint16_t best_move = 0; // 2 bytes
-    uint8_t depth_tflag = 0; // 1 byte  -> contains depth: 6 bits (max 63), flag: 2 bits (4 values)
+    uint8_t depth_tflag = 0; // 1 byte  -> contains depth: 6 bits (64 values), flag: 2 bits (4 values)
     uint8_t move_number = 0; // 1 byte
     // ==============
     // ----> total = 8 + 8 = 16 bytes
@@ -33,9 +33,9 @@ struct TEntry {
 
     TEntry(){};
 
-    TEntry(uint64_t zobrist, int eval, int depth, chess::Move move, TFlag flag, uint8_t move_number):
+    TEntry(uint64_t zobrist, int value, int depth, chess::Move move, TFlag flag, uint8_t move_number):
             zobrist_hash(zobrist),
-            evaluation(eval),
+            value(value),
             best_move(move.move()),
             depth_tflag((static_cast<uint8_t>(depth) << 2) | (static_cast<uint8_t>(flag))),
             move_number(move_number) {};

@@ -19,7 +19,7 @@ chess::Move Engine::minimax_root(int depth, int color){
             switch (transposition->flag()){
                 case TFlag::EXACT:
                     best_move = transposition->best_move;
-                    best_move.setScore(transposition->evaluation);
+                    best_move.setScore(transposition->value);
                     return best_move;
                 default:
                     break;
@@ -28,7 +28,7 @@ chess::Move Engine::minimax_root(int depth, int color){
         if (transposition->best_move != NO_MOVE){
             // in case the search breaks early, initialize best_move.
             best_move = transposition->best_move;
-            best_move.setScore(transposition->evaluation);
+            best_move.setScore(transposition->value);
             sorted_move_gen.set_tt_move(transposition->best_move);
         }
     }
@@ -276,12 +276,12 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
             // if is repetition(1), danger of repetition so TT is unreliable
             switch (transposition->flag()){
                 case TFlag::EXACT:
-                    return transposition->evaluation;
+                    return transposition->value;
                 case TFlag::LOWER_BOUND:
-                    alpha = std::max(alpha, transposition->evaluation);
+                    alpha = std::max(alpha, transposition->value);
                     break;
                 case TFlag::UPPER_BOUND:
-                    beta = std::min(beta, transposition->evaluation);
+                    beta = std::min(beta, transposition->value);
                     break;
                 default:
                     break;
@@ -289,7 +289,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
             // we need to do a cutoff check because we updated alpha/beta.
             if (beta <= alpha){
                 // no need to store in transposition table as is already there.
-                return transposition->evaluation;
+                return transposition->value;
             }
         }
 
@@ -298,7 +298,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
 
     bool in_check = inner_board.inCheck();
 
-    int static_eval = is_hit ? transposition->evaluation : inner_board.evaluate();
+    int static_eval = is_hit ? transposition->value : inner_board.evaluate();
     // razoring
     if (!pv && !in_check && (depth < 6) && static_eval + depth*800 + 1500 < alpha){ 
         static_eval = qsearch<false>(alpha, beta, color, QSEARCH_MAX_DEPTH); // we update static eval to the better qsearch eval. //? tweak depth?
@@ -444,7 +444,7 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
     if (is_hit){
         switch (transposition->flag()){
             case TFlag::EXACT:
-                stand_pat = transposition->evaluation;
+                stand_pat = transposition->value;
                 if (transposition->depth() == 0){ // outcomes are stored at depth 255
                     // we can already check for cutoff
                     if (stand_pat >= beta) return stand_pat;
@@ -453,11 +453,11 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
                 }
                 break;
             case TFlag::LOWER_BOUND:
-                if (!pv) alpha = std::max(alpha, transposition->evaluation);
+                if (!pv) alpha = std::max(alpha, transposition->value);
                 is_hit = false;
                 break;
             case TFlag::UPPER_BOUND:
-                if (!pv) beta = std::min(beta, transposition->evaluation); 
+                if (!pv) beta = std::min(beta, transposition->value); 
                 is_hit = false;
                 break;
             default:
@@ -465,7 +465,7 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
         }
         if (beta <= alpha){
             // no need to store in transposition table as is already there.
-            return transposition->evaluation;
+            return transposition->value;
         }
         if (transposition->best_move != NO_MOVE) sorted_capture_gen.set_tt_move(transposition->best_move);
     }
