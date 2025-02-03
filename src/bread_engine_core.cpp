@@ -262,7 +262,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     // transpositions will be checked inside of qsearch
     // if isRepetition(1), qsearch will not consider the danger of draw as it searches captures.
     if (depth == 0){
-        return qsearch<pv>(alpha, beta, color, QSEARCH_MAX_DEPTH);
+        return qsearch<pv>(alpha, beta, color, 0);
     }
 
     const int initial_alpha = alpha;
@@ -301,7 +301,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     int static_eval = is_hit ? transposition->value : inner_board.evaluate();
     // razoring
     if (!pv && !in_check && (depth < 6) && static_eval + depth*800 + 1500 < alpha){ 
-        static_eval = qsearch<false>(alpha, beta, color, QSEARCH_MAX_DEPTH); // we update static eval to the better qsearch eval. //? tweak depth?
+        static_eval = qsearch<false>(alpha, beta, color, 0); // we update static eval to the better qsearch eval. //? tweak depth?
         if (static_eval <= alpha) return static_eval;
     }
 
@@ -470,7 +470,7 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
         if (transposition->best_move != NO_MOVE) sorted_capture_gen.set_tt_move(transposition->best_move);
     }
 
-    if (depth != 0){
+    if (depth != -QSEARCH_MAX_DEPTH){
         sorted_capture_gen.generate_moves();
     }
 
@@ -489,9 +489,9 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
             transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
             return stand_pat;
         }
-    }   
+    }
 
-    if (depth == 0){
+    if (depth == -QSEARCH_MAX_DEPTH){
         transposition_table.store(zobrist_hash, stand_pat, 0, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
         return stand_pat;
     }
@@ -524,7 +524,7 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
             break;
         }
     }
-    if (inner_board.halfMoveClock() + depth >= 100) return max_eval; // avoid storing history dependant evals.
+    if (inner_board.halfMoveClock() + (depth + QSEARCH_MAX_DEPTH) >= 100) return max_eval; // avoid storing history dependant evals.
     transposition_table.store(zobrist_hash, stand_pat, 0, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
     
     if (is_mate(max_eval)) max_eval = increment_mate_ply(max_eval);

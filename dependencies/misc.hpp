@@ -10,14 +10,14 @@ constexpr int QSEARCH_MAX_DEPTH = 6;
 
 constexpr int BENCHMARK_DEPTH = 9;
 
-// constexpr int DEPTH_UNSEARCHED = -1;
-// constexpr int DEPTH_QSEARCH = 0;
+constexpr int DEPTH_UNSEARCHED = -1;
+constexpr int DEPTH_QSEARCH = 0;
 
 constexpr int BEST_MOVE_SCORE = 1'000'000;
 constexpr int WORST_MOVE_SCORE = -1'000'000;
 
-// constexpr int WORST_VALUE = -31'998;
-// constexpr int BEST_VALUE = 31'998;
+constexpr int WORST_VALUE = -31'998;
+constexpr int BEST_VALUE = 31'998;
 constexpr int TB_VALUE = 31'999;
 constexpr int MATE_VALUE = 32'600;
 // constexpr int NO_VALUE = 32'600;

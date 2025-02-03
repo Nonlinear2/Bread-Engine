@@ -56,8 +56,9 @@ void SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_score(chess::Move& mov
     if (move.typeOf() == chess::Move::PROMOTION){
         score += 100 * piece_value[static_cast<int>(move.promotionType())] * MATERIAL_CHANGE_MULTIPLIER;
     }
-    
-    if (depth != -1 && killer_moves[depth].in_buffer(move)){
+
+    assert(depth != DEPTH_UNSEARCHED);
+    if (killer_moves[depth].in_buffer(move)){
         score += 100 * KILLER_SCORE;
     }
 
