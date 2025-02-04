@@ -3,83 +3,6 @@
 // TODO: tweak qsearch depth:
 // try qsearch depth reductions and search depth extensions when in check
 
-chess::Move Engine::minimax_root(int depth, int color){
-    int alpha = -INFINITE_VALUE;
-    int beta = INFINITE_VALUE;
-    chess::Move best_move = NO_MOVE;
-    uint64_t zobrist_hash = inner_board.hash();
-    inner_board.synchronize();
-
-    SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board, depth);
-    bool is_hit;
-    TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
-    if (is_hit){
-        if ((transposition->depth() >= depth) && (!inner_board.isRepetition(1))){
-            // if is repetition(1), danger of repetition so TT is unreliable
-            switch (transposition->flag()){
-                case TFlag::EXACT:
-                    best_move = transposition->best_move;
-                    best_move.setScore(transposition->value());
-                    return best_move;
-                default:
-                    break;
-            }
-        }
-        if (transposition->best_move != NO_MOVE){
-            // in case the search breaks early, initialize best_move.
-            best_move = transposition->best_move;
-            best_move.setScore(transposition->value());
-            sorted_move_gen.set_tt_move(transposition->best_move);
-        }
-    }
-
-    sorted_move_gen.generate_moves();
-    
-    int pos_eval;
-    chess::Move move;
-    while(sorted_move_gen.next(move)){
-        bool is_capture = inner_board.isCapture(move);
-
-        inner_board.update_state(move);
-
-        int new_depth = depth-1;
-        new_depth += inner_board.inCheck();
-        new_depth -= ((sorted_move_gen.index() > 1) && (depth > 5) && (!is_capture) && (!inner_board.inCheck()));
-
-        if (sorted_move_gen.index() == 0){
-            pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha);
-        } else {
-            pos_eval = -negamax<false>(new_depth, -color, -beta, -alpha);
-            if ((new_depth < depth-1) && (pos_eval > alpha)){
-                pos_eval = -negamax<false>(depth-1, -color, -beta, -alpha);
-            }
-        }
-
-        inner_board.restore_state(move);
-
-        if (interrupt_flag){
-            if (best_move != NO_MOVE){
-                return best_move; 
-            } else { // this means no move was ever recorded
-                std::cerr << "error: the engine didn't complete any search." << std::endl;
-                return NO_MOVE;
-            }
-        }
-        
-        if (is_mate(pos_eval)) pos_eval = increment_mate_ply(pos_eval);
-
-        if (pos_eval > alpha){
-            best_move = move;
-            best_move.setScore(pos_eval);
-            alpha = pos_eval;
-        }
-    }
-    
-    transposition_table.store(zobrist_hash, alpha, NO_VALUE, depth, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-
-    return best_move;
-}
-
 // to make the engine prefer faster checkmates instead of stalling,
 // we decrease the eval if the checkmate is deeper in the search tree.
 
@@ -116,6 +39,27 @@ int Engine::get_think_time(int time_left, int num_moves_out_of_book, int num_mov
     }
     return static_cast<int>(factor*target + 0.9F*increment);
 }
+
+bool Engine::update_interrupt_flag(){
+    SearchLimit limit_ = limit.load();
+    switch (limit_.type){
+        case LimitType::Time:
+            update_run_time();
+            interrupt_flag = (run_time >= limit_.value);
+            break;
+        case LimitType::Nodes:
+            interrupt_flag = (nodes >= limit_.value);
+            break;
+        default:
+            interrupt_flag = false;
+            break;
+    }
+    return interrupt_flag;
+}
+
+void Engine::update_run_time(){
+    run_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time).count();
+};
 
 std::pair<std::string, std::string> Engine::get_pv_pmove(std::string fen){
     std::string pv = "";
@@ -228,26 +172,82 @@ void Engine::iterative_deepening(SearchLimit limit){
     return;
 }
 
-bool Engine::update_interrupt_flag(){
-    SearchLimit limit_ = limit.load();
-    switch (limit_.type){
-        case LimitType::Time:
-            update_run_time();
-            interrupt_flag = (run_time >= limit_.value);
-            break;
-        case LimitType::Nodes:
-            interrupt_flag = (nodes >= limit_.value);
-            break;
-        default:
-            interrupt_flag = false;
-            break;
-    }
-    return interrupt_flag;
-}
+chess::Move Engine::minimax_root(int depth, int color){
+    int alpha = -INFINITE_VALUE;
+    int beta = INFINITE_VALUE;
+    chess::Move best_move = NO_MOVE;
+    uint64_t zobrist_hash = inner_board.hash();
+    inner_board.synchronize();
 
-void Engine::update_run_time(){
-    run_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time).count();
-};
+    SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board, depth);
+    bool is_hit;
+    TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
+    if (is_hit){
+        if ((transposition->depth() >= depth) && (!inner_board.isRepetition(1))){
+            // if is repetition(1), danger of repetition so TT is unreliable
+            switch (transposition->flag()){
+                case TFlag::EXACT:
+                    best_move = transposition->best_move;
+                    best_move.setScore(transposition->value());
+                    return best_move;
+                default:
+                    break;
+            }
+        }
+        if (transposition->best_move != NO_MOVE){
+            // in case the search breaks early, initialize best_move.
+            best_move = transposition->best_move;
+            best_move.setScore(transposition->value());
+            sorted_move_gen.set_tt_move(transposition->best_move);
+        }
+    }
+
+    sorted_move_gen.generate_moves();
+    
+    int pos_eval;
+    chess::Move move;
+    while(sorted_move_gen.next(move)){
+        bool is_capture = inner_board.isCapture(move);
+
+        inner_board.update_state(move);
+
+        int new_depth = depth-1;
+        new_depth += inner_board.inCheck();
+        new_depth -= ((sorted_move_gen.index() > 1) && (depth > 5) && (!is_capture) && (!inner_board.inCheck()));
+
+        if (sorted_move_gen.index() == 0){
+            pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha);
+        } else {
+            pos_eval = -negamax<false>(new_depth, -color, -beta, -alpha);
+            if ((new_depth < depth-1) && (pos_eval > alpha)){
+                pos_eval = -negamax<false>(depth-1, -color, -beta, -alpha);
+            }
+        }
+
+        inner_board.restore_state(move);
+
+        if (interrupt_flag){
+            if (best_move != NO_MOVE){
+                return best_move; 
+            } else { // this means no move was ever recorded
+                std::cerr << "error: the engine didn't complete any search." << std::endl;
+                return NO_MOVE;
+            }
+        }
+        
+        if (is_mate(pos_eval)) pos_eval = increment_mate_ply(pos_eval);
+
+        if (pos_eval > alpha){
+            best_move = move;
+            best_move.setScore(pos_eval);
+            alpha = pos_eval;
+        }
+    }
+    
+    transposition_table.store(zobrist_hash, alpha, NO_VALUE, depth, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+
+    return best_move;
+}
 
 template<bool pv>
 int Engine::negamax(int depth, int color, int alpha, int beta){
