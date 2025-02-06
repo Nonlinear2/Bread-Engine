@@ -84,8 +84,8 @@ void TranspositionTable::store(uint64_t zobrist, int value, int eval, int depth,
     // - the new depth is nonzero and an exact entry
     if (entry->depth_tflag == 0 ||
         move_number > entry->move_number + 4 ||
-        depth > entry->depth() ||
-        ((depth != 0) && (flag == TFlag::EXACT)))
+        depth > entry->depth() - 1 ||
+        ((depth != DEPTH_QSEARCH) && (flag == TFlag::EXACT)))
     {
         // add move if the old entry didn't hold the same position or if the new move is better
         if (entry->zobrist_hash != zobrist ||
