@@ -22,6 +22,8 @@ class Engine {
 
     NnueBoard inner_board = NnueBoard();
 
+    void set_uci_display(bool v);
+
     int increment_mate_ply(int eval);
 
     bool is_mate(int eval);
@@ -35,14 +37,16 @@ class Engine {
 
     void update_run_time();
 
-    void search(std::string fen, SearchLimit limit);
-    void search(SearchLimit limit);
+    chess::Move search(std::string fen, SearchLimit limit);
+    chess::Move search(SearchLimit limit);
 
-    void iterative_deepening(SearchLimit limit);
+    chess::Move iterative_deepening(SearchLimit limit);
 
     std::atomic<bool> is_nonsense = false;
     private:
     friend class UCIAgent;
+
+    bool display_uci = true;
 
     int engine_color;
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;

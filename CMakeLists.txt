@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(bread_engine VERSION 1.2.1)
+project(bread_engine VERSION 1.2.2)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -115,4 +115,9 @@ bread_configure(parameter_tuning SOURCES
 bread_configure(search_position SOURCES
     ${bread_SOURCE}
     ${bread_UTILS}/run_search.cpp
+)
+
+bread_configure(data_gen SOURCES
+    ${bread_SOURCE}
+    ${bread_UTILS}/data_gen.cpp
 )

@@ -14,29 +14,43 @@ bool Nonsense::should_bongcloud(uint64_t hash, int move_number){
     return (is_bongcloud || (hash == starting_pos_hash));
 }
 
-void Nonsense::play_bongcloud(){
+chess::Move Nonsense::play_bongcloud(bool display_info){
     if (is_bongcloud){
-        std::cout << "info depth 91";
-        std::cout << " score mate 78";
-        std::cout << " nodes 149597870700 nps 299792458";
-        std::cout << " time 0";
-        std::cout << " hashfull 0";
-        std::cout << " pv e1e2" << std::endl;
-        std::cout << "bestmove e1e2" << std::endl;
+        if (display_info){
+            std::cout << "info depth 91";
+            std::cout << " score mate 78";
+            std::cout << " nodes 149597870700 nps 299792458";
+            std::cout << " time 0";
+            std::cout << " hashfull 0";
+            std::cout << " pv e1e2" << std::endl;
+            std::cout << "bestmove e1e2" << std::endl;
+        }
         is_bongcloud = false;
+        chess::Move move = chess::Move::make(chess::Square(chess::Square::underlying::SQ_E1),
+                                             chess::Square(chess::Square::underlying::SQ_E2),
+                                             chess::PieceType::KING);
+        move.setScore(10);
+        return move;
     } else {
-        std::cout << "info depth 1";
-        std::cout << " score cp 0";
-        std::cout << " nodes 10 nps 3";
-        std::cout << " time 0";
-        std::cout << " hashfull 0";
-        std::cout << " pv e2e4" << std::endl;
-        std::cout << "bestmove e2e4" << std::endl;
+        if (display_info){
+            std::cout << "info depth 1";
+            std::cout << " score cp 0";
+            std::cout << " nodes 10 nps 3";
+            std::cout << " time 0";
+            std::cout << " hashfull 0";
+            std::cout << " pv e2e4" << std::endl;
+            std::cout << "bestmove e2e4" << std::endl;
+        }
         is_bongcloud = true;
+        chess::Move move = chess::Move::make(chess::Square(chess::Square::underlying::SQ_E2),
+                                             chess::Square(chess::Square::underlying::SQ_E4),
+                                             chess::PieceType::PAWN);
+        move.setScore(0);
+        return move;
     }
 }
 
-void Nonsense::play_worst_winning_move(chess::Move move, chess::Movelist moves){
+chess::Move Nonsense::worst_winning_move(chess::Move move, chess::Movelist moves){
     chess::Move worst_winning_move = move;
     for (auto move: moves){
         if (move.score() != TB_VALUE) continue;
@@ -54,8 +68,6 @@ void Nonsense::play_worst_winning_move(chess::Move move, chess::Movelist moves){
             }
         }
     }
-    
-    std::cout << " pv " << chess::uci::moveToUci(worst_winning_move) << std::endl;
-    std::cout << "bestmove " << chess::uci::moveToUci(worst_winning_move) << std::endl;
+    return worst_winning_move;
 }
 

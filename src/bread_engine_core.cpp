@@ -6,6 +6,10 @@
 // to make the engine prefer faster checkmates instead of stalling,
 // we decrease the eval if the checkmate is deeper in the search tree.
 
+void Engine::set_uci_display(bool v){
+    display_uci = v;
+}
+
 int Engine::increment_mate_ply(int eval){
     assert(is_mate(eval));
     return (is_win(eval) ? 1 : -1)*(std::abs(eval) - 1);
@@ -83,19 +87,20 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(std::string fen){
     return std::pair(pv, ponder_move);
 }
 
-void Engine::search(std::string fen, SearchLimit limit){
+chess::Move Engine::search(std::string fen, SearchLimit limit){
     inner_board.setFen(fen);
-    iterative_deepening(limit);
+    return iterative_deepening(limit);
 };
 
-void Engine::search(SearchLimit limit){
-    iterative_deepening(limit);
+chess::Move Engine::search(SearchLimit limit){
+    return iterative_deepening(limit);
 };
 
-void Engine::iterative_deepening(SearchLimit limit){
+chess::Move Engine::iterative_deepening(SearchLimit limit){
     if (is_nonsense) srand((unsigned int)time(NULL));
-    if (is_nonsense && nonsense.should_bongcloud(inner_board.hash(), inner_board.fullMoveNumber())){ nonsense.play_bongcloud(); return; }
-    
+    if (is_nonsense && nonsense.should_bongcloud(inner_board.hash(), inner_board.fullMoveNumber()))
+        return nonsense.play_bongcloud(display_uci);
+
     this->limit = limit;
     start_time = std::chrono::high_resolution_clock::now();
 
@@ -118,15 +123,27 @@ void Engine::iterative_deepening(SearchLimit limit){
     chess::Movelist tb_moves;
     if (inner_board.probe_root_dtz(tb_move, tb_moves, is_nonsense)){
         update_run_time();
-        std::cout << "info depth 0";
-        std::cout << " score cp " << tb_move.score();
-        std::cout << " nodes 0 nps 0";
-        std::cout << " time " << run_time;
-        std::cout << " hashfull " << transposition_table.hashfull();
-        if (is_nonsense && (tb_move.score() == TB_VALUE)){ nonsense.play_worst_winning_move(tb_move, tb_moves); return; }
-        std::cout << " pv " << chess::uci::moveToUci(tb_move) << std::endl;
-        std::cout << "bestmove " << chess::uci::moveToUci(tb_move) << std::endl;
-        return;
+        if (display_uci){
+            std::cout << "info depth 0";
+            std::cout << " score cp " << tb_move.score();
+            std::cout << " nodes 0 nps 0";
+            std::cout << " time " << run_time;
+            std::cout << " hashfull " << transposition_table.hashfull();
+        }
+        if (is_nonsense && (tb_move.score() == TB_VALUE)){
+            tb_move = nonsense.worst_winning_move(tb_move, tb_moves);
+            tb_move.setScore(TB_VALUE);
+            if (display_uci){
+                std::cout << " pv " << chess::uci::moveToUci(tb_move) << std::endl;
+                std::cout << "bestmove " << chess::uci::moveToUci(tb_move) << std::endl;
+            }
+            return tb_move;
+        }
+        if (display_uci){
+            std::cout << " pv " << chess::uci::moveToUci(tb_move) << std::endl;
+            std::cout << "bestmove " << chess::uci::moveToUci(tb_move) << std::endl;
+        }
+        return tb_move;
     };
 
     while (true){
@@ -142,34 +159,37 @@ void Engine::iterative_deepening(SearchLimit limit){
         update_run_time();
         if (run_time == 0) run_time = 1; // avoid division by 0;
         // do not count interrupted searches in depth
-        std::cout << "info depth " << current_depth - interrupt_flag;
-        if (is_mate(best_move.score())){
-            std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
-        } else {
-            std::cout << " score cp " << static_cast<int>(std::tanh(static_cast<float>(best_move.score())/(64*127))*1111);
+        if (display_uci){
+            std::cout << "info depth " << current_depth - interrupt_flag;
+            if (is_mate(best_move.score())){
+                std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
+            } else {
+                std::cout << " score cp " << static_cast<int>(std::tanh(static_cast<float>(best_move.score())/(64*127))*1111);
+            }
+            std::cout << " nodes " << nodes;
+            std::cout << " nps " << nodes*1000/run_time;
+            std::cout << " time " << run_time;
+            std::cout << " hashfull " << transposition_table.hashfull();
+            std::cout << " pv" << pv << std::endl;
         }
-        std::cout << " nodes " << nodes;
-        std::cout << " nps " << nodes*1000/run_time;
-        std::cout << " time " << run_time;
-        std::cout << " hashfull " << transposition_table.hashfull();
-        std::cout << " pv" << pv << std::endl;
-        
 
         // should the search really stop if there is a mate for the oponent?
         if ((interrupt_flag) ||
             (is_mate(best_move.score())) ||
             ((limit.type == LimitType::Depth) && (current_depth == limit.value)) ||
             (current_depth == ENGINE_MAX_DEPTH)) break;
-        
     }
-    if (is_nonsense) nonsense.display_info();
-    std::cout << "bestmove " << chess::uci::moveToUci(best_move);
-    if (ponder_move.size() > 0){
-        std::cout << " ponder " << ponder_move;
+    if (is_nonsense && display_uci) nonsense.display_info();
+
+    if (display_uci){
+        std::cout << "bestmove " << chess::uci::moveToUci(best_move);
+        if (ponder_move.size() > 0){
+            std::cout << " ponder " << ponder_move;
+        }
+        std::cout << std::endl;
     }
-    std::cout << std::endl;
     interrupt_flag = false;
-    return;
+    return best_move;
 }
 
 chess::Move Engine::minimax_root(int depth, int color){
@@ -372,7 +392,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         bool is_killer = SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
 
         // lmp
-        if ((!pv) && (!in_check) && (!is_capture) && (sorted_move_gen.index() > 3 + depth) && (!is_hit) && (static_eval < alpha)) continue;
+        if (!pv && !in_check && !is_capture && sorted_move_gen.index() > 3 + depth && !is_hit && static_eval < alpha) continue;
         
         inner_board.update_state(move);
         
@@ -511,7 +531,6 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
     }
 
     if (depth == -QSEARCH_MAX_DEPTH){
-        // transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
         return stand_pat;
     }
 
@@ -529,6 +548,8 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
 
         // SEE pruning
         if (!SEE::evaluate(inner_board, move, (alpha-stand_pat)/800 - 3)) continue;
+
+        // if (!pv && (sorted_capture_gen.index() > 7) && (!is_hit) && (stand_pat + 2000 < alpha)) continue;
 
         inner_board.update_state(move);
         pos_eval = -qsearch<pv>(-beta, -alpha, -color, depth-1);
