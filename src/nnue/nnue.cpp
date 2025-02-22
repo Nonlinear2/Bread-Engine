@@ -267,7 +267,7 @@ int NNUE::run_cropped_nn(bool color){
     crelu32(layer_3_unclipped_output, layer_3_clipped_output, layer_3.output_size);
 
     int16_t output = layer_4.run(layer_3_clipped_output);
-    return output;
+    return output / 16;
 
 };
 

@@ -1,6 +1,7 @@
 #include "bread_engine_core.hpp"
 #include "chess.hpp"
 #include <iostream>
+#include <Windows.h>
 
 float sigmoid(float x){
     return x / (2 + 2*std::abs(x)) + 0.5;
@@ -15,17 +16,17 @@ bool move_in_list(chess::Move move, chess::Movelist ml){
 }
 
 int main(){
-    std::string path = "C:/Users/nourb/OneDrive/Desktop/training_data_3.txt";
+    std::string path = "";
     std::ofstream output_file;
 
     std::vector<bool> stm = {};
     std::vector<std::string> fens = {};
     std::vector<int> scores = {};
 
-    output_file.open(path);
+    output_file.open(path, std::ios::app);
 
     const float scale = 600;
-    const float alpha = 0.5;
+    const float alpha = 0.3;
 
     const int total_games = 1'000'000;
 
@@ -81,6 +82,10 @@ int main(){
         }
         fens.clear();
         scores.clear();
+    
+        if((GetKeyState('1') & 0x8000) && (GetKeyState('5') & 0x8000) && (GetKeyState('0') & 0x8000)){
+            break;
+        }
 
         count++;
         if (count % 100 == 0){

@@ -164,7 +164,7 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
             if (is_mate(best_move.score())){
                 std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
             } else {
-                std::cout << " score cp " << static_cast<int>(std::tanh(static_cast<float>(best_move.score())/(64*127))*1111);
+                std::cout << " score cp " << best_move.score();
             }
             std::cout << " nodes " << nodes;
             std::cout << " nps " << nodes*1000/run_time;
@@ -341,13 +341,13 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         static_eval = inner_board.evaluate();
 
     // razoring
-    if (!pv && !in_check && (depth < 6) && static_eval + depth*800 + 1500 < alpha){ 
+    if (!pv && !in_check && (depth < 6) && static_eval + depth*150 + 281 < alpha){ 
         static_eval = qsearch<false>(alpha, beta, color, 0); // we update static eval to the better qsearch eval. //? tweak depth?
         if (static_eval <= alpha) return static_eval;
     }
 
     // reverse futility pruning
-    if (!pv && !in_check && (depth < 6) && (static_eval - depth*800 - 1500 >= beta)){
+    if (!pv && !in_check && (depth < 6) && (static_eval - depth*150 - 281 >= beta)){
         return static_eval;
     }
 
@@ -544,10 +544,10 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
         // delta pruning
         // move.score() is calculated with set_capture_score which is material difference.
         // 8000 is the equivalent of a queen, as a safety margin
-        if (stand_pat + move.score()*800 + 8000 < alpha) continue; // multiplication by 800 is to convert from pawn to "engine centipawns".
+        if (stand_pat + move.score()*150 + 1500 < alpha) continue; // multiplication by 800 is to convert from pawn to "engine centipawns".
 
         // SEE pruning
-        if (!SEE::evaluate(inner_board, move, (alpha-stand_pat)/800 - 3)) continue;
+        if (!SEE::evaluate(inner_board, move, (alpha-stand_pat)/150 - 3)) continue;
 
         // if (!pv && (sorted_capture_gen.index() > 7) && (!is_hit) && (stand_pat + 2000 < alpha)) continue;
 
