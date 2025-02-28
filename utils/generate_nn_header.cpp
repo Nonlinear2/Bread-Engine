@@ -16,11 +16,15 @@ void parameters_to_header(std::string input_path, int weights_size, std::ofstrea
     if (weights_stream.is_open()){
         weights_stream.read(reinterpret_cast<char*>(weights), 
                             weights_size*sizeof(weights_type));        
-    } else {std::cout << "error loading weights \n";}
+    } else {
+        delete[] weights;
+        std::cout << "error loading weights \n";
+    }
 
     for (int i = 0; i < weights_size; i++){
         output_file << static_cast<int>(weights[i]) << ", ";
     }
+    delete[] weights;
 };
 
 int main(){
