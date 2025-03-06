@@ -13,7 +13,7 @@ Bread engine does not have a graphical interface built in. However it supports t
 
 ### Linux
 
-To use the engine on linux, you need to build the project yourself. You can find more details on how to do this below.
+To use the engine on Linux, you need to build the project yourself. You can find more details on how to do this below.
 
 ---
 
@@ -35,7 +35,14 @@ The build has been tested using compilers MSVC 19.38, Clang 17.0 and GCC 13.1.
 
 ### Windows
 
-Clone the repository, open a command line, navigate to the project's root directory and type `mkdir build`, `cd build`, `cmake ..`, `cmake --build . --target release --config release`. This will generate a build folder with the executable.
+Clone the repository, open a command line, navigate to the project's root directory and type:
+```powershell
+mkdir build
+cd build
+cmake ..
+cmake --build . --target release --config release
+```
+This will generate a build folder with the executable.
 
 ### Linux
 
