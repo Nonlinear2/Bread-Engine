@@ -353,14 +353,14 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     // null move pruning
     // maybe check for zugzwang?
     int null_move_eval;
-    if (!pv && 
-        (depth >= 4) &&
-        !in_check && 
-        !inner_board.last_move_null() && 
-        static_eval > beta - depth*100 - 250 &&
-        beta != INFINITE_VALUE)
+    if (!pv 
+        && !in_check 
+        && !inner_board.last_move_null() 
+        && static_eval > beta - depth*100 - 150 
+        && beta != INFINITE_VALUE
+        && !is_loss(beta))
     {
-        int R = 2 + (static_eval >= beta) + depth / 6;
+        int R = 2 + (static_eval >= beta) + depth / 5;
         inner_board.makeNullMove();
         null_move_eval = -negamax<false>(depth - R, -color, -beta, -beta+1);
         inner_board.unmakeNullMove();
