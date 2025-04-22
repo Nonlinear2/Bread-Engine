@@ -285,7 +285,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
 
     // transpositions will be checked inside of qsearch
     // if isRepetition(1), qsearch will not consider the danger of draw as it searches captures.
-    if (depth == 0){
+    if (depth <= 0){
         return qsearch<pv>(alpha, beta, color, 0);
     }
 
@@ -403,11 +403,9 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         int new_depth = depth-1;
         new_depth += gives_check;
         new_depth -= ((sorted_move_gen.index() > 1) && (!is_capture) && (!gives_check) && (!is_killer));
-        new_depth -= (depth > 5) && (!is_hit) && (!is_killer); // IIR /// depth > 3
+        new_depth -= (depth > 5) && (!is_hit) && (!is_killer); // IIR
         new_depth -= (tt_capture && !is_capture);
         
-        new_depth = std::clamp(new_depth, 0, depth);
-
         if (pv && (sorted_move_gen.index() == 0)){
             pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha);
         } else {
