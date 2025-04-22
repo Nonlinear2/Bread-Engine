@@ -224,6 +224,8 @@ chess::Move Engine::minimax_root(int depth, int color){
 
     sorted_move_gen.generate_moves();
     
+    bool in_check = inner_board.inCheck();
+
     int pos_eval;
     chess::Move move;
     while(sorted_move_gen.next(move)){
@@ -233,15 +235,12 @@ chess::Move Engine::minimax_root(int depth, int color){
 
         int new_depth = depth-1;
         new_depth += inner_board.inCheck();
-        new_depth -= ((sorted_move_gen.index() > 1) && (depth > 5) && (!is_capture) && (!inner_board.inCheck()));
+        new_depth -= sorted_move_gen.index() > 1 && depth > 5 && !is_capture && !in_check;
 
         if (sorted_move_gen.index() == 0){
             pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha);
         } else {
             pos_eval = -negamax<false>(new_depth, -color, -beta, -alpha);
-            if ((new_depth < depth-1) && (pos_eval > alpha)){
-                pos_eval = -negamax<false>(depth-1, -color, -beta, -alpha);
-            }
         }
 
         inner_board.restore_state(move);
