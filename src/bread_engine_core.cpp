@@ -541,13 +541,15 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
     while (sorted_capture_gen.next(move)){
         // delta pruning
         // move.score() is calculated with set_capture_score which is material difference.
-        // 8000 is the equivalent of a queen, as a safety margin
-        if (stand_pat + move.score()*150 + 1500 < alpha) continue; // multiplication by 800 is to convert from pawn to "engine centipawns".
-
-        // SEE pruning
-        if (!SEE::evaluate(inner_board, move, (alpha-stand_pat)/150 - 3)) continue;
-
-        // if (!pv && (sorted_capture_gen.index() > 7) && (!is_hit) && (stand_pat + 2000 < alpha)) continue;
+        // 1500 is a safety margin
+        if (move.typeOf() != chess::Move::PROMOTION){
+            if (stand_pat + move.score()*150 + 1500 < alpha) continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
+    
+            // SEE pruning
+            if (!SEE::evaluate(inner_board, move, (alpha-stand_pat)/150 - 2)) continue;
+    
+            if (!pv && (sorted_capture_gen.index() > 7) && (stand_pat + 1000 < alpha) && !SEE::evaluate(inner_board, move, -1)) continue;
+        }
 
         inner_board.update_state(move);
         pos_eval = -qsearch<pv>(-beta, -alpha, -color, depth-1);
