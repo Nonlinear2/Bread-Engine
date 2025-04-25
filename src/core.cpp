@@ -1,10 +1,4 @@
-#include "bread_engine_core.hpp"
-
-// TODO: tweak qsearch depth:
-// try qsearch depth reductions and search depth extensions when in check
-
-// to make the engine prefer faster checkmates instead of stalling,
-// we decrease the eval if the checkmate is deeper in the search tree.
+#include "core.hpp"
 
 void Engine::set_uci_display(bool v){
     display_uci = v;
@@ -27,6 +21,8 @@ bool Engine::is_loss(int eval){
     return (eval <= -TB_VALUE);
 }
 
+// to make the engine prefer faster checkmates instead of stalling,
+// we decrease the eval if the checkmate is deeper in the search tree.
 int Engine::get_mate_in_moves(int eval){
     int ply = MATE_VALUE - std::abs(eval);
     return (is_win(eval) ? 1: -1)*(ply/2 + (ply%2 != 0)); 
@@ -149,7 +145,7 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
     while (true){
         current_depth++;
 
-        best_move = minimax_root(current_depth, engine_color);
+        best_move = minimax_root(current_depth, engine_color, root_ss);
 
         std::pair<std::string, std::string> pv_pmove = get_pv_pmove(initial_fen);
         pv = pv_pmove.first;
@@ -192,7 +188,9 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
     return best_move;
 }
 
-chess::Move Engine::minimax_root(int depth, int color){
+chess::Move Engine::minimax_root(int depth, int color, Stack* ss){
+    assert(depth < ENGINE_MAX_DEPTH);
+
     int alpha = -INFINITE_VALUE;
     int beta = INFINITE_VALUE;
     chess::Move best_move = NO_MOVE;
@@ -232,15 +230,16 @@ chess::Move Engine::minimax_root(int depth, int color){
         bool is_capture = inner_board.isCapture(move);
 
         inner_board.update_state(move);
+        ss->current_move = move;
 
         int new_depth = depth-1;
         new_depth += inner_board.inCheck();
         new_depth -= sorted_move_gen.index() > 1 && depth > 5 && !is_capture && !in_check;
 
         if (sorted_move_gen.index() == 0){
-            pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha);
+            pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha, ss + 1);
         } else {
-            pos_eval = -negamax<false>(new_depth, -color, -beta, -alpha);
+            pos_eval = -negamax<false>(new_depth, -color, -beta, -alpha, ss + 1);
         }
 
         inner_board.restore_state(move);
@@ -269,8 +268,10 @@ chess::Move Engine::minimax_root(int depth, int color){
 }
 
 template<bool pv>
-int Engine::negamax(int depth, int color, int alpha, int beta){
+int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
     assert((alpha < INFINITE_VALUE) && (beta > -INFINITE_VALUE));
+    assert(depth < ENGINE_MAX_DEPTH);
+
     nodes++;
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
     if (interrupt_flag || ((depth >= 5) && update_interrupt_flag())){
@@ -285,7 +286,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     // transpositions will be checked inside of qsearch
     // if isRepetition(1), qsearch will not consider the danger of draw as it searches captures.
     if (depth <= 0){
-        return qsearch<pv>(alpha, beta, color, 0);
+        return qsearch<pv>(alpha, beta, color, 0, ss + 1);
     }
 
     int static_eval = NO_VALUE;
@@ -341,7 +342,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
 
     // razoring
     if (!pv && !in_check && (depth < 6) && static_eval + depth*150 + 281 < alpha){ 
-        static_eval = qsearch<false>(alpha, beta, color, 0); // we update static eval to the better qsearch eval. //? tweak depth?
+        static_eval = qsearch<false>(alpha, beta, color, 0, ss + 1); // we update static eval to the better qsearch eval. //? tweak depth?
         if (static_eval <= alpha) return static_eval;
     }
 
@@ -362,7 +363,8 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
     {
         int R = 2 + (static_eval >= beta) + depth / 4;
         inner_board.makeNullMove();
-        null_move_eval = -negamax<false>(depth - R, -color, -beta, -beta+1);
+        ss->current_move = chess::Move::NULL_MOVE;
+        null_move_eval = -negamax<false>(depth - R, -color, -beta, -beta+1, ss + 1);
         inner_board.unmakeNullMove();
         if (null_move_eval >= beta) return null_move_eval;
     }
@@ -395,6 +397,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         if (!pv && !in_check && !is_capture && sorted_move_gen.index() > 3 + depth && !is_hit && static_eval < alpha) continue;
         
         inner_board.update_state(move);
+        ss->current_move = move;
         
         bool gives_check = inner_board.inCheck();
 
@@ -405,12 +408,14 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
         new_depth -= (depth > 5) && (!is_hit) && (!is_killer); // IIR
         new_depth -= (tt_capture && !is_capture);
         
+        new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
+
         if (pv && (sorted_move_gen.index() == 0)){
-            pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha);
+            pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha, ss + 1);
         } else {
-            pos_eval = -negamax<false>(new_depth, -color, -beta, -alpha);
+            pos_eval = -negamax<false>(new_depth, -color, -beta, -alpha, ss + 1);
             if ((new_depth < depth-1) && (pos_eval > alpha)){
-                pos_eval = -negamax<false>(depth-1, -color, -beta, -alpha);
+                pos_eval = -negamax<false>(depth-1, -color, -beta, -alpha, ss + 1);
             }
         }
 
@@ -461,7 +466,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta){
 }
 
 template<bool pv>
-int Engine::qsearch(int alpha, int beta, int color, int depth){
+int Engine::qsearch(int alpha, int beta, int color, int depth, Stack* ss){
     // assert(pv || ((alpha == (beta-1)) && (alpha == (beta-1))));
     nodes++;
 
@@ -534,6 +539,8 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
 
     alpha = std::max(alpha, stand_pat);
 
+    chess::Square previous_to_square = ((ss - 1)->current_move).to();
+
     int max_eval = stand_pat;
     int pos_eval;
     chess::Move move;
@@ -542,7 +549,7 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
         // delta pruning
         // move.score() is calculated with set_capture_score which is material difference.
         // 1500 is a safety margin
-        if (move.typeOf() != chess::Move::PROMOTION){
+        if (move.typeOf() != chess::Move::PROMOTION && move.to() != previous_to_square){
             if (stand_pat + move.score()*150 + 1500 < alpha) continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
     
             // SEE pruning
@@ -552,7 +559,8 @@ int Engine::qsearch(int alpha, int beta, int color, int depth){
         }
 
         inner_board.update_state(move);
-        pos_eval = -qsearch<pv>(-beta, -alpha, -color, depth-1);
+        ss->current_move = move;
+        pos_eval = -qsearch<pv>(-beta, -alpha, -color, depth-1, ss + 1);
         inner_board.restore_state(move);
 
         if (pos_eval > max_eval){

@@ -10,12 +10,20 @@
 #include "nnue_board.hpp"
 #include "sorted_move_gen.hpp"
 
+struct Stack {
+    chess::Move current_move = NO_MOVE;
+};
+
 class Engine {
     public:
+
     int nodes = 0;
     int current_depth = 0;
     std::atomic<SearchLimit> limit;
     std::atomic<bool> interrupt_flag = false;
+
+    Stack stack[ENGINE_MAX_DEPTH + QSEARCH_MAX_DEPTH + 1] = {};
+    Stack* root_ss = stack + 1;
 
     std::atomic<int> run_time;
     TranspositionTable transposition_table;
@@ -43,6 +51,7 @@ class Engine {
     chess::Move iterative_deepening(SearchLimit limit);
 
     std::atomic<bool> is_nonsense = false;
+
     private:
     friend class UCIAgent;
 
@@ -55,11 +64,11 @@ class Engine {
 
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove(std::string fen);
-    chess::Move minimax_root(int depth, int color);
+    chess::Move minimax_root(int depth, int color, Stack* ss);
 
     template<bool pv>
-    int negamax(int depth, int color, int alpha, int beta);
+    int negamax(int depth, int color, int alpha, int beta, Stack* ss);
 
     template<bool pv>
-    int qsearch(int alpha, int beta, int color, int depth);
+    int qsearch(int alpha, int beta, int color, int depth, Stack* ss);
 };

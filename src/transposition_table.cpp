@@ -111,11 +111,9 @@ TEntry* TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
     return entry;
 }
 
-
 void TranspositionTable::clear(){
     std::fill(entries.begin(), entries.end(), TEntry());
 }
-
 
 int TranspositionTable::hashfull(){
     int used = 0;
@@ -138,7 +136,6 @@ void TranspositionTable::save_to_file(std::string file){
 
     ofs.close();
 }
-
 
 void TranspositionTable::load_from_file(std::string file){
     std::ifstream ifs(file, std::ios::binary | std::ios::in);

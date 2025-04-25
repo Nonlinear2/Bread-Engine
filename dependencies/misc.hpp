@@ -5,7 +5,7 @@
 
 #define NO_MOVE chess::Move::NO_MOVE
 
-constexpr int ENGINE_MAX_DEPTH = 25;
+constexpr int ENGINE_MAX_DEPTH = 63;
 constexpr int QSEARCH_MAX_DEPTH = 6;
 
 constexpr int BENCHMARK_DEPTH = 9;

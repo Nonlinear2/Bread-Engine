@@ -5,7 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
-#include "bread_engine_core.hpp"
+#include "core.hpp"
 #include "benchmark_engine.hpp"
 
 class UCIAgent {
