@@ -22,8 +22,8 @@ class Engine {
     std::atomic<SearchLimit> limit;
     std::atomic<bool> interrupt_flag = false;
 
-    Stack stack[ENGINE_MAX_DEPTH + QSEARCH_MAX_DEPTH + 1] = {};
-    Stack* root_ss = stack + 1;
+    Stack stack[ENGINE_MAX_DEPTH + QSEARCH_MAX_DEPTH + 2] = {};
+    Stack* root_ss = stack + 2;
 
     std::atomic<int> run_time;
     TranspositionTable transposition_table;

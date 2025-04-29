@@ -115,6 +115,11 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
 
     engine_color = (inner_board.sideToMove() == chess::Color::WHITE) ? 1: -1;
 
+    // reset stack
+    for (int i = 0; i < ENGINE_MAX_DEPTH + QSEARCH_MAX_DEPTH + 2; i++){
+        stack[i] = Stack();
+    }
+
     chess::Move tb_move;
     chess::Movelist tb_moves;
     if (inner_board.probe_root_dtz(tb_move, tb_moves, is_nonsense)){
@@ -326,7 +331,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
             default:
                 break;
         }
-            // we need to do a cutoff check because we updated alpha/beta.
+        // we need to do a cutoff check because we updated alpha/beta.
         if (beta <= alpha){
             // no need to store in transposition table as is already there.
             return transposition->value();
@@ -339,34 +344,36 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
 
     if (static_eval == NO_VALUE)
         static_eval = inner_board.evaluate();
+    
+    // pruning
+    if (!pv && !in_check){
 
-    // razoring
-    if (!pv && !in_check && (depth < 6) && static_eval + depth*150 + 281 < alpha){ 
-        static_eval = qsearch<false>(alpha, beta, color, 0, ss + 1); // we update static eval to the better qsearch eval. //? tweak depth?
-        if (static_eval <= alpha) return static_eval;
-    }
+        // razoring
+        if (depth < 6 && static_eval + depth*150 + 281 < alpha){ 
+            static_eval = qsearch<false>(alpha, beta, color, 0, ss + 1); // we update static eval to the better qsearch eval. //? tweak depth?
+            if (static_eval <= alpha) return static_eval;
+        }
 
-    // reverse futility pruning
-    if (!pv && !in_check && (depth < 6) && (static_eval - depth*150 - 281 >= beta)){
-        return static_eval;
-    }
+        // reverse futility pruning
+        if (depth < 6 && static_eval - depth*150 - 281 >= beta){
+            return static_eval;
+        }
 
-    // null move pruning
-    // maybe check for zugzwang?
-    int null_move_eval;
-    if (!pv 
-        && !in_check 
-        && !inner_board.last_move_null() 
-        && static_eval > beta - depth*90 
-        && beta != INFINITE_VALUE
-        && !is_loss(beta))
-    {
-        int R = 2 + (static_eval >= beta) + depth / 4;
-        inner_board.makeNullMove();
-        ss->current_move = chess::Move::NULL_MOVE;
-        null_move_eval = -negamax<false>(depth - R, -color, -beta, -beta+1, ss + 1);
-        inner_board.unmakeNullMove();
-        if (null_move_eval >= beta) return null_move_eval;
+        // null move pruning
+        // maybe check for zugzwang?
+        int null_move_eval;
+        if (!inner_board.last_move_null() 
+            && static_eval > beta - depth*90
+            && beta != INFINITE_VALUE
+            && !is_loss(beta))
+        {
+            int R = 2 + (static_eval >= beta) + depth / 4;
+            inner_board.makeNullMove();
+            ss->current_move = chess::Move::NULL_MOVE;
+            null_move_eval = -negamax<false>(depth - R, -color, -beta, -beta+1, ss + 1);
+            inner_board.unmakeNullMove();
+            if (null_move_eval >= beta) return null_move_eval;
+        }
     }
 
     sorted_move_gen.generate_moves();
@@ -407,7 +414,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
         new_depth -= ((sorted_move_gen.index() > 1) && (!is_capture) && (!gives_check) && (!is_killer));
         new_depth -= (depth > 5) && (!is_hit) && (!is_killer); // IIR
         new_depth -= (tt_capture && !is_capture);
-        
+
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
         if (pv && (sorted_move_gen.index() == 0)){
