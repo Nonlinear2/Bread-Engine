@@ -149,10 +149,10 @@ chess::Move SortedMoveGen<MoveGenType>::pop_best_score(){
 }
 
 template<chess::movegen::MoveGenType MoveGenType>
-bool SortedMoveGen<MoveGenType>::is_empty(){return empty(); }
+bool SortedMoveGen<MoveGenType>::is_empty(){ return empty(); }
 
 template<chess::movegen::MoveGenType MoveGenType>
-inline int SortedMoveGen<MoveGenType>::index(){return move_idx; }
+inline int SortedMoveGen<MoveGenType>::index(){ return move_idx; }
 
 template<>
 void SortedMoveGen<chess::movegen::MoveGenType::ALL>::clear_killer_moves(){
