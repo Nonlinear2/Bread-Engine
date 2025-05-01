@@ -4,6 +4,9 @@ template<>
 SortedMoveGen<chess::movegen::MoveGenType::ALL>::SortedMoveGen(NnueBoard& board, int depth): board(board), depth(depth) {};
 
 template<>
+SortedMoveGen<chess::movegen::MoveGenType::ALL>::SortedMoveGen(NnueBoard& board): board(board) {};
+
+template<>
 SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::SortedMoveGen(NnueBoard& board): board(board) {};
 
 template<chess::movegen::MoveGenType MoveGenType>
@@ -57,8 +60,8 @@ void SortedMoveGen<chess::movegen::MoveGenType::ALL>::set_score(chess::Move& mov
         score += 100 * piece_value[static_cast<int>(move.promotionType())] * MATERIAL_CHANGE_MULTIPLIER;
     }
 
-    assert(depth != DEPTH_UNSEARCHED);
-    if (killer_moves[depth].in_buffer(move)){
+    // assert(depth != DEPTH_UNSEARCHED);
+    if (depth != DEPTH_UNSEARCHED && killer_moves[depth].in_buffer(move)){
         score += 100 * KILLER_SCORE;
     }
 
@@ -149,10 +152,10 @@ chess::Move SortedMoveGen<MoveGenType>::pop_best_score(){
 }
 
 template<chess::movegen::MoveGenType MoveGenType>
-bool SortedMoveGen<MoveGenType>::is_empty(){return empty(); }
+bool SortedMoveGen<MoveGenType>::is_empty(){ return empty(); }
 
 template<chess::movegen::MoveGenType MoveGenType>
-inline int SortedMoveGen<MoveGenType>::index(){return move_idx; }
+inline int SortedMoveGen<MoveGenType>::index(){ return move_idx; }
 
 template<>
 void SortedMoveGen<chess::movegen::MoveGenType::ALL>::clear_killer_moves(){

@@ -66,6 +66,9 @@ class Engine {
     std::pair<std::string, std::string> get_pv_pmove(std::string fen);
     chess::Move minimax_root(int depth, int color, Stack* ss);
 
+    SortedMoveGen<chess::movegen::MoveGenType::ALL> qs_sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board);
+    SortedMoveGen<chess::movegen::MoveGenType::CAPTURE> qs_sorted_capture_gen = SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>(inner_board);
+
     template<bool pv>
     int negamax(int depth, int color, int alpha, int beta, Stack* ss);
 

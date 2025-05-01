@@ -398,11 +398,15 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
     bool tt_capture = is_hit && transposition->best_move != NO_MOVE && inner_board.isCapture(transposition->best_move);
     while (sorted_move_gen.next(move)){
         bool is_capture = inner_board.isCapture(move);
-        bool is_killer = SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
 
         // lmp
         if (!pv && !in_check && !is_capture && sorted_move_gen.index() > 3 + depth && !is_hit && static_eval < alpha) continue;
-        
+
+        // if (!pv && !in_check && is_capture && sorted_move_gen.index() > 3 + depth && !is_hit
+        //     && static_eval + piece_value[static_cast<int>(inner_board.at(move.to()).type())] * 150 < alpha) continue;
+
+        bool is_killer = SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
+
         inner_board.update_state(move);
         ss->current_move = move;
         
@@ -487,9 +491,13 @@ int Engine::qsearch(int alpha, int beta, int color, int depth, Stack* ss){
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = inner_board.hash();
 
+    bool in_check = inner_board.inCheck();
+
+    SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board);
+    SortedMoveGen sorted_capture_gen = SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>(inner_board);
+
     // first we check for transposition. If it is outcome, it should have already been stored
     // with an exact flag, so the stand pat will be correct anyways.
-    SortedMoveGen sorted_capture_gen = SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>(inner_board);
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
@@ -516,17 +524,25 @@ int Engine::qsearch(int alpha, int beta, int color, int depth, Stack* ss){
             // no need to store in transposition table as is already there.
             return transposition->value();
         }
-        if (transposition->best_move != NO_MOVE) sorted_capture_gen.set_tt_move(transposition->best_move);
+        if (transposition->best_move != NO_MOVE){
+            if (in_check)
+                sorted_move_gen.set_tt_move(transposition->best_move);
+            else
+                sorted_capture_gen.set_tt_move(transposition->best_move);
+        }
     }
 
     if (depth != -QSEARCH_MAX_DEPTH){
-        sorted_capture_gen.generate_moves();
+        if (in_check)
+            sorted_move_gen.generate_moves();
+        else
+            sorted_capture_gen.generate_moves();
     }
 
     if (stand_pat == NO_VALUE){
         // if it is hit, no need to check for outcome, as it wouldn't be stored in the
         // transposition table at a 0 depth.
-        if (sorted_capture_gen.is_empty() && inner_board.try_outcome_eval(stand_pat)){ // only generate non captures?
+        if ((in_check ? sorted_move_gen.is_empty() : sorted_capture_gen.is_empty()) && inner_board.try_outcome_eval(stand_pat)){ // only generate non captures?
             transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
             return stand_pat;
         }
@@ -552,34 +568,54 @@ int Engine::qsearch(int alpha, int beta, int color, int depth, Stack* ss){
     int pos_eval;
     chess::Move move;
     chess::Move best_move = NO_MOVE;
-    while (sorted_capture_gen.next(move)){
-        // delta pruning
-        // move.score() is calculated with set_capture_score which is material difference.
-        // 1500 is a safety margin
-        if (move.typeOf() != chess::Move::PROMOTION && move.to() != previous_to_square){
-            if (stand_pat + move.score()*150 + 1500 < alpha) continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
+    if (in_check){
+        while (sorted_move_gen.next(move)){
     
-            // SEE pruning
-            if (!SEE::evaluate(inner_board, move, (alpha-stand_pat)/150 - 2)) continue;
+            inner_board.update_state(move);
+            ss->current_move = move;
+            pos_eval = -qsearch<pv>(-beta, -alpha, -color, depth-1, ss + 1);
+            inner_board.restore_state(move);
     
-            if (!pv && (sorted_capture_gen.index() > 7) && (stand_pat + 1000 < alpha) && !SEE::evaluate(inner_board, move, -1)) continue;
+            if (pos_eval > max_eval){
+                max_eval = pos_eval;
+                best_move = move;
+            }
+            alpha = std::max(alpha, pos_eval);
+            if (alpha >= beta){ // only check for cutoffs when alpha gets updated.
+                break;
+            }
         }
+    } else {
+        while (sorted_capture_gen.next(move)){
+            // delta pruning
+            // move.score() is calculated with set_capture_score which is material difference.
+            // 1500 is a safety margin
+            if (move.typeOf() != chess::Move::PROMOTION && move.to() != previous_to_square){
+                if (stand_pat + move.score()*150 + 1500 < alpha) continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
+        
+                // SEE pruning
+                if (!SEE::evaluate(inner_board, move, (alpha-stand_pat)/150 - 2)) continue;
+        
+                if (!pv && (sorted_capture_gen.index() > 7) && (stand_pat + 1000 < alpha) && !SEE::evaluate(inner_board, move, -1)) continue;
+            }
 
-        inner_board.update_state(move);
-        ss->current_move = move;
-        pos_eval = -qsearch<pv>(-beta, -alpha, -color, depth-1, ss + 1);
-        inner_board.restore_state(move);
+            inner_board.update_state(move);
+            ss->current_move = move;
+            pos_eval = -qsearch<pv>(-beta, -alpha, -color, depth-1, ss + 1);
+            inner_board.restore_state(move);
 
-        if (pos_eval > max_eval){
-            max_eval = pos_eval;
-            best_move = move;
-        }
-        alpha = std::max(alpha, pos_eval);
-        if (alpha >= beta){ // only check for cutoffs when alpha gets updated.
-            break;
+            if (pos_eval > max_eval){
+                max_eval = pos_eval;
+                best_move = move;
+            }
+            alpha = std::max(alpha, pos_eval);
+            if (alpha >= beta){ // only check for cutoffs when alpha gets updated.
+                break;
+            }
         }
     }
-    if (inner_board.halfMoveClock() + (depth + QSEARCH_MAX_DEPTH) >= 100) return max_eval; // avoid storing history dependant evals.
+
+    if (inner_board.halfMoveClock() + (depth + QSEARCH_MAX_DEPTH) >= 100) return max_eval; // avoid storing history dependant evals
 
     if (depth == 0){
         transposition_table.store(zobrist_hash, max_eval,
