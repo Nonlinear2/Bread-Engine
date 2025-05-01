@@ -8,7 +8,7 @@ set(bread_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(bread_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 set(bread_DEPENDENCIES ${CMAKE_CURRENT_SOURCE_DIR}/dependencies)
 set(bread_NEURAL_NETWORKS ${CMAKE_CURRENT_SOURCE_DIR}/neural_networks)
-set(bread_NN_HEADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../bread-build/gen")
+set(bread_NN_HEADER_DIR ${CMAKE_BINARY_DIR}/gen)
 set(bread_NN_HEADER_PATH ${bread_NN_HEADER_DIR}/neural_network.hpp)
 
 set(bread_NNUE_MODEL_PATH "${bread_NEURAL_NETWORKS}/model_NNUE_2-40960_2x256_32_32_1_quant_layers")
