@@ -22,7 +22,7 @@ int main(){
         cb.setFen(fens[i]);
         cb.synchronize();
 
-        chess::Move best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Nodes, 5000));
+        chess::Move best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Depth, 9));
         std::cout << "score: " << best_move.score() << std::endl;
 
         // std::cout << fens[i] << "\n";

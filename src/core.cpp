@@ -225,13 +225,17 @@ chess::Move Engine::minimax_root(int depth, int color, Stack* ss){
         }
     }
 
-    sorted_move_gen.generate_moves();
-    
     bool in_check = inner_board.inCheck();
 
     int pos_eval;
     chess::Move move;
+    int move_count = 0;
     while(sorted_move_gen.next(move)){
+        // avoid searching the tt move twice
+        // if (is_hit && move == transposition->best_move && move_count != 0)
+        //     continue;
+        move_count++;
+
         bool is_capture = inner_board.isCapture(move);
 
         inner_board.update_state(move);
@@ -376,19 +380,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
         }
     }
 
-    sorted_move_gen.generate_moves();
     int max_eval = -INFINITE_VALUE;
-
-    if (sorted_move_gen.is_empty()){ // avoid calling expensive try_outcome_eval function
-        // If board is in check, it is checkmate
-        // if there are no legal moves and it's not check, it is stalemate so eval is 0
-        max_eval = inner_board.inCheck() ? -MATE_VALUE : 0;
-        // we know this eval is exact at any depth, but 
-        // we also don't want this eval to pollute the transposition table.
-        // the full move number will make sure it is replaced at some point.
-        transposition_table.store(zobrist_hash, max_eval, NO_VALUE, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
-        return max_eval;
-    }
 
     if (inner_board.isHalfMoveDraw()) return 0;
 
@@ -396,9 +388,15 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
     chess::Move move;
     int pos_eval;
     bool tt_capture = is_hit && transposition->best_move != NO_MOVE && inner_board.isCapture(transposition->best_move);
+    int move_count = 0;
     while (sorted_move_gen.next(move)){
+        // avoid searching the tt move twice
+        // if (is_hit && move == transposition->best_move && move_count != 0)
+        //     continue;
+        move_count++;
+
         bool is_capture = inner_board.isCapture(move);
-        
+
         // lmp
         if (!pv && !in_check && !is_capture && sorted_move_gen.index() > 3 + depth && !is_hit && static_eval < alpha) continue;
 
@@ -438,10 +436,23 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
 
         alpha = std::max(alpha, pos_eval);
         if (beta <= alpha){
-            if (!is_capture) sorted_move_gen.update_history(move, depth, color);
+            if (!is_capture)
+                sorted_move_gen.update_history(move, depth, color);
+        
             SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].add_move(move);
             break;
         }
+    }
+
+    if (move_count == 0){ // avoid calling expensive try_outcome_eval function
+        // If board is in check, it is checkmate
+        // if there are no legal moves and it's not check, it is stalemate so eval is 0
+        max_eval = inner_board.inCheck() ? -MATE_VALUE : 0;
+        // we know this eval is exact at any depth, but 
+        // we also don't want this eval to pollute the transposition table.
+        // the full move number will make sure it is replaced at some point.
+        transposition_table.store(zobrist_hash, max_eval, NO_VALUE, 255, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+        return max_eval;
     }
 
     // if max eval was obtained because of a threefold repetition,

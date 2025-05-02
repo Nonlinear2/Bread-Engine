@@ -27,6 +27,8 @@ bool UCIAgent::process_uci_command(std::string command){
     
     } else if (first == "bench"){
         process_bench(parsed_command);
+        tb_free();
+        return 0;
 
     } else if (first == "go"){
         interrupt_if_searching();

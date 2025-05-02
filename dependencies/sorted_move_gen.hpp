@@ -31,11 +31,11 @@ class SortedMoveGen: public chess::Movelist {
     void update_history(chess::Move move, int depth, bool color);
 
     private:
-    int initial_size;
+    int generated_move_count = 0;
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
     bool checked_tt_move = false;
-    bool assigned_scores = false;
+    bool generated_moves = false;
     chess::Move tt_move = NO_MOVE;
     void set_score(chess::Move& move);
     bool is_valid_move(chess::Move move);

@@ -9,7 +9,7 @@ SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::SortedMoveGen(NnueBoard& bo
 template<chess::movegen::MoveGenType MoveGenType>
 void SortedMoveGen<MoveGenType>::generate_moves(){
     chess::movegen::legalmoves<MoveGenType>(*this, board);
-    initial_size = size_;
+    generated_move_count = size_;
 }
 
 // set move score to be sorted later
@@ -97,19 +97,22 @@ bool SortedMoveGen<MoveGenType>::next(chess::Move& move){
     if (checked_tt_move == false){
         checked_tt_move = true;
         if (is_valid_move(tt_move)){
-            move = pop_move(std::find(begin(), end(), tt_move) - begin());
+            move = tt_move;
             return true;
         }
     }
 
-    if (assigned_scores == false){
-        assigned_scores = true;
+    if (generated_moves == false){
+        generated_moves = true;
+        generate_moves();
+        if (is_valid_move(tt_move)){
+            pop_move(std::find(begin(), end(), tt_move) - begin());
+        }
         for (int i = 0; i < size_; i++){
             set_score(moves_[i]);
         }
     }
-    // to implement element removal from a movelist object,
-    // the movelist is split into an unseen part first, and a seen part.
+
     if (size() == 0){
         return false;
     }
@@ -121,6 +124,9 @@ bool SortedMoveGen<MoveGenType>::next(chess::Move& move){
 
 template<chess::movegen::MoveGenType MoveGenType>
 chess::Move SortedMoveGen<MoveGenType>::pop_move(int move_idx){
+    // to implement element removal from a movelist object,
+    // the movelist is split into an unseen part first, and a seen part.
+
     // if the move is not in the last position, move it there.
     if (move_idx != size_-1){
         chess::Move swap = moves_[move_idx];
@@ -162,11 +168,18 @@ void SortedMoveGen<chess::movegen::MoveGenType::ALL>::clear_killer_moves(){
 template<>
 void SortedMoveGen<chess::movegen::MoveGenType::ALL>::update_history(chess::Move move, int depth, bool color){
     int bonus = std::min(depth*depth*32 + 20, 1000);
-    for (int i = 0; i < initial_size; i++){
-        if (moves_[i] == move){
-            history.history[color][move.from().index()*64 + move.to().index()] += (bonus - history.history[color][move.from().index()*64 + move.to().index()] * std::abs(bonus) / MAX_HISTORY_BONUS);
-        } else {
-            if (!board.isCapture(moves_[i])) history.history[color][moves_[i].from().index()*64 + moves_[i].to().index()] += -bonus/initial_size - history.history[color][moves_[i].from().index()*64 + moves_[i].to().index()] * std::abs(bonus/initial_size) / MAX_HISTORY_BONUS;
+
+    // update best move
+    int idx = move.from().index()*64 + move.to().index();
+    history.history[color][idx] += (bonus - history.history[color][idx] * std::abs(bonus) / MAX_HISTORY_BONUS);
+
+    // update other searched moves
+    for (int i = 0; i < generated_move_count; i++){ // update searched moves only
+        if (moves_[i] != move && !board.isCapture(moves_[i])){
+            idx = moves_[i].from().index()*64 + moves_[i].to().index();
+            history.history[color][idx] += 
+                - bonus / (generated_move_count)
+                - history.history[color][idx] * std::abs(bonus / (generated_move_count)) / MAX_HISTORY_BONUS;
         }
     }
 }
