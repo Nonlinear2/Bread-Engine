@@ -562,8 +562,7 @@ int Engine::qsearch(int alpha, int beta, int color, int depth, Stack* ss){
             if (stand_pat + move.score()*150 + 1500 < alpha) continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
     
             // SEE pruning
-            if ((!is_hit || transposition->best_move == NO_MOVE || sorted_capture_gen.index() != 1)
-                && !SEE::evaluate(inner_board, move, (alpha-stand_pat)/150 - 2)) continue;
+            if (!SEE::evaluate(inner_board, move, (alpha-stand_pat)/150 - 2)) continue;
     
             if (!pv && (sorted_capture_gen.index() > 8) && (stand_pat + 1000 < alpha) && !SEE::evaluate(inner_board, move, -1)) continue;
         }
