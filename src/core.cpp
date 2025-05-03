@@ -239,9 +239,9 @@ chess::Move Engine::minimax_root(int depth, int color, Stack* ss){
 
         int new_depth = depth-1;
         new_depth += inner_board.inCheck();
-        new_depth -= sorted_move_gen.index() > 1 && depth > 5 && !is_capture && !in_check;
+        new_depth -= sorted_move_gen.index() > 2 && depth > 5 && !is_capture && !in_check;
 
-        if (sorted_move_gen.index() == 0){
+        if (sorted_move_gen.index() == 1){
             pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha, ss + 1);
         } else {
             pos_eval = -negamax<false>(new_depth, -color, -beta, -alpha, ss + 1);
@@ -400,7 +400,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
         bool is_capture = inner_board.isCapture(move);
         
         // lmp
-        if (!pv && !in_check && !is_capture && sorted_move_gen.index() > 3 + depth && !is_hit && static_eval < alpha) continue;
+        if (!pv && !in_check && !is_capture && sorted_move_gen.index() > 4 + depth && !is_hit && static_eval < alpha) continue;
 
         bool is_killer = SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
         
@@ -412,13 +412,13 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
         // late move reductions
         int new_depth = depth-1;
         new_depth += gives_check;
-        new_depth -= ((sorted_move_gen.index() > 1) && (!is_capture) && (!gives_check) && (!is_killer));
+        new_depth -= ((sorted_move_gen.index() > 2) && (!is_capture) && (!gives_check) && (!is_killer));
         new_depth -= (depth > 5) && (!is_hit) && (!is_killer); // IIR
         new_depth -= (tt_capture && !is_capture);
 
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
-        if (pv && (sorted_move_gen.index() == 0)){
+        if (pv && (sorted_move_gen.index() == 1)){
             pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha, ss + 1);
         } else {
             pos_eval = -negamax<false>(new_depth, -color, -beta, -alpha, ss + 1);
@@ -558,12 +558,14 @@ int Engine::qsearch(int alpha, int beta, int color, int depth, Stack* ss){
         // move.score() is calculated with set_capture_score which is material difference.
         // 1500 is a safety margin
         if (move.typeOf() != chess::Move::PROMOTION && move.to() != previous_to_square){
+
             if (stand_pat + move.score()*150 + 1500 < alpha) continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
     
             // SEE pruning
-            if (!SEE::evaluate(inner_board, move, (alpha-stand_pat)/150 - 2)) continue;
+            if ((!is_hit || transposition->best_move == NO_MOVE || sorted_capture_gen.index() != 1)
+                && !SEE::evaluate(inner_board, move, (alpha-stand_pat)/150 - 2)) continue;
     
-            if (!pv && (sorted_capture_gen.index() > 7) && (stand_pat + 1000 < alpha) && !SEE::evaluate(inner_board, move, -1)) continue;
+            if (!pv && (sorted_capture_gen.index() > 8) && (stand_pat + 1000 < alpha) && !SEE::evaluate(inner_board, move, -1)) continue;
         }
 
         inner_board.update_state(move);

@@ -33,7 +33,7 @@ class SortedMoveGen: public chess::Movelist {
     private:
     int initial_size;
     int depth = DEPTH_UNSEARCHED;
-    int move_idx = -1;
+    int move_count = 0;
     bool checked_tt_move = false;
     bool assigned_scores = false;
     chess::Move tt_move = NO_MOVE;
