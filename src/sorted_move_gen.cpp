@@ -87,7 +87,7 @@ bool SortedMoveGen<chess::movegen::MoveGenType::ALL>::is_valid_move(chess::Move 
 
 template<>
 bool SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::is_valid_move(chess::Move move){
-    return move != NO_MOVE;
+    return move != NO_MOVE && board.isCapture(move);
 }
 
 template<chess::movegen::MoveGenType MoveGenType>
@@ -97,26 +97,18 @@ bool SortedMoveGen<MoveGenType>::next(chess::Move& move){
     if (checked_tt_move == false){
         checked_tt_move = true;
         if (is_valid_move(tt_move)){
-            move = tt_move;
+            move = pop_move(std::find(begin(), end(), tt_move) - begin());
             return true;
         }
     }
 
-    if (assigned_scores == false){
-        assigned_scores = true;
-        for (int i = 0; i < size_; i++){
-            set_score(moves_[i]);
-        }
-    }
     // to implement element removal from a movelist object,
     // the movelist is split into an unseen part first, and a seen part.
-    do {
-        if (size() == 0)
-            return false;
-    
-        move = pop_best_score();
-    } while (move == tt_move);
+    if (size() == 0){
+        return false;
+    }
 
+    move = pop_best_score();
     return true;
 }
 
