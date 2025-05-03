@@ -284,7 +284,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
     }
 
     // there are no repetition checks in qsearch as captures can never lead to repetition.
-    if (inner_board.isRepetition(2)){
+    if (inner_board.isRepetition(2) || inner_board.isHalfMoveDraw()){
         return 0;
     }
 
@@ -390,8 +390,6 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
         return max_eval;
     }
 
-    if (inner_board.isHalfMoveDraw()) return 0;
-
     chess::Move best_move;
     chess::Move move;
     int pos_eval;
@@ -485,6 +483,8 @@ int Engine::qsearch(int alpha, int beta, int color, int depth, Stack* ss){
         return stand_pat;
     }
 
+    if (inner_board.isHalfMoveDraw()) return 0;
+
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = inner_board.hash();
 
@@ -531,8 +531,6 @@ int Engine::qsearch(int alpha, int beta, int color, int depth, Stack* ss){
             transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
             return stand_pat;
         }
-
-        if (inner_board.isHalfMoveDraw()) return 0;
 
         stand_pat = inner_board.evaluate();
         if (stand_pat >= beta){
