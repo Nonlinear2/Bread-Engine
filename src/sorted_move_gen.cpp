@@ -164,13 +164,17 @@ void SortedMoveGen<chess::movegen::MoveGenType::ALL>::clear_killer_moves(){
 }
 
 template<>
-void SortedMoveGen<chess::movegen::MoveGenType::ALL>::update_history(chess::Move move, int depth, bool color){
+void SortedMoveGen<chess::movegen::MoveGenType::ALL>::update_history(chess::Move best_move, int depth, bool color){
     int bonus = std::min(depth*depth*32 + 20, 1000);
+    int idx = best_move.from().index()*64 + best_move.to().index();
+
+    if (!board.isCapture(best_move))
+        history.history[color][idx] += (bonus - history.history[color][idx] * std::abs(bonus) / MAX_HISTORY_BONUS);
+
     for (int i = 0; i < generated_moves_count; i++){
-        if (moves_[i] == move){
-            history.history[color][move.from().index()*64 + move.to().index()] += (bonus - history.history[color][move.from().index()*64 + move.to().index()] * std::abs(bonus) / MAX_HISTORY_BONUS);
-        } else {
-            if (!board.isCapture(moves_[i])) history.history[color][moves_[i].from().index()*64 + moves_[i].to().index()] += -bonus/generated_moves_count - history.history[color][moves_[i].from().index()*64 + moves_[i].to().index()] * std::abs(bonus/generated_moves_count) / MAX_HISTORY_BONUS;
+        if (moves_[i] != best_move && !board.isCapture(moves_[i])){
+            idx = moves_[i].from().index()*64 + moves_[i].to().index();
+            history.history[color][idx] += -bonus - history.history[color][idx] * std::abs(bonus) / MAX_HISTORY_BONUS;
         }
     }
 }
