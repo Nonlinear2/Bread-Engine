@@ -29,14 +29,14 @@ class SortedMoveGen: public chess::Movelist {
     int index();
     static void clear_killer_moves();
     void update_history(chess::Move move, int depth, bool color);
-
+    
+    chess::Move tt_move = NO_MOVE;
+    int generated_moves_count = 0;
     private:
-    int initial_size;
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
     bool checked_tt_move = false;
-    bool assigned_scores = false;
-    chess::Move tt_move = NO_MOVE;
+    bool generated_moves = false;
     void set_score(chess::Move& move);
     bool is_valid_move(chess::Move move);
     chess::Move pop_move(int move_idx);
