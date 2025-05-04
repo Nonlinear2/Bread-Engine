@@ -492,10 +492,10 @@ int Engine::qsearch(int alpha, int beta, int color, int depth, Stack* ss){
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
-        if (transposition->eval() != NO_VALUE)
-            stand_pat = transposition->eval();
-
         switch (transposition->flag()){
+            if (transposition->eval() != NO_VALUE){
+                stand_pat = transposition->eval();
+            }
             if (transposition->value() == NO_VALUE)
                 break;
             case TFlag::EXACT:
