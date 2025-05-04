@@ -82,12 +82,12 @@ void SortedMoveGen<MoveGenType>::set_tt_move(chess::Move move){
 
 template<>
 bool SortedMoveGen<chess::movegen::MoveGenType::ALL>::is_valid_move(chess::Move move){
-    return (move != NO_MOVE);
+    return move != NO_MOVE;
 }
 
 template<>
 bool SortedMoveGen<chess::movegen::MoveGenType::CAPTURE>::is_valid_move(chess::Move move){
-    return ((move != NO_MOVE) && (board.isCapture(move)));
+    return move != NO_MOVE && board.isCapture(move);
 }
 
 template<chess::movegen::MoveGenType MoveGenType>

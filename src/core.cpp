@@ -422,7 +422,8 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
 
         alpha = std::max(alpha, pos_eval);
         if (beta <= alpha){
-            if (!is_capture) sorted_move_gen.update_history(move, depth, color);
+            if (!is_capture)
+                sorted_move_gen.update_history(move, depth, color);
             SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].add_move(move);
             break;
         }
