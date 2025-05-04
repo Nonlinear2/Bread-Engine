@@ -301,13 +301,10 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
-        if (transposition->eval() != NO_VALUE){
+        if (transposition->eval() != NO_VALUE)
             static_eval = transposition->eval();
-        }
-        switch (transposition->flag()){
-            if (transposition->value() == NO_VALUE)
-                break;
 
+        switch (transposition->flag()){
             case TFlag::EXACT:
                 if (transposition->depth() >= depth && !inner_board.isRepetition(1)){
                     return transposition->value();
@@ -492,12 +489,11 @@ int Engine::qsearch(int alpha, int beta, int color, int depth, Stack* ss){
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
     if (is_hit){
+        if (transposition->eval() != NO_VALUE){
+            stand_pat = transposition->eval();
+        }
+
         switch (transposition->flag()){
-            if (transposition->eval() != NO_VALUE){
-                stand_pat = transposition->eval();
-            }
-            if (transposition->value() == NO_VALUE)
-                break;
             case TFlag::EXACT:
                 return transposition->value();
             case TFlag::LOWER_BOUND:
@@ -511,6 +507,7 @@ int Engine::qsearch(int alpha, int beta, int color, int depth, Stack* ss){
             default:
                 break;
         }
+
         if (beta <= alpha){
             // no need to store in transposition table as is already there.
             return transposition->value();
