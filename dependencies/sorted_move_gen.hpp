@@ -29,7 +29,7 @@ class SortedMoveGen: public chess::Movelist {
     int index();
     static void clear_killer_moves();
     void update_history(chess::Move move, int depth, bool color);
-    
+
     chess::Move tt_move = NO_MOVE;
     int generated_moves_count = 0;
     private:

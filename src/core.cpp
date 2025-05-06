@@ -255,7 +255,7 @@ chess::Move Engine::minimax_root(int depth, int color, Stack* ss){
                 return NO_MOVE;
             }
         }
-        
+
         if (is_mate(pos_eval)) pos_eval = increment_mate_ply(pos_eval);
 
         if (pos_eval > alpha){
@@ -264,7 +264,7 @@ chess::Move Engine::minimax_root(int depth, int color, Stack* ss){
             alpha = pos_eval;
         }
     }
-    
+
     transposition_table.store(zobrist_hash, alpha, NO_VALUE, depth, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
 
     return best_move;
@@ -379,15 +379,15 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
     bool tt_capture = is_hit && transposition->best_move != NO_MOVE && inner_board.isCapture(transposition->best_move);
     while (sorted_move_gen.next(move)){
         bool is_capture = inner_board.isCapture(move);
-        
+
         // lmp
         if (!pv && !in_check && !is_capture && sorted_move_gen.index() > 3 + depth && !is_hit && static_eval < alpha) continue;
 
         bool is_killer = SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
-        
+
         inner_board.update_state(move);
         ss->current_move = move;
-        
+
         bool gives_check = inner_board.inCheck();
 
         // late move reductions
@@ -409,7 +409,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
         }
 
         inner_board.restore_state(move);
-        
+
         if (interrupt_flag) return 0;
 
         if (pos_eval > max_eval){
@@ -472,7 +472,7 @@ int Engine::qsearch(int alpha, int beta, int color, int depth, Stack* ss){
     nodes++;
 
     int stand_pat = NO_VALUE;
-    
+
     // tablebase probe
     if (inner_board.probe_wdl(stand_pat))
         return stand_pat;
@@ -541,7 +541,7 @@ int Engine::qsearch(int alpha, int beta, int color, int depth, Stack* ss){
         // 1500 is a safety margin
         if (move.typeOf() != chess::Move::PROMOTION && move.to() != previous_to_square){
             if (stand_pat + move.score()*150 + 1500 < alpha) continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
-    
+
             // SEE pruning
             if (!SEE::evaluate(inner_board, move, (alpha-stand_pat)/150 - 2)) continue;
     

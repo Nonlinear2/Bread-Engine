@@ -112,11 +112,9 @@ bool SortedMoveGen<MoveGenType>::next(chess::Move& move){
             pop_move(std::find(begin(), end(), tt_move) - begin());
         }
     }
-    // to implement element removal from a movelist object,
-    // the movelist is split into an unseen part first, and a seen part.
-    if (size() == 0){
+
+    if (size() == 0)
         return false;
-    }
 
     move = pop_best_score();
 
@@ -125,6 +123,9 @@ bool SortedMoveGen<MoveGenType>::next(chess::Move& move){
 
 template<chess::movegen::MoveGenType MoveGenType>
 chess::Move SortedMoveGen<MoveGenType>::pop_move(int move_idx){
+    // to implement element removal from a movelist object,
+    // the movelist is split into an unseen part first, and a seen part.
+
     // if the move is not in the last position, move it there.
     if (move_idx != size_-1){
         chess::Move swap = moves_[move_idx];
