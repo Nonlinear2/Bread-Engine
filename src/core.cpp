@@ -61,19 +61,21 @@ void Engine::update_run_time(){
     run_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time).count();
 };
 
-std::pair<std::string, std::string> Engine::get_pv_pmove(std::string fen){
+std::pair<std::string, std::string> Engine::get_pv_pmove(){
     std::string pv = "";
     std::string ponder_move = "";
-    chess::Board pv_visitor;
 
-    pv_visitor.setFen(fen);
+    chess::Board pv_visitor = inner_board;
 
     for (int i = 0; i < current_depth; i++){
         bool is_hit;
         TEntry* transposition = transposition_table.probe(is_hit, pv_visitor.hash());
-        if ((!is_hit) || (transposition->best_move == NO_MOVE)){
+        if (!is_hit || transposition->best_move == NO_MOVE)
             break;
-        }
+
+        if (pv_visitor.isRepetition(2) || pv_visitor.isHalfMoveDraw() || pv_visitor.isInsufficientMaterial())
+            break;
+
         if (i == 1){
             ponder_move = chess::uci::moveToUci(transposition->best_move);
         }
@@ -99,8 +101,6 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
 
     this->limit = limit;
     start_time = std::chrono::high_resolution_clock::now();
-
-    std::string initial_fen = inner_board.getFen();
 
     std::string pv;
     std::string ponder_move = "";
@@ -152,7 +152,7 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
 
         best_move = minimax_root(current_depth, engine_color, root_ss);
 
-        std::pair<std::string, std::string> pv_pmove = get_pv_pmove(initial_fen);
+        std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
         pv = pv_pmove.first;
         if (pv_pmove.second.size() > 0){
             ponder_move = pv_pmove.second;
@@ -282,7 +282,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
     }
 
     // there are no repetition checks in qsearch as captures can never lead to repetition.
-    if (inner_board.isRepetition(2) || inner_board.isHalfMoveDraw()){
+    if (inner_board.isRepetition(2) || inner_board.isHalfMoveDraw() || inner_board.isInsufficientMaterial()){
         return 0;
     }
 

@@ -63,7 +63,7 @@ class Engine {
     Nonsense nonsense = Nonsense();
 
     bool update_interrupt_flag();
-    std::pair<std::string, std::string> get_pv_pmove(std::string fen);
+    std::pair<std::string, std::string> get_pv_pmove();
     chess::Move minimax_root(int depth, int color, Stack* ss);
 
     template<bool pv>
