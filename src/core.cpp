@@ -393,9 +393,10 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
         // late move reductions
         int new_depth = depth-1;
         new_depth += gives_check;
-        new_depth -= ((sorted_move_gen.index() > 1) && (!is_capture) && (!gives_check) && (!is_killer));
-        new_depth -= (depth > 5) && (!is_hit) && (!is_killer); // IIR
-        new_depth -= (tt_capture && !is_capture);
+        new_depth -= sorted_move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
+        new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
+        new_depth -= tt_capture && !is_capture;
+        new_depth -= sorted_move_gen.index() > 10;
 
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
@@ -454,7 +455,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
         node_type = TFlag::LOWER_BOUND;
     } else if (max_eval <= initial_alpha){
         // this means that the evals were all lower than best option for us
-        // so it is possible there was a beta cutoff. So eval is equal or lower
+        // So eval is equal or lower
         node_type = TFlag::UPPER_BOUND;
     } else {
         // eval is between initial alpha and beta. so search was completed without cutoffs, and is exact

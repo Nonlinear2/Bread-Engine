@@ -21,7 +21,7 @@ int History::get_history_bonus(int from, int to, bool color){
     return history[color][from*64 + to];
 }
 
-bool SEE::evaluate(const chess::Board& board, chess::Move move, int threshold){ // return true if equal to threshold
+bool SEE::evaluate(const chess::Board& board, chess::Move move, int threshold){ // return true if greater than threshold
     assert(SEE_KING_VALUE > piece_value[static_cast<int>(chess::PieceType::QUEEN)]*10);
     const chess::Square from_sq = move.from();
     const chess::Square to_sq = move.to();
