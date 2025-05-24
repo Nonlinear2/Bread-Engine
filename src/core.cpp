@@ -314,7 +314,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     eval = transposition.value;
     move_gen.set_tt_move(transposition.move);
     
-    if (transposition.depth >= depth && !pos.isRepetition(1)){
+    chess::Move excluded_move = ss->excluded_move;
+    if (transposition.depth >= depth && excluded_move == Move::NO_MOVE && !pos.isRepetition(1)){
         switch (transposition.flag){
             case TFlag::EXACT:
                 return transposition.value;
@@ -359,7 +360,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         // null move pruning
         // maybe check for zugzwang?
         int null_move_eval;
-        if (!pos.last_move_null() 
+        if (!pos.last_move_null() && excluded_move == Move::NO_MOVE
             && eval > beta - depth*90
             && beta != INFINITE_VALUE
             && !is_loss(beta))
@@ -378,11 +379,34 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     while (move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
 
+        if (move == excluded_move)
+            continue;
+
         // lmp
         if (!pv && !in_check && !is_capture && move_gen.index() > 3 + depth && !is_hit && eval < alpha)
             continue;
 
         bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
+        
+        int new_depth = depth-1;
+        int extension = 0;
+        if (is_hit && move == transposition.move && excluded_move == Move::NO_MOVE
+            && depth >= 6 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
+            && transposition.depth >= depth - 1)
+        {
+            int singular_beta = transposition.value - 10 - 6*depth;
+
+            ss->excluded_move = move;
+            value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss);
+            ss->excluded_move = Move::NO_MOVE;
+
+            if (interrupt_flag) return 0;
+
+            if (value < singular_beta)
+                extension = 1;
+        }
+
+        new_depth += extension;
 
         ss->moved_piece = pos.at(move.from());
         ss->current_move = move;
@@ -391,7 +415,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         bool gives_check = pos.inCheck();
 
         // late move reductions
-        int new_depth = depth-1;
         new_depth += gives_check;
         new_depth -= move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
         new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
