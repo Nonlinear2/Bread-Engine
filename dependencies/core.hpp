@@ -11,7 +11,8 @@
 #include "sorted_move_gen.hpp"
 
 struct Stack {
-    chess::Move current_move = NO_MOVE;
+    chess::Move current_move  = NO_MOVE;
+    chess::Move excluded_move = NO_MOVE;
 };
 
 class Engine {

@@ -297,6 +297,8 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = inner_board.hash();
 
+    chess::Move excluded_move = ss->excluded_move;
+
     SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board, depth);
     bool is_hit;
     TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
@@ -304,32 +306,34 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
         if (transposition->eval() != NO_VALUE)
             static_eval = transposition->eval();
 
-        switch (transposition->flag()){
-            case TFlag::EXACT:
-                if (transposition->depth() >= depth && !inner_board.isRepetition(1)){
-                    return transposition->value();
-                }
-                static_eval = transposition->value();
-                break;
-            case TFlag::LOWER_BOUND:
-                if (transposition->depth() >= depth && !inner_board.isRepetition(1)){
-                    alpha = std::max(alpha, transposition->value());
-                }
-                static_eval = transposition->value();
-                break;
-            case TFlag::UPPER_BOUND:
-                if (transposition->depth() >= depth && !inner_board.isRepetition(1)){
-                    beta = std::min(beta, transposition->value());
-                }
-                static_eval = transposition->value();
-                break;
-            default:
-                break;
-        }
-        // we need to do a cutoff check because we updated alpha/beta.
-        if (beta <= alpha){
-            // no need to store in transposition table as is already there.
-            return transposition->value();
+        if (excluded_move == NO_MOVE){
+            switch (transposition->flag()){
+                case TFlag::EXACT:
+                    if (transposition->depth() >= depth && !inner_board.isRepetition(1)){
+                        return transposition->value();
+                    }
+                    static_eval = transposition->value();
+                    break;
+                case TFlag::LOWER_BOUND:
+                    if (transposition->depth() >= depth && !inner_board.isRepetition(1)){
+                        alpha = std::max(alpha, transposition->value());
+                    }
+                    static_eval = transposition->value();
+                    break;
+                case TFlag::UPPER_BOUND:
+                    if (transposition->depth() >= depth && !inner_board.isRepetition(1)){
+                        beta = std::min(beta, transposition->value());
+                    }
+                    static_eval = transposition->value();
+                    break;
+                default:
+                    break;
+            }
+            // we need to do a cutoff check because we updated alpha/beta.
+            if (beta <= alpha){
+                // no need to store in transposition table as is already there.
+                return transposition->value();
+            }
         }
 
         if (transposition->best_move != NO_MOVE) sorted_move_gen.set_tt_move(transposition->best_move);
@@ -357,7 +361,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
         // null move pruning
         // maybe check for zugzwang?
         int null_move_eval;
-        if (!inner_board.last_move_null() 
+        if (!inner_board.last_move_null() && excluded_move == NO_MOVE
             && static_eval > beta - depth*90
             && beta != INFINITE_VALUE
             && !is_loss(beta))
@@ -378,12 +382,42 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
     int pos_eval;
     bool tt_capture = is_hit && transposition->best_move != NO_MOVE && inner_board.isCapture(transposition->best_move);
     while (sorted_move_gen.next(move)){
+
+        if (move == excluded_move)
+            continue;
+
         bool is_capture = inner_board.isCapture(move);
 
         // lmp
         if (!pv && !in_check && !is_capture && sorted_move_gen.index() > 3 + depth && !is_hit && static_eval < alpha) continue;
 
         bool is_killer = SortedMoveGen<chess::movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
+        
+        int new_depth = depth-1;
+        int extension = 0;
+        if (is_hit && move == transposition->best_move && excluded_move == NO_MOVE
+            && depth >= 6 && (transposition->flag() == TFlag::LOWER_BOUND || transposition->flag() == TFlag::EXACT)
+            && transposition->depth() >= depth - 3)
+        {
+            int singular_beta = transposition->value() - 2 - 5*depth;
+
+            ss->excluded_move = move;
+            pos_eval = negamax<false>(new_depth / 2, color, singular_beta - 1, singular_beta, ss);
+            ss->excluded_move = NO_MOVE;
+
+            if (pos_eval < singular_beta)
+                extension = (pos_eval < singular_beta - 100);
+
+            // multi cut pruning
+            else if (pos_eval >= beta)
+                return pos_eval;
+
+            // If the ttMove is assumed to fail high over current beta
+            else if (transposition->value() >= beta)
+                extension = -1;
+        }
+
+        new_depth += extension;
 
         inner_board.update_state(move);
         ss->current_move = move;
@@ -391,7 +425,6 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
         bool gives_check = inner_board.inCheck();
 
         // late move reductions
-        int new_depth = depth-1;
         new_depth += gives_check;
         new_depth -= sorted_move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
         new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
