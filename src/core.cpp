@@ -344,7 +344,7 @@ int Engine::negamax(int depth, int color, int alpha, int beta, Stack* ss){
     if (!pv && !in_check){
 
         // razoring
-        if (depth < 6 && static_eval + depth*150 + 281 < alpha){ 
+        if (static_eval + 100*depth*depth + 250 < alpha){ 
             static_eval = qsearch<false>(alpha, beta, color, 0, ss + 1); // we update static eval to the better qsearch eval. //? tweak depth?
             if (static_eval <= alpha) return static_eval;
         }
