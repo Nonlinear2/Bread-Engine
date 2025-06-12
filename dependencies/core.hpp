@@ -30,6 +30,8 @@ class Engine {
 
     NnueBoard inner_board = NnueBoard();
 
+    chess::Movelist root_moves;
+    
     void set_uci_display(bool v);
 
     int increment_mate_ply(int eval);

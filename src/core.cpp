@@ -113,6 +113,8 @@ chess::Move Engine::iterative_deepening(SearchLimit limit){
 
     current_depth = 0;
 
+    root_moves.clear();
+
     engine_color = (inner_board.sideToMove() == chess::Color::WHITE) ? 1: -1;
 
     // reset stack
@@ -201,35 +203,28 @@ chess::Move Engine::minimax_root(int depth, int color, Stack* ss){
     chess::Move best_move = NO_MOVE;
     uint64_t zobrist_hash = inner_board.hash();
     inner_board.synchronize();
-
-    SortedMoveGen sorted_move_gen = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board, depth);
-    bool is_hit;
-    TEntry* transposition = transposition_table.probe(is_hit, zobrist_hash);
-    if (is_hit){
-        if ((transposition->depth() >= depth) && (!inner_board.isRepetition(1))){
-            // if is repetition(1), danger of repetition so TT is unreliable
-            switch (transposition->flag()){
-                case TFlag::EXACT:
-                    best_move = transposition->best_move;
-                    best_move.setScore(transposition->value());
-                    return best_move;
-                default:
-                    break;
-            }
+    
+    if (root_moves.empty()){
+        chess::movegen::legalmoves(root_moves, inner_board);
+        assert(!root_moves.empty());
+        SortedMoveGen smg = SortedMoveGen<chess::movegen::MoveGenType::ALL>(inner_board, depth);
+        for (int i = 0; i < root_moves.size(); i++){
+            smg.set_score(root_moves[i]);
         }
-        if (transposition->best_move != NO_MOVE){
-            // in case the search breaks early, initialize best_move.
-            best_move = transposition->best_move;
-            best_move.setScore(transposition->value());
-            sorted_move_gen.set_tt_move(transposition->best_move);
-        }
+        std::stable_sort(root_moves.begin(), root_moves.end(),
+        [](const chess::Move a, const chess::Move b){ return a.score() > b.score(); });
+        for (chess::Move& m: root_moves)
+        m.setScore(-INFINITE_VALUE);
     }
+    
+    std::vector<chess::Move> temp_root_moves(root_moves.begin(), root_moves.end());
 
     bool in_check = inner_board.inCheck();
 
     int pos_eval;
-    chess::Move move;
-    while(sorted_move_gen.next(move)){
+    int move_count = 0;
+    for (chess::Move& move: root_moves){
+        move_count++;
         bool is_capture = inner_board.isCapture(move);
 
         inner_board.update_state(move);
@@ -237,9 +232,9 @@ chess::Move Engine::minimax_root(int depth, int color, Stack* ss){
 
         int new_depth = depth-1;
         new_depth += inner_board.inCheck();
-        new_depth -= sorted_move_gen.index() > 1 && depth > 5 && !is_capture && !in_check;
+        new_depth -= move_count > 2 && depth > 5 && !is_capture && !in_check;
 
-        if (sorted_move_gen.index() == 0){
+        if (move_count == 1){
             pos_eval = -negamax<true>(new_depth, -color, -beta, -alpha, ss + 1);
         } else {
             pos_eval = -negamax<false>(new_depth, -color, -beta, -alpha, ss + 1);
@@ -247,25 +242,24 @@ chess::Move Engine::minimax_root(int depth, int color, Stack* ss){
 
         inner_board.restore_state(move);
 
-        if (interrupt_flag){
-            if (best_move != NO_MOVE){
-                return best_move; 
-            } else { // this means no move was ever recorded
-                std::cerr << "error: the engine didn't complete any search." << std::endl;
-                return NO_MOVE;
-            }
-        }
+        if (interrupt_flag)
+            return temp_root_moves[0];
+
+        move.setScore(pos_eval);
 
         if (is_mate(pos_eval)) pos_eval = increment_mate_ply(pos_eval);
 
         if (pos_eval > alpha){
             best_move = move;
-            best_move.setScore(pos_eval);
+            std::rotate(temp_root_moves.begin(),
+                temp_root_moves.begin() + move_count  - 1, temp_root_moves.begin() + move_count);
             alpha = pos_eval;
         }
     }
-
+    
     transposition_table.store(zobrist_hash, alpha, NO_VALUE, depth, best_move, TFlag::EXACT, static_cast<uint8_t>(inner_board.fullMoveNumber()));
+
+    std::copy(temp_root_moves.begin(), temp_root_moves.end(), root_moves.begin());
 
     return best_move;
 }

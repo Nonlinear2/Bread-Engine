@@ -17,17 +17,26 @@ int main(){
     };
     // engine.transpositsion_table.info();
 
-    for (int i = 0; i < fens.size(); i++){
-        NnueBoard cb;
-        cb.setFen(fens[i]);
-        cb.synchronize();
+    // for (int i = 0; i < fens.size(); i++){
+    //     NnueBoard cb;
+    //     cb.setFen(fens[i]);
+    //     cb.synchronize();
 
-        chess::Move best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Depth, 9));
-        std::cout << "score: " << best_move.score() << std::endl;
+    //     chess::Move best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Depth, 9));
+    //     std::cout << "score: " << best_move.score() << std::endl;
 
-        // std::cout << fens[i] << "\n";
-        // std::cout << cb.evaluate() << std::endl;
-        // engine.search(fens[i], SearchLimit(LimitType::Depth, 11));
-    }
+    //     // std::cout << fens[i] << "\n";
+    //     // std::cout << cb.evaluate() << std::endl;
+    //     // engine.search(fens[i], SearchLimit(LimitType::Depth, 11));
+    // }
+    NnueBoard cb;
+    cb.setFen(chess::constants::STARTPOS);
+    cb.synchronize();
+
+    chess::Move best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Time, 300));
+    cb.setFen("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2");
+    best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Time, 300));
+    std::cout << "score: " << best_move.score() << std::endl;
+
     return 0;
 }   
