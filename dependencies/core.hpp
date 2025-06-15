@@ -34,14 +34,15 @@ class Engine {
     
     void set_uci_display(bool v);
 
-    int increment_mate_ply(int eval);
+    int increment_mate_ply(int value);
 
-    bool is_mate(int eval);
+    bool is_mate(int value);
 
-    bool is_win(int eval);
-    bool is_loss(int eval);
+    bool is_decisive(int value);
+    bool is_win(int value);
+    bool is_loss(int value);
 
-    int get_mate_in_moves(int eval);
+    int get_mate_in_moves(int value);
     
     int get_think_time(int time_left, int num_moves_out_of_book, int num_moves_until_time_control, int increment);
 
@@ -59,18 +60,17 @@ class Engine {
 
     bool display_uci = true;
 
-    int engine_color;
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 
     Nonsense nonsense = Nonsense();
 
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove();
-    chess::Move minimax_root(int depth, int color, Stack* ss);
+    chess::Move minimax_root(int depth, Stack* ss);
 
     template<bool pv>
-    int negamax(int depth, int color, int alpha, int beta, Stack* ss);
+    int negamax(int depth, int alpha, int beta, Stack* ss);
 
     template<bool pv>
-    int qsearch(int alpha, int beta, int color, int depth, Stack* ss);
+    int qsearch(int alpha, int beta, int depth, Stack* ss);
 };
