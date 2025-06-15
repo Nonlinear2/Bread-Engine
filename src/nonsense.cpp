@@ -9,12 +9,13 @@ void Nonsense::display_info(){
 }
 
 bool Nonsense::should_bongcloud(uint64_t hash, int move_number){
-    if (is_bongcloud) is_bongcloud = (move_number == 2); // make sure it is still possible to bongcloud.
+    if (is_bongcloud)
+        is_bongcloud = (move_number == 2); // make sure it is still possible to bongcloud.
 
-    return (is_bongcloud || (hash == starting_pos_hash));
+    return (is_bongcloud || hash == starting_pos_hash);
 }
 
-chess::Move Nonsense::play_bongcloud(bool display_info){
+Move Nonsense::play_bongcloud(bool display_info){
     if (is_bongcloud){
         if (display_info){
             std::cout << "info depth 91";
@@ -26,9 +27,9 @@ chess::Move Nonsense::play_bongcloud(bool display_info){
             std::cout << "bestmove e1e2" << std::endl;
         }
         is_bongcloud = false;
-        chess::Move move = chess::Move::make(chess::Square(chess::Square::underlying::SQ_E1),
-                                             chess::Square(chess::Square::underlying::SQ_E2),
-                                             chess::PieceType::KING);
+        Move move = Move::make(Square(Square::underlying::SQ_E1),
+                                             Square(Square::underlying::SQ_E2),
+                                             PieceType::KING);
         move.setScore(10);
         return move;
     } else {
@@ -42,27 +43,29 @@ chess::Move Nonsense::play_bongcloud(bool display_info){
             std::cout << "bestmove e2e4" << std::endl;
         }
         is_bongcloud = true;
-        chess::Move move = chess::Move::make(chess::Square(chess::Square::underlying::SQ_E2),
-                                             chess::Square(chess::Square::underlying::SQ_E4),
-                                             chess::PieceType::PAWN);
+        Move move = Move::make(Square(Square::underlying::SQ_E2),
+                                             Square(Square::underlying::SQ_E4),
+                                             PieceType::PAWN);
         move.setScore(0);
         return move;
     }
 }
 
-chess::Move Nonsense::worst_winning_move(chess::Move move, chess::Movelist moves){
-    chess::Move worst_winning_move = move;
+Move Nonsense::worst_winning_move(Move move, Movelist moves){
+    Move worst_winning_move = move;
     for (auto move: moves){
-        if (move.score() != TB_VALUE) continue;
+        if (move.score() != TB_VALUE)
+            continue;
 
-        if (move.typeOf() == chess::Move::ENPASSANT){
+        if (move.typeOf() == Move::ENPASSANT){
             worst_winning_move = move;
             break;
-        } else if (move.typeOf() == chess::Move::PROMOTION){
-            chess::PieceType promotion = move.promotionType();
-            if (promotion == chess::PieceType::ROOK) worst_winning_move = move;
+        } else if (move.typeOf() == Move::PROMOTION){
+            PieceType promotion = move.promotionType();
+            if (promotion == PieceType::ROOK)
+                worst_winning_move = move;
 
-            if ((promotion == chess::PieceType::KNIGHT) || (promotion == chess::PieceType::BISHOP)){
+            if (promotion == PieceType::KNIGHT || promotion == PieceType::BISHOP){
                 worst_winning_move = move;
                 break;
             }

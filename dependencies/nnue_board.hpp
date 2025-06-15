@@ -8,7 +8,7 @@
 #include "nnue.hpp"
 #include "misc.hpp"
 
-class NnueBoard: public chess::Board {
+class NnueBoard: public Board {
     public:
     NNUE nnue_ = NNUE();
 
@@ -19,9 +19,9 @@ class NnueBoard: public chess::Board {
 
     bool last_move_null();
 
-    void update_state(chess::Move move);
+    void update_state(Move move);
 
-    void restore_state(chess::Move move);
+    void restore_state(Move move);
 
     int evaluate();
 
@@ -31,16 +31,16 @@ class NnueBoard: public chess::Board {
     bool probe_wdl(int& eval);
 
 
-    bool probe_root_dtz(chess::Move& move, chess::Movelist& moves, bool generate_moves);
+    bool probe_root_dtz(Move& move, Movelist& moves, bool generate_moves);
 
-    chess::Move tb_result_to_move(unsigned int tb_result);
+    Move tb_result_to_move(unsigned int tb_result);
     
     private:
     std::stack<Accumulator> accumulator_stack;
 
     std::vector<int> get_HKP(bool color);
 
-    modified_features get_modified_features(chess::Move move, bool color);
+    modified_features get_modified_features(Move move, bool color);
 
-    bool is_updatable_move(chess::Move move);
+    bool is_updatable_move(Move move);
 };

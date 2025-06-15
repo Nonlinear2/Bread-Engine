@@ -7,7 +7,7 @@ float sigmoid(float x){
     return x / (2 + 2*std::abs(x)) + 0.5;
 }
 
-bool move_in_list(chess::Move move, chess::Movelist ml){
+bool move_in_list(Move move, Movelist ml){
     for (auto m: ml){
         if (move == m)
             return true;
@@ -31,27 +31,27 @@ int main(){
     const int total_games = 1'000'000;
 
     srand((unsigned int)time(NULL));
-    chess::Board cb = chess::Board();
+    Board cb = Board();
     Engine engine = Engine();
 
     engine.set_uci_display(false);
 
-    chess::Movelist move_list;
-    chess::Move best_move;
+    Movelist move_list;
+    Move best_move;
     int value;
     float wdl;
     int count = 0;
     for (int i = 0; i < total_games; i++){
-        cb.setFen(chess::constants::STARTPOS);
+        cb.setFen(constants::STARTPOS);
         for (int i = 0; i < 7; i++){
-            if (std::get<1>(cb.isGameOver()) != chess::GameResult::NONE){
+            if (std::get<1>(cb.isGameOver()) != GameResult::NONE){
                 break;
             }
-            chess::movegen::legalmoves(move_list, cb);
+            movegen::legalmoves(move_list, cb);
             cb.makeMove(move_list[rand()%move_list.size()]);
         }
-        while (std::get<1>(cb.isGameOver()) == chess::GameResult::NONE){
-            chess::movegen::legalmoves(move_list, cb);
+        while (std::get<1>(cb.isGameOver()) == GameResult::NONE){
+            movegen::legalmoves(move_list, cb);
             best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Nodes, 5000));
 
             if (!move_in_list(best_move, move_list)){
@@ -59,16 +59,16 @@ int main(){
             }
 
             if (!cb.isCapture(best_move) && !cb.inCheck() && std::abs(best_move.score()) < TB_VALUE){
-                stm.push_back(cb.sideToMove() == chess::Color::WHITE);
+                stm.push_back(cb.sideToMove() == Color::WHITE);
                 fens.push_back(cb.getFen());
                 scores.push_back(best_move.score());
             }
             cb.makeMove(best_move);
         }
 
-        if (std::get<1>(cb.isGameOver()) == chess::GameResult::DRAW){
+        if (std::get<1>(cb.isGameOver()) == GameResult::DRAW){
             wdl = 0.5;
-        } else if (cb.sideToMove() == chess::Color::WHITE){
+        } else if (cb.sideToMove() == Color::WHITE){
             wdl = 0;
         } else {
             wdl = 1;

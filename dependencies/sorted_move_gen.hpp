@@ -7,8 +7,8 @@
 #include "misc.hpp"
 #include "chess.hpp"
 
-template<chess::movegen::MoveGenType MoveGenType>
-class SortedMoveGen: public chess::Movelist {
+template<movegen::MoveGenType MoveGenType>
+class SortedMoveGen: public Movelist {
     public:
     static constexpr PieceSquareMaps psm = PieceSquareMaps();
     static inline int KILLER_SCORE = 149;
@@ -23,22 +23,22 @@ class SortedMoveGen: public chess::Movelist {
     SortedMoveGen(NnueBoard& board);
     SortedMoveGen(NnueBoard& board, int depth);
     void generate_moves();
-    void set_tt_move(chess::Move move);
-    bool next(chess::Move& move);
+    void set_tt_move(Move move);
+    bool next(Move& move);
     bool is_empty();
     int index();
     static void clear_killer_moves();
-    void update_history(chess::Move move, int depth, bool color);
-    void set_score(chess::Move& move);
+    void update_history(Move move, int depth, bool color);
+    void set_score(Move& move);
 
-    chess::Move tt_move = NO_MOVE;
+    Move tt_move = Move::NO_MOVE;
     int generated_moves_count = 0;
     private:
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
     bool checked_tt_move = false;
     bool generated_moves = false;
-    bool is_valid_move(chess::Move move);
-    chess::Move pop_move(int move_idx);
-    chess::Move pop_best_score();
+    bool is_valid_move(Move move);
+    Move pop_move(int move_idx);
+    Move pop_best_score();
 };

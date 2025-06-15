@@ -3,7 +3,7 @@
 #include <array>
 #include "chess.hpp"
 
-#define NO_MOVE chess::Move::NO_MOVE
+using namespace chess;
 
 constexpr int ENGINE_MAX_DEPTH = 63;
 constexpr int QSEARCH_MAX_DEPTH = 6;
@@ -42,9 +42,9 @@ class CircularBuffer3 {
     int curr_idx = 0;
     std::array<uint16_t, 3> data;
 
-    void add_move(chess::Move move);
+    void add_move(Move move);
 
-    bool in_buffer(chess::Move move);
+    bool in_buffer(Move move);
 };
 
 enum LimitType {
@@ -71,6 +71,6 @@ class History {
 };
 
 namespace SEE {
-bool evaluate(const chess::Board& board, chess::Move move, int threshold);
-chess::PieceType pop_lva(const chess::Board& board, chess::Bitboard& occupied, const chess::Bitboard& attackers, chess::Color color);
+bool evaluate(const Board& board, Move move, int threshold);
+PieceType pop_lva(const Board& board, Bitboard& occupied, const Bitboard& attackers, Color color);
 } // namespace SEE

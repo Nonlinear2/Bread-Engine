@@ -139,7 +139,7 @@ the following optimizations are also implemented in bread engine:
 ### Threefold repetition
 The first idea that comes to mind to implement threefold repetition is to have something like 
 ```c++
-if (inner_board.isthreefoldrepetition()){
+if (pos.is_threefold_repetition()){
     return 0;
 }
 ```

@@ -3,6 +3,8 @@
 #include "chess.hpp"
 #include <array>
 
+using namespace chess;
+
 constexpr std::array<int, 64> pawn_map_b = {
             252,  252,  252,  252,  252,  252,  252,  252, 
             196,  196,  196,  196,  196,  196,  196,  196, 
@@ -166,14 +168,14 @@ struct PieceSquareMaps {
 
     }
 
-    constexpr int get_psm(chess::Piece piece, chess::Square from_sq, chess::Square to_sq) const {
+    constexpr int get_psm(Piece piece, Square from_sq, Square to_sq) const {
         int piece_idx = static_cast<int>(piece);
         piece_idx = (piece_idx-(piece_idx > 5))*64;
         return all_psm[piece_idx + to_sq.index()] - all_psm[piece_idx + from_sq.index()];
     }
 
-    constexpr int get_ksm(chess::Piece king, bool is_endgame, chess::Square from_sq, chess::Square to_sq) const {
-        int piece_idx = 128*(king == chess::Piece::BLACKKING) + 64*is_endgame; 
+    constexpr int get_ksm(Piece king, bool is_endgame, Square from_sq, Square to_sq) const {
+        int piece_idx = 128*(king == Piece::BLACKKING) + 64*is_endgame; 
         return all_ksm[piece_idx + to_sq.index()] - all_ksm[piece_idx + from_sq.index()];
     }
 };

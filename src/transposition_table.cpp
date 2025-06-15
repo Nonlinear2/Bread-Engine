@@ -4,11 +4,8 @@ TranspositionTable::TranspositionTable(){allocateMB(256);};
 
 void TranspositionTable::info(){
     int used = 0;
-
     int num_move = 0;
-
     int num_depth_zero = 0;
-
     int num_exact = 0;
     int num_upper = 0;
     int num_lower = 0;
@@ -18,7 +15,7 @@ void TranspositionTable::info(){
         if (entry.zobrist_hash != 0){
             used++;
 
-            num_move += (entry.best_move != NO_MOVE);
+            num_move += (entry.move != Move::NO_MOVE);
 
             num_depth_zero += (entry.depth() == 0);
 
@@ -73,7 +70,8 @@ void TranspositionTable::allocateMB(int new_size){
     entries.shrink_to_fit();
 }
 
-void TranspositionTable::store(uint64_t zobrist, int value, int eval, int depth, chess::Move move, TFlag flag, uint8_t move_number){
+void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int depth,
+                               Move move, TFlag flag, uint8_t move_number){
     // no need to store the side to move, as it is in the zobrist hash.
     TEntry* entry = &entries[zobrist & (entries.size() - 1)];
 
@@ -85,30 +83,29 @@ void TranspositionTable::store(uint64_t zobrist, int value, int eval, int depth,
     if (entry->depth_tflag == 0 ||
         move_number > entry->move_number + 4 ||
         depth > entry->depth() - 1 ||
-        ((depth != DEPTH_QSEARCH) && (flag == TFlag::EXACT)))
+        (depth != DEPTH_QSEARCH && flag == TFlag::EXACT))
     {
         // add move if the old entry didn't hold the same position or if the new move is better
         if (entry->zobrist_hash != zobrist ||
-            (move != NO_MOVE && (entry->best_move == NO_MOVE || depth > entry->depth())))
-        {
-            entry->best_move = move.move();
-        }
+            (move != Move::NO_MOVE && (entry->move == Move::NO_MOVE || depth > entry->depth())))
+            entry->move = move.move();
+
         entry->zobrist_hash = zobrist;
-        entry->value_ = value;
-        entry->eval_ = eval;
+        entry->value = value;
+        entry->static_eval = static_eval;
         entry->depth_tflag = (static_cast<uint8_t>(depth) << 2) | (static_cast<uint8_t>(flag));
         entry->move_number = move_number;
     };
 }
 
-void TranspositionTable::store(TEntry entry){
-    entries[entry.zobrist_hash & (entries.size() - 1)] = entry;
-}
-
-TEntry* TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
+TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
     TEntry* entry = &entries[zobrist & (entries.size() - 1)];
     is_hit = (entry->zobrist_hash == zobrist);
-    return entry;
+
+    if (is_hit)
+        return TTData(entry);
+    else
+        return TTData();
 }
 
 void TranspositionTable::clear(){

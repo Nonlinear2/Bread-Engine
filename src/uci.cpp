@@ -20,7 +20,7 @@ bool UCIAgent::process_uci_command(std::string command){
 
     } else if (first == "ucinewgame"){
         engine.transposition_table.clear();
-        SortedMoveGen<chess::movegen::MoveGenType::ALL>::history.clear();
+        SortedMoveGen<movegen::MoveGenType::ALL>::history.clear();
         
     } else if (first == "position"){
         process_position(parsed_command);
@@ -98,20 +98,20 @@ void UCIAgent::process_position(std::vector<std::string> command){
 
     std::string fen = "";
     if (command[1] == "startpos"){
-        fen = chess::constants::STARTPOS;
+        fen = constants::STARTPOS;
     } else if (command[1] == "fen") {
         for (int i=0; i < 5; i++){
             fen += command[2+i] + " ";
         }
         fen += command[7];
     }
-    engine.inner_board.setFen(fen);
+    engine.pos.setFen(fen);
 
     bool is_movelist = false; 
     for (int i=2; i < command.size(); i++){
         std::string token = command[i];
         if (is_movelist){
-            engine.inner_board.makeMove(chess::uci::uciToMove(engine.inner_board, token));
+            engine.pos.makeMove(uci::uciToMove(engine.pos, token));
         }
         if (token == "moves"){
             is_movelist = true;
@@ -187,7 +187,7 @@ int UCIAgent::get_think_time_from_go_command(std::vector<std::string> command){
         return -1;
     }
 
-    bool engine_color = (engine.inner_board.sideToMove() == chess::Color::WHITE);
+    bool engine_color = (engine.pos.sideToMove() == Color::WHITE);
     return engine.get_think_time(engine_color ? wtime: btime, 
                                  num_moves_out_of_book,
                                  movestogo,
