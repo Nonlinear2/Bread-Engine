@@ -105,13 +105,13 @@ void UCIAgent::process_position(std::vector<std::string> command){
         }
         fen += command[7];
     }
-    engine.inner_board.setFen(fen);
+    engine.pos.setFen(fen);
 
     bool is_movelist = false; 
     for (int i=2; i < command.size(); i++){
         std::string token = command[i];
         if (is_movelist){
-            engine.inner_board.makeMove(chess::uci::uciToMove(engine.inner_board, token));
+            engine.pos.makeMove(chess::uci::uciToMove(engine.pos, token));
         }
         if (token == "moves"){
             is_movelist = true;
@@ -187,7 +187,7 @@ int UCIAgent::get_think_time_from_go_command(std::vector<std::string> command){
         return -1;
     }
 
-    bool engine_color = (engine.inner_board.sideToMove() == chess::Color::WHITE);
+    bool engine_color = (engine.pos.sideToMove() == chess::Color::WHITE);
     return engine.get_think_time(engine_color ? wtime: btime, 
                                  num_moves_out_of_book,
                                  movestogo,

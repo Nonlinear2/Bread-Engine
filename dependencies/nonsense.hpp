@@ -35,8 +35,8 @@ class Nonsense {
 
     void display_info();
     bool should_bongcloud(uint64_t hash, int move_number);
-    chess::Move play_bongcloud(bool display_info);
-    chess::Move worst_winning_move(chess::Move move, chess::Movelist moves);
+    Move play_bongcloud(bool display_info);
+    Move worst_winning_move(Move move, Movelist moves);
     private:
     static constexpr uint64_t starting_pos_hash = 5060803636482931868;
     bool is_bongcloud = false;
