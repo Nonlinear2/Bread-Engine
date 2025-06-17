@@ -292,6 +292,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
     int static_eval = NO_VALUE;
     int eval = NO_VALUE;
+    int max_value = -INFINITE_VALUE;
+    Move best_move;
+    Move move;
+    int value;
 
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
@@ -372,11 +376,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         }
     }
 
-    int max_value = -INFINITE_VALUE;
-
-    Move best_move;
-    Move move;
-    int pos_eval;
     bool tt_capture = is_hit && transposition->best_move != Move::NO_MOVE && pos.isCapture(transposition->best_move);
     while (sorted_move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
@@ -402,11 +401,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
         if (pv && (sorted_move_gen.index() == 0)){
-            pos_eval = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
+            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
         } else {
-            pos_eval = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
-            if ((new_depth < depth-1) && (pos_eval > alpha)){
-                pos_eval = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
+            value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
+            if ((new_depth < depth-1) && (value > alpha)){
+                value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
             }
         }
 
@@ -414,12 +413,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         if (interrupt_flag) return 0;
 
-        if (pos_eval > max_value){
-            max_value = pos_eval;
+        if (value > max_value){
+            max_value = value;
             best_move = move;
         }
 
-        alpha = std::max(alpha, pos_eval);
+        alpha = std::max(alpha, value);
         if (beta <= alpha){
             if (!is_capture)
                 sorted_move_gen.update_history(move, depth, 
@@ -447,10 +446,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     // one TT entry which is completely fine.
     // what about evaluations higher in the tree where pos.isRepetition(1) is false?
     // these evals are not history dependent as they mean that one side can force a draw.
-    if ((max_value == 0 && pos.isRepetition(1)) || pos.halfMoveClock() + depth >= 100){
+    if ((max_value == 0 && pos.isRepetition(1)) || pos.halfMoveClock() + depth >= 100)
         return max_value;
-        // we fall through without storing the eval in the TT.
-    };
+    // we fall through without storing the eval in the TT.
 
     TFlag node_type;
     if (beta <= alpha){ // this means there was a cutoff. So true eval is equal or higher
@@ -463,7 +461,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         // eval is between initial alpha and beta. so search was completed without cutoffs, and is exact
         node_type = TFlag::EXACT;
     }
-    if (is_mate(max_value)) max_value = increment_mate_ply(max_value);
+    if (is_mate(max_value))
+        max_value = increment_mate_ply(max_value);
     transposition_table.store(zobrist_hash, max_value, static_eval, depth, best_move, node_type, static_cast<uint8_t>(pos.fullMoveNumber()));
 
     return max_value;
@@ -483,6 +482,11 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (pos.isHalfMoveDraw()) 
         return 0;
 
+    int max_value = stand_pat;
+    int value;
+    Move move;
+    Move best_move = Move::NO_MOVE;
+
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = pos.hash();
 
@@ -500,11 +504,13 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             case TFlag::EXACT:
                 return transposition->value();
             case TFlag::LOWER_BOUND:
-                if (!pv) alpha = std::max(alpha, transposition->value());
+                if (!pv)
+                    alpha = std::max(alpha, transposition->value());
                 stand_pat = std::max(stand_pat, transposition->value());
                 break;
             case TFlag::UPPER_BOUND:
-                if (!pv) beta = std::min(beta, transposition->value());
+                if (!pv)
+                    beta = std::min(beta, transposition->value());
                 stand_pat = std::min(stand_pat, transposition->value());
                 break;
             default:
@@ -537,10 +543,6 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     Square previous_to_square = ((ss - 1)->current_move).to();
 
-    int max_value = stand_pat;
-    int pos_eval;
-    Move move;
-    Move best_move = Move::NO_MOVE;
     while (sorted_capture_gen.next(move)){
         // delta pruning
         // move.score() is calculated with set_capture_score which is material difference.
@@ -557,14 +559,14 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
         pos.update_state(move);
         ss->current_move = move;
-        pos_eval = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
+        value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
 
-        if (pos_eval > max_value){
-            max_value = pos_eval;
+        if (value > max_value){
+            max_value = value;
             best_move = move;
         }
-        alpha = std::max(alpha, pos_eval);
+        alpha = std::max(alpha, value);
         if (alpha >= beta){ // only check for cutoffs when alpha gets updated.
             break;
         }
