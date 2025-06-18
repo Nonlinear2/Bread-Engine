@@ -108,9 +108,8 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
         for (int i = 0; i < size_; i++){
             set_score(moves_[i]);
         }
-        if (is_valid_move(tt_move)){
+        if (is_valid_move(tt_move))
             pop_move(std::find(begin(), end(), tt_move) - begin());
-        }
     }
 
     if (size() == 0)

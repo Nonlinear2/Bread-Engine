@@ -2,14 +2,15 @@
 
 // This is a circular buffer to implement FIFO for killer moves
 void CircularBuffer3::add_move(Move move){
-    if (data[curr_idx] != move.move()) data[curr_idx] = move.move(); // avoid storing the same move multiple times.
+    if (data[curr_idx] != move.move())
+        data[curr_idx] = move.move(); // avoid storing the same move multiple times.
     curr_idx++;
     curr_idx %= 3;
 }
 
 bool CircularBuffer3::in_buffer(Move move){
     uint16_t move_val = move.move();
-    return (data[0] == move_val) || (data[1] == move_val) || (data[2] == move_val);
+    return data[0] == move_val || data[1] == move_val || data[2] == move_val;
 }
 
 void History::clear(){
@@ -58,21 +59,18 @@ bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true
         default:
             break;
     }
-    if (board.at(to_sq) != Piece::NONE){
+    if (board.at(to_sq) != Piece::NONE)
         value_on_square = piece_value[static_cast<int>(board.at(to_sq).type())];
-    }
 
     do {
         // make capture
 
         // add xray pieces to the attackers
-        if ((next_piece == PieceType::PAWN) || (next_piece == PieceType::BISHOP) || (next_piece == PieceType::QUEEN)){
+        if (next_piece == PieceType::PAWN || next_piece == PieceType::BISHOP || next_piece == PieceType::QUEEN)
             attackers[attacker_turn] |= attacks::bishop(to_sq, occupied) & bishops_and_queens;
-        }
 
-        if ((next_piece == PieceType::ROOK) || (next_piece == PieceType::QUEEN)){
+        if (next_piece == PieceType::ROOK || next_piece == PieceType::QUEEN)
             attackers[attacker_turn] |= attacks::rook(to_sq, occupied) & rooks_and_queens;
-        }
 
         attackers[attacker_turn] &= occupied;
 
@@ -82,8 +80,10 @@ bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true
         attacker_turn = !attacker_turn;
 
         // if the side to move is up material, they don't need to capture again.
-        if (attacker_turn && (balance >= threshold)) return true;
-        if (!attacker_turn && (balance < threshold)) return false;
+        if (attacker_turn && balance >= threshold)
+            return true;
+        if (!attacker_turn && balance < threshold)
+            return false;
         // prepare next piece
         next_piece = pop_lva(
             board,

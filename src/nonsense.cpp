@@ -9,9 +9,10 @@ void Nonsense::display_info(){
 }
 
 bool Nonsense::should_bongcloud(uint64_t hash, int move_number){
-    if (is_bongcloud) is_bongcloud = (move_number == 2); // make sure it is still possible to bongcloud.
+    if (is_bongcloud)
+        is_bongcloud = (move_number == 2); // make sure it is still possible to bongcloud.
 
-    return (is_bongcloud || (hash == starting_pos_hash));
+    return (is_bongcloud || hash == starting_pos_hash);
 }
 
 Move Nonsense::play_bongcloud(bool display_info){
@@ -53,16 +54,18 @@ Move Nonsense::play_bongcloud(bool display_info){
 Move Nonsense::worst_winning_move(Move move, Movelist moves){
     Move worst_winning_move = move;
     for (auto move: moves){
-        if (move.score() != TB_VALUE) continue;
+        if (move.score() != TB_VALUE)
+            continue;
 
         if (move.typeOf() == Move::ENPASSANT){
             worst_winning_move = move;
             break;
         } else if (move.typeOf() == Move::PROMOTION){
             PieceType promotion = move.promotionType();
-            if (promotion == PieceType::ROOK) worst_winning_move = move;
+            if (promotion == PieceType::ROOK)
+                worst_winning_move = move;
 
-            if ((promotion == PieceType::KNIGHT) || (promotion == PieceType::BISHOP)){
+            if (promotion == PieceType::KNIGHT || promotion == PieceType::BISHOP){
                 worst_winning_move = move;
                 break;
             }

@@ -299,25 +299,26 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
-
-    SortedMoveGen sorted_move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(pos, depth);
-
+    
+    SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(pos, depth);
+    
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
-
+    
     static_eval = eval = transposition.static_eval;
     eval = transposition.value;
-
+    move_gen.set_tt_move(transposition.move);
+    
     if (transposition.depth >= depth && !pos.isRepetition(1)){
         switch (transposition.flag){
             case TFlag::EXACT:
-                return transposition.value;
+            return transposition.value;
             case TFlag::LOWER_BOUND:
-                alpha = std::max(alpha, transposition.value);
-                break;
+            alpha = std::max(alpha, transposition.value);
+            break;
             case TFlag::UPPER_BOUND:
-                beta = std::min(beta, transposition.value);
-                break;
+            beta = std::min(beta, transposition.value);
+            break;
         }
     }
 
@@ -325,8 +326,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     // no need to store in transposition table as is already there.
     if (beta <= alpha)
         return transposition.value;
-
-    sorted_move_gen.set_tt_move(transposition.move);
 
     bool in_check = pos.inCheck();
 
@@ -340,8 +339,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         // razoring
         if (eval + 100*depth*depth + 250 < alpha){ 
-            eval = qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval. //? tweak depth?
-            if (eval <= alpha) return eval;
+            eval = qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval.
+            if (eval <= alpha)
+                return eval;
         }
 
         // reverse futility pruning
@@ -366,12 +366,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         }
     }
 
-    bool tt_capture = is_hit && transposition.move != Move::NO_MOVE && pos.isCapture(transposition.move);
-    while (sorted_move_gen.next(move)){
+    bool tt_capture = transposition.move != Move::NO_MOVE && pos.isCapture(transposition.move);
+    while (move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
 
         // lmp
-        if (!pv && !in_check && !is_capture && sorted_move_gen.index() > 3 + depth && !is_hit && eval < alpha) continue;
+        if (!pv && !in_check && !is_capture && move_gen.index() > 3 + depth && !is_hit && eval < alpha)
+            continue;
 
         bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
 
@@ -383,14 +384,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         // late move reductions
         int new_depth = depth-1;
         new_depth += gives_check;
-        new_depth -= sorted_move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
+        new_depth -= move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
         new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
         new_depth -= tt_capture && !is_capture;
-        new_depth -= sorted_move_gen.index() > 10;
+        new_depth -= move_gen.index() > 10;
 
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
-        if (pv && (sorted_move_gen.index() == 0)){
+        if (pv && (move_gen.index() == 0)){
             value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
         } else {
             value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
@@ -411,14 +412,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         alpha = std::max(alpha, value);
         if (beta <= alpha){
             if (!is_capture)
-                sorted_move_gen.update_history(move, depth, 
+                move_gen.update_history(move, depth, 
                     (pos.sideToMove() == Color::WHITE) ? 1: -1);
             SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves[depth].add_move(move);
             break;
         }
     }
 
-    if (sorted_move_gen.tt_move == Move::NO_MOVE && sorted_move_gen.generated_moves_count == 0){ // avoid calling expensive try_outcome_eval function
+    if (move_gen.tt_move == Move::NO_MOVE && move_gen.generated_moves_count == 0){ // avoid calling expensive try_outcome_eval function
         // If board is in check, it is checkmate
         // if there are no legal moves and it's not check, it is stalemate so eval is 0
         max_value = pos.inCheck() ? -MATE_VALUE : 0;
@@ -472,7 +473,6 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (pos.isHalfMoveDraw()) 
         return 0;
 
-    int max_value = stand_pat;
     int value;
     Move move;
     Move best_move = Move::NO_MOVE;
@@ -482,7 +482,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     // first we check for transposition. If it is outcome, it should have already been stored
     // with an exact flag, so the stand pat will be correct anyways.
-    SortedMoveGen sorted_capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(pos);
+    SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(pos);
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
     stand_pat = transposition.static_eval;
@@ -509,7 +509,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (stand_pat >= beta)
         return stand_pat;
 
-    sorted_capture_gen.set_tt_move(transposition.move);
+    capture_gen.set_tt_move(transposition.move);
 
     if (stand_pat == NO_VALUE){
         stand_pat = pos.evaluate();
@@ -524,9 +524,11 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     alpha = std::max(alpha, stand_pat);
 
+    int max_value = stand_pat;
+
     Square previous_to_square = ((ss - 1)->current_move).to();
 
-    while (sorted_capture_gen.next(move)){
+    while (capture_gen.next(move)){
         // delta pruning
         // move.score() is calculated with set_capture_score which is material difference.
         // 1500 is a safety margin
@@ -538,7 +540,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             if (!SEE::evaluate(pos, move, (alpha-stand_pat)/150 - 2))
                 continue;
     
-            if (!pv && sorted_capture_gen.index() > 7
+            if (!pv && capture_gen.index() > 7
                 && stand_pat + 1000 < alpha && !SEE::evaluate(pos, move, -1))
                 continue;
         }
@@ -558,13 +560,13 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             break;
     }
 
-    if (sorted_capture_gen.tt_move == Move::NO_MOVE && sorted_capture_gen.generated_moves_count == 0 
+    if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.generated_moves_count == 0 
         && pos.try_outcome_eval(stand_pat)){
         transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
         return stand_pat;
     }
 
-    if (pos.halfMoveClock() + (depth + QSEARCH_MAX_DEPTH) >= 100)
+    if (pos.halfMoveClock() + depth + QSEARCH_MAX_DEPTH >= 100)
         return max_value; // avoid storing history dependant evals.
 
     if (depth == 0)
