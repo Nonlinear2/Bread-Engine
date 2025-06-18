@@ -60,7 +60,7 @@ void benchmark_engine(int depth){
     std::vector<int> times;
     std::vector<int> nodes;
     
-    chess::Board cb = chess::Board();
+    Board cb = Board();
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
     for (auto fen: fens){
 

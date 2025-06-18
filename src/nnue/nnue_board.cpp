@@ -10,10 +10,10 @@ void NnueBoard::synchronize(){
 }
 
 bool NnueBoard::last_move_null(){
-    return (prev_states_.back().hash == (hash()^chess::Zobrist::sideToMove()));
+    return (prev_states_.back().hash == (hash()^Zobrist::sideToMove()));
 }
 
-void NnueBoard::update_state(chess::Move move){
+void NnueBoard::update_state(Move move){
 
     accumulator_stack.push(nnue_.accumulator);
 
@@ -31,7 +31,7 @@ void NnueBoard::update_state(chess::Move move){
     }
 }
 
-void NnueBoard::restore_state(chess::Move move){
+void NnueBoard::restore_state(Move move){
     unmakeMove(move);
 
     // last layer accumulators will never be used with this implementation.
@@ -40,7 +40,7 @@ void NnueBoard::restore_state(chess::Move move){
 }
 
 int NnueBoard::evaluate(){
-    return std::clamp(nnue_.run_cropped_nn(sideToMove() == chess::Color::WHITE), WORST_VALUE, BEST_VALUE);
+    return std::clamp(nnue_.run_cropped_nn(sideToMove() == Color::WHITE), WORST_VALUE, BEST_VALUE);
 }
 
 bool NnueBoard::try_outcome_eval(int& eval){
@@ -55,8 +55,8 @@ bool NnueBoard::try_outcome_eval(int& eval){
         return true;
     }
 
-    chess::Movelist movelist;
-    chess::movegen::legalmoves(movelist, *this);
+    Movelist movelist;
+    movegen::legalmoves(movelist, *this);
 
     if (movelist.empty()){
         // checkmate/stalemate.
@@ -75,12 +75,12 @@ bool NnueBoard::probe_wdl(int& eval){
     if (ep_square == 64) ep_square = 0;
 
     unsigned int TB_hit = tb_probe_wdl(
-            us(chess::Color::WHITE).getBits(), us(chess::Color::BLACK).getBits(), 
-            pieces(chess::PieceType::KING).getBits(), pieces(chess::PieceType::QUEEN).getBits(),
-            pieces(chess::PieceType::ROOK).getBits(), pieces(chess::PieceType::BISHOP).getBits(),
-            pieces(chess::PieceType::KNIGHT).getBits(), pieces(chess::PieceType::PAWN).getBits(),
+            us(Color::WHITE).getBits(), us(Color::BLACK).getBits(), 
+            pieces(PieceType::KING).getBits(), pieces(PieceType::QUEEN).getBits(),
+            pieces(PieceType::ROOK).getBits(), pieces(PieceType::BISHOP).getBits(),
+            pieces(PieceType::KNIGHT).getBits(), pieces(PieceType::PAWN).getBits(),
             halfMoveClock(), castlingRights().has(sideToMove()),
-            ep_square, sideToMove() == chess::Color::WHITE
+            ep_square, sideToMove() == Color::WHITE
     );
     switch(TB_hit){
         case TB_WIN:
@@ -99,7 +99,7 @@ bool NnueBoard::probe_wdl(int& eval){
     }
 }
 
-bool NnueBoard::probe_root_dtz(chess::Move& move, chess::Movelist& moves, bool generate_moves){
+bool NnueBoard::probe_root_dtz(Move& move, Movelist& moves, bool generate_moves){
     if (occ().count() > TB_LARGEST){
         return false;
     }
@@ -110,12 +110,12 @@ bool NnueBoard::probe_root_dtz(chess::Move& move, chess::Movelist& moves, bool g
     unsigned int tb_moves[TB_MAX_MOVES];
 
     unsigned int TB_hit = tb_probe_root(
-            us(chess::Color::WHITE).getBits(), us(chess::Color::BLACK).getBits(), 
-            pieces(chess::PieceType::KING).getBits(), pieces(chess::PieceType::QUEEN).getBits(),
-            pieces(chess::PieceType::ROOK).getBits(), pieces(chess::PieceType::BISHOP).getBits(),
-            pieces(chess::PieceType::KNIGHT).getBits(), pieces(chess::PieceType::PAWN).getBits(),
+            us(Color::WHITE).getBits(), us(Color::BLACK).getBits(), 
+            pieces(PieceType::KING).getBits(), pieces(PieceType::QUEEN).getBits(),
+            pieces(PieceType::ROOK).getBits(), pieces(PieceType::BISHOP).getBits(),
+            pieces(PieceType::KNIGHT).getBits(), pieces(PieceType::PAWN).getBits(),
             halfMoveClock(), castlingRights().has(sideToMove()),
-            ep_square, sideToMove() == chess::Color::WHITE,
+            ep_square, sideToMove() == Color::WHITE,
             generate_moves ? tb_moves : NULL
     );
 
@@ -126,7 +126,7 @@ bool NnueBoard::probe_root_dtz(chess::Move& move, chess::Movelist& moves, bool g
     move = tb_result_to_move(TB_hit);
 
     if (generate_moves){
-        chess::Move current_move;
+        Move current_move;
         for (int i = 0; i < TB_MAX_MOVES; i++){
             if (tb_moves[i] == TB_RESULT_FAILED) break;
             current_move = tb_result_to_move(tb_moves[i]);
@@ -136,33 +136,33 @@ bool NnueBoard::probe_root_dtz(chess::Move& move, chess::Movelist& moves, bool g
     return true;
 }
 
-chess::Move NnueBoard::tb_result_to_move(unsigned int tb_result){
-    chess::Move move;
+Move NnueBoard::tb_result_to_move(unsigned int tb_result){
+    Move move;
     if (TB_GET_PROMOTES(tb_result) == TB_PROMOTES_NONE){
-        move = chess::Move::make(
-            static_cast<chess::Square>(TB_GET_FROM(tb_result)),
-            static_cast<chess::Square>(TB_GET_TO(tb_result)));
+        move = Move::make(
+            static_cast<Square>(TB_GET_FROM(tb_result)),
+            static_cast<Square>(TB_GET_TO(tb_result)));
     } else {
-        chess::PieceType promotion_type;
+        PieceType promotion_type;
 
         switch (TB_GET_PROMOTES(tb_result)){
         case TB_PROMOTES_QUEEN:
-            promotion_type = chess::PieceType::QUEEN;
+            promotion_type = PieceType::QUEEN;
             break;
         case TB_PROMOTES_KNIGHT:
-            promotion_type = chess::PieceType::KNIGHT;
+            promotion_type = PieceType::KNIGHT;
             break;
         case TB_PROMOTES_ROOK:
-            promotion_type = chess::PieceType::ROOK;
+            promotion_type = PieceType::ROOK;
             break;
         case TB_PROMOTES_BISHOP:
-            promotion_type = chess::PieceType::BISHOP;
+            promotion_type = PieceType::BISHOP;
             break;
         }
 
-        move = chess::Move::make<chess::Move::PROMOTION>(
-            static_cast<chess::Square>(TB_GET_FROM(tb_result)),
-            static_cast<chess::Square>(TB_GET_TO(tb_result)),
+        move = Move::make<Move::PROMOTION>(
+            static_cast<Square>(TB_GET_FROM(tb_result)),
+            static_cast<Square>(TB_GET_TO(tb_result)),
             promotion_type);
     }
 
@@ -181,7 +181,7 @@ chess::Move NnueBoard::tb_result_to_move(unsigned int tb_result){
 }
 
 std::vector<int> NnueBoard::get_HKP(bool color){
-    chess::Bitboard occupied = occ();
+    Bitboard occupied = occ();
 
     std::vector<int> active_features = std::vector<int>(occupied.count()-2);
 
@@ -194,10 +194,10 @@ std::vector<int> NnueBoard::get_HKP(bool color){
         int sq = occupied.pop();
 
         if (color){
-            curr_piece = piece_to_index_w[static_cast<int>(at(static_cast<chess::Square>(sq)))];
+            curr_piece = piece_to_index_w[static_cast<int>(at(static_cast<Square>(sq)))];
             sq = (63 - sq);
         } else {
-            curr_piece = piece_to_index_b[static_cast<int>(at(static_cast<chess::Square>(sq)))];
+            curr_piece = piece_to_index_b[static_cast<int>(at(static_cast<Square>(sq)))];
         }
 
         sq += 7 - 2 * (sq % 8); // reverse row
@@ -219,8 +219,8 @@ std::vector<int> NnueBoard::get_HKP(bool color){
 
 // assumes it is not a king move
 // this function must be called before pushing the move
-modified_features NnueBoard::get_modified_features(chess::Move move, bool color){
-    int king_square = kingSq(color ? chess::Color::WHITE : chess::Color::BLACK).index();
+modified_features NnueBoard::get_modified_features(Move move, bool color){
+    int king_square = kingSq(color ? Color::WHITE : Color::BLACK).index();
     
     int from;
     int to;
@@ -234,8 +234,8 @@ modified_features NnueBoard::get_modified_features(chess::Move move, bool color)
     from = move.from().index();
     to = move.to().index();
 
-    chess::Piece curr_piece = at(static_cast<chess::Square>(from));
-    chess::Piece capt_piece = at(static_cast<chess::Square>(to));
+    Piece curr_piece = at(static_cast<Square>(from));
+    Piece capt_piece = at(static_cast<Square>(to));
 
     if (color){
         king_square = 63 - king_square;
@@ -255,7 +255,7 @@ modified_features NnueBoard::get_modified_features(chess::Move move, bool color)
     
     removed = from + (curr_piece_idx + king_square * 10) * 64;
 
-    if (capt_piece != chess::Piece::NONE){
+    if (capt_piece != Piece::NONE){
         if (color){
             capt_piece_idx = piece_to_index_w[static_cast<int>(capt_piece)];
         } else {
@@ -267,6 +267,6 @@ modified_features NnueBoard::get_modified_features(chess::Move move, bool color)
     return modified_features(added, removed, captured);
 }
 
-bool NnueBoard::is_updatable_move(chess::Move move){
-    return ((move.typeOf() == chess::Move::NORMAL) && (kingSq(sideToMove()) != move.from()));
+bool NnueBoard::is_updatable_move(Move move){
+    return ((move.typeOf() == Move::NORMAL) && (kingSq(sideToMove()) != move.from()));
 }
