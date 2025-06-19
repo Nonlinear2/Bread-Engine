@@ -73,13 +73,15 @@ inline __m256i _mm256_add8x256_epi32(__m256i* inputs){
 };
 
 template<int in_size, int out_size>
-void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
+void HiddenLayer<in_size, out_size>::run(int8_t* input, int8_t* output){
 
     __m256i output_chunks[int32_per_reg];
     const __m256i one = _mm256_set1_epi16(1);
+    const __m256i zero = _mm256_setzero_si256();
+    __m256i result[4];
 
     for (int j = 0; j < num_output_chunks; j++){
-        __m256i result = _mm256_loadu_si256((const __m256i*)&this->bias[j*int32_per_reg]);
+        result[j%4] = _mm256_loadu_si256((const __m256i*)&this->bias[j*int32_per_reg]);
         for (int i = 0; i < num_input_chunks; i++){
             __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]); // load int8
             for (int k = 0; k < int32_per_reg; k++){
@@ -89,10 +91,18 @@ void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
                 );
                 output_chunks[k] = _mm256_madd_epi16(output_chunks[k], one); // hadd pairs to int32
             }
-            result = _mm256_add_epi32(result, _mm256_add8x256_epi32(output_chunks));
+            result[j%4] = _mm256_add_epi32(result[j%4], _mm256_add8x256_epi32(output_chunks));
         }
-        result = _mm256_srai_epi32(result, 6); // this integer divides the result by 64 which is the scale.
-        _mm256_storeu_si256((__m256i*)&output[j*int32_per_reg], result); // store int32
+        result[j%4] = _mm256_srai_epi32(result[j%4], 6); // this integer divides the result by 64 which is the scale.
+        if (j%4 == 3){
+            result[0] = _mm256_permute4x64_epi64(_mm256_packs_epi32(result[0], result[1]), 0b10'00'11'01);
+            result[1] = _mm256_permute4x64_epi64(_mm256_packs_epi32(result[2], result[3]), 0b10'00'11'01);
+
+            result[0] = _mm256_packs_epi16(result[0], result[1]);
+            result[0] = _mm256_max_epi8(result[0], zero); // packs saturates at 127, so only max is applied
+            result[0] = _mm256_permute4x64_epi64(result[0], 0b01'11'00'10);
+            _mm256_storeu_si256((__m256i*)&output[j/4*int8_per_reg], result[0]); // store int8
+        }
     }
 };
 
@@ -260,13 +270,13 @@ int NNUE::run_cropped_nn(bool color){
     crelu16(accumulator[color], &ft_clipped_output[0], acc_size);
     crelu16(accumulator[!color], &ft_clipped_output[acc_size], acc_size);
 
-    layer_2.run(ft_clipped_output, layer_2_unclipped_output);
-    crelu32(layer_2_unclipped_output, layer_2_clipped_output, layer_2.output_size);
+    layer_2.run(ft_clipped_output, layer_2_output);
+    // crelu32(layer_2_unclipped_output, layer_2_clipped_output, layer_2.output_size);
 
-    layer_3.run(layer_2_clipped_output, layer_3_unclipped_output);
-    crelu32(layer_3_unclipped_output, layer_3_clipped_output, layer_3.output_size);
+    layer_3.run(layer_2_output, layer_3_output);
+    // crelu32(layer_3_unclipped_output, layer_3_clipped_output, layer_3.output_size);
 
-    int16_t output = layer_4.run(layer_3_clipped_output);
+    int16_t output = layer_4.run(layer_3_output);
     return output / 16;
 
 };
