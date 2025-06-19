@@ -19,34 +19,35 @@ enum LayerName {FEATURE_TRANSFORMER, LAYER_1, LAYER_2, LAYER_3};
 inline const int HKP_size = 40960; // 64*64*5*2
 inline const int acc_size = 256;
 
-const std::vector<int> piece_to_index_w = {
-    9, // white pawn
-    3, // white knight
-    5, // white bishop
-    1, // white rook
-    7, // white queen
-    10, // white king
-    8, // black pawn
-    2, // black knight
-    4, // black bishop
-    0, // black rook
-    6, // black queen
-    11, // black king
-};
-
-const std::vector<int> piece_to_index_b = {
-    8, // white pawn
-    2, // white knight
-    4, // white bishop
-    0, // white rook
-    6, // white queen
-    11, // white king
-    9, // black pawn
-    3, // black knight
-    5, // black bishop
-    1, // black rook
-    7, // black queen
-    10, // black king
+const std::vector<std::vector<int>> piece_to_index = {
+    { // black perspective
+        8, // white pawn
+        2, // white knight
+        4, // white bishop
+        0, // white rook
+        6, // white queen
+        11, // white king
+        9, // black pawn
+        3, // black knight
+        5, // black bishop
+        1, // black rook
+        7, // black queen
+        10, // black king
+    },
+    { // white perspective
+        9, // white pawn
+        3, // white knight
+        5, // white bishop
+        1, // white rook
+        7, // white queen
+        10, // white king
+        8, // black pawn
+        2, // black knight
+        4, // black bishop
+        0, // black rook
+        6, // black queen
+        11, // black king
+    }
 };
 
 struct modified_features {

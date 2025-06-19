@@ -193,12 +193,9 @@ std::vector<int> NnueBoard::get_HKP(bool color){
     while (occupied){
         int sq = occupied.pop();
 
-        if (color){
-            curr_piece = piece_to_index_w[static_cast<int>(at(static_cast<chess::Square>(sq)))];
+        curr_piece = piece_to_index[color][static_cast<int>(at(static_cast<chess::Square>(sq)))];
+        if (color)
             sq = (63 - sq);
-        } else {
-            curr_piece = piece_to_index_b[static_cast<int>(at(static_cast<chess::Square>(sq)))];
-        }
 
         sq += 7 - 2 * (sq % 8); // reverse row
 
@@ -220,12 +217,14 @@ std::vector<int> NnueBoard::get_HKP(bool color){
 // assumes it is not a king move
 // this function must be called before pushing the move
 modified_features NnueBoard::get_modified_features(chess::Move move, bool color){
+
+    // NORMAL, PROMOTION, ENPASSANT
+    chess::Move move_type = move.typeOf();
+
     int king_square = kingSq(color ? chess::Color::WHITE : chess::Color::BLACK).index();
-    
-    int from;
-    int to;
-    int curr_piece_idx;
-    int capt_piece_idx;
+
+    int from, to;
+    int from_piece_idx, to_piece_idx, capt_piece_idx;
 
     int added;
     int removed;
@@ -234,33 +233,38 @@ modified_features NnueBoard::get_modified_features(chess::Move move, bool color)
     from = move.from().index();
     to = move.to().index();
 
-    chess::Piece curr_piece = at(static_cast<chess::Square>(from));
-    chess::Piece capt_piece = at(static_cast<chess::Square>(to));
+    chess::Piece from_piece = at(static_cast<chess::Square>(from));
 
-    if (color){
+    chess::Piece to_piece = move_type == chess::Move::PROMOTION
+        ? chess::Piece(move.promotionType(), ~from_piece.color())
+        : from_piece;
+
+    chess::Piece capt_piece = move_type == chess::Move::ENPASSANT
+        ? chess::Piece(chess::PieceType::PAWN, ~from_piece.color())
+        : at(static_cast<chess::Square>(to));
+
+
+    from_piece_idx = piece_to_index[color][static_cast<int>(from_piece)];
+    to_piece_idx = move_type == chess::Move::PROMOTION
+        ? piece_to_index[color][static_cast<int>(to_piece)]
+        : from_piece_idx;
+
+    if (color)
         king_square = 63 - king_square;
         from = 63 - from;
         to = 63 - to;
-        curr_piece_idx = piece_to_index_w[static_cast<int>(curr_piece)];
-    } else {
-        curr_piece_idx = piece_to_index_b[static_cast<int>(curr_piece)];
-    }
 
     king_square += 7 - 2 * (king_square % 8); // reverse row
     from += 7 - 2 * (from % 8); // reverse row
     to += 7 - 2 * (to % 8); // reverse row
 
 
-    added = to + (curr_piece_idx + king_square * 10) * 64;
-    
-    removed = from + (curr_piece_idx + king_square * 10) * 64;
+    added = to + (to_piece_idx + king_square * 10) * 64;
+
+    removed = from + (from_piece_idx + king_square * 10) * 64;
 
     if (capt_piece != chess::Piece::NONE){
-        if (color){
-            capt_piece_idx = piece_to_index_w[static_cast<int>(capt_piece)];
-        } else {
-            capt_piece_idx = piece_to_index_b[static_cast<int>(capt_piece)];
-        }
+        capt_piece_idx = piece_to_index[color][static_cast<int>(capt_piece)];
         captured = to + (capt_piece_idx + king_square * 10) * 64;
     }
 
@@ -268,5 +272,5 @@ modified_features NnueBoard::get_modified_features(chess::Move move, bool color)
 }
 
 bool NnueBoard::is_updatable_move(chess::Move move){
-    return ((move.typeOf() == chess::Move::NORMAL) && (kingSq(sideToMove()) != move.from()));
+    return move.typeOf() != chess::Move::CASTLING && kingSq(sideToMove()) != move.from();
 }
