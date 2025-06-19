@@ -89,7 +89,7 @@ class HiddenLayer: public NNLayer<int8_t, in_size, int32_t, out_size> {
     static constexpr int num_input_chunks = in_size/int8_per_reg;
     static constexpr int num_output_chunks = out_size/int32_per_reg;
 
-    void run(int8_t* input, int32_t* output);
+    void run(int8_t* input, int8_t* output);
 };
 
 class OutputLayer: public NNLayer<int8_t, 32, int16_t, 1> {
@@ -126,21 +126,17 @@ class NNUE {
     // also, output is scaled back by 64, so total scale is still only 127. as we only do integer division,
     // error caused by the division is max 1/127.
 
-    int32_t layer_2_unclipped_output[32];
-
     // apply crelu32 and store
-    int8_t layer_2_clipped_output[32];
+    int8_t layer_2_output[32];
 
     // max value is 32*(127*127) with 32 accumulations of the max possible output with the max possible weight.
     // this is 516128. Max bias is therefore (2,147,483,647 - 516,128)/32 = 67092734 which is fine.
     HiddenLayer<32, 32> layer_3 = HiddenLayer<32, 32>(); // 32 -> 32
     // still output is scaled back by 64, so scale is 127 times true output.
-    int32_t layer_3_unclipped_output[32];
 
     // apply crelu32 and store
-    int8_t layer_3_clipped_output[32];
+    int8_t layer_3_output[32];
 
-    
     // max output value is 1*(127*127) + bias, the max possible output with the max possible weight.
     // this is 16129+bias which is less than the max int16 if bias is less than (int16_max - 16129)/(127*64) = 2.04
     OutputLayer layer_4 = OutputLayer(); // 32 -> 1
