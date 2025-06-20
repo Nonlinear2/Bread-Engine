@@ -32,14 +32,6 @@ struct TEntry {
         return static_cast<TFlag>(depth_tflag & 0b00000011);
     };
 
-    int value(){
-        return static_cast<int>(value);
-    };
-
-    int static_eval(){
-        return static_cast<int>(static_eval);
-    };
-
     TEntry(){};
 
     TEntry(uint64_t zobrist, int value, int static_eval, int depth, Move move, TFlag flag, uint8_t move_number):

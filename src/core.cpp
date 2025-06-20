@@ -312,13 +312,15 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     if (transposition.depth >= depth && !pos.isRepetition(1)){
         switch (transposition.flag){
             case TFlag::EXACT:
-            return transposition.value;
+                return transposition.value;
             case TFlag::LOWER_BOUND:
-            alpha = std::max(alpha, transposition.value);
-            break;
+                alpha = std::max(alpha, transposition.value);
+                break;
             case TFlag::UPPER_BOUND:
-            beta = std::min(beta, transposition.value);
-            break;
+                beta = std::min(beta, transposition.value);
+                break;
+            default:
+                break;
         }
     }
 
@@ -499,6 +501,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             if (!pv)
                 beta = std::min(beta, transposition.value);
             stand_pat = std::min(stand_pat, transposition.value);
+            break;
+        default:
             break;
     }
 

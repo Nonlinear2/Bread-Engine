@@ -31,7 +31,7 @@ class SortedMoveGen: public Movelist {
     void update_history(Move move, int depth, bool color);
     void set_score(Move& move);
 
-    Move tt_move = NO_MOVE;
+    Move tt_move = Move::NO_MOVE;
     int generated_moves_count = 0;
     private:
     int depth = DEPTH_UNSEARCHED;

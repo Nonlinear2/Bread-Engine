@@ -29,6 +29,8 @@ void TranspositionTable::info(){
                 case TFlag::LOWER_BOUND:
                     num_lower++;
                     break;
+                default:
+                    break;
             }
         }
     }
