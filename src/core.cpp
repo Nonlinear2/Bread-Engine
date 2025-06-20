@@ -510,7 +510,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (beta <= alpha)
         return transposition.value;
 
-    if (stand_pat >= beta)
+    if (stand_pat != NO_VALUE && stand_pat >= beta)
         return stand_pat;
 
     capture_gen.set_tt_move(transposition.move);
