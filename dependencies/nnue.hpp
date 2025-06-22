@@ -83,7 +83,17 @@ class NNLayer {
 class FeatureTransformer: public NNLayer<int16_t, HKP_size, int16_t, acc_size> {};
 
 template<int in_size, int out_size>
-class HiddenLayer: public NNLayer<int8_t, in_size, int32_t, out_size> {
+class SparseLayer: public NNLayer<int8_t, in_size, int32_t, out_size> {
+    public:
+
+    static constexpr int num_input_chunks = in_size/int8_per_reg;
+    static constexpr int num_output_chunks = out_size/int32_per_reg;
+
+    void run(int8_t* input, int32_t* output);
+};
+
+template<int in_size, int out_size>
+class DenseLayer: public NNLayer<int8_t, in_size, int32_t, out_size> {
     public:
 
     static constexpr int num_input_chunks = in_size/int8_per_reg;
@@ -122,7 +132,7 @@ class NNUE {
     // int8 weights with scale 64. Multiplication outputs in int16, so no overflows,
     // and sum is computed in int32. Maximum weights times maximum input with accumulation is 127*127*512 = 8258048
     // maximum bias is therefore (2,147,483,647-8,258,048)/32 = 66850799 which is totally fine.
-    HiddenLayer<512, 32> layer_2 = HiddenLayer<512, 32>(); // 512 -> 32
+    SparseLayer<512, 32> layer_2 = SparseLayer<512, 32>(); // 512 -> 32
     // also, output is scaled back by 64, so total scale is still only 127. as we only do integer division,
     // error caused by the division is max 1/127.
 
@@ -133,7 +143,7 @@ class NNUE {
 
     // max value is 32*(127*127) with 32 accumulations of the max possible output with the max possible weight.
     // this is 516128. Max bias is therefore (2,147,483,647 - 516,128)/32 = 67092734 which is fine.
-    HiddenLayer<32, 32> layer_3 = HiddenLayer<32, 32>(); // 32 -> 32
+    DenseLayer<32, 32> layer_3 = DenseLayer<32, 32>(); // 32 -> 32
     // still output is scaled back by 64, so scale is 127 times true output.
     int32_t layer_3_unclipped_output[32];
 

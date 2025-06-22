@@ -72,8 +72,61 @@ inline __m256i _mm256_add8x256_epi32(__m256i* inputs){
     );
 };
 
+
+// weight section:
+// [  ] ...
+// [  ] ...
+// [  ] ...
+// [  ] ...
+// ...
+// flattened: [  ][  ][  ][  ]...
+
+// input:      1234|1234|1234|1234|1234|1234|1234|1234
+// weights:    [  ]|[  ]|[  ]|[  ]|[  ]|[  ]|[  ]|[  ]
+// maddubs:    * * |* * |* * |* * |* * |* * |* * |* *
+// madd:       x   |x   |x   |x   |x   |x   |x   |x   
+
+// -> accumulate for nnz chunks, and get output.
+
+// sparse matrix multiplication
 template<int in_size, int out_size>
-void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
+void SparseLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
+    // we process 4 int8s at a time, as an int32.
+    constexpr int MAX_NNZ_INPUTS = in_size / sizeof(uint32_t);
+    int nnz_indices[MAX_NNZ_INPUTS];
+
+    int num_nnz_inputs;
+
+    __m256i output_chunks[int32_per_reg];
+    const __m256i one = _mm256_set1_epi16(1);
+
+    // load the bias from memory
+    for (int i = 0; i < int32_per_reg; i++){
+        output_chunks[i] = _mm256_loadu_si256((const __m256i*)&this->bias[i*int32_per_reg]);
+    }
+
+    for (int i = 0; i < num_nnz_inputs; i++){
+        // load the nonzero input group
+        const __m256i input_group = _mm256_set1_epi32((const __m256i*)&input[nnz_indices[i]]);
+        for (int j = 0; j < num_output_chunks; j++){
+            output_chunks[j] = _mm256_maddubs_epi16(
+                input_group,
+                _mm256_loadu_si256((const __m256i*)&this->weights[(j*int32_per_reg+k) * this->input_size + i*int8_per_reg]) //load int8
+            );
+            output_chunks[k] = _mm256_madd_epi16(output_chunks[k], one); // hadd pairs to int32
+        }
+    }
+    
+    for (int i = 0; i < int32_per_reg; i++){
+        // this integer divides the result by 64 which is the scale.
+        output_chunks[i] = _mm256_srai_epi32(output_chunks[i], 6);
+        _mm256_storeu_si256((__m256i*)&output[i*int32_per_reg], output_chunks[i]); // store int32
+    }
+};
+
+// dense matrix multiplication
+template<int in_size, int out_size>
+void DenseLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
 
     __m256i output_chunks[int32_per_reg];
     const __m256i one = _mm256_set1_epi16(1);
@@ -97,10 +150,10 @@ void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
 };
 
 // layer 2
-template class HiddenLayer<512, 32>;
+template class SparseLayer<512, 32>;
 
 // layer 3
-template class HiddenLayer<32, 32>;
+template class DenseLayer<32, 32>;
 
 /*************
 OutputLayer
