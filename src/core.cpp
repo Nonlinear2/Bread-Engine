@@ -372,9 +372,18 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     while (move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
 
-        // lmp
-        if (!pv && !in_check && !is_capture && move_gen.index() > 3 + depth && !is_hit && eval < alpha)
-            continue;
+        if (!is_loss(max_value)){
+            // lmp
+            if (!pv && !in_check && !is_capture && move_gen.index() > 3 + depth && !is_hit && eval < alpha)
+                continue;
+
+            int futility_value = static_eval
+                + piece_value[static_cast<int>(pos.at(move.to()).type())]*200
+                + depth * 100 + 570;
+
+            if (!pv && !in_check && is_capture && depth < 5 && futility_value < alpha)
+                continue;
+        }
 
         bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
 
