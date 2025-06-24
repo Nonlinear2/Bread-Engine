@@ -11,9 +11,6 @@ template<movegen::MoveGenType MoveGenType>
 class SortedMoveGen: public Movelist {
     public:
     static constexpr PieceSquareMaps psm = PieceSquareMaps();
-    static inline int KILLER_SCORE = 149;
-    static inline int MATERIAL_CHANGE_MULTIPLIER = 119;
-    static inline int ENDGAME_PIECE_COUNT = 11;
 
     static inline std::array<CircularBuffer3, ENGINE_MAX_DEPTH> killer_moves = {};
     static inline History history = History();

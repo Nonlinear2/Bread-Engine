@@ -32,37 +32,36 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
     int score = 0;
 
     if ((piece != Piece::WHITEKING) && (piece != Piece::BLACKKING)){
-        score += 100*psm.get_psm(piece, from, to);
+        score += psm.get_psm(piece, from, to)/2;
     } else {
-        bool is_endgame = board.occ().count() <= ENDGAME_PIECE_COUNT;
-        score += 100*psm.get_ksm(piece, is_endgame, to, from);
+        bool is_endgame = board.occ().count() <= 11;
+        score += psm.get_ksm(piece, is_endgame, to, from)/2;
     }
     
     if (piece.type() != PieceType::PAWN){
-        score += bool(attacked_by_pawn & Bitboard::fromSquare(from))
-                 * 40 * from_value * MATERIAL_CHANGE_MULTIPLIER;
+        score += bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value/2;
         
-        score -= bool(attacked_by_pawn & Bitboard::fromSquare(to))
-            * 41 * from_value * MATERIAL_CHANGE_MULTIPLIER;
+        score -= bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value;
     }
 
     // captures should be searched early, so
     // to_value = piece_value(to) - piece_value(from) doesn't seem to work.
     // however, find a way to make these captures even better ?
     if (to_piece != Piece::NONE){
-        score += 100 * piece_value[static_cast<int>(to_piece.type())] * MATERIAL_CHANGE_MULTIPLIER;
+        score += piece_value[static_cast<int>(to_piece.type())];
     }
 
     if (move.typeOf() == Move::PROMOTION){
-        score += 100 * piece_value[static_cast<int>(move.promotionType())] * MATERIAL_CHANGE_MULTIPLIER;
+        score += piece_value[static_cast<int>(move.promotionType())];
     }
 
     assert(depth != DEPTH_UNSEARCHED);
     if (killer_moves[depth].in_buffer(move)){
-        score += 100 * KILLER_SCORE;
+        score += 149;
     }
 
-    score += history.get_history_bonus(from.index(), to.index(), board.sideToMove() == Color::WHITE); // cant be less than worst move score
+    // cant be less than worst move score
+    score += history.get_history_bonus(from.index(), to.index(), board.sideToMove() == Color::WHITE)/64;
     
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 

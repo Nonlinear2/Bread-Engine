@@ -47,7 +47,7 @@ bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true
 
     switch (move.typeOf()){
         case Move::ENPASSANT:
-            value_on_square = 1;
+            value_on_square = piece_value[static_cast<int>(PieceType::PAWN)];
             occupied.clear(to_sq.ep_square().index());
             // update attacks
             attackers[attacker_turn] |= attacks::rook(to_sq, occupied) & rooks_and_queens;
