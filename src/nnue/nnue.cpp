@@ -122,7 +122,7 @@ void SparseLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
     const __m256i one = _mm256_set1_epi16(1);
 
     __m256i input_chunk;
-    for (int i = 0; i < in_size / int32_per_reg; i++){
+    for (int i = 0; i < in_size / int8_per_reg; i++){
         input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]);
         int nnz_bitmask = _mm256_movemask_ps(
             (__m256)_mm256_cmpeq_epi32(input_chunk, _mm256_setzero_si256())
@@ -148,7 +148,7 @@ void SparseLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
         for (int j = 0; j < num_output_chunks; j++){
             output_chunks[j] = _mm256_maddubs_epi16(
                 input_group,
-                _mm256_loadu_si256((const __m256i*)&this->weights[(i*out_size*4) + j*int32_per_reg])
+                _mm256_loadu_si256((const __m256i*)&this->weights[(nnz_indices[i]*out_size*4) + j*int8_per_reg])
             );
             output_chunks[j] = _mm256_madd_epi16(output_chunks[j], one); // hadd pairs to int32
         }
