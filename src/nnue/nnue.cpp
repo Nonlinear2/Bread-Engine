@@ -4,6 +4,27 @@
 NNLayer
 *************/
 
+#if !defined(_MSC_VER)
+    constexpr
+#endif
+    int
+    lsb(uint32_t bits) {
+    assert(bits != 0);
+#if __cplusplus >= 202002L
+    return std::countr_zero(bits);
+#else
+#if defined(__GNUC__)
+    return __builtin_ctzll(bits);
+#elif defined(_MSC_VER)
+    unsigned long idx;
+    _BitScanForward64(&idx, bits);
+    return static_cast<int>(idx);
+#else
+#error "Compiler not supported."
+#endif
+#endif
+}
+
 template<typename in_type, int in_size, typename out_type, int out_size>
 NNLayer<in_type, in_size, out_type, out_size>::NNLayer(){
     weights = static_cast<in_type*>(operator new[](sizeof(in_type)*input_size*output_size, std::align_val_t{32}));
@@ -80,6 +101,7 @@ inline __m256i _mm256_add8x256_epi32(__m256i* inputs){
 // [  ] ...
 // ...
 // flattened: [  ][  ][  ][  ]...
+// height = out_size, width = 4
 
 // input:      1234|1234|1234|1234|1234|1234|1234|1234
 // weights:    [  ]|[  ]|[  ]|[  ]|[  ]|[  ]|[  ]|[  ]
@@ -94,26 +116,41 @@ void SparseLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
     // we process 4 int8s at a time, as an int32.
     constexpr int MAX_NNZ_INPUTS = in_size / sizeof(uint32_t);
     int nnz_indices[MAX_NNZ_INPUTS];
-
-    int num_nnz_inputs;
+    int num_nnz_inputs = 0;
 
     __m256i output_chunks[int32_per_reg];
     const __m256i one = _mm256_set1_epi16(1);
 
+    __m256i input_chunk;
+    for (int i = 0; i < in_size / int32_per_reg; i++){
+        input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]);
+        int nnz_bitmask = _mm256_movemask_ps(
+            (__m256)_mm256_cmpeq_epi32(input_chunk, _mm256_setzero_si256())
+        );
+
+        int idx;
+        while (nnz_bitmask){
+            idx = lsb(nnz_bitmask);
+            nnz_bitmask &= nnz_bitmask - 1;
+            nnz_indices[num_nnz_inputs++] = i*int8_per_reg + idx;
+        }
+    }
+
+
     // load the bias from memory
-    for (int i = 0; i < int32_per_reg; i++){
+    for (int i = 0; i < in_size / int32_per_reg; i++){
         output_chunks[i] = _mm256_loadu_si256((const __m256i*)&this->bias[i*int32_per_reg]);
     }
 
     for (int i = 0; i < num_nnz_inputs; i++){
         // load the nonzero input group
-        const __m256i input_group = _mm256_set1_epi32((const __m256i*)&input[nnz_indices[i]]);
+        const __m256i input_group = _mm256_set1_epi32(*reinterpret_cast<const int32_t*>(&input[nnz_indices[i]]));
         for (int j = 0; j < num_output_chunks; j++){
             output_chunks[j] = _mm256_maddubs_epi16(
                 input_group,
-                _mm256_loadu_si256((const __m256i*)&this->weights[(j*int32_per_reg+k) * this->input_size + i*int8_per_reg]) //load int8
+                _mm256_loadu_si256((const __m256i*)&this->weights[(i*out_size*4) + j*int32_per_reg])
             );
-            output_chunks[k] = _mm256_madd_epi16(output_chunks[k], one); // hadd pairs to int32
+            output_chunks[j] = _mm256_madd_epi16(output_chunks[j], one); // hadd pairs to int32
         }
     }
     

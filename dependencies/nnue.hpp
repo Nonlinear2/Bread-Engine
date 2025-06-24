@@ -7,6 +7,7 @@
 #include <cmath>
 #include <chess.hpp>
 #include <immintrin.h>
+#include <bit>
 #include "neural_network.hpp"
 
 constexpr int num_avx_registers = 16;
