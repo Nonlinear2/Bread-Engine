@@ -541,7 +541,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
                 continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
 
             // SEE pruning
-            if (!SEE::evaluate(pos, move, (alpha-stand_pat) - 300))
+            if (!SEE::evaluate(pos, move, ((alpha-stand_pat)/150 - 2)*150))
                 continue;
     
             if (!pv && capture_gen.index() > 7

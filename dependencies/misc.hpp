@@ -25,15 +25,15 @@ constexpr int NO_VALUE = 32'601;
 constexpr int MAX_MATE_PLY = 1'00;
 constexpr int INFINITE_VALUE = 32'700;
 constexpr int MAX_HISTORY_BONUS = 10'000;
-constexpr int SEE_KING_VALUE = 100'000;
+constexpr int SEE_KING_VALUE = 150'000;
 
 const std::vector<int> piece_value = {
     150, // pawn
-    440, // knight
-    458, // bishop
+    450, // knight
+    450, // bishop
     750, // rook
-    1390, // queen
-    3000, // king
+    1350, // queen
+    300, // king
     0, // none
 };
 
