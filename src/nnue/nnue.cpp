@@ -118,11 +118,11 @@ void SparseLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
     int nnz_indices[MAX_NNZ_INPUTS];
     int num_nnz_inputs = 0;
 
-    __m256i output_chunks[int32_per_reg];
+    __m256i output_chunks[num_output_chunks];
     const __m256i one = _mm256_set1_epi16(1);
 
     __m256i input_chunk;
-    for (int i = 0; i < in_size / int8_per_reg; i++){
+    for (int i = 0; i < num_input_chunks; i++){
         input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]);
         int nnz_bitmask = _mm256_movemask_ps(
             (__m256)_mm256_cmpeq_epi32(input_chunk, _mm256_setzero_si256())
@@ -132,29 +132,28 @@ void SparseLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
         while (nnz_bitmask){
             idx = lsb(nnz_bitmask);
             nnz_bitmask &= nnz_bitmask - 1;
-            nnz_indices[num_nnz_inputs++] = i*int8_per_reg + idx;
+            nnz_indices[num_nnz_inputs++] = i*int8_per_reg + idx*sizeof(uint32_t);
         }
     }
 
-
     // load the bias from memory
-    for (int i = 0; i < in_size / int32_per_reg; i++){
+    for (int i = 0; i < num_output_chunks; i++){
         output_chunks[i] = _mm256_loadu_si256((const __m256i*)&this->bias[i*int32_per_reg]);
     }
 
     for (int i = 0; i < num_nnz_inputs; i++){
         // load the nonzero input group
-        const __m256i input_group = _mm256_set1_epi32(*reinterpret_cast<const int32_t*>(&input[nnz_indices[i]]));
+        const __m256i input_group = _mm256_set1_epi32(*reinterpret_cast<const uint32_t*>(&input[0])); // nnz_indices[i]
         for (int j = 0; j < num_output_chunks; j++){
             output_chunks[j] = _mm256_maddubs_epi16(
                 input_group,
-                _mm256_loadu_si256((const __m256i*)&this->weights[(nnz_indices[i]*out_size*4) + j*int8_per_reg])
+                _mm256_loadu_si256((const __m256i*)&this->weights[0]) // (nnz_indices[i]*out_size*4) + j*int8_per_reg
             );
             output_chunks[j] = _mm256_madd_epi16(output_chunks[j], one); // hadd pairs to int32
         }
     }
-    
-    for (int i = 0; i < int32_per_reg; i++){
+
+    for (int i = 0; i < num_output_chunks; i++){
         // this integer divides the result by 64 which is the scale.
         output_chunks[i] = _mm256_srai_epi32(output_chunks[i], 6);
         _mm256_storeu_si256((__m256i*)&output[i*int32_per_reg], output_chunks[i]); // store int32
@@ -165,7 +164,7 @@ void SparseLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
 template<int in_size, int out_size>
 void DenseLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
 
-    __m256i output_chunks[int32_per_reg];
+    __m256i process_chunks[int32_per_reg];
     const __m256i one = _mm256_set1_epi16(1);
 
     for (int j = 0; j < num_output_chunks; j++){
@@ -173,13 +172,13 @@ void DenseLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
         for (int i = 0; i < num_input_chunks; i++){
             __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]); // load int8
             for (int k = 0; k < int32_per_reg; k++){
-                output_chunks[k] = _mm256_maddubs_epi16(
+                process_chunks[k] = _mm256_maddubs_epi16(
                     input_chunk,
                     _mm256_loadu_si256((const __m256i*)&this->weights[(j*int32_per_reg+k) * this->input_size + i*int8_per_reg]) //load int8
                 );
-                output_chunks[k] = _mm256_madd_epi16(output_chunks[k], one); // hadd pairs to int32
+                process_chunks[k] = _mm256_madd_epi16(process_chunks[k], one); // hadd pairs to int32
             }
-            result = _mm256_add_epi32(result, _mm256_add8x256_epi32(output_chunks));
+            result = _mm256_add_epi32(result, _mm256_add8x256_epi32(process_chunks));
         }
         result = _mm256_srai_epi32(result, 6); // this integer divides the result by 64 which is the scale.
         _mm256_storeu_si256((__m256i*)&output[j*int32_per_reg], result); // store int32
