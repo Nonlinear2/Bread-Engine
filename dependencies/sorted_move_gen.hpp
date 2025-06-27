@@ -18,10 +18,10 @@ class SortedMoveGen: public Movelist {
     static inline std::array<CircularBuffer3, ENGINE_MAX_DEPTH> killer_moves = {};
     static inline History history = History();
 
-    NnueBoard& board;
+    NnueBoard& pos;
 
-    SortedMoveGen(NnueBoard& board);
-    SortedMoveGen(NnueBoard& board, int depth);
+    SortedMoveGen(NnueBoard& pos);
+    SortedMoveGen(NnueBoard& pos, int depth);
     void generate_moves();
     void set_tt_move(Move move);
     bool next(Move& move);

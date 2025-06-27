@@ -1,14 +1,14 @@
 #include "sorted_move_gen.hpp"
 
 template<>
-SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(NnueBoard& board, int depth): board(board), depth(depth) {};
+SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(NnueBoard& pos, int depth): pos(pos), depth(depth) {};
 
 template<>
-SortedMoveGen<movegen::MoveGenType::CAPTURE>::SortedMoveGen(NnueBoard& board): board(board) {};
+SortedMoveGen<movegen::MoveGenType::CAPTURE>::SortedMoveGen(NnueBoard& pos): pos(pos) {};
 
 template<movegen::MoveGenType MoveGenType>
 void SortedMoveGen<MoveGenType>::generate_moves(){
-    movegen::legalmoves<MoveGenType>(*this, board);
+    movegen::legalmoves<MoveGenType>(*this, pos);
     generated_moves_count = size_;
 }
 
@@ -18,23 +18,23 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
     
     const Square from = move.from();
     const Square to = move.to();
-    const Piece piece = board.at(from);
-    const Piece to_piece = board.at(to);
+    const Piece piece = pos.at(from);
+    const Piece to_piece = pos.at(to);
     const int from_value = piece_value[static_cast<int>(piece.type())];
 
     Bitboard attacked_by_pawn = 0;
 
-    Bitboard pawn_attackers = board.pieces(PieceType::PAWN, ~board.sideToMove());
+    Bitboard pawn_attackers = pos.pieces(PieceType::PAWN, ~pos.sideToMove());
 
     while (pawn_attackers)
-        attacked_by_pawn |= attacks::pawn(~board.sideToMove(), pawn_attackers.pop());
+        attacked_by_pawn |= attacks::pawn(~pos.sideToMove(), pawn_attackers.pop());
 
     int score = 0;
 
     if ((piece != Piece::WHITEKING) && (piece != Piece::BLACKKING)){
         score += 100*psm.get_psm(piece, from, to);
     } else {
-        bool is_endgame = board.occ().count() <= ENDGAME_PIECE_COUNT;
+        bool is_endgame = pos.occ().count() <= ENDGAME_PIECE_COUNT;
         score += 100*psm.get_ksm(piece, is_endgame, to, from);
     }
     
@@ -62,7 +62,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
         score += 100 * KILLER_SCORE;
     }
 
-    score += history.get_history_bonus(from.index(), to.index(), board.sideToMove() == Color::WHITE); // cant be less than worst move score
+    score += history.get_history_bonus(from.index(), to.index(), pos.sideToMove() == Color::WHITE); // cant be less than worst move score
     
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -71,8 +71,8 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
 
 template<>
 void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
-    move.setScore(piece_value[static_cast<int>(board.at(move.to()).type())] - 
-                  piece_value[static_cast<int>(board.at(move.from()).type())]);
+    move.setScore(piece_value[static_cast<int>(pos.at(move.to()).type())] - 
+                  piece_value[static_cast<int>(pos.at(move.from()).type())]);
 }
 
 template<movegen::MoveGenType MoveGenType>
@@ -87,7 +87,7 @@ bool SortedMoveGen<movegen::MoveGenType::ALL>::is_valid_move(Move move){
 
 template<>
 bool SortedMoveGen<movegen::MoveGenType::CAPTURE>::is_valid_move(Move move){
-    return move != Move::NO_MOVE && board.isCapture(move);
+    return move != Move::NO_MOVE && pos.isCapture(move);
 }
 
 template<movegen::MoveGenType MoveGenType>
@@ -168,11 +168,11 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, in
     int bonus = std::min(depth*depth*32 + 20, 1000);
     int idx = best_move.from().index()*64 + best_move.to().index();
 
-    if (!board.isCapture(best_move))
+    if (!pos.isCapture(best_move))
         history.history[color][idx] += (bonus - history.history[color][idx] * std::abs(bonus) / MAX_HISTORY_BONUS);
 
     for (int i = 0; i < generated_moves_count; i++){
-        if (moves_[i] != best_move && !board.isCapture(moves_[i])){
+        if (moves_[i] != best_move && !pos.isCapture(moves_[i])){
             idx = moves_[i].from().index()*64 + moves_[i].to().index();
             history.history[color][idx] += -bonus - history.history[color][idx] * std::abs(bonus) / MAX_HISTORY_BONUS;
         }
