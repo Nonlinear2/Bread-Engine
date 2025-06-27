@@ -12,61 +12,82 @@ void SortedMoveGen<MoveGenType>::generate_moves(){
     generated_moves_count = size_;
 }
 
+template<>
+void SortedMoveGen<movegen::MoveGenType::ALL>::prepare_pos_data(){
+    const Color stm = board.sideToMove();
+
+    attacked_by_pawn = 0;
+
+    Bitboard pawn_attackers = board.pieces(PieceType::PAWN, ~stm);
+    while (pawn_attackers)
+        attacked_by_pawn |= attacks::pawn(~stm, pawn_attackers.pop());
+
+    const Square opp_king_sq = board.kingSq(~stm);
+    const Bitboard occ = board.occ();
+
+    check_squares = {
+        attacks::pawn(~stm, opp_king_sq), // pawn
+        attacks::knight(opp_king_sq), // knight
+        attacks::bishop(opp_king_sq, occ), // bishop
+        attacks::rook(opp_king_sq, occ), // rook
+        attacks::queen(opp_king_sq, occ), // queen
+    };
+
+    is_endgame = occ.count() <= 11;
+}
+
 // set move score to be sorted later
 template<>
 void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
     
+    const Color stm = board.sideToMove();
     const Square from = move.from();
     const Square to = move.to();
     const Piece piece = board.at(from);
+    assert(piece.type() != PieceType::NONE);
     const Piece to_piece = board.at(to);
     const int from_value = piece_value[static_cast<int>(piece.type())];
 
-    Bitboard attacked_by_pawn = 0;
-
-    Bitboard pawn_attackers = board.pieces(PieceType::PAWN, ~board.sideToMove());
-
-    while (pawn_attackers)
-        attacked_by_pawn |= attacks::pawn(~board.sideToMove(), pawn_attackers.pop());
-
     int score = 0;
 
-    if ((piece != Piece::WHITEKING) && (piece != Piece::BLACKKING)){
-        score += 100 * psm.get_psm(piece, from, to);
-    } else {
-        bool is_endgame = board.occ().count() <= 11;
-        score += 100 * psm.get_ksm(piece, is_endgame, to, from);
-    }
+    if (piece != Piece::WHITEKING && piece != Piece::BLACKKING)
+        score += psm.get_psm(piece, from, to);
+    else
+        score += psm.get_ksm(piece, is_endgame, to, from);
     
-    if (piece.type() != PieceType::PAWN){
-        score += 40 * 119 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value/150;
-        
-        score -= 41 * 119 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value/150;
+    if (piece.type() != PieceType::PAWN && piece.type() != PieceType::KING){
+        score += 41 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value/150;
+        score -= 42 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value/150;
     }
+
+    if (piece.type() != PieceType::KING
+        && (check_squares[static_cast<int>(piece.type())] & Bitboard::fromSquare(to)))
+        score += 160;
 
     // captures should be searched early, so
     // to_value = piece_value(to) - piece_value(from) doesn't seem to work.
     // however, find a way to make these captures even better ?
-    if (to_piece != Piece::NONE){
-        score += 100 * 119 * piece_value[static_cast<int>(to_piece.type())]/150;
-    }
+    if (to_piece != Piece::NONE)
+        score += 119 * piece_value[static_cast<int>(to_piece.type())]/150;
 
-    if (move.typeOf() == Move::PROMOTION){
-        score += 100 * 119 * piece_value[static_cast<int>(move.promotionType())]/150;
-    }
+    if (move.typeOf() == Move::PROMOTION)
+        score += 119 * piece_value[static_cast<int>(move.promotionType())]/150;
 
     assert(depth != DEPTH_UNSEARCHED);
-    if (killer_moves[depth].in_buffer(move)){
-        score += 100*149;
-    }
+    if (killer_moves[depth].in_buffer(move))
+        score += 149;
 
     // cant be less than worst move score
-    score += history.get_history_bonus(from.index(), to.index(), board.sideToMove() == Color::WHITE);
+    score += history.get_history_bonus(from.index(), to.index(), stm == Color::WHITE)/100;
     
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
     move.setScore(score);
 }
+
+
+template<>
+void SortedMoveGen<movegen::MoveGenType::CAPTURE>::prepare_pos_data(){}
 
 template<>
 void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
@@ -104,6 +125,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
     if (generated_moves == false){
         generated_moves = true;
         generate_moves();
+        prepare_pos_data();
         for (int i = 0; i < size_; i++){
             set_score(moves_[i]);
         }

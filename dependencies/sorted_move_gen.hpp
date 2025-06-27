@@ -27,10 +27,15 @@ class SortedMoveGen: public Movelist {
     static void clear_killer_moves();
     void update_history(Move move, int depth, bool color);
     void set_score(Move& move);
+    void prepare_pos_data();
 
     Move tt_move = Move::NO_MOVE;
     int generated_moves_count = 0;
     private:
+    Bitboard attacked_by_pawn;
+    std::vector<Bitboard> check_squares;
+    bool is_endgame;
+
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
     bool checked_tt_move = false;

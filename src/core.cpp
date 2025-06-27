@@ -215,6 +215,7 @@ Move Engine::minimax_root(int depth, Stack* ss){
         assert(!root_moves.empty());
         SortedMoveGen smg = SortedMoveGen<movegen::MoveGenType::ALL>(pos, depth);
 
+        smg.prepare_pos_data();
         for (int i = 0; i < root_moves.size(); i++)
             smg.set_score(root_moves[i]);
 
