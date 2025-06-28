@@ -12,67 +12,107 @@ void SortedMoveGen<MoveGenType>::generate_moves(){
     generated_moves_count = size_;
 }
 
+template<>
+void SortedMoveGen<movegen::MoveGenType::ALL>::prepare_pos_data(){
+    const Color stm = pos.sideToMove();
+
+    attacked_by_pawn = 0;
+
+    Bitboard pawn_attackers = pos.pieces(PieceType::PAWN, ~stm);
+    while (pawn_attackers)
+        attacked_by_pawn |= attacks::pawn(~stm, pawn_attackers.pop());
+
+    const Square opp_king_sq = pos.kingSq(~stm);
+    const Bitboard occ = pos.occ();
+
+    check_squares = {
+        attacks::pawn(~stm, opp_king_sq), // pawn
+        attacks::knight(opp_king_sq), // knight
+        attacks::bishop(opp_king_sq, occ), // bishop
+        attacks::rook(opp_king_sq, occ), // rook
+        attacks::queen(opp_king_sq, occ), // queen
+    };
+
+    is_endgame = occ.count() <= 11;
+}
+
 // set move score to be sorted later
 template<>
 void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
     
+    const Color stm = pos.sideToMove();
     const Square from = move.from();
     const Square to = move.to();
     const Piece piece = pos.at(from);
+    assert(piece.type() != PieceType::NONE);
     const Piece to_piece = pos.at(to);
     const int from_value = piece_value[static_cast<int>(piece.type())];
 
-    Bitboard attacked_by_pawn = 0;
-
-    Bitboard pawn_attackers = pos.pieces(PieceType::PAWN, ~pos.sideToMove());
-
-    while (pawn_attackers)
-        attacked_by_pawn |= attacks::pawn(~pos.sideToMove(), pawn_attackers.pop());
-
     int score = 0;
 
-    if ((piece != Piece::WHITEKING) && (piece != Piece::BLACKKING)){
-        score += 100*psm.get_psm(piece, from, to);
-    } else {
-        bool is_endgame = pos.occ().count() <= ENDGAME_PIECE_COUNT;
-        score += 100*psm.get_ksm(piece, is_endgame, to, from);
-    }
+    if (piece != Piece::WHITEKING && piece != Piece::BLACKKING)
+        score += psm.get_psm(piece, from, to);
+    else
+        score += psm.get_ksm(piece, is_endgame, to, from);
     
-    if (piece.type() != PieceType::PAWN){
-        score += bool(attacked_by_pawn & Bitboard::fromSquare(from))
-                 * 40 * from_value * MATERIAL_CHANGE_MULTIPLIER;
-        
-        score -= bool(attacked_by_pawn & Bitboard::fromSquare(to))
-            * 41 * from_value * MATERIAL_CHANGE_MULTIPLIER;
+    if (piece.type() != PieceType::PAWN && piece.type() != PieceType::KING){
+        score += 48 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value/150;
+        score -= 49 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value/150;
     }
+
+    if (piece.type() != PieceType::KING
+        && (check_squares[static_cast<int>(piece.type())] & Bitboard::fromSquare(to)))
+        score += 160;
 
     // captures should be searched early, so
     // to_value = piece_value(to) - piece_value(from) doesn't seem to work.
     // however, find a way to make these captures even better ?
-    if (to_piece != Piece::NONE){
-        score += 100 * piece_value[static_cast<int>(to_piece.type())] * MATERIAL_CHANGE_MULTIPLIER;
-    }
+    if (to_piece != Piece::NONE)
+        score += 119 * piece_value[static_cast<int>(to_piece.type())]/150;
 
-    if (move.typeOf() == Move::PROMOTION){
-        score += 100 * piece_value[static_cast<int>(move.promotionType())] * MATERIAL_CHANGE_MULTIPLIER;
-    }
+    if (move.typeOf() == Move::PROMOTION)
+        score += 119 * piece_value[static_cast<int>(move.promotionType())]/150;
 
     assert(depth != DEPTH_UNSEARCHED);
-    if (killer_moves[depth].in_buffer(move)){
-        score += 100 * KILLER_SCORE;
-    }
+    if (killer_moves[depth].in_buffer(move))
+        score += 149;
 
-    score += history.get_history_bonus(from.index(), to.index(), pos.sideToMove() == Color::WHITE); // cant be less than worst move score
+    // cant be less than worst move score
+    score += history.get_history_bonus(from.index(), to.index(), stm == Color::WHITE)/100;
     
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
     move.setScore(score);
 }
 
+
+template<>
+void SortedMoveGen<movegen::MoveGenType::CAPTURE>::prepare_pos_data(){
+    const Color stm = pos.sideToMove();
+    const Square opp_king_sq = pos.kingSq(~stm);
+    const Bitboard occ = pos.occ();
+
+    check_squares = {
+        attacks::pawn(~stm, opp_king_sq), // pawn
+        attacks::knight(opp_king_sq), // knight
+        attacks::bishop(opp_king_sq, occ), // bishop
+        attacks::rook(opp_king_sq, occ), // rook
+        attacks::queen(opp_king_sq, occ), // queen
+    };
+}
+
 template<>
 void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
-    move.setScore(piece_value[static_cast<int>(pos.at(move.to()).type())] - 
-                  piece_value[static_cast<int>(pos.at(move.from()).type())]);
+    const int piece_type = static_cast<int>(pos.at(move.from()).type());
+    const int to_piece_type = static_cast<int>(pos.at(move.to()).type());
+
+    int score = piece_value[to_piece_type] - piece_value[piece_type]
+        + 360 * (piece_type != static_cast<int>(PieceType::KING)
+                 && (check_squares[piece_type] & Bitboard::fromSquare(move.to())));
+
+    score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
+
+    move.setScore(score);
 }
 
 template<movegen::MoveGenType MoveGenType>
@@ -105,6 +145,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
     if (generated_moves == false){
         generated_moves = true;
         generate_moves();
+        prepare_pos_data();
         for (int i = 0; i < size_; i++){
             set_score(moves_[i]);
         }
@@ -140,13 +181,20 @@ template<movegen::MoveGenType MoveGenType>
 Move SortedMoveGen<MoveGenType>::pop_best_score(){
     int score;
     int best_move_idx;
-    int best_move_score = WORST_MOVE_SCORE;
-    for (int i = 0; i < size_; i++){
-        score = moves_[i].score();
-        if (score > best_move_score){
-            best_move_score = score;
-            best_move_idx = i;
+    int best_move_score;
+    while (true){
+        best_move_score = WORST_MOVE_SCORE;
+        for (int i = 0; i < size_; i++){
+            score = moves_[i].score();
+            if (score >= best_move_score){
+                best_move_score = score;
+                best_move_idx = i;
+            }
         }
+        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves_[best_move_idx], 0))
+            break;
+        
+        moves_[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
     }
 
     return pop_move(best_move_idx);

@@ -215,6 +215,7 @@ Move Engine::minimax_root(int depth, Stack* ss){
         assert(!root_moves.empty());
         SortedMoveGen smg = SortedMoveGen<movegen::MoveGenType::ALL>(pos, depth);
 
+        smg.prepare_pos_data();
         for (int i = 0; i < root_moves.size(); i++)
             smg.set_score(root_moves[i]);
 
@@ -537,15 +538,18 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         // move.score() is calculated with set_capture_score which is material difference.
         // 1500 is a safety margin
         if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-            if (stand_pat + move.score()*150 + 1500 < alpha)
+            if (stand_pat 
+                + piece_value[static_cast<int>(pos.at(move.to()).type())]
+                - piece_value[static_cast<int>(pos.at(move.from()).type())]
+                + 1500 < alpha)
                 continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
 
             // SEE pruning
-            if (!SEE::evaluate(pos, move, (alpha-stand_pat)/150 - 2))
+            if (!SEE::evaluate(pos, move, ((alpha-stand_pat)/150 - 2)*150))
                 continue;
     
             if (!pv && capture_gen.index() > 7
-                && stand_pat + 1000 < alpha && !SEE::evaluate(pos, move, -1))
+                && stand_pat + 1000 < alpha && !SEE::evaluate(pos, move, -150))
                 continue;
         }
 
