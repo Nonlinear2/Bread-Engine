@@ -29,9 +29,9 @@ inline std::vector<std::string> fens = {
     "r2qnrnk/p2b2b1/1p1p2pp/2pPpp2/1PP1P3/PRNBB3/3QNPPP/5RK1 w - -",
 };
 
-int sum(std::vector<int> values){
-    int total = 0;
-    for (auto v: values){
+int64_t sum(std::vector<int> values){
+    int64_t total = 0;
+    for (int v: values){
         total += v;
     }
     return total;
