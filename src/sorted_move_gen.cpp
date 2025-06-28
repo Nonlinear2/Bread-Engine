@@ -56,8 +56,8 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
         score += psm.get_ksm(piece, is_endgame, to, from);
     
     if (piece.type() != PieceType::PAWN && piece.type() != PieceType::KING){
-        score += 41 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value/150;
-        score -= 42 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value/150;
+        score += 48 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value/150;
+        score -= 49 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value/150;
     }
 
     if (piece.type() != PieceType::KING
@@ -87,12 +87,32 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
 
 
 template<>
-void SortedMoveGen<movegen::MoveGenType::CAPTURE>::prepare_pos_data(){}
+void SortedMoveGen<movegen::MoveGenType::CAPTURE>::prepare_pos_data(){
+    const Color stm = board.sideToMove();
+    const Square opp_king_sq = board.kingSq(~stm);
+    const Bitboard occ = board.occ();
+
+    check_squares = {
+        attacks::pawn(~stm, opp_king_sq), // pawn
+        attacks::knight(opp_king_sq), // knight
+        attacks::bishop(opp_king_sq, occ), // bishop
+        attacks::rook(opp_king_sq, occ), // rook
+        attacks::queen(opp_king_sq, occ), // queen
+    };
+}
 
 template<>
 void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
-    move.setScore(piece_value[static_cast<int>(board.at(move.to()).type())] - 
-                  piece_value[static_cast<int>(board.at(move.from()).type())]);
+    const int piece_type = static_cast<int>(board.at(move.from()).type());
+    const int to_piece_type = static_cast<int>(board.at(move.to()).type());
+
+    int score = piece_value[to_piece_type] - piece_value[piece_type]
+        + 360 * (piece_type != static_cast<int>(PieceType::KING)
+                 && (check_squares[piece_type] & Bitboard::fromSquare(move.to())));
+
+    score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
+
+    move.setScore(score);
 }
 
 template<movegen::MoveGenType MoveGenType>
@@ -161,13 +181,20 @@ template<movegen::MoveGenType MoveGenType>
 Move SortedMoveGen<MoveGenType>::pop_best_score(){
     int score;
     int best_move_idx;
-    int best_move_score = WORST_MOVE_SCORE;
-    for (int i = 0; i < size_; i++){
-        score = moves_[i].score();
-        if (score > best_move_score){
-            best_move_score = score;
-            best_move_idx = i;
+    int best_move_score;
+    while (true){
+        best_move_score = WORST_MOVE_SCORE;
+        for (int i = 0; i < size_; i++){
+            score = moves_[i].score();
+            if (score >= best_move_score){
+                best_move_score = score;
+                best_move_idx = i;
+            }
         }
+        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(board, moves_[best_move_idx], 0))
+            break;
+        
+        moves_[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
     }
 
     return pop_move(best_move_idx);

@@ -538,7 +538,10 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         // move.score() is calculated with set_capture_score which is material difference.
         // 1500 is a safety margin
         if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-            if (stand_pat + move.score() + 1500 < alpha)
+            if (stand_pat 
+                + piece_value[static_cast<int>(pos.at(move.to()).type())]
+                - piece_value[static_cast<int>(pos.at(move.from()).type())]
+                + 1500 < alpha)
                 continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
 
             // SEE pruning
