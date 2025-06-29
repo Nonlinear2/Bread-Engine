@@ -55,7 +55,7 @@ class SortedMoveGen {
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
     GenerationStage stage = TT_MOVE;
-    Move pop_move(Movelist move_list, int move_idx);
-    bool pop_best_good_see(Movelist move_list, Move &move);
-    bool pop_best(Movelist move_list, Move &move);
+    Move pop_move(Movelist& move_list, int move_idx);
+    bool pop_best_good_see(Movelist& move_list, Move &move);
+    bool pop_best(Movelist& move_list, Move &move);
 };
