@@ -15,15 +15,38 @@ void SortedMoveGen<MoveGenType>::generate_moves(){
 template<>
 void SortedMoveGen<movegen::MoveGenType::ALL>::prepare_pos_data(){
     const Color stm = pos.sideToMove();
+    const Bitboard occ = pos.occ();
 
-    attacked_by_pawn = 0;
+    Bitboard attacked_by_pawn = 0;
+    Bitboard attacked_by_minor = 0;
+    Bitboard attacked_by_rook = 0;
 
     Bitboard pawn_attackers = pos.pieces(PieceType::PAWN, ~stm);
     while (pawn_attackers)
         attacked_by_pawn |= attacks::pawn(~stm, pawn_attackers.pop());
 
+    Bitboard knight_attackers = pos.pieces(PieceType::KNIGHT, ~stm);
+    while (knight_attackers)
+        attacked_by_minor |= attacks::knight(knight_attackers.pop());
+
+    Bitboard bishop_attackers = pos.pieces(PieceType::BISHOP, ~stm);
+    while (bishop_attackers)
+        attacked_by_minor |= attacks::bishop(bishop_attackers.pop(), occ);
+
+    Bitboard rook_attackers = pos.pieces(PieceType::ROOK, ~stm);
+    while (rook_attackers)
+        attacked_by_rook |= attacks::rook(rook_attackers.pop(), occ);
+    
+    attacked_by_less = {
+        0, // pawn
+        attacked_by_pawn, // knight
+        attacked_by_pawn, // bishop
+        attacked_by_pawn | attacked_by_minor, // rook
+        attacked_by_pawn | attacked_by_minor | attacked_by_rook, // queen
+        0, // king
+    };
+
     const Square opp_king_sq = pos.kingSq(~stm);
-    const Bitboard occ = pos.occ();
 
     check_squares = {
         attacks::pawn(~stm, opp_king_sq), // pawn
@@ -31,6 +54,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::prepare_pos_data(){
         attacks::bishop(opp_king_sq, occ), // bishop
         attacks::rook(opp_king_sq, occ), // rook
         attacks::queen(opp_king_sq, occ), // queen
+        0,
     };
 
     is_endgame = occ.count() <= 11;
@@ -55,14 +79,10 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
     else
         score += psm.get_ksm(piece, is_endgame, to, from);
     
-    if (piece.type() != PieceType::PAWN && piece.type() != PieceType::KING){
-        score += 48 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value/150;
-        score -= 49 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value/150;
-    }
+    score += 48 * bool(attacked_by_less[static_cast<int>(piece.type())] & Bitboard::fromSquare(from)) * from_value/150;
+    score -= 49 * bool(attacked_by_less[static_cast<int>(piece.type())] & Bitboard::fromSquare(to)) * from_value/150;
 
-    if (piece.type() != PieceType::KING
-        && (check_squares[static_cast<int>(piece.type())] & Bitboard::fromSquare(to)))
-        score += 160;
+    score += 160 * bool(check_squares[static_cast<int>(piece.type())] & Bitboard::fromSquare(to));
 
     // captures should be searched early, so
     // to_value = piece_value(to) - piece_value(from) doesn't seem to work.

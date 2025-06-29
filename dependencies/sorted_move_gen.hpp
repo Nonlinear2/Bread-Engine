@@ -32,7 +32,7 @@ class SortedMoveGen: public Movelist {
     Move tt_move = Move::NO_MOVE;
     int generated_moves_count = 0;
     private:
-    Bitboard attacked_by_pawn;
+    std::vector<Bitboard> attacked_by_less;
     std::vector<Bitboard> check_squares;
     bool is_endgame;
 
