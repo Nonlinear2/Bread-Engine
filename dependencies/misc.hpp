@@ -15,7 +15,6 @@ constexpr int DEPTH_QSEARCH = 0;
 
 constexpr int BEST_MOVE_SCORE = 100'000;
 constexpr int WORST_MOVE_SCORE = -100'000;
-constexpr int BAD_SEE_TRESHOLD = 10'000;
 
 constexpr int WORST_VALUE = -31'998;
 constexpr int BEST_VALUE = 31'998;

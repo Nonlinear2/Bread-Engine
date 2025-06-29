@@ -7,8 +7,22 @@
 #include "misc.hpp"
 #include "chess.hpp"
 
+enum GenerationStage: int{
+    TT_MOVE,
+    GENERATE_CAPTURES,
+    GOOD_CAPTURES,
+    GENERATE_QUIETS,
+    GOOD_QUIETS,
+    BAD_CAPTURES,
+    BAD_QUIETS,
+};
+
+constexpr GenerationStage& operator++(GenerationStage& g) {
+    return g = static_cast<GenerationStage>(static_cast<int>(g) + 1);
+}
+
 template<movegen::MoveGenType MoveGenType>
-class SortedMoveGen: public Movelist {
+class SortedMoveGen {
     public:
     static constexpr PieceSquareMaps psm = PieceSquareMaps();
 
@@ -19,10 +33,9 @@ class SortedMoveGen: public Movelist {
 
     SortedMoveGen(NnueBoard& pos);
     SortedMoveGen(NnueBoard& pos, int depth);
-    void generate_moves();
     void set_tt_move(Move move);
     bool next(Move& move);
-    bool is_empty();
+    bool empty();
     int index();
     static void clear_killer_moves();
     void update_history(Move move, int depth, bool color);
@@ -32,15 +45,17 @@ class SortedMoveGen: public Movelist {
     Move tt_move = Move::NO_MOVE;
     int generated_moves_count = 0;
     private:
+    Movelist captures;
+    Movelist quiets;
+
     Bitboard attacked_by_pawn;
     std::vector<Bitboard> check_squares;
     bool is_endgame;
-
+    
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
-    bool checked_tt_move = false;
-    bool generated_moves = false;
-    bool is_valid_move(Move move);
-    Move pop_move(int move_idx);
-    Move pop_best_score();
+    GenerationStage stage = TT_MOVE;
+    Move pop_move(Movelist move_list, int move_idx);
+    bool pop_best_good_see(Movelist move_list, Move &move);
+    bool pop_best(Movelist move_list, Move &move);
 };
