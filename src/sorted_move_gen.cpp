@@ -31,6 +31,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::prepare_pos_data(){
         attacks::bishop(opp_king_sq, occ), // bishop
         attacks::rook(opp_king_sq, occ), // rook
         attacks::queen(opp_king_sq, occ), // queen
+        0, // king
     };
 
     is_endgame = occ.count() <= 11;
@@ -60,8 +61,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
         score -= 49 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value/150;
     }
 
-    if (piece.type() != PieceType::KING
-        && (check_squares[static_cast<int>(piece.type())] & Bitboard::fromSquare(to)))
+    if (check_squares[static_cast<int>(piece.type())] & Bitboard::fromSquare(to))
         score += 160;
 
     // captures should be searched early, so
@@ -98,6 +98,7 @@ void SortedMoveGen<movegen::MoveGenType::CAPTURE>::prepare_pos_data(){
         attacks::bishop(opp_king_sq, occ), // bishop
         attacks::rook(opp_king_sq, occ), // rook
         attacks::queen(opp_king_sq, occ), // queen
+        0, // king
     };
 }
 
@@ -107,8 +108,7 @@ void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
     const int to_piece_type = static_cast<int>(pos.at(move.to()).type());
 
     int score = piece_value[to_piece_type] - piece_value[piece_type]
-        + 360 * (piece_type != static_cast<int>(PieceType::KING)
-                 && (check_squares[piece_type] & Bitboard::fromSquare(move.to())));
+        + 360 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
