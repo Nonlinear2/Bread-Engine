@@ -33,9 +33,10 @@ int main(){
     cb.setFen(constants::STARTPOS);
     cb.synchronize();
 
-    chess::Move best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Time, 300));
-    cb.setFen("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2");
-    best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Time, 300));
+    chess::Move best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Nodes, 300));
+    cb.setFen("rnbqkbnr/pp1p1ppp/2p5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR b KQkq - 1 3");
+    cb.synchronize();
+    best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Nodes, 300));
     std::cout << "score: " << best_move.score() << std::endl;
 
     return 0;

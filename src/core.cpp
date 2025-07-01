@@ -215,6 +215,7 @@ Move Engine::minimax_root(int depth, Stack* ss){
         assert(!root_moves.empty());
         SortedMoveGen smg = SortedMoveGen<movegen::MoveGenType::ALL>(pos, depth);
 
+        smg.prepare_pos_data();
         for (int i = 0; i < root_moves.size(); i++)
             smg.set_score(root_moves[i]);
 
@@ -222,10 +223,8 @@ Move Engine::minimax_root(int depth, Stack* ss){
             [](const Move a, const Move b){ return a.score() > b.score(); });
 
         for (Move& m: root_moves)
-            m.setScore(-INFINITE_VALUE);
+            m.setScore(NO_VALUE);
     }
-    
-    std::vector<Move> reordered_root_moves(root_moves.begin(), root_moves.end());
 
     bool in_check = pos.inCheck();
 
@@ -251,7 +250,7 @@ Move Engine::minimax_root(int depth, Stack* ss){
         pos.restore_state(move);
 
         if (interrupt_flag)
-            return reordered_root_moves[0];
+            return root_moves[0];
 
         move.setScore(pos_eval);
 
@@ -259,15 +258,16 @@ Move Engine::minimax_root(int depth, Stack* ss){
 
         if (pos_eval > alpha){
             best_move = move;
-            std::rotate(reordered_root_moves.begin(),
-                reordered_root_moves.begin() + move_count - 1, reordered_root_moves.begin() + move_count);
+            // ! This preserves the order of the array after the current move.
+            // ! Rotate also invalidates the "&move" reference.
+            std::rotate(root_moves.begin(), root_moves.begin() + move_count - 1,
+                root_moves.begin() + move_count);
             alpha = pos_eval;
         }
     }
 
-    transposition_table.store(zobrist_hash, alpha, NO_VALUE, depth, best_move, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
-
-    std::copy(reordered_root_moves.begin(), reordered_root_moves.end(), root_moves.begin());
+    transposition_table.store(zobrist_hash, alpha, NO_VALUE, depth, best_move,
+        TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
 
     return best_move;
 }
@@ -537,15 +537,18 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         // move.score() is calculated with set_capture_score which is material difference.
         // 1500 is a safety margin
         if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-            if (stand_pat + move.score()*150 + 1500 < alpha)
+            if (stand_pat 
+                + piece_value[static_cast<int>(pos.at(move.to()).type())]
+                - piece_value[static_cast<int>(pos.at(move.from()).type())]
+                + 1500 < alpha)
                 continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
 
             // SEE pruning
-            if (!SEE::evaluate(pos, move, (alpha-stand_pat)/150 - 2))
+            if (!SEE::evaluate(pos, move, ((alpha-stand_pat)/150 - 2)*150))
                 continue;
     
             if (!pv && capture_gen.index() > 7
-                && stand_pat + 1000 < alpha && !SEE::evaluate(pos, move, -1))
+                && stand_pat + 1000 < alpha && !SEE::evaluate(pos, move, -150))
                 continue;
         }
 

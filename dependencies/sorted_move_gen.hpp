@@ -11,17 +11,14 @@ template<movegen::MoveGenType MoveGenType>
 class SortedMoveGen: public Movelist {
     public:
     static constexpr PieceSquareMaps psm = PieceSquareMaps();
-    static inline int KILLER_SCORE = 149;
-    static inline int MATERIAL_CHANGE_MULTIPLIER = 119;
-    static inline int ENDGAME_PIECE_COUNT = 11;
 
     static inline std::array<CircularBuffer3, ENGINE_MAX_DEPTH> killer_moves = {};
     static inline History history = History();
 
-    NnueBoard& board;
+    NnueBoard& pos;
 
-    SortedMoveGen(NnueBoard& board);
-    SortedMoveGen(NnueBoard& board, int depth);
+    SortedMoveGen(NnueBoard& pos);
+    SortedMoveGen(NnueBoard& pos, int depth);
     void generate_moves();
     void set_tt_move(Move move);
     bool next(Move& move);
@@ -30,10 +27,15 @@ class SortedMoveGen: public Movelist {
     static void clear_killer_moves();
     void update_history(Move move, int depth, bool color);
     void set_score(Move& move);
+    void prepare_pos_data();
 
     Move tt_move = Move::NO_MOVE;
     int generated_moves_count = 0;
     private:
+    Bitboard attacked_by_pawn;
+    std::vector<Bitboard> check_squares;
+    bool is_endgame;
+
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
     bool checked_tt_move = false;
