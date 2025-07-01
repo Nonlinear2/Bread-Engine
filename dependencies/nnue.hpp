@@ -14,7 +14,7 @@ constexpr int int32_per_reg = 8;
 constexpr int int16_per_reg = 16;
 constexpr int int8_per_reg = 32;
 
-enum LayerName {FEATURE_TRANSFORMER, LAYER_1, LAYER_2, LAYER_3};
+enum LayerName {FEATURE_TRANSFORMER, LAYER_2, LAYER_3, LAYER_4};
 
 inline const int HKP_size = 40960; // 64*64*5*2
 inline const int acc_size = 256;

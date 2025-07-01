@@ -1,8 +1,61 @@
 #include "nnue.hpp"
 
 /*************
-NNLayer
-*************/
+ NNLayer
+ *************/
+
+#include <cstdint>
+#include <stdio.h>
+
+#define STR2(x) #x
+#define STR(x) STR2(x)
+
+#ifdef _WIN32
+#define INCBIN_SECTION ".rdata, \"dr\""
+#else
+#define INCBIN_SECTION ".rodata"
+#endif
+
+// this aligns start address to 16 and terminates byte array with explict 0
+// which is not really needed, feel free to change it to whatever you want/need
+#define INCBIN(name, file) \
+    __asm__(".section " INCBIN_SECTION "\n" \
+            ".global " STR(name) "_start\n" \
+            ".balign 16\n" \
+            STR(name) "_start:\n" \
+            ".incbin \"" file "\"\n" \
+            \
+            ".global " STR(name) "_end\n" \
+            ".balign 1\n" \
+            STR(name) "_end:\n" \
+            ".byte 0\n" \
+    ); \
+
+INCBIN(ft_weights, bread_NNUE_MODEL_PATH "/feature_transformer/weights.bin");
+INCBIN(ft_bias, bread_NNUE_MODEL_PATH "/feature_transformer/bias.bin");
+
+INCBIN(l2_weights, bread_NNUE_MODEL_PATH "/layer_2/weights.bin");
+INCBIN(l2_bias, bread_NNUE_MODEL_PATH "/layer_2/bias.bin");
+
+INCBIN(l3_weights, bread_NNUE_MODEL_PATH "/layer_3/weights.bin");
+INCBIN(l3_bias, bread_NNUE_MODEL_PATH "/layer_3/bias.bin");
+
+INCBIN(l4_weights, bread_NNUE_MODEL_PATH "/layer_4/weights.bin");
+INCBIN(l4_bias, bread_NNUE_MODEL_PATH "/layer_4/bias.bin");
+
+extern "C" {
+    extern const int16_t ft_weights_start[];
+    extern const int16_t ft_bias_start[];
+
+    extern const int8_t l2_weights_start[];
+    extern const int32_t l2_bias_start[];
+
+    extern const int8_t l3_weights_start[];
+    extern const int32_t l3_bias_start[];
+
+    extern const int8_t l4_weights_start[];
+    extern const int16_t l4_bias_start[];
+};
 
 template<typename in_type, int in_size, typename out_type, int out_size>
 NNLayer<in_type, in_size, out_type, out_size>::NNLayer(){
@@ -18,11 +71,39 @@ NNLayer<in_type, in_size, out_type, out_size>::~NNLayer(){
 
 template<typename in_type, int in_size, typename out_type, int out_size>
 void NNLayer<in_type, in_size, out_type, out_size>::load_from_header(LayerName name){
-    for (int i = 0; i < input_size*output_size; i++){
-        weights[i] = nn_data::weights[name][i];
-    }
-    for (int i = 0; i < output_size; i++){
-        bias[i] = nn_data::bias[name][i];
+    switch (name) {
+        case FEATURE_TRANSFORMER:
+            for (int i = 0; i < input_size*output_size; i++){
+                weights[i] = ft_weights_start[i];
+            }
+            for (int i = 0; i < output_size; i++){
+                bias[i] = ft_bias_start[i];
+            }
+            return;
+        case LAYER_2: 
+            for (int i = 0; i < input_size*output_size; i++){
+                weights[i] = l3_weights_start[i];
+            }
+            for (int i = 0; i < output_size; i++){
+                bias[i] = l3_bias_start[i];
+            }
+            return;
+        case LAYER_3:
+            for (int i = 0; i < input_size*output_size; i++){
+                weights[i] = l3_weights_start[i];
+            }
+            for (int i = 0; i < output_size; i++){
+                bias[i] = l3_bias_start[i];
+            }
+            return;
+        case LAYER_4:
+            for (int i = 0; i < input_size*output_size; i++){
+                weights[i] = l4_weights_start[i];
+            }
+            for (int i = 0; i < output_size; i++){
+                bias[i] = l4_bias_start[i];
+            }
+            return;
     }
 };
 
@@ -140,9 +221,9 @@ NNUE::NNUE(){
 
 void NNUE::load_model(){
     feature_transformer.load_from_header(FEATURE_TRANSFORMER);
-    layer_2.load_from_header(LAYER_1);
-    layer_3.load_from_header(LAYER_2);
-    layer_4.load_from_header(LAYER_3);
+    layer_2.load_from_header(LAYER_2);
+    layer_3.load_from_header(LAYER_3);
+    layer_4.load_from_header(LAYER_4);
 };
 
 void NNUE::compute_accumulator(const std::vector<int> active_features, bool color){
