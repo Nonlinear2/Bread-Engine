@@ -310,7 +310,7 @@ int NNUE::run_cropped_nn(bool color){
     run(ft_clipped_output, l2_unclipped_output, l2_input_size, l2_output_size, l2_weights, l2_bias);
     crelu32(l2_unclipped_output, l2_clipped_output, l2_output_size);
 
-    run(l2_clipped_output, l3_unclipped_output, l2_input_size, l2_output_size, l2_weights, l2_bias);
+    run(l2_clipped_output, l3_unclipped_output, l3_input_size, l3_output_size, l3_weights, l3_bias);
     crelu32(l3_unclipped_output, l3_clipped_output, l3_output_size);
 
     int16_t output = run_output_layer(l3_clipped_output, l4_weights, l4_bias);
