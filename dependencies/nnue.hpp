@@ -5,9 +5,10 @@
 #include <fstream>
 #include <string>
 #include <cmath>
+#include <cstdint>
+#include <stdio.h>
 #include <chess.hpp>
 #include <immintrin.h>
-#include "neural_network.hpp"
 
 constexpr int num_avx_registers = 16;
 constexpr int int32_per_reg = 8;

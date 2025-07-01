@@ -1,23 +1,23 @@
 #include "nnue.hpp"
 
-/*************
- NNLayer
- *************/
-
-#include <cstdint>
-#include <stdio.h>
-
 #define STR2(x) #x
 #define STR(x) STR2(x)
 
+#ifdef __APPLE__
+#define USTR(x) "_" STR(x)
+#else
+#define USTR(x) STR(x)
+#endif
+
 #ifdef _WIN32
 #define INCBIN_SECTION ".rdata, \"dr\""
+#elif defined __APPLE__
+#define INCBIN_SECTION "__TEXT,__const"
 #else
 #define INCBIN_SECTION ".rodata"
 #endif
 
-// this aligns start address to 16 and terminates byte array with explict 0
-// which is not really needed, feel free to change it to whatever you want/need
+// credit: https://gist.github.com/mmozeiko/ed9655cf50341553d282
 #define INCBIN(name, file) \
     __asm__(".section " INCBIN_SECTION "\n" \
             ".global " STR(name) "_start\n" \
@@ -57,6 +57,10 @@ extern "C" {
     extern const int16_t l4_bias_start[];
 };
 
+/*************
+ NNLayer
+ *************/
+
 template<typename in_type, int in_size, typename out_type, int out_size>
 NNLayer<in_type, in_size, out_type, out_size>::NNLayer(){
     weights = static_cast<in_type*>(operator new[](sizeof(in_type)*input_size*output_size, std::align_val_t{32}));
@@ -82,10 +86,10 @@ void NNLayer<in_type, in_size, out_type, out_size>::load_from_header(LayerName n
             return;
         case LAYER_2: 
             for (int i = 0; i < input_size*output_size; i++){
-                weights[i] = l3_weights_start[i];
+                weights[i] = l2_weights_start[i];
             }
             for (int i = 0; i < output_size; i++){
-                bias[i] = l3_bias_start[i];
+                bias[i] = l2_bias_start[i];
             }
             return;
         case LAYER_3:

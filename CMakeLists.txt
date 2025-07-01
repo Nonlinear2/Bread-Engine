@@ -27,7 +27,6 @@ set(bread_SOURCE
     ${bread_SRC}/transposition_table.cpp
     ${bread_SRC}/core.cpp
     ${bread_SRC}/benchmark_engine.cpp
-    ${bread_SRC}/neural_network.cpp
     ${bread_DEPENDENCIES}/extern/Fathom/src/tbprobe.cpp
 )
 
