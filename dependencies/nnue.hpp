@@ -172,6 +172,8 @@ class NNUE {
     // max output value is 1*(127*127) + bias, the max possible output with the max possible weight.
     // this is 16129+bias which is less than the max int16 if bias is less than (int16_max - 16129)/(127*64) = 2.04
 
+    void run_sparse(int8_t* input, int32_t* output, int input_size, int output_size, int8_t* weights, int32_t* bias);
+
     void run_dense(int8_t* input, int32_t* output, int input_size, int output_size, int8_t* weights, int32_t* bias);
 
     // output is not scaled back by 64, so scale is 64*127 times true output.

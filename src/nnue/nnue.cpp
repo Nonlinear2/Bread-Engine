@@ -256,9 +256,12 @@ void NNUE::update_accumulator(const modified_features m_features, bool color){
 // -> accumulate for nnz chunks, and get output.
 
 // sparse matrix multiplication
-void NNUE::run_sparse(int8_t* input, int32_t* output){
+void NNUE::run_sparse(int8_t* input, int32_t* output, int input_size, int output_size, int8_t* weights, int32_t* bias){
+    const int num_input_chunks = input_size/int8_per_reg;
+    const int num_output_chunks = output_size/int32_per_reg;
+
     // we process 4 int8s at a time, as an int32.
-    constexpr int MAX_NNZ_INPUTS = in_size / sizeof(uint32_t);
+    const int MAX_NNZ_INPUTS = input_size / sizeof(uint32_t);
     int nnz_indices[MAX_NNZ_INPUTS];
     int num_nnz_inputs = 0;
 
@@ -282,7 +285,7 @@ void NNUE::run_sparse(int8_t* input, int32_t* output){
 
     // load the bias from memory
     for (int i = 0; i < num_output_chunks; i++){
-        output_chunks[i] = _mm256_loadu_si256((const __m256i*)&this->bias[i*int32_per_reg]);
+        output_chunks[i] = _mm256_loadu_si256((const __m256i*)&bias[i*int32_per_reg]);
     }
 
     for (int i = 0; i < num_nnz_inputs; i++){
@@ -291,7 +294,7 @@ void NNUE::run_sparse(int8_t* input, int32_t* output){
         for (int j = 0; j < num_output_chunks; j++){
             output_chunks[j] = _mm256_maddubs_epi16(
                 input_group,
-                _mm256_loadu_si256((const __m256i*)&this->weights[0]) // (nnz_indices[i]*out_size*4) + j*int8_per_reg
+                _mm256_loadu_si256((const __m256i*)&weights[0]) // (nnz_indices[i]*out_size*4) + j*int8_per_reg
             );
             output_chunks[j] = _mm256_madd_epi16(output_chunks[j], one); // hadd pairs to int32
         }
@@ -395,10 +398,10 @@ int NNUE::run_cropped_nn(bool color){
     crelu16(accumulator[color], &ft_clipped_output[0], acc_size);
     crelu16(accumulator[!color], &ft_clipped_output[acc_size], acc_size);
 
-    run(ft_clipped_output, l2_unclipped_output, l2_input_size, l2_output_size, l2_weights, l2_bias);
+    run_sparse(ft_clipped_output, l2_unclipped_output, l2_input_size, l2_output_size, l2_weights, l2_bias);
     crelu32(l2_unclipped_output, l2_clipped_output, l2_output_size);
 
-    run(l2_clipped_output, l3_unclipped_output, l3_input_size, l3_output_size, l3_weights, l3_bias);
+    run_dense(l2_clipped_output, l3_unclipped_output, l3_input_size, l3_output_size, l3_weights, l3_bias);
     crelu32(l3_unclipped_output, l3_clipped_output, l3_output_size);
 
     int16_t output = run_output_layer(l3_clipped_output, l4_weights, l4_bias);
