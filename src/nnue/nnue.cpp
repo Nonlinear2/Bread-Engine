@@ -270,10 +270,11 @@ void NNUE::run_sparse(int8_t* input, int32_t* output, int input_size, int output
 
     for (int i = 0; i < num_input_chunks; i++){
         __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]);
-        uint8_t nnz_bitmask = _mm256_movemask_ps(
-            (__m256)_mm256_cmpgt_epi8(input_chunk, _mm256_setzero_si256())
+        uint8_t z_bitmask = _mm256_movemask_ps(
+            (__m256)_mm256_cmpeq_epi32(input_chunk, _mm256_setzero_si256())
         );
 
+        uint8_t nnz_bitmask = ~z_bitmask;
         int idx;
         while (nnz_bitmask){
             idx = lsb(nnz_bitmask);
