@@ -410,3 +410,8 @@ int NNUE::run_cropped_nn(bool color){
     return output / 16;
 
 };
+
+void NNUE::run_accumulator_activation(bool color){
+    crelu16(accumulator[color], &ft_clipped_output[0], acc_size);
+    crelu16(accumulator[!color], &ft_clipped_output[acc_size], acc_size);
+};

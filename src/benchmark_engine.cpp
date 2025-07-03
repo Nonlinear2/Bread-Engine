@@ -29,6 +29,26 @@ inline std::vector<std::string> fens = {
     "r2qnrnk/p2b2b1/1p1p2pp/2pPpp2/1PP1P3/PRNBB3/3QNPPP/5RK1 w - -",
 };
 
+std::vector<std::string> loadFensFromFile(const std::string& filename) {
+    std::vector<std::string> fens;
+    std::ifstream file(filename);
+    std::string line;
+    
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open file " << filename << std::endl;
+        return fens;
+    }
+    
+    while (std::getline(file, line)) {
+        if (!line.empty()) {  // Skip empty lines
+            fens.push_back(line);
+        }
+    }
+    
+    file.close();
+    return fens;
+}
+
 int64_t sum(std::vector<int> values){
     int64_t total = 0;
     for (int v: values){
@@ -60,7 +80,6 @@ void benchmark_engine(int depth){
     std::vector<int> times;
     std::vector<int> nodes;
     
-    Board cb = Board();
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
     for (auto fen: fens){
 
@@ -70,8 +89,6 @@ void benchmark_engine(int depth){
 
         times.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time).count());
         nodes.push_back(engine.nodes);
-
-        cb.setFen(fen);
 
         // print info to terminal
         std::cout << engine.current_depth << std::endl;

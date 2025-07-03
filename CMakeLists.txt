@@ -11,6 +11,9 @@ set(bread_NEURAL_NETWORKS ${CMAKE_CURRENT_SOURCE_DIR}/neural_networks)
 
 set(bread_NNUE_MODEL_PATH "${bread_NEURAL_NETWORKS}/model_NNUE_2-40960_2x256_32_32_1_quant_layers")
 
+set(bread_NNUE_FENS_PATH "${bread_UTILS}/nnue_activation_benchmark_fens.txt")
+
+
 set(bread_INCLUDE_DIRS
     ${bread_DEPENDENCIES}
     ${bread_DEPENDENCIES}/extern
@@ -52,6 +55,8 @@ function(bread_configure bread_TARGET)
 
     target_compile_definitions(${bread_TARGET} PRIVATE bread_NNUE_MODEL_PATH="${bread_NNUE_MODEL_PATH}")
 
+    target_compile_definitions(${bread_TARGET} PRIVATE bread_NNUE_FENS_PATH="${bread_NNUE_FENS_PATH}")
+
     if (TARGET release)
         set_target_properties(release PROPERTIES OUTPUT_NAME "bread_engine_${CMAKE_PROJECT_VERSION}")
     endif()
@@ -85,4 +90,9 @@ bread_configure(search_position SOURCES
 bread_configure(data_gen SOURCES
     ${bread_SOURCE}
     ${bread_UTILS}/data_gen.cpp
+)
+
+bread_configure(benchmark_nnue_activation SOURCES
+    ${bread_SOURCE}
+    ${bread_UTILS}/nnue_activation_benchmark.cpp
 )

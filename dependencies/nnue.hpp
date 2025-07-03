@@ -192,4 +192,6 @@ class NNUE {
     void update_accumulator(const modified_features m_features, bool color);
 
     int run_cropped_nn(bool color);
+
+    void run_accumulator_activation(bool color);
 };
