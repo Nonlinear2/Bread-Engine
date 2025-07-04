@@ -116,8 +116,6 @@ void SortedMoveGen<MoveGenType>::set_tt_move(Move move){
 
 template<movegen::MoveGenType MoveGenType>
 bool SortedMoveGen<MoveGenType>::next(Move& move){
-    move_idx++;
-
     switch (stage){
         case TT_MOVE:
             ++stage;
@@ -179,6 +177,7 @@ Move SortedMoveGen<MoveGenType>::pop_move(Movelist& move_list, int move_idx){
 template<movegen::MoveGenType MoveGenType>
 bool SortedMoveGen<MoveGenType>::pop_best_good_see(Movelist& move_list, Move& move){
     int move_idx;
+    bool is_tt_move = false;
     do {
         // find the best move that doesn't have bad see.
         int move_score = WORST_MOVE_SCORE;
@@ -194,12 +193,14 @@ bool SortedMoveGen<MoveGenType>::pop_best_good_see(Movelist& move_list, Move& mo
         if (move_score == WORST_MOVE_SCORE)
             return false;
 
-        if (move_list[move_idx] == tt_move)
+        is_tt_move = move_list[move_idx] == tt_move;
+
+        if (is_tt_move)
             pop_move(move_list, move_idx);
         else
             move_list[move_idx].setSee(SEE::evaluate(pos, move_list[move_idx], 0) ? SeeState::GOOD : SeeState::BAD);
 
-    } while (move_list[move_idx].see() != SeeState::GOOD || move_list[move_idx] == tt_move);
+    } while (is_tt_move || move_list[move_idx].see() != SeeState::GOOD);
 
     move = pop_move(move_list, move_idx);
     return true;
