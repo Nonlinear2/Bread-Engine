@@ -154,15 +154,15 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             ++stage;
 
         case BAD_CAPTURES:
-            if (captures.num_left() > 0){
-                pop_move(captures, 0);
+            if (captures.num_left > 0){
+                move = pop_move(captures, 0);
                 return true;
             }
             ++stage;
 
         case BAD_QUIETS:
-            if (MoveGenType == movegen::MoveGenType::ALL && quiets.num_left() > 0){
-                pop_move(quiets, 0);
+            if (MoveGenType == movegen::MoveGenType::ALL && quiets.num_left > 0){
+                move = pop_move(quiets, 0);
                 return true;
             }
     }
@@ -186,32 +186,34 @@ Move SortedMoveGen<MoveGenType>::pop_move(Movelist& move_list, int move_idx){
 
 template<movegen::MoveGenType MoveGenType>
 bool SortedMoveGen<MoveGenType>::pop_best_good_see(Movelist& move_list, Move& move){
-    int move_idx;
-    bool is_tt_move = false;
-    do {
+    while (true) {
+        int move_idx = -1;
         // find the best move that doesn't have bad see.
         for (int i = 0; i < move_list.num_left; i++){
             Move m = move_list[i];
-            if (m.see() != SeeState::BAD)
+            if (m.see() != SeeState::BAD){
                 move_idx = i;
                 break;
+            }
         }
 
         // if no moves have good see anymore, return false
         if (move_idx == -1)
             return false;
 
-        is_tt_move = move_list[move_idx] == tt_move;
-
-        if (is_tt_move)
+        if (move_list[move_idx] == tt_move){
             pop_move(move_list, move_idx);
-        else
-            move_list[move_idx].setSee(SEE::evaluate(pos, move_list[move_idx], 0) ? SeeState::GOOD : SeeState::BAD);
+            continue;
+        }
+    
+        bool see = SEE::evaluate(pos, move_list[move_idx], 0);
+        move_list[move_idx].setSee(see ? SeeState::GOOD : SeeState::BAD);
 
-    } while (is_tt_move || move_list[move_idx].see() != SeeState::GOOD);
-
-    move = pop_move(move_list, move_idx);
-    return true;
+        if (move_list[move_idx].see() == SeeState::GOOD){
+            move = pop_move(move_list, move_idx);
+            return true;
+        }
+    }   
 }
 
 template<movegen::MoveGenType MoveGenType>
