@@ -43,7 +43,6 @@ class SortedMoveGen {
     void prepare_pos_data();
 
     Move tt_move = Move::NO_MOVE;
-    int generated_moves_count = 0;
     private:
     Movelist captures;
     Movelist quiets;

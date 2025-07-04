@@ -127,7 +127,6 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             }
         case GENERATE_CAPTURES:
             movegen::legalmoves<movegen::MoveGenType::CAPTURE>(captures, pos);
-            generated_moves_count += captures.size();
             prepare_pos_data();
             for (int i = 0; i < captures.size(); i++){
                 set_score(captures[i]);
@@ -140,7 +139,6 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
         case GENERATE_QUIETS:
             if (MoveGenType == movegen::MoveGenType::ALL){
                 movegen::legalmoves<movegen::MoveGenType::QUIET>(quiets, pos);
-                generated_moves_count += quiets.size();
                 for (int i = 0; i < quiets.size(); i++){
                     set_score(quiets[i]);
                 }
