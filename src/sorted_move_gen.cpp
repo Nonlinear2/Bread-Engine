@@ -131,6 +131,10 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             for (int i = 0; i < captures.size(); i++){
                 set_score(captures[i]);
             }
+
+            std::sort(captures.begin(), captures.end(),
+                [](const Move& a, const Move& b) { return a.score() > b.score(); });
+
             ++stage;
         case GOOD_CAPTURES:
             if (pop_best_good_see(captures, move))
@@ -139,9 +143,11 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
         case GENERATE_QUIETS:
             if (MoveGenType == movegen::MoveGenType::ALL){
                 movegen::legalmoves<movegen::MoveGenType::QUIET>(quiets, pos);
-                for (int i = 0; i < quiets.size(); i++){
+                for (int i = 0; i < quiets.size(); i++)
                     set_score(quiets[i]);
-                }
+                    
+                std::sort(quiets.begin(), quiets.end(),
+                    [](const Move& a, const Move& b) { return a.score() > b.score(); });
             }
             ++stage;
         case GOOD_QUIETS:
@@ -150,13 +156,17 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             ++stage;
 
         case BAD_CAPTURES:
-            if (pop_best(captures, move))
+            if (captures.num_left() > 0){
+                pop_move(captures, 0);
                 return true;
+            }
             ++stage;
 
         case BAD_QUIETS:
-            if (MoveGenType == movegen::MoveGenType::ALL && pop_best(quiets, move))
+            if (MoveGenType == movegen::MoveGenType::ALL && quiets.num_left() > 0){
+                pop_move(quiets, 0);
                 return true;
+            }
     }
     return false;
 }
@@ -178,20 +188,18 @@ Move SortedMoveGen<MoveGenType>::pop_move(Movelist& move_list, int move_idx){
 
 template<movegen::MoveGenType MoveGenType>
 bool SortedMoveGen<MoveGenType>::pop_best_good_see(Movelist& move_list, Move& move){
-    int move_idx;
+    int move_idx = -1;
     do {
         // find the best move that doesn't have bad see.
-        int move_score = WORST_MOVE_SCORE;
         for (int i = 0; i < move_list.num_left; i++){
             Move m = move_list[i];
-            if (m.score() >= move_score && m.see() != SeeState::BAD){
-                move_score = m.score();
+            if (m.see() != SeeState::BAD)
                 move_idx = i;
-            }
+                break;
         }
 
         // if no moves have good see anymore, return false
-        if (move_score == WORST_MOVE_SCORE)
+        if (move_idx == -1)
             return false;
 
         if (move_list[move_idx] == tt_move)
@@ -203,26 +211,6 @@ bool SortedMoveGen<MoveGenType>::pop_best_good_see(Movelist& move_list, Move& mo
 
     move = pop_move(move_list, move_idx);
     return true;
-}
-
-template<movegen::MoveGenType MoveGenType>
-bool SortedMoveGen<MoveGenType>::pop_best(Movelist& move_list, Move& move){
-    // find the best move that doesn't have bad see.
-    int move_idx;
-    int move_score = WORST_MOVE_SCORE;
-    for (int i = 0; i < move_list.num_left; i++){
-        Move m = move_list[i];
-        if (m.score() >= move_score){
-            move_score = m.score();
-            move_idx = i;
-        }
-    }
-    // if no moves are left, return false
-    if (move_score != WORST_MOVE_SCORE){
-        move = pop_move(move_list, move_idx);
-        return true;
-    } else
-        return false;
 }
 
 template<movegen::MoveGenType MoveGenType>
