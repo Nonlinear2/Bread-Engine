@@ -1,45 +1,61 @@
 #include "nnue.hpp"
 
-/*************
-NNLayer
-*************/
+#define STR2(x) #x
+#define STR(x) STR2(x)
 
-template<typename in_type, int in_size, typename out_type, int out_size>
-NNLayer<in_type, in_size, out_type, out_size>::NNLayer(){
-    weights = static_cast<in_type*>(operator new[](sizeof(in_type)*input_size*output_size, std::align_val_t{32}));
-    bias = static_cast<out_type*>(operator new[](sizeof(out_type)*output_size, std::align_val_t{32}));
-}
+#ifdef __APPLE__
+#define USTR(x) "_" STR(x)
+#else
+#define USTR(x) STR(x)
+#endif
 
-template<typename in_type, int in_size, typename out_type, int out_size>
-NNLayer<in_type, in_size, out_type, out_size>::~NNLayer(){
-    operator delete[](weights, std::align_val_t(32));
-    operator delete[](bias, std::align_val_t(32));
-}
+#ifdef _WIN32
+#define INCBIN_SECTION ".rdata, \"dr\""
+#elif defined __APPLE__
+#define INCBIN_SECTION "__TEXT,__const"
+#else
+#define INCBIN_SECTION ".rodata"
+#endif
 
-template<typename in_type, int in_size, typename out_type, int out_size>
-void NNLayer<in_type, in_size, out_type, out_size>::load_from_header(LayerName name){
-    for (int i = 0; i < input_size*output_size; i++){
-        weights[i] = nn_data::weights[name][i];
-    }
-    for (int i = 0; i < output_size; i++){
-        bias[i] = nn_data::bias[name][i];
-    }
+// credit: https://gist.github.com/mmozeiko/ed9655cf50341553d282
+#define INCBIN(name, file) \
+    __asm__(".section " INCBIN_SECTION "\n" \
+            ".global " STR(name) "_start\n" \
+            ".balign 16\n" \
+            STR(name) "_start:\n" \
+            ".incbin \"" file "\"\n" \
+            \
+            ".global " STR(name) "_end\n" \
+            ".balign 1\n" \
+            STR(name) "_end:\n" \
+            ".byte 0\n" \
+    ); \
+
+INCBIN(ft_weights, bread_NNUE_MODEL_PATH "/feature_transformer/weights.bin");
+INCBIN(ft_bias, bread_NNUE_MODEL_PATH "/feature_transformer/bias.bin");
+
+INCBIN(l2_weights, bread_NNUE_MODEL_PATH "/layer_2/weights.bin");
+INCBIN(l2_bias, bread_NNUE_MODEL_PATH "/layer_2/bias.bin");
+
+INCBIN(l3_weights, bread_NNUE_MODEL_PATH "/layer_3/weights.bin");
+INCBIN(l3_bias, bread_NNUE_MODEL_PATH "/layer_3/bias.bin");
+
+INCBIN(l4_weights, bread_NNUE_MODEL_PATH "/layer_4/weights.bin");
+INCBIN(l4_bias, bread_NNUE_MODEL_PATH "/layer_4/bias.bin");
+
+extern "C" {
+    extern const int16_t ft_weights_start[];
+    extern const int16_t ft_bias_start[];
+
+    extern const int8_t l2_weights_start[];
+    extern const int32_t l2_bias_start[];
+
+    extern const int8_t l3_weights_start[];
+    extern const int32_t l3_bias_start[];
+
+    extern const int8_t l4_weights_start[];
+    extern const int16_t l4_bias_start[];
 };
-
-// feature_transformer
-template class NNLayer<int16_t, HKP_size, int16_t, acc_size>;
-
-// hidden layers
-template class NNLayer<int8_t, 512, int32_t, 32>;
-template class NNLayer<int8_t, 32, int32_t, 32>;
-
-// output layer
-template class NNLayer<int8_t, 32, int16_t, 1>;
-
-
-/*************
-HiddenLayer
-*************/
 
 inline __m256i _mm256_add8x256_epi32(__m256i* inputs){
 
@@ -72,58 +88,6 @@ inline __m256i _mm256_add8x256_epi32(__m256i* inputs){
     );
 };
 
-template<int in_size, int out_size>
-void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
-
-    __m256i output_chunks[int32_per_reg];
-    const __m256i one = _mm256_set1_epi16(1);
-
-    for (int j = 0; j < num_output_chunks; j++){
-        __m256i result = _mm256_loadu_si256((const __m256i*)&this->bias[j*int32_per_reg]);
-        for (int i = 0; i < num_input_chunks; i++){
-            __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]); // load int8
-            for (int k = 0; k < int32_per_reg; k++){
-                output_chunks[k] = _mm256_maddubs_epi16(
-                    input_chunk,
-                    _mm256_loadu_si256((const __m256i*)&this->weights[(j*int32_per_reg+k) * this->input_size + i*int8_per_reg]) //load int8
-                );
-                output_chunks[k] = _mm256_madd_epi16(output_chunks[k], one); // hadd pairs to int32
-            }
-            result = _mm256_add_epi32(result, _mm256_add8x256_epi32(output_chunks));
-        }
-        result = _mm256_srai_epi32(result, 6); // this integer divides the result by 64 which is the scale.
-        _mm256_storeu_si256((__m256i*)&output[j*int32_per_reg], result); // store int32
-    }
-};
-
-// layer 2
-template class HiddenLayer<512, 32>;
-
-// layer 3
-template class HiddenLayer<32, 32>;
-
-/*************
-OutputLayer
-*************/
-
-int16_t OutputLayer::run(int8_t* input){
-
-    __m256i input_reg = _mm256_loadu_si256((const __m256i*)input); // load int8
-
-    __m256i output_reg = _mm256_maddubs_epi16(input_reg, _mm256_loadu_si256((const __m256i*)weights)); // load int8
-    // output now in epi16
-    
-    // accumulate together
-    output_reg = _mm256_hadd_epi16(output_reg, output_reg);
-    output_reg = _mm256_hadd_epi16(output_reg, output_reg);
-    
-    int16_t out_ptr[16];
-    _mm256_storeu_si256((__m256i*)out_ptr, output_reg); // store int16
-
-    return out_ptr[0] + out_ptr[1] + out_ptr[8] + out_ptr[9] + bias[0];
-
-};
-
 /****************
 Accumulator class
 ****************/
@@ -138,11 +102,52 @@ NNUE::NNUE(){
     load_model();
 };
 
+NNUE::~NNUE(){
+    operator delete[](ft_weights, std::align_val_t(32));
+    operator delete[](ft_bias, std::align_val_t(32));
+
+    operator delete[](l2_weights, std::align_val_t(32));
+    operator delete[](l2_bias, std::align_val_t(32));
+
+    operator delete[](l3_weights, std::align_val_t(32));
+    operator delete[](l3_bias, std::align_val_t(32));
+
+    operator delete[](l4_weights, std::align_val_t(32));
+    operator delete[](l4_bias, std::align_val_t(32));
+};
+
 void NNUE::load_model(){
-    feature_transformer.load_from_header(FEATURE_TRANSFORMER);
-    layer_2.load_from_header(LAYER_1);
-    layer_3.load_from_header(LAYER_2);
-    layer_4.load_from_header(LAYER_3);
+    // feature transformer
+    for (int i = 0; i < ft_input_size*ft_output_size; i++){
+        ft_weights[i] = ft_weights_start[i];
+    }
+    for (int i = 0; i < ft_output_size; i++){
+        ft_bias[i] = ft_bias_start[i];
+    }
+
+    // layer 2
+    for (int i = 0; i < l2_input_size*l2_output_size; i++){
+        l2_weights[i] = l2_weights_start[i];
+    }
+    for (int i = 0; i < l2_output_size; i++){
+        l2_bias[i] = l2_bias_start[i];
+    }
+
+    // layer 3
+    for (int i = 0; i < l3_input_size*l3_output_size; i++){
+        l3_weights[i] = l3_weights_start[i];
+    }
+    for (int i = 0; i < l3_output_size; i++){
+        l3_bias[i] = l3_bias_start[i];
+    }
+
+    // layer 4
+    for (int i = 0; i < l4_input_size*l4_output_size; i++){
+        l4_weights[i] = l4_weights_start[i];
+    }
+    for (int i = 0; i < l4_output_size; i++){
+        l4_bias[i] = l4_bias_start[i];
+    }
 };
 
 void NNUE::compute_accumulator(const std::vector<int> active_features, bool color){
@@ -153,7 +158,7 @@ void NNUE::compute_accumulator(const std::vector<int> active_features, bool colo
 
     // load the bias from memory
     for (int i = 0; i < num_avx_registers; i++){
-        avx_regs[i] = _mm256_loadu_si256((const __m256i*)&feature_transformer.bias[i*int16_per_reg]); // load int16
+        avx_regs[i] = _mm256_loadu_si256((const __m256i*)&ft_bias[i*int16_per_reg]); // load int16
     }
 
     for (const int &a: active_features){
@@ -161,7 +166,7 @@ void NNUE::compute_accumulator(const std::vector<int> active_features, bool colo
             // a*acc size is the index of the a-th row. We then accumulate the weights.
             avx_regs[i] = _mm256_add_epi16(
                 avx_regs[i],
-                _mm256_loadu_si256((const __m256i*)&feature_transformer.weights[a*acc_size + i*int16_per_reg]) // load int16
+                _mm256_loadu_si256((const __m256i*)&ft_weights[a*acc_size + i*int16_per_reg]) // load int16
                 );
         }
     }
@@ -185,7 +190,7 @@ void NNUE::update_accumulator(const modified_features m_features, bool color){
         // m_features.added*acc_size is the index of the added featured row. We then accumulate the weights.
         avx_regs[i] = _mm256_add_epi16(
             avx_regs[i],
-            _mm256_loadu_si256((const __m256i*)&feature_transformer.weights[m_features.added*acc_size + i*int16_per_reg]) // load int16
+            _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.added*acc_size + i*int16_per_reg]) // load int16
             );
     }
     // removed feature
@@ -193,7 +198,7 @@ void NNUE::update_accumulator(const modified_features m_features, bool color){
         // m_features.removed*acc_size is to get the right column.
         avx_regs[i] = _mm256_sub_epi16(
             avx_regs[i],
-            _mm256_loadu_si256((const __m256i*)&feature_transformer.weights[m_features.removed*acc_size + i*int16_per_reg]) // load int16
+            _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.removed*acc_size + i*int16_per_reg]) // load int16
             );
     }
 
@@ -201,7 +206,7 @@ void NNUE::update_accumulator(const modified_features m_features, bool color){
         for (int i = 0; i < num_avx_registers; i++){
             avx_regs[i] = _mm256_sub_epi16(
                 avx_regs[i],
-                _mm256_loadu_si256((const __m256i*)&feature_transformer.weights[m_features.captured*acc_size + i*int16_per_reg]) // load int16
+                _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.captured*acc_size + i*int16_per_reg]) // load int16
                 );
         }
     }
@@ -212,6 +217,48 @@ void NNUE::update_accumulator(const modified_features m_features, bool color){
     }
 };
 
+void NNUE::run(int8_t* input, int32_t* output, int input_size, int output_size, int8_t* weights, int32_t* bias){
+    const int num_input_chunks = input_size/int8_per_reg;
+    const int num_output_chunks = output_size/int32_per_reg;
+
+    __m256i output_chunks[int32_per_reg];
+    const __m256i one = _mm256_set1_epi16(1);
+
+    for (int j = 0; j < num_output_chunks; j++){
+        __m256i result = _mm256_loadu_si256((const __m256i*)&bias[j*int32_per_reg]);
+        for (int i = 0; i < num_input_chunks; i++){
+            __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]); // load int8
+            for (int k = 0; k < int32_per_reg; k++){
+                output_chunks[k] = _mm256_maddubs_epi16(
+                    input_chunk,
+                    _mm256_loadu_si256((const __m256i*)&weights[(j*int32_per_reg+k) * input_size + i*int8_per_reg]) //load int8
+                );
+                output_chunks[k] = _mm256_madd_epi16(output_chunks[k], one); // hadd pairs to int32
+            }
+            result = _mm256_add_epi32(result, _mm256_add8x256_epi32(output_chunks));
+        }
+        result = _mm256_srai_epi32(result, 6); // this integer divides the result by 64 which is the scale.
+        _mm256_storeu_si256((__m256i*)&output[j*int32_per_reg], result); // store int32
+    }
+};
+
+int16_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int16_t* bias){
+
+    __m256i input_reg = _mm256_loadu_si256((const __m256i*)input); // load int8
+
+    __m256i output_reg = _mm256_maddubs_epi16(input_reg, _mm256_loadu_si256((const __m256i*)weights)); // load int8
+    // output now in epi16
+
+    // accumulate together
+    output_reg = _mm256_hadd_epi16(output_reg, output_reg);
+    output_reg = _mm256_hadd_epi16(output_reg, output_reg);
+
+    int16_t out_ptr[16];
+    _mm256_storeu_si256((__m256i*)out_ptr, output_reg); // store int16
+
+    return out_ptr[0] + out_ptr[1] + out_ptr[8] + out_ptr[9] + bias[0];
+
+};
 
 // input size must be a multiple of 32
 // there is no max size.
@@ -260,14 +307,13 @@ int NNUE::run_cropped_nn(bool color){
     crelu16(accumulator[color], &ft_clipped_output[0], acc_size);
     crelu16(accumulator[!color], &ft_clipped_output[acc_size], acc_size);
 
-    layer_2.run(ft_clipped_output, layer_2_unclipped_output);
-    crelu32(layer_2_unclipped_output, layer_2_clipped_output, layer_2.output_size);
+    run(ft_clipped_output, l2_unclipped_output, l2_input_size, l2_output_size, l2_weights, l2_bias);
+    crelu32(l2_unclipped_output, l2_clipped_output, l2_output_size);
 
-    layer_3.run(layer_2_clipped_output, layer_3_unclipped_output);
-    crelu32(layer_3_unclipped_output, layer_3_clipped_output, layer_3.output_size);
+    run(l2_clipped_output, l3_unclipped_output, l3_input_size, l3_output_size, l3_weights, l3_bias);
+    crelu32(l3_unclipped_output, l3_clipped_output, l3_output_size);
 
-    int16_t output = layer_4.run(layer_3_clipped_output);
+    int16_t output = run_output_layer(l3_clipped_output, l4_weights, l4_bias);
     return output / 16;
 
 };
-

@@ -8,8 +8,6 @@ set(bread_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(bread_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 set(bread_DEPENDENCIES ${CMAKE_CURRENT_SOURCE_DIR}/dependencies)
 set(bread_NEURAL_NETWORKS ${CMAKE_CURRENT_SOURCE_DIR}/neural_networks)
-set(bread_NN_HEADER_DIR ${CMAKE_BINARY_DIR}/gen)
-set(bread_NN_HEADER_PATH ${bread_NN_HEADER_DIR}/neural_network.hpp)
 
 set(bread_NNUE_MODEL_PATH "${bread_NEURAL_NETWORKS}/model_NNUE_2-40960_2x256_32_32_1_quant_layers")
 
@@ -18,7 +16,6 @@ set(bread_INCLUDE_DIRS
     ${bread_DEPENDENCIES}/extern
     ${bread_DEPENDENCIES}/unit_tests
     ${bread_DEPENDENCIES}/extern/Fathom/src
-    ${bread_NN_HEADER_DIR}
 )
 
 set(bread_SOURCE
@@ -42,28 +39,6 @@ if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL 
     )
 endif()
 
-add_executable(generate_neural_net_header ${bread_UTILS}/generate_nn_header.cpp)
-add_executable(clear_neural_net_header ${bread_UTILS}/clear_nn_header.cpp)
-
-target_compile_definitions(
-    generate_neural_net_header PRIVATE bread_NN_HEADER_PATH="${bread_NN_HEADER_PATH}")
-target_compile_definitions(
-    generate_neural_net_header PRIVATE bread_NNUE_MODEL_PATH="${bread_NNUE_MODEL_PATH}")
-
-target_compile_definitions(
-    clear_neural_net_header PRIVATE bread_NN_HEADER_PATH="${bread_NN_HEADER_PATH}")
-target_compile_definitions(
-    clear_neural_net_header PRIVATE bread_NNUE_MODEL_PATH="${bread_NNUE_MODEL_PATH}")
-
-file(MAKE_DIRECTORY ${bread_NN_HEADER_DIR})
-
-add_custom_target(run_generate_nn_header
-    COMMAND $<TARGET_FILE:generate_neural_net_header>
-    DEPENDS generate_neural_net_header
-    COMMENT "generating the neural network header"
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-)
-
 function(bread_configure bread_TARGET)
     cmake_parse_arguments(bread "" "" "SOURCES" ${ARGN})
 
@@ -73,17 +48,7 @@ function(bread_configure bread_TARGET)
     
     target_compile_definitions(${bread_TARGET} PRIVATE bread_VERSION="${CMAKE_PROJECT_VERSION}")
 
-    add_dependencies(${bread_TARGET} run_generate_nn_header)
-
-    add_custom_command(
-        TARGET ${bread_TARGET} POST_BUILD
-        COMMAND $<TARGET_FILE:clear_neural_net_header>
-        COMMENT "clearing the neural network header"
-    )
-
     target_compile_definitions(${bread_TARGET} PRIVATE bread_TB_PATH="${bread_TB_PATH}")
-
-    target_compile_definitions(${bread_TARGET} PRIVATE bread_NN_HEADER_PATH="${bread_NN_HEADER_PATH}")
 
     target_compile_definitions(${bread_TARGET} PRIVATE bread_NNUE_MODEL_PATH="${bread_NNUE_MODEL_PATH}")
 
