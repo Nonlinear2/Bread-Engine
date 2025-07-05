@@ -61,10 +61,19 @@ VERSION: 0.6.39
 namespace chess {
 
 enum SeeState {
-    BAD,
-    GOOD,
-    NONE,
+    NONE      = 0,
+    NEGATIVE  = 1 << 0,
+    ZERO      = 1 << 1,
+    POSITIVE  = 1 << 2,
+
+    ZERO_OR_NEGATIVE = NEGATIVE | ZERO,
+    ZERO_OR_POSITIVE = ZERO | POSITIVE,
+    ALL = NEGATIVE | ZERO | POSITIVE
 };
+
+constexpr SeeState operator~(SeeState s) {
+    return SeeState(s ^ SeeState::ALL);
+}
 
 class Color {
    public:

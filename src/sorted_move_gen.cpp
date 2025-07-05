@@ -123,48 +123,35 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                 move = tt_move;
                 return true;
             }
-        case GENERATE_CAPTURES:
-            movegen::legalmoves<movegen::MoveGenType::CAPTURE>(captures, pos);
+        case GENERATE_MOVES:
+            movegen::legalmoves<MoveGenType>(moves, pos);
             prepare_pos_data();
-            for (int i = 0; i < captures.size(); i++){
-                set_score(captures[i]);
+            for (int i = 0; i < moves.size(); i++){
+                set_score(moves[i]);
             }
 
-            std::sort(captures.begin(), captures.end(),
+            std::sort(moves.begin(), moves.end(),
                 [](const Move& a, const Move& b) { return a.score() > b.score(); });
+            ++stage;
 
-            ++stage;
-        case GOOD_CAPTURES:
-            if (pop_best_good_see(captures, move))
-                return true;
-            ++stage;
-        case GENERATE_QUIETS:
-            if (MoveGenType == movegen::MoveGenType::ALL){
-                movegen::legalmoves<movegen::MoveGenType::QUIET>(quiets, pos);
-                for (int i = 0; i < quiets.size(); i++)
-                    set_score(quiets[i]);
-                    
-                std::sort(quiets.begin(), quiets.end(),
-                    [](const Move& a, const Move& b) { return a.score() > b.score(); });
-            }
-            ++stage;
-        case GOOD_QUIETS:
-            if (MoveGenType == movegen::MoveGenType::ALL && pop_best_good_see(quiets, move))
+        case POSITIVE_SEE:
+            if (pop_best_see(moves, move, SeeState::POSITIVE))
                 return true;
             ++stage;
 
-        case BAD_CAPTURES:
-            if (captures.num_left > 0){
-                move = pop_move(captures, 0);
+        case ZERO_SEE:
+            if (pop_best_see(moves, move, SeeState::ZERO_OR_POSITIVE))
                 return true;
-            }
+            ++stage;
+        case NEGATIVE_SEE:
+            if (pop_best_see(moves, move, SeeState::ALL))
+                return true;
             ++stage;
 
-        case BAD_QUIETS:
-            if (MoveGenType == movegen::MoveGenType::ALL && quiets.num_left > 0){
-                move = pop_move(quiets, 0);
-                return true;
-            }
+            // if (moves.num_left > 0){
+            //     move = pop_move(moves, 0);
+            //     return true;
+            // }
     }
     return false;
 }
@@ -185,13 +172,15 @@ Move SortedMoveGen<MoveGenType>::pop_move(Movelist& move_list, int move_idx){
 }
 
 template<movegen::MoveGenType MoveGenType>
-bool SortedMoveGen<MoveGenType>::pop_best_good_see(Movelist& move_list, Move& move){
+bool SortedMoveGen<MoveGenType>::pop_best_see(Movelist& move_list, Move& move, SeeState threshold){
     while (true) {
         int move_idx = -1;
-        // find the best move that doesn't have bad see.
+        SeeState see;
+        // find the best move that has good enough see.
         for (int i = 0; i < move_list.num_left; i++){
-            Move m = move_list[i];
-            if (m.see() != SeeState::BAD){
+            see = move_list[i].see();
+            // cases where we need to examine the move
+            if (see == SeeState::NONE || (see & threshold)) {
                 move_idx = i;
                 break;
             }
@@ -205,19 +194,24 @@ bool SortedMoveGen<MoveGenType>::pop_best_good_see(Movelist& move_list, Move& mo
             pop_move(move_list, move_idx);
             continue;
         }
-    
-        bool see = SEE::evaluate(pos, move_list[move_idx], 0);
-        move_list[move_idx].setSee(see ? SeeState::GOOD : SeeState::BAD);
+        
+        // needs computing more precise see
+        if (see == SeeState::NONE
+            || (see == SeeState::ZERO_OR_NEGATIVE && threshold == SeeState::ZERO_OR_POSITIVE)){
+            bool above_threshold = SEE::evaluate(pos, move_list[move_idx],
+                threshold == SeeState::POSITIVE ? 1 : 0);
+            move_list[move_idx].setSee(above_threshold ? threshold : ~threshold);
+        }
 
-        if (move_list[move_idx].see() == SeeState::GOOD){
+        if (move_list[move_idx].see() & threshold){
             move = pop_move(move_list, move_idx);
             return true;
         }
-    }   
-}
+    }
+} 
 
 template<movegen::MoveGenType MoveGenType>
-bool SortedMoveGen<MoveGenType>::empty(){ return captures.empty() && quiets.empty(); }
+bool SortedMoveGen<MoveGenType>::empty(){ return moves.empty(); }
 
 template<movegen::MoveGenType MoveGenType>
 inline int SortedMoveGen<MoveGenType>::index(){ return move_idx; }
@@ -235,9 +229,9 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, in
     if (!pos.isCapture(best_move))
         history.history[color][idx] += (bonus - history.history[color][idx] * std::abs(bonus) / MAX_HISTORY_BONUS);
 
-    for (int i = 0; i < quiets.size(); i++){
-        if (quiets[i] != best_move){
-            idx = quiets[i].from().index()*64 + quiets[i].to().index();
+    for (int i = 0; i < moves.size(); i++){
+        if (!pos.isCapture(moves[i]) && moves[i] != best_move){
+            idx = moves[i].from().index()*64 + moves[i].to().index();
             history.history[color][idx] += -bonus - history.history[color][idx] * std::abs(bonus) / MAX_HISTORY_BONUS;
         }
     }

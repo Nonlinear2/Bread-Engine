@@ -9,12 +9,10 @@
 
 enum GenerationStage: int{
     TT_MOVE,
-    GENERATE_CAPTURES,
-    GOOD_CAPTURES,
-    GENERATE_QUIETS,
-    GOOD_QUIETS,
-    BAD_CAPTURES,
-    BAD_QUIETS,
+    GENERATE_MOVES,
+    POSITIVE_SEE,
+    ZERO_SEE,
+    NEGATIVE_SEE
 };
 
 constexpr GenerationStage& operator++(GenerationStage& g) {
@@ -44,8 +42,7 @@ class SortedMoveGen {
 
     Move tt_move = Move::NO_MOVE;
     private:
-    Movelist captures;
-    Movelist quiets;
+    Movelist moves;
 
     Bitboard attacked_by_pawn;
     std::vector<Bitboard> check_squares;
@@ -55,6 +52,5 @@ class SortedMoveGen {
     int move_idx = -1;
     GenerationStage stage = TT_MOVE;
     Move pop_move(Movelist& move_list, int move_idx);
-    bool pop_best_good_see(Movelist& move_list, Move &move);
-    bool pop_best(Movelist& move_list, Move &move);
+    bool pop_best_see(Movelist& move_list, Move &move, SeeState see_threshold);
 };
