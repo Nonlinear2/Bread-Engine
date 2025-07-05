@@ -1331,9 +1331,9 @@ class Movelist {
         return -1;
     }
 
-    size_type size_ = 0;
-    std::array<value_type, constants::MAX_MOVES> moves_;
     private:
+    std::array<value_type, constants::MAX_MOVES> moves_;
+    size_type size_ = 0;
 };
 }  // namespace chess
 
