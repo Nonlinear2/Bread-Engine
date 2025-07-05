@@ -10,9 +10,8 @@
 enum GenerationStage: int{
     TT_MOVE,
     GENERATE_MOVES,
-    POSITIVE_SEE,
-    ZERO_SEE,
-    NEGATIVE_SEE
+    GOOD_SEE,
+    BAD_SEE
 };
 
 constexpr GenerationStage& operator++(GenerationStage& g) {

@@ -134,16 +134,12 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                 [](const Move& a, const Move& b) { return a.score() > b.score(); });
             ++stage;
 
-        case POSITIVE_SEE:
+        case GOOD_SEE:
             if (pop_best_see(moves, move, SeeState::POSITIVE))
                 return true;
             ++stage;
 
-        case ZERO_SEE:
-            if (pop_best_see(moves, move, SeeState::ZERO_OR_POSITIVE))
-                return true;
-            ++stage;
-        case NEGATIVE_SEE:
+        case BAD_SEE:
             if (pop_best_see(moves, move, SeeState::ALL))
                 return true;
             ++stage;
