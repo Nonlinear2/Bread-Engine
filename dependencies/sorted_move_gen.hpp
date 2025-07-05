@@ -7,6 +7,16 @@
 #include "misc.hpp"
 #include "chess.hpp"
 
+enum GenerationStage: int{
+    TT_MOVE,
+    GENERATE_MOVES,
+    GET_MOVES,
+};
+
+constexpr GenerationStage& operator++(GenerationStage& g) {
+    return g = static_cast<GenerationStage>(static_cast<int>(g) + 1);
+}
+
 template<movegen::MoveGenType MoveGenType>
 class SortedMoveGen {
     public:
@@ -38,8 +48,7 @@ class SortedMoveGen {
 
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
-    bool checked_tt_move = false;
-    bool generated_moves = false;
+    GenerationStage stage = TT_MOVE;
     Move pop_move(int move_idx);
     Move pop_best_score();
 };
