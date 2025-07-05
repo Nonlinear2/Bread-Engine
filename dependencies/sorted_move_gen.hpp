@@ -8,7 +8,7 @@
 #include "chess.hpp"
 
 template<movegen::MoveGenType MoveGenType>
-class SortedMoveGen: public Movelist {
+class SortedMoveGen {
     public:
     static constexpr PieceSquareMaps psm = PieceSquareMaps();
 
@@ -32,6 +32,8 @@ class SortedMoveGen: public Movelist {
     Move tt_move = Move::NO_MOVE;
     int generated_moves_count = 0;
     private:
+    Movelist moves;
+    
     Bitboard attacked_by_pawn;
     std::vector<Bitboard> check_squares;
     bool is_endgame;

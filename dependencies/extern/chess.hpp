@@ -1284,13 +1284,14 @@ class Movelist {
     // Modifiers
 
     /// @brief Clears the movelist.
-    constexpr void clear() noexcept { size_ = 0; }
+    constexpr void clear() noexcept { size_ = 0; num_left = 0; }
 
     /// @brief Add a move to the end of the movelist.
     /// @param move
     constexpr void add(const_reference move) noexcept {
         assert(size_ < constants::MAX_MOVES);
         moves_[size_++] = move;
+        num_left++;
     }
 
     /// @brief Add a move to the end of the movelist.
@@ -1298,6 +1299,7 @@ class Movelist {
     constexpr void add(value_type&& move) noexcept {
         assert(size_ < constants::MAX_MOVES);
         moves_[size_++] = move;
+        num_left++;
     }
 
     // Other
@@ -1316,9 +1318,10 @@ class Movelist {
         return -1;
     }
 
-   protected:
-    std::array<value_type, constants::MAX_MOVES> moves_;
+    size_type num_left = 0;
     size_type size_ = 0;
+    std::array<value_type, constants::MAX_MOVES> moves_;
+    private:
 };
 }  // namespace chess
 
