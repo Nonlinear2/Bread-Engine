@@ -200,7 +200,7 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
 }
 
 template<movegen::MoveGenType MoveGenType>
-bool SortedMoveGen<MoveGenType>::is_empty(){ return moves.empty(); }
+bool SortedMoveGen<MoveGenType>::empty(){ return moves.empty(); }
 
 template<movegen::MoveGenType MoveGenType>
 inline int SortedMoveGen<MoveGenType>::index(){ return move_idx; }

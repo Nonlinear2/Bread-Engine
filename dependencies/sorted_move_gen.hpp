@@ -22,7 +22,7 @@ class SortedMoveGen {
     void generate_moves();
     void set_tt_move(Move move);
     bool next(Move& move);
-    bool is_empty();
+    bool empty();
     int index();
     static void clear_killer_moves();
     void update_history(Move move, int depth, bool color);
@@ -30,8 +30,8 @@ class SortedMoveGen {
     void prepare_pos_data();
 
     Move tt_move = Move::NO_MOVE;
-    Movelist moves;
     private:
+    Movelist moves;
     
     Bitboard attacked_by_pawn;
     std::vector<Bitboard> check_squares;
