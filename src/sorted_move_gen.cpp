@@ -147,7 +147,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
         generate_moves();
         prepare_pos_data();
         for (int i = 0; i < moves.size_; i++){
-            set_score(moves.moves_[i]);
+            set_score(moves[i]);
         }
         if (is_valid_move(tt_move))
             pop_move(std::find(moves.begin(), moves.end(), tt_move) - moves.begin());
@@ -168,13 +168,13 @@ Move SortedMoveGen<MoveGenType>::pop_move(int move_idx){
 
     // if the move is not in the last position, move it there.
     if (move_idx != moves.size_-1){
-        Move swap = moves.moves_[move_idx];
-        moves.moves_[move_idx] = moves.moves_[moves.size_-1];
-        moves.moves_[moves.size_-1] = swap;
+        Move swap = moves[move_idx];
+        moves[move_idx] = moves[moves.size_-1];
+        moves[moves.size_-1] = swap;
     }
 
     moves.size_--;
-    return moves.moves_[moves.size_];
+    return moves[moves.size_];
 }
 
 template<movegen::MoveGenType MoveGenType>
@@ -185,16 +185,16 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
     while (true){
         best_move_score = WORST_MOVE_SCORE;
         for (int i = 0; i < moves.size_; i++){
-            score = moves.moves_[i].score();
+            score = moves[i].score();
             if (score >= best_move_score){
                 best_move_score = score;
                 best_move_idx = i;
             }
         }
-        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves.moves_[best_move_idx], 0))
+        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], 0))
             break;
         
-        moves.moves_[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
+        moves[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
     }
 
     return pop_move(best_move_idx);
@@ -220,8 +220,8 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, in
         history.history[color][idx] += (bonus - history.history[color][idx] * std::abs(bonus) / MAX_HISTORY_BONUS);
 
     for (int i = 0; i < generated_moves_count; i++){
-        if (moves.moves_[i] != best_move && !pos.isCapture(moves.moves_[i])){
-            idx = moves.moves_[i].from().index()*64 + moves.moves_[i].to().index();
+        if (moves[i] != best_move && !pos.isCapture(moves[i])){
+            idx = moves[i].from().index()*64 + moves[i].to().index();
             history.history[color][idx] += -bonus - history.history[color][idx] * std::abs(bonus) / MAX_HISTORY_BONUS;
         }
     }
