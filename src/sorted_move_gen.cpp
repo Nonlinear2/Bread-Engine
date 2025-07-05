@@ -132,10 +132,8 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             for (int i = 0; i < moves.size(); i++){
                 set_score(moves[i]);
             }
-            if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.isCapture(tt_move)))
-                pop_move(std::find(moves.begin(), moves.end(), tt_move) - moves.begin());
-            
-            std::sort(moves.begin(), moves.end(),
+
+            std::stable_sort(moves.begin(), moves.end(),
                 [](const Move& a, const Move& b) { return a.score() > b.score(); });
             ++stage;
 
@@ -153,40 +151,28 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 }
 
 template<movegen::MoveGenType MoveGenType>
-Move SortedMoveGen<MoveGenType>::pop_move(int move_idx){
-    // to implement element removal from a movelist object,
-    // the movelist is split into an unseen part first, and a seen part.
-
-    // if the move is not in the last position, move it there.
-    if (move_idx != moves.num_left-1){
-        Move swap = moves[move_idx];
-        moves[move_idx] = moves[moves.num_left-1];
-        moves[moves.num_left-1] = swap;
-    }
-
-    return moves[--moves.num_left];
-}
-
-template<movegen::MoveGenType MoveGenType>
 bool SortedMoveGen<MoveGenType>::pop_best_see(Move& move, SeeState threshold){
-    if (moves.num_left == 0)
-        return false;
-
     // find the best move that has good enough see.
-    for (int i = 0; i < moves.num_left; i++){
+    for (Move& m: moves){
+        if (m.processed())
+            continue;
 
-        if (moves[i].see() == SeeState::NONE){
-            bool above = SEE::evaluate(pos, moves[i], 0);
-            moves[i].setSee(above ? SeeState::POSITIVE : SeeState::NEGATIVE);
+        if (m == tt_move){
+            m.setProcessed(true);
+            continue;
         }
 
-        if (moves[i].see() == threshold) {
-            move = pop_move(i);
+        if (m.see() == SeeState::NONE)
+            m.setSee(SEE::evaluate(pos, m, 0) ? SeeState::POSITIVE : SeeState::NEGATIVE);
+
+        if (m.see() == threshold){
+            move = m;
+            m.setProcessed(true);
             return true;
         }
     }
 
-    // if no moves have good see anymore, return false
+    // if no moves left, return false
     return false;
 }
 
