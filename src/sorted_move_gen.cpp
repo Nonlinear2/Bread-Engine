@@ -9,7 +9,6 @@ SortedMoveGen<movegen::MoveGenType::CAPTURE>::SortedMoveGen(NnueBoard& pos): pos
 template<movegen::MoveGenType MoveGenType>
 void SortedMoveGen<MoveGenType>::generate_moves(){
     movegen::legalmoves<MoveGenType>(moves, pos);
-    generated_moves_count = moves.size_;
 }
 
 template<>
@@ -153,7 +152,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             pop_move(std::find(moves.begin(), moves.end(), tt_move) - moves.begin());
     }
 
-    if (moves.size_ == 0)
+    if (moves.num_left == 0)
         return false;
 
     move = pop_best_score();
@@ -167,14 +166,14 @@ Move SortedMoveGen<MoveGenType>::pop_move(int move_idx){
     // the movelist is split into an unseen part first, and a seen part.
 
     // if the move is not in the last position, move it there.
-    if (move_idx != moves.size_-1){
+    if (move_idx != moves.num_left-1){
         Move swap = moves[move_idx];
-        moves[move_idx] = moves[moves.size_-1];
-        moves[moves.size_-1] = swap;
+        moves[move_idx] = moves[moves.num_left-1];
+        moves[moves.num_left-1] = swap;
     }
 
-    moves.size_--;
-    return moves[moves.size_];
+    moves.num_left--;
+    return moves[moves.num_left];
 }
 
 template<movegen::MoveGenType MoveGenType>
@@ -184,7 +183,7 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
     int best_move_score;
     while (true){
         best_move_score = WORST_MOVE_SCORE;
-        for (int i = 0; i < moves.size_; i++){
+        for (int i = 0; i < moves.num_left; i++){
             score = moves[i].score();
             if (score >= best_move_score){
                 best_move_score = score;
@@ -219,7 +218,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, in
     if (!pos.isCapture(best_move))
         history.history[color][idx] += (bonus - history.history[color][idx] * std::abs(bonus) / MAX_HISTORY_BONUS);
 
-    for (int i = 0; i < generated_moves_count; i++){
+    for (int i = 0; i < moves.size(); i++){
         if (moves[i] != best_move && !pos.isCapture(moves[i])){
             idx = moves[i].from().index()*64 + moves[i].to().index();
             history.history[color][idx] += -bonus - history.history[color][idx] * std::abs(bonus) / MAX_HISTORY_BONUS;
