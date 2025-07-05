@@ -19,7 +19,6 @@ class SortedMoveGen {
 
     SortedMoveGen(NnueBoard& pos);
     SortedMoveGen(NnueBoard& pos, int depth);
-    void generate_moves();
     void set_tt_move(Move move);
     bool next(Move& move);
     bool empty();
@@ -41,7 +40,6 @@ class SortedMoveGen {
     int move_idx = -1;
     bool checked_tt_move = false;
     bool generated_moves = false;
-    bool is_valid_move(Move move);
     Move pop_move(int move_idx);
     Move pop_best_score();
 };

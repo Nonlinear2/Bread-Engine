@@ -6,11 +6,6 @@ SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(NnueBoard& pos, int dept
 template<>
 SortedMoveGen<movegen::MoveGenType::CAPTURE>::SortedMoveGen(NnueBoard& pos): pos(pos) {};
 
-template<movegen::MoveGenType MoveGenType>
-void SortedMoveGen<MoveGenType>::generate_moves(){
-    movegen::legalmoves<MoveGenType>(moves, pos);
-}
-
 template<>
 void SortedMoveGen<movegen::MoveGenType::ALL>::prepare_pos_data(){
     const Color stm = pos.sideToMove();
@@ -119,23 +114,13 @@ void SortedMoveGen<MoveGenType>::set_tt_move(Move move){
     tt_move = move;
 }
 
-template<>
-bool SortedMoveGen<movegen::MoveGenType::ALL>::is_valid_move(Move move){
-    return move != Move::NO_MOVE;
-}
-
-template<>
-bool SortedMoveGen<movegen::MoveGenType::CAPTURE>::is_valid_move(Move move){
-    return move != Move::NO_MOVE && pos.isCapture(move);
-}
-
 template<movegen::MoveGenType MoveGenType>
 bool SortedMoveGen<MoveGenType>::next(Move& move){
     move_idx++;
 
     if (checked_tt_move == false){
         checked_tt_move = true;
-        if (is_valid_move(tt_move)){
+        if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.isCapture(tt_move))){
             move = tt_move;
             return true;
         }
@@ -143,12 +128,12 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 
     if (generated_moves == false){
         generated_moves = true;
-        generate_moves();
+        movegen::legalmoves<MoveGenType>(moves, pos);
         prepare_pos_data();
         for (int i = 0; i < moves.size_; i++){
             set_score(moves[i]);
         }
-        if (is_valid_move(tt_move))
+        if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.isCapture(tt_move)))
             pop_move(std::find(moves.begin(), moves.end(), tt_move) - moves.begin());
     }
 
