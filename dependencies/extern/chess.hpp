@@ -60,6 +60,12 @@ VERSION: 0.6.39
 
 namespace chess {
 
+enum SeeState {
+    NONE      = 0,
+    NEGATIVE  = 1 << 0,
+    POSITIVE  = 1 << 1,
+};
+
 class Color {
    public:
     enum class underlying : std::int8_t { WHITE = 0, BLACK = 1, NONE = -1 };
@@ -1179,9 +1185,11 @@ class Move {
     /// @brief Set the score for a move. Useful if you later want to sort the moves.
     /// @param score
     constexpr void setScore(int score) noexcept { score_ = score; }
+    constexpr void setSee(SeeState see) noexcept { see_ = see; }
 
     [[nodiscard]] constexpr std::uint16_t move() const noexcept { return move_; }
     [[nodiscard]] constexpr int score() const noexcept { return score_; }
+    [[nodiscard]] constexpr SeeState see() const noexcept { return see_; }
 
     constexpr bool operator==(const Move &rhs) const noexcept { return move_ == rhs.move_; }
     constexpr bool operator!=(const Move &rhs) const noexcept { return move_ != rhs.move_; }
@@ -1196,6 +1204,7 @@ class Move {
    private:
     std::uint16_t move_;
     int score_;
+    SeeState see_ = NONE;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Move &move) {

@@ -175,13 +175,15 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
                 best_move_idx = i;
             }
         }
-        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], 0))
-            break;
+
+        if (moves[best_move_idx].see() == SeeState::NONE)
+            moves[best_move_idx].setSee(SEE::evaluate(pos, moves[best_move_idx], 0) ? SeeState::POSITIVE : SeeState::NEGATIVE);
         
+        if (best_move_score < -BAD_SEE_TRESHOLD || moves[best_move_idx].see() == SeeState::POSITIVE)
+            return pop_move(best_move_idx);
+
         moves[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
     }
-
-    return pop_move(best_move_idx);
 }
 
 template<movegen::MoveGenType MoveGenType>
