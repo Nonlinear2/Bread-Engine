@@ -1186,12 +1186,10 @@ class Move {
     /// @param score
     constexpr void setScore(int score) noexcept { score_ = score; }
     constexpr void setSee(SeeState see) noexcept { see_ = see; }
-    constexpr void setProcessed(bool processed) noexcept { processed_ = processed; }
 
     [[nodiscard]] constexpr std::uint16_t move() const noexcept { return move_; }
     [[nodiscard]] constexpr int score() const noexcept { return score_; }
     [[nodiscard]] constexpr SeeState see() const noexcept { return see_; }
-    [[nodiscard]] constexpr bool processed() const noexcept { return processed_; }
 
     constexpr bool operator==(const Move &rhs) const noexcept { return move_ == rhs.move_; }
     constexpr bool operator!=(const Move &rhs) const noexcept { return move_ != rhs.move_; }
@@ -1207,7 +1205,6 @@ class Move {
     std::uint16_t move_;
     int score_;
     SeeState see_ = NONE;
-    bool processed_ = false;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Move &move) {
