@@ -1187,13 +1187,10 @@ class Move {
     /// @param score
     constexpr void setScore(int score) noexcept { score_ = score; }
     constexpr void setSee(SeeState see) noexcept { see_ = see; }
-    constexpr void setProcessed(bool processed) noexcept { processed_ = processed; }
 
     [[nodiscard]] constexpr std::uint16_t move() const noexcept { return move_; }
     [[nodiscard]] constexpr int score() const noexcept { return score_; }
     [[nodiscard]] constexpr SeeState see() const noexcept { return see_; }
-    [[nodiscard]] constexpr bool processed() const noexcept { return processed_; }
-
 
 
     constexpr bool operator==(const Move &rhs) const noexcept { return move_ == rhs.move_; }
@@ -1210,7 +1207,6 @@ class Move {
     std::uint16_t move_;
     int score_;
     SeeState see_ = NONE;
-    bool processed_ = false;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Move &move) {
@@ -1299,13 +1295,14 @@ class Movelist {
     // Modifiers
 
     /// @brief Clears the movelist.
-    constexpr void clear() noexcept { size_ = 0; }
+    constexpr void clear() noexcept { size_ = 0; num_left = 0; }
 
     /// @brief Add a move to the end of the movelist.
     /// @param move
     constexpr void add(const_reference move) noexcept {
         assert(size_ < constants::MAX_MOVES);
         moves_[size_++] = move;
+        num_left++;
     }
 
     /// @brief Add a move to the end of the movelist.
@@ -1313,6 +1310,7 @@ class Movelist {
     constexpr void add(value_type&& move) noexcept {
         assert(size_ < constants::MAX_MOVES);
         moves_[size_++] = move;
+        num_left++;
     }
 
     // Other
@@ -1331,6 +1329,7 @@ class Movelist {
         return -1;
     }
 
+    size_type num_left = 0;
     size_type size_ = 0;
     std::array<value_type, constants::MAX_MOVES> moves_;
     private:
