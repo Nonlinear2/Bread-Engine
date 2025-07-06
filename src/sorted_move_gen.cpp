@@ -166,39 +166,42 @@ Move SortedMoveGen<MoveGenType>::pop_move(int move_idx){
 
 template<movegen::MoveGenType MoveGenType>
 bool SortedMoveGen<MoveGenType>::pop_best_see(Move& move, SeeState threshold){
-    if (moves.num_left == 0)
-        return false;
-
     int score;
-    int best_move_idx;
     int best_move_score;
     while (true){
+        int best_move_idx = -1;
         best_move_score = WORST_MOVE_SCORE;
-        for (int i = 0; i < moves.num_left; i++){
+        for (int i = 0; i < moves.size(); i++){
             score = moves[i].score();
-            if (score >= best_move_score){
+            if (score >= best_move_score && !moves[i].processed()){
                 best_move_score = score;
                 best_move_idx = i;
             }
         }
 
-        if (moves[best_move_idx].see() == SeeState::NONE)
-            moves[best_move_idx].setSee(SEE::evaluate(pos, moves[best_move_idx], 0) ? SeeState::POSITIVE : SeeState::NEGATIVE);
+        if (best_move_idx == -1)
+            return false;
+
+        Move& best_move = moves[best_move_idx];
+        if (best_move.see() == SeeState::NONE)
+            best_move.setSee(SEE::evaluate(pos, best_move, 0) ? SeeState::POSITIVE : SeeState::NEGATIVE);
         
         if (threshold == SeeState::POSITIVE){
             if (best_move_score < -BAD_SEE_TRESHOLD)
                 return false;
     
-            if (moves[best_move_idx].see() == SeeState::POSITIVE){
-                move = pop_move(best_move_idx);
+            if (best_move.see() == SeeState::POSITIVE){
+                move = best_move;
+                best_move.setProcessed(true);
                 return true;
             }
         } else {
-            move = pop_move(best_move_idx);
+            move = best_move;
+            best_move.setProcessed(true);
             return true;
         }
 
-        moves[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
+        best_move.setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
     }
 }
 
