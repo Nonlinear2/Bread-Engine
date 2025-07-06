@@ -10,7 +10,8 @@
 enum GenerationStage: int{
     TT_MOVE,
     GENERATE_MOVES,
-    GET_MOVES,
+    GOOD_SEE,
+    BAD_SEE,
 };
 
 constexpr GenerationStage& operator++(GenerationStage& g) {
@@ -49,6 +50,6 @@ class SortedMoveGen {
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
     GenerationStage stage = TT_MOVE;
-    Move pop_move(int idx);
-    bool pop_best_see(Move& move);
+    Move pop_move(int move_idx);
+    bool pop_best_see(Move& move, SeeState threshold);
 };
