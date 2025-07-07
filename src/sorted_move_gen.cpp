@@ -1,10 +1,10 @@
 #include "sorted_move_gen.hpp"
 
 template<>
-SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(NnueBoard& pos, int depth): pos(pos), depth(depth) {};
+SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Stack* ss, NnueBoard& pos, int depth): ss(ss), pos(pos), depth(depth) {};
 
 template<>
-SortedMoveGen<movegen::MoveGenType::CAPTURE>::SortedMoveGen(NnueBoard& pos): pos(pos) {};
+SortedMoveGen<movegen::MoveGenType::CAPTURE>::SortedMoveGen(Stack* ss, NnueBoard& pos): ss(ss), pos(pos) {};
 
 template<movegen::MoveGenType MoveGenType>
 void SortedMoveGen<MoveGenType>::generate_moves(){
@@ -77,9 +77,11 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
     if (killer_moves[depth].in_buffer(move))
         score += 149;
 
-    // cant be less than worst move score
     score += history[stm == Color::WHITE][from.index()][to.index()] / 100;
-    
+    score += cont_history[stm == Color::WHITE]
+        [(ss - 1)->moved_piece][(ss - 1)->current_move.to().index()]
+        [piece][to.index()] / 200;
+
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
     move.setScore(score);
@@ -212,32 +214,31 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::clear_killer_moves(){
 }
 
 template<>
-void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move move, int depth, bool color){
+void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move move, int depth){
     int bonus = std::min(depth*depth*32 + 20, 1000);
     int from = move.from().index();
     int to = move.to().index();
 
-    if (!pos.isCapture(move))
-        history.apply_bonus(color, from, to, bonus);
+    history.apply_bonus(pos.sideToMove() == Color::WHITE, from, to, bonus);
 
     for (int i = 0; i < generated_moves_count; i++){
         if (moves_[i] != move && !pos.isCapture(moves_[i])){
             from = moves_[i].from().index();
             to = moves_[i].to().index();
-            history.apply_bonus(color, from, to, -bonus);
+            history.apply_bonus(pos.sideToMove() == Color::WHITE, from, to, -bonus);
         }
     }
 }
 
 template<>
-void SortedMoveGen<movegen::MoveGenType::ALL>::update_cont_history(Stack* ss, int depth, bool color){
-    int prev_piece = static_cast<int>((ss - 1)->moved_piece);
+void SortedMoveGen<movegen::MoveGenType::ALL>::update_cont_history(int depth, int bonus){
+    Piece prev_piece = (ss - 1)->moved_piece;
     int prev_to = ((ss - 1)->current_move).to().index();
     int piece = static_cast<int>(ss->moved_piece);
     int to = (ss->current_move).to().index();
 
-    if (!pos.isCapture(ss->current_move))
-        cont_history.apply_bonus(color, prev_piece, prev_to, piece, to, 800);
+    if (prev_piece != Piece::NONE && prev_to != Square(Square::underlying::NO_SQ))
+        cont_history.apply_bonus(pos.sideToMove() == Color::WHITE, prev_piece, prev_to, piece, to, bonus);
 }
 
 template class SortedMoveGen<movegen::MoveGenType::CAPTURE>;

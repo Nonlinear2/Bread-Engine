@@ -16,18 +16,19 @@ class SortedMoveGen: public Movelist {
     static inline FromToHistory history = FromToHistory();
     static inline ContinuationHistory cont_history = ContinuationHistory();
 
+    Stack* ss;
     NnueBoard& pos;
 
-    SortedMoveGen(NnueBoard& pos);
-    SortedMoveGen(NnueBoard& pos, int depth);
+    SortedMoveGen(Stack* ss, NnueBoard& pos);
+    SortedMoveGen(Stack* ss, NnueBoard& pos, int depth);
     void generate_moves();
     void set_tt_move(Move move);
     bool next(Move& move);
     bool is_empty();
     int index();
     static void clear_killer_moves();
-    void update_history(Move move, int depth, bool color);
-    void update_cont_history(Stack* ss, int depth, bool color);
+    void update_history(Move move, int depth);
+    void update_cont_history(int depth, int bonus);
     void set_score(Move& move);
     void prepare_pos_data();
 

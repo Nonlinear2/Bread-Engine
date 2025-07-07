@@ -213,7 +213,7 @@ Move Engine::minimax_root(int depth, Stack* ss){
     if (root_moves.empty()){
         movegen::legalmoves(root_moves, pos);
         assert(!root_moves.empty());
-        SortedMoveGen smg = SortedMoveGen<movegen::MoveGenType::ALL>(pos, depth);
+        SortedMoveGen smg = SortedMoveGen<movegen::MoveGenType::ALL>(ss, pos, depth);
 
         smg.prepare_pos_data();
         for (int i = 0; i < root_moves.size(); i++)
@@ -401,9 +401,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         } else {
             value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
             if ((new_depth < depth-1) && (value > alpha)){
-                
                 value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
-            }
+                if (!is_capture)
+                    move_gen.update_cont_history(depth, 1000);
+            } else if (value < alpha && !is_capture)
+                move_gen.update_cont_history(depth, -200);
         }
 
         pos.restore_state(move);
@@ -418,8 +420,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         alpha = std::max(alpha, value);
         if (beta <= alpha){
             if (!is_capture)
-                move_gen.update_history(move, depth, 
-                    (pos.sideToMove() == Color::WHITE) ? 1: -1);
+                move_gen.update_history(move, depth);
             SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves[depth].add_move(move);
             break;
         }
