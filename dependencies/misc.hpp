@@ -63,12 +63,22 @@ class SearchLimit {
     int value;
 };
 
-class History {
+class ContinuationHistory {
     public:
     void clear();
-    int get_history_bonus(int from, int to, bool color);
+    void apply_bonus(int color, int piece_1, int to_1, int piece_2, int to_2, int bonus);
+    std::array<std::array<std::array<std::array<int, 64>, 12>, 64>, 12>& operator[](bool color);
 
-    std::array<std::array<int, 64*64>, 2> history = {};
+    std::array<std::array<std::array<std::array<std::array<int, 64>, 12>, 64>, 12>, 2> history = {};
+};
+
+class FromToHistory {
+    public:
+    void clear();
+    void apply_bonus(int color, int from, int to, int bonus);
+    std::array<std::array<int, 64>, 64>& operator[](bool color);
+
+    std::array<std::array<std::array<int, 64>, 64>, 2> history = {};
 };
 
 namespace SEE {

@@ -13,13 +13,36 @@ bool CircularBuffer3::in_buffer(Move move){
     return data[0] == move_val || data[1] == move_val || data[2] == move_val;
 }
 
-void History::clear(){
-    std::fill(std::begin(history[0]), std::end(history[0]), 0);
-    std::fill(std::begin(history[1]), std::end(history[1]), 0);
+void ContinuationHistory::clear(){
+    for (int i = 0; i < 2; i++)
+        for (int j = 0; j < 12; j++)
+            for (int k = 0; k < 64; k++)
+                for (int l = 0; l < 12; l++)
+                    std::fill(std::begin(history[i][j][k][l]), std::end(history[i][j][k][l]), 0);
 }
 
-int History::get_history_bonus(int from, int to, bool color){
-    return history[color][from*64 + to];
+void ContinuationHistory::apply_bonus(int color, int piece_1, int to_1, int piece_2, int to_2, int bonus){
+    history[color][piece_1][to_1][piece_2][to_2]
+        += (bonus - history[color][piece_1][to_1][piece_2][to_2] * std::abs(bonus) / MAX_HISTORY_BONUS);
+}
+
+std::array<std::array<std::array<std::array<int, 64>, 12>, 64>, 12>& ContinuationHistory::operator[](bool color){
+    return history[color];
+}
+
+
+void FromToHistory::clear(){
+    for (int i = 0; i < 2; i++)
+        for (int j = 0; j < 64; j++)
+            std::fill(std::begin(history[i][j]), std::end(history[i][j]), 0);
+}
+
+void FromToHistory::apply_bonus(int color, int from, int to, int bonus){
+    history[color][from][to] += (bonus - history[color][from][to] * std::abs(bonus) / MAX_HISTORY_BONUS);
+}
+
+std::array<std::array<int, 64>, 64>& FromToHistory::operator[](bool color){
+    return history[color];
 }
 
 bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true if greater than threshold

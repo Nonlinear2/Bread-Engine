@@ -13,7 +13,7 @@ class SortedMoveGen: public Movelist {
     static constexpr PieceSquareMaps psm = PieceSquareMaps();
 
     static inline std::array<CircularBuffer3, ENGINE_MAX_DEPTH> killer_moves = {};
-    static inline History history = History();
+    static inline FromToHistory history = FromToHistory();
 
     NnueBoard& pos;
 
