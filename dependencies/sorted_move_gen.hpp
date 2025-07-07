@@ -14,6 +14,7 @@ class SortedMoveGen: public Movelist {
 
     static inline std::array<CircularBuffer3, ENGINE_MAX_DEPTH> killer_moves = {};
     static inline FromToHistory history = FromToHistory();
+    static inline ContinuationHistory cont_history = ContinuationHistory();
 
     NnueBoard& pos;
 
@@ -26,6 +27,7 @@ class SortedMoveGen: public Movelist {
     int index();
     static void clear_killer_moves();
     void update_history(Move move, int depth, bool color);
+    void update_cont_history(Stack* ss, int depth, bool color);
     void set_score(Move& move);
     void prepare_pos_data();
 

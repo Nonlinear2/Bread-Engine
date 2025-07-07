@@ -21,9 +21,9 @@ void ContinuationHistory::clear(){
                     std::fill(std::begin(history[i][j][k][l]), std::end(history[i][j][k][l]), 0);
 }
 
-void ContinuationHistory::apply_bonus(int color, int piece_1, int to_1, int piece_2, int to_2, int bonus){
-    history[color][piece_1][to_1][piece_2][to_2]
-        += (bonus - history[color][piece_1][to_1][piece_2][to_2] * std::abs(bonus) / MAX_HISTORY_BONUS);
+void ContinuationHistory::apply_bonus(int color, int prev_piece, int prev_to, int piece, int to, int bonus){
+    history[color][prev_piece][prev_to][piece][to]
+        += (bonus - history[color][prev_piece][prev_to][piece][to] * std::abs(bonus) / MAX_HISTORY_BONUS);
 }
 
 std::array<std::array<std::array<std::array<int, 64>, 12>, 64>, 12>& ContinuationHistory::operator[](bool color){

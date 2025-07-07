@@ -236,6 +236,7 @@ Move Engine::minimax_root(int depth, Stack* ss){
 
         pos.update_state(move);
         ss->current_move = move;
+        ss->moved_piece = pos.at(move.from());
 
         int new_depth = depth-1;
         new_depth += pos.inCheck();
@@ -362,6 +363,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             int R = 2 + (eval >= beta) + depth / 4;
             pos.makeNullMove();
             ss->current_move = Move::NULL_MOVE;
+            ss->moved_piece = Piece::NONE;
             null_move_eval = -negamax<false>(depth - R, -beta, -beta+1, ss + 1);
             pos.unmakeNullMove();
             if (null_move_eval >= beta) return null_move_eval;
@@ -380,6 +382,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         pos.update_state(move);
         ss->current_move = move;
+        ss->moved_piece = pos.at(move.from());
 
         bool gives_check = pos.inCheck();
 
@@ -398,6 +401,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         } else {
             value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
             if ((new_depth < depth-1) && (value > alpha)){
+                
                 value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
             }
         }
@@ -533,13 +537,16 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     Square previous_to_square = ((ss - 1)->current_move).to();
 
     while (capture_gen.next(move)){
+        Piece captured_piece = pos.at(move.to());
+        Piece moved_piece = pos.at(move.from());
+
         // delta pruning
         // move.score() is calculated with set_capture_score which is material difference.
         // 1500 is a safety margin
         if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
             if (stand_pat 
-                + piece_value[static_cast<int>(pos.at(move.to()).type())]
-                - piece_value[static_cast<int>(pos.at(move.from()).type())]
+                + piece_value[static_cast<int>(captured_piece.type())]
+                - piece_value[static_cast<int>(moved_piece.type())]
                 + 1500 < alpha)
                 continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
 
@@ -554,6 +561,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
         pos.update_state(move);
         ss->current_move = move;
+        ss->moved_piece = moved_piece;
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
 

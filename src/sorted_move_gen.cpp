@@ -212,21 +212,32 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::clear_killer_moves(){
 }
 
 template<>
-void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, int depth, bool color){
+void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move move, int depth, bool color){
     int bonus = std::min(depth*depth*32 + 20, 1000);
-    int from = best_move.from().index();
-    int to = best_move.to().index();
+    int from = move.from().index();
+    int to = move.to().index();
 
-    if (!pos.isCapture(best_move))
+    if (!pos.isCapture(move))
         history.apply_bonus(color, from, to, bonus);
 
     for (int i = 0; i < generated_moves_count; i++){
-        if (moves_[i] != best_move && !pos.isCapture(moves_[i])){
+        if (moves_[i] != move && !pos.isCapture(moves_[i])){
             from = moves_[i].from().index();
             to = moves_[i].to().index();
             history.apply_bonus(color, from, to, -bonus);
         }
     }
+}
+
+template<>
+void SortedMoveGen<movegen::MoveGenType::ALL>::update_cont_history(Stack* ss, int depth, bool color){
+    int prev_piece = static_cast<int>((ss - 1)->moved_piece);
+    int prev_to = ((ss - 1)->current_move).to().index();
+    int piece = static_cast<int>(ss->moved_piece);
+    int to = (ss->current_move).to().index();
+
+    if (!pos.isCapture(ss->current_move))
+        cont_history.apply_bonus(color, prev_piece, prev_to, piece, to, 800);
 }
 
 template class SortedMoveGen<movegen::MoveGenType::CAPTURE>;
