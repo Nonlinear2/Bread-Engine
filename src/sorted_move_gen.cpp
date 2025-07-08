@@ -6,12 +6,6 @@ SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Stack* ss, NnueBoard& po
 template<>
 SortedMoveGen<movegen::MoveGenType::CAPTURE>::SortedMoveGen(Stack* ss, NnueBoard& pos): ss(ss), pos(pos) {};
 
-template<movegen::MoveGenType MoveGenType>
-void SortedMoveGen<MoveGenType>::generate_moves(){
-    movegen::legalmoves<MoveGenType>(*this, pos);
-    generated_moves_count = size_;
-}
-
 template<>
 void SortedMoveGen<movegen::MoveGenType::ALL>::prepare_pos_data(){
     const Color stm = pos.sideToMove();
@@ -122,45 +116,35 @@ void SortedMoveGen<MoveGenType>::set_tt_move(Move move){
     tt_move = move;
 }
 
-template<>
-bool SortedMoveGen<movegen::MoveGenType::ALL>::is_valid_move(Move move){
-    return move != Move::NO_MOVE;
-}
-
-template<>
-bool SortedMoveGen<movegen::MoveGenType::CAPTURE>::is_valid_move(Move move){
-    return move != Move::NO_MOVE && pos.isCapture(move);
-}
-
 template<movegen::MoveGenType MoveGenType>
 bool SortedMoveGen<MoveGenType>::next(Move& move){
     move_idx++;
 
-    if (checked_tt_move == false){
-        checked_tt_move = true;
-        if (is_valid_move(tt_move)){
-            move = tt_move;
-            return true;
-        }
+    switch (stage){
+        case TT_MOVE:
+            ++stage;
+            if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.isCapture(tt_move))){
+                move = tt_move;
+                return true;
+            }
+
+        case GENERATE_MOVES:
+            movegen::legalmoves<MoveGenType>(moves, pos);
+            prepare_pos_data();
+            for (int i = 0; i < moves.size(); i++){
+                set_score(moves[i]);
+            }
+            if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.isCapture(tt_move)))
+                pop_move(std::find(moves.begin(), moves.end(), tt_move) - moves.begin());
+            ++stage;
+
+        case GET_MOVES:
+            if (moves.num_left != 0){
+                move = pop_best_score();
+                return true;
+            }
     }
-
-    if (generated_moves == false){
-        generated_moves = true;
-        generate_moves();
-        prepare_pos_data();
-        for (int i = 0; i < size_; i++){
-            set_score(moves_[i]);
-        }
-        if (is_valid_move(tt_move))
-            pop_move(std::find(begin(), end(), tt_move) - begin());
-    }
-
-    if (size() == 0)
-        return false;
-
-    move = pop_best_score();
-
-    return true;
+    return false;
 }
 
 template<movegen::MoveGenType MoveGenType>
@@ -169,14 +153,14 @@ Move SortedMoveGen<MoveGenType>::pop_move(int move_idx){
     // the movelist is split into an unseen part first, and a seen part.
 
     // if the move is not in the last position, move it there.
-    if (move_idx != size_-1){
-        Move swap = moves_[move_idx];
-        moves_[move_idx] = moves_[size_-1];
-        moves_[size_-1] = swap;
+    if (move_idx != moves.num_left-1){
+        Move swap = moves[move_idx];
+        moves[move_idx] = moves[moves.num_left-1];
+        moves[moves.num_left-1] = swap;
     }
 
-    size_--;
-    return moves_[size_];
+    moves.num_left--;
+    return moves[moves.num_left];
 }
 
 template<movegen::MoveGenType MoveGenType>
@@ -186,24 +170,24 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
     int best_move_score;
     while (true){
         best_move_score = WORST_MOVE_SCORE;
-        for (int i = 0; i < size_; i++){
-            score = moves_[i].score();
+        for (int i = 0; i < moves.num_left; i++){
+            score = moves[i].score();
             if (score >= best_move_score){
                 best_move_score = score;
                 best_move_idx = i;
             }
         }
-        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves_[best_move_idx], 0))
+        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], 0))
             break;
         
-        moves_[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
+        moves[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
     }
 
     return pop_move(best_move_idx);
 }
 
 template<movegen::MoveGenType MoveGenType>
-bool SortedMoveGen<MoveGenType>::is_empty(){ return empty(); }
+bool SortedMoveGen<MoveGenType>::empty(){ return moves.empty(); }
 
 template<movegen::MoveGenType MoveGenType>
 inline int SortedMoveGen<MoveGenType>::index(){ return move_idx; }
@@ -221,10 +205,10 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move move, int dep
 
     history.apply_bonus(pos.sideToMove() == Color::WHITE, from, to, bonus);
 
-    for (int i = 0; i < generated_moves_count; i++){
-        if (moves_[i] != move && !pos.isCapture(moves_[i])){
-            from = moves_[i].from().index();
-            to = moves_[i].to().index();
+    for (int i = 0; i < moves.size(); i++){
+        if (moves[i] != move && !pos.isCapture(moves[i])){
+            from = moves[i].from().index();
+            to = moves[i].to().index();
             history.apply_bonus(pos.sideToMove() == Color::WHITE, from, to, -bonus);
         }
     }
