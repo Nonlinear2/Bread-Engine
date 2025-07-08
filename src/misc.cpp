@@ -30,7 +30,6 @@ std::array<std::array<std::array<std::array<int, 64>, 12>, 64>, 12>& Continuatio
     return history[color];
 }
 
-
 void FromToHistory::clear(){
     for (int i = 0; i < 2; i++)
         for (int j = 0; j < 64; j++)

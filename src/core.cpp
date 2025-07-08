@@ -301,7 +301,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
     
-    SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(pos, depth);
+    SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(ss, pos, depth);
     
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
@@ -402,10 +402,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
             if ((new_depth < depth-1) && (value > alpha)){
                 value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
-                if (!is_capture)
-                    move_gen.update_cont_history(depth, 1000);
-            } else if (value < alpha && !is_capture)
-                move_gen.update_cont_history(depth, -200);
+                // if (!is_capture)
+                    // move_gen.update_cont_history(depth, 1000);
+            }
+            // else if (value < alpha && !is_capture)
+                // move_gen.update_cont_history(depth, -200);
         }
 
         pos.restore_state(move);
@@ -489,7 +490,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     // first we check for transposition. If it is outcome, it should have already been stored
     // with an exact flag, so the stand pat will be correct anyways.
-    SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(pos);
+    SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(ss, pos);
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
     stand_pat = transposition.static_eval;

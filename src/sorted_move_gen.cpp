@@ -72,9 +72,9 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
         score += 149;
 
     score += history[stm == Color::WHITE][from.index()][to.index()] / 100;
-    score += cont_history[stm == Color::WHITE]
-        [(ss - 1)->moved_piece][(ss - 1)->current_move.to().index()]
-        [piece][to.index()] / 200;
+    // score += cont_history[stm == Color::WHITE]
+    //     [(ss - 1)->moved_piece][(ss - 1)->current_move.to().index()]
+    //     [piece][to.index()] / 200;
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -221,7 +221,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::update_cont_history(int depth, in
     int piece = static_cast<int>(ss->moved_piece);
     int to = (ss->current_move).to().index();
 
-    if (prev_piece != Piece::NONE && prev_to != Square(Square::underlying::NO_SQ))
+    if (prev_piece != Piece::NONE && prev_to != int(Square::underlying::NO_SQ))
         cont_history.apply_bonus(pos.sideToMove() == Color::WHITE, prev_piece, prev_to, piece, to, bonus);
 }
 
