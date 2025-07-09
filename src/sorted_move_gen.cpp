@@ -1,10 +1,12 @@
 #include "sorted_move_gen.hpp"
 
 template<>
-SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(NnueBoard& pos, int depth): pos(pos), depth(depth) {};
+SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(
+    int prev_piece, int prev_to, NnueBoard& pos, int depth): prev_piece(prev_piece), prev_to(prev_to), pos(pos), depth(depth) {};
 
 template<>
-SortedMoveGen<movegen::MoveGenType::CAPTURE>::SortedMoveGen(NnueBoard& pos): pos(pos) {};
+SortedMoveGen<movegen::MoveGenType::CAPTURE>::SortedMoveGen(
+    int prev_piece, int prev_to, NnueBoard& pos): prev_piece(prev_piece), prev_to(prev_to), pos(pos) {};
 
 template<>
 void SortedMoveGen<movegen::MoveGenType::ALL>::prepare_pos_data(){
@@ -72,8 +74,11 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
         score += 149;
 
     // cant be less than worst move score
-    score += history.get_history_bonus(from.index(), to.index(), stm == Color::WHITE)/100;
-    
+    score += history.get(stm == Color::WHITE, from.index(), to.index())/100;
+
+    if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
+        score += cont_history.get(prev_piece, prev_to, piece, to.index()) / 200;
+
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
     move.setScore(score);
@@ -199,16 +204,19 @@ template<>
 void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, int depth){
     bool color = pos.sideToMove() == Color::WHITE;
     int bonus = std::min(depth*depth*32 + 20, 1000);
-    int idx = best_move.from().index()*64 + best_move.to().index();
 
-    history.history[color][idx] += (bonus - history.history[color][idx] * std::abs(bonus) / MAX_HISTORY_BONUS);
+    history.apply_bonus(color, best_move.from().index(), best_move.to().index(), bonus);
 
     for (int i = 0; i < moves.size(); i++){
-        if (moves[i] != best_move && !pos.isCapture(moves[i])){
-            idx = moves[i].from().index()*64 + moves[i].to().index();
-            history.history[color][idx] += -bonus - history.history[color][idx] * std::abs(bonus) / MAX_HISTORY_BONUS;
-        }
+        if (moves[i] != best_move && !pos.isCapture(moves[i]))
+            history.apply_bonus(color, moves[i].from().index(), moves[i].to().index(), -bonus);
     }
+}
+
+template<>
+void SortedMoveGen<movegen::MoveGenType::ALL>::update_cont_history(int piece, int to, int bonus){
+    if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
+        cont_history.apply_bonus(prev_piece, prev_to, piece, to, bonus);
 }
 
 template class SortedMoveGen<movegen::MoveGenType::CAPTURE>;

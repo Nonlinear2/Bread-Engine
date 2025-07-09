@@ -13,13 +13,30 @@ bool CircularBuffer3::in_buffer(Move move){
     return data[0] == move_val || data[1] == move_val || data[2] == move_val;
 }
 
-void History::clear(){
+void FromToHistory::clear(){
     std::fill(std::begin(history[0]), std::end(history[0]), 0);
     std::fill(std::begin(history[1]), std::end(history[1]), 0);
 }
 
-int History::get_history_bonus(int from, int to, bool color){
+void ContinuationHistory::clear(){
+    std::fill(std::begin(history), std::end(history), 0);
+}
+
+int& FromToHistory::get(bool color, int from, int to){
     return history[color][from*64 + to];
+}
+
+int& ContinuationHistory::get(int prev_piece, int prev_to, int piece, int to){
+    return history[prev_piece * 64*12*64 + prev_to * 12*64 + piece * 64 + to];
+}
+
+void FromToHistory::apply_bonus(bool color, int from, int to, int bonus){
+    get(color, from, to) += (bonus - get(color, from, to) * std::abs(bonus) / MAX_HISTORY_BONUS);
+}
+
+void ContinuationHistory::apply_bonus(int prev_piece, int prev_to, int piece, int to, int bonus){
+    get(prev_piece, prev_to, piece, to)
+        += (bonus - get(prev_piece, prev_to, piece, to) * std::abs(bonus) / MAX_HISTORY_BONUS);
 }
 
 bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true if greater than threshold

@@ -38,6 +38,11 @@ const std::vector<int> piece_value = {
     0, // none
 };
 
+struct Stack {
+    Move current_move = Move::NO_MOVE;
+    Piece moved_piece = Piece::NONE;
+};
+
 class CircularBuffer3 {
     public:
     int curr_idx = 0;
@@ -63,10 +68,20 @@ class SearchLimit {
     int value;
 };
 
-class History {
+class ContinuationHistory {
     public:
     void clear();
-    int get_history_bonus(int from, int to, bool color);
+    int& get(int prev_piece, int prev_to, int piece, int to);
+    void apply_bonus(int prev_piece, int prev_to, int piece, int to, int bonus);
+
+    std::array<int, 64*12*64*12> history = {};
+};
+
+class FromToHistory {
+    public:
+    void clear();
+    int& get(bool color, int from, int to);
+    void apply_bonus(bool color, int from, int to, int bonus);
 
     std::array<std::array<int, 64*64>, 2> history = {};
 };

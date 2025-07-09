@@ -10,10 +10,6 @@
 #include "nnue_board.hpp"
 #include "sorted_move_gen.hpp"
 
-struct Stack {
-    Move current_move = Move::NO_MOVE;
-};
-
 class Engine {
     public:
 

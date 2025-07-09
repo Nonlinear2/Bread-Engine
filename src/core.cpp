@@ -213,7 +213,9 @@ Move Engine::minimax_root(int depth, Stack* ss){
     if (root_moves.empty()){
         movegen::legalmoves(root_moves, pos);
         assert(!root_moves.empty());
-        SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(pos, depth);
+        SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(
+            (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos, depth
+        );
 
         move_gen.prepare_pos_data();
         for (int i = 0; i < root_moves.size(); i++)
@@ -234,8 +236,9 @@ Move Engine::minimax_root(int depth, Stack* ss){
         move_count++;
         bool is_capture = pos.isCapture(move);
 
-        pos.update_state(move);
+        ss->moved_piece = pos.at(move.from());
         ss->current_move = move;
+        pos.update_state(move);
 
         int new_depth = depth-1;
         new_depth += pos.inCheck();
@@ -300,8 +303,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
     
-    SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(pos, depth);
-    
+    SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(
+        (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos, depth
+    );
+
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
     
@@ -360,8 +365,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             && !is_loss(beta))
         {
             int R = 2 + (eval >= beta) + depth / 4;
-            pos.makeNullMove();
+            ss->moved_piece = Piece::NONE;
             ss->current_move = Move::NULL_MOVE;
+            pos.makeNullMove();
             null_move_eval = -negamax<false>(depth - R, -beta, -beta+1, ss + 1);
             pos.unmakeNullMove();
             if (null_move_eval >= beta) return null_move_eval;
@@ -378,8 +384,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
 
-        pos.update_state(move);
+        ss->moved_piece = pos.at(move.from());
         ss->current_move = move;
+        pos.update_state(move);
 
         bool gives_check = pos.inCheck();
 
@@ -399,7 +406,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
             if ((new_depth < depth-1) && (value > alpha)){
                 value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
+                if (!is_capture)
+                    move_gen.update_cont_history(ss->moved_piece, move.to().index(), 1000);
             }
+            else if (value < alpha && !is_capture)
+                move_gen.update_cont_history(ss->moved_piece, move.to().index(), -200);
         }
 
         pos.restore_state(move);
@@ -483,7 +494,10 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     // first we check for transposition. If it is outcome, it should have already been stored
     // with an exact flag, so the stand pat will be correct anyways.
-    SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(pos);
+    SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(
+        (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos
+    );
+    
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
     stand_pat = transposition.static_eval;
@@ -532,13 +546,16 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     Square previous_to_square = ((ss - 1)->current_move).to();
 
     while (capture_gen.next(move)){
+        Piece captured_piece = pos.at(move.to());
+        Piece moved_piece = pos.at(move.from());
+
         // delta pruning
         // move.score() is calculated with set_capture_score which is material difference.
         // 1500 is a safety margin
         if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
             if (stand_pat 
-                + piece_value[static_cast<int>(pos.at(move.to()).type())]
-                - piece_value[static_cast<int>(pos.at(move.from()).type())]
+                + piece_value[static_cast<int>(captured_piece.type())]
+                - piece_value[static_cast<int>(moved_piece.type())]
                 + 1500 < alpha)
                 continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
 
@@ -551,8 +568,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
                 continue;
         }
 
-        pos.update_state(move);
+        ss->moved_piece = moved_piece;
         ss->current_move = move;
+        pos.update_state(move);
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
 
