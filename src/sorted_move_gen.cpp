@@ -196,7 +196,8 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::clear_killer_moves(){
 }
 
 template<>
-void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, int depth, bool color){
+void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, int depth){
+    bool color = pos.sideToMove() == Color::WHITE;
     int bonus = std::min(depth*depth*32 + 20, 1000);
     int idx = best_move.from().index()*64 + best_move.to().index();
 

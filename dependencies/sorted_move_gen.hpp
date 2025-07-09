@@ -34,7 +34,7 @@ class SortedMoveGen {
     bool empty();
     int index();
     static void clear_killer_moves();
-    void update_history(Move move, int depth, bool color);
+    void update_history(Move best_move, int depth);
     void set_score(Move& move);
     void prepare_pos_data();
 
