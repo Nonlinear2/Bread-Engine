@@ -77,7 +77,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
     score += history.get(stm == Color::WHITE, from.index(), to.index())/100;
 
     if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
-        score += cont_history.get(prev_piece, prev_to, piece, to.index()) / 200;
+        score += cont_history.get(prev_piece, prev_to, piece, to.index()) / 100;
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
