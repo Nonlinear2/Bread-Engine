@@ -296,7 +296,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
     int static_eval, eval;
     int max_value = -INFINITE_VALUE;
-    Move best_move;
+    Move best_move = Move::NO_MOVE;
     Move move;
     int value;
 
@@ -408,8 +408,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
                 value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
                 if (!is_capture)
                     move_gen.update_cont_history(ss->moved_piece, move.to().index(), 1000);
-            }
-            else if (value < alpha && !is_capture)
+            } else if (value < alpha && !is_capture)
                 move_gen.update_cont_history(ss->moved_piece, move.to().index(), -200);
         }
 
@@ -441,6 +440,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         transposition_table.store(zobrist_hash, max_value, NO_VALUE, 255, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
         return max_value;
     }
+
+    if (max_value > initial_alpha && !pos.isCapture(best_move))
+        move_gen.update_cont_history(pos.at(best_move.from()), best_move.to().index(), 1000);
 
     // if max eval was obtained because of a threefold repetition,
     // the eval should not be stored in the transposition table, as
