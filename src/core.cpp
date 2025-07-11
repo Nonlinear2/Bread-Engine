@@ -397,17 +397,15 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             int singular_beta = transposition->value() - 2 - 5*depth;
 
             ss->excluded_move = move;
-            pos_eval = negamax<false>(new_depth / 2, color, singular_beta - 1, singular_beta, ss);
+            pos_eval = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss);
             ss->excluded_move = NO_MOVE;
 
-            if (pos_eval < singular_beta)
-                extension = (pos_eval < singular_beta - 100);
-
+            if (pos_eval < singular_beta - 100)
+                extension = 1;
             // multi cut pruning
             else if (pos_eval >= beta)
                 return pos_eval;
 
-            // If the ttMove is assumed to fail high over current beta
             else if (transposition->value() >= beta)
                 extension = -1;
         }
