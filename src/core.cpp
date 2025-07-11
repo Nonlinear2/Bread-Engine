@@ -315,7 +315,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     move_gen.set_tt_move(transposition.move);
     
     chess::Move excluded_move = ss->excluded_move;
-    if (transposition.depth >= depth && excluded_move == NO_MOVE && !pos.isRepetition(1)){
+    if (transposition.depth >= depth && excluded_move == Move::NO_MOVE && !pos.isRepetition(1)){
         switch (transposition.flag){
             case TFlag::EXACT:
                 return transposition.value;
@@ -360,7 +360,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         // null move pruning
         // maybe check for zugzwang?
         int null_move_eval;
-        if (!pos.last_move_null() && excluded_move == NO_MOVE
+        if (!pos.last_move_null() && excluded_move == Move::NO_MOVE
             && eval > beta - depth*90
             && beta != INFINITE_VALUE
             && !is_loss(beta))
@@ -390,23 +390,23 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         
         int new_depth = depth-1;
         int extension = 0;
-        if (is_hit && move == transposition->best_move && excluded_move == NO_MOVE
-            && depth >= 6 && (transposition->flag() == TFlag::LOWER_BOUND || transposition->flag() == TFlag::EXACT)
-            && transposition->depth() >= depth - 3)
+        if (is_hit && move == transposition.move && excluded_move == Move::NO_MOVE
+            && depth >= 6 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
+            && transposition.depth >= depth - 3)
         {
-            int singular_beta = transposition->value() - 2 - 5*depth;
+            int singular_beta = transposition.value - 2 - 5*depth;
 
             ss->excluded_move = move;
-            pos_eval = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss);
-            ss->excluded_move = NO_MOVE;
+            value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss);
+            ss->excluded_move = Move::NO_MOVE;
 
-            if (pos_eval < singular_beta - 100)
+            if (value < singular_beta - 100)
                 extension = 1;
             // multi cut pruning
-            else if (pos_eval >= beta)
-                return pos_eval;
+            else if (value >= beta)
+                return value;
 
-            else if (transposition->value() >= beta)
+            else if (transposition.value >= beta)
                 extension = -1;
         }
 
