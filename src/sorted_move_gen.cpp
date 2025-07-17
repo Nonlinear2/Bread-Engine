@@ -167,6 +167,7 @@ bool SortedMoveGen<MoveGenType>::pop_best_see(Move& move, SeeState threshold){
                 m.setSee(SEE::evaluate(pos, m, 0) ? SeeState::POSITIVE : SeeState::NEGATIVE);
 
             if (m.see() == threshold){
+                m.setProcessed(true);
                 move = m;
                 return true;
             }
