@@ -137,6 +137,10 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             for (int i = 0; i < moves.size(); i++){
                 set_score(moves[i]);
             }
+
+            std::sort(moves.begin(), moves.end(),
+                [](const Move& a, const Move& b) { return a.score() > b.score(); });
+
             ++stage;
 
         case GOOD_SEE:
