@@ -53,8 +53,8 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
         score += psm.get_ksm(piece, is_endgame, to, from);
     
     if (piece.type() != PieceType::PAWN && piece.type() != PieceType::KING){
-        score += 48 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value/150;
-        score -= 49 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value/150;
+        score += 8 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value/25;
+        score -= 9 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value/25;
     }
 
     if (check_squares[static_cast<int>(piece.type())] & Bitboard::fromSquare(to))
@@ -64,10 +64,10 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
     // to_value = piece_value(to) - piece_value(from) doesn't seem to work.
     // however, find a way to make these captures even better ?
     if (to_piece != Piece::NONE)
-        score += 119 * piece_value[static_cast<int>(to_piece.type())]/150;
+        score += 12 * piece_value[static_cast<int>(to_piece.type())]/15;
 
     if (move.typeOf() == Move::PROMOTION)
-        score += 119 * piece_value[static_cast<int>(move.promotionType())]/150;
+        score += 12 * piece_value[static_cast<int>(move.promotionType())]/15;
 
     assert(depth != DEPTH_UNSEARCHED);
     if (killer_moves[depth].in_buffer(move))
@@ -137,56 +137,38 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             for (int i = 0; i < moves.size(); i++){
                 set_score(moves[i]);
             }
-            if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.isCapture(tt_move)))
-                pop_move(std::find(moves.begin(), moves.end(), tt_move) - moves.begin());
             ++stage;
 
-        case GET_MOVES:
-            if (moves.num_left != 0){
-                move = pop_best_score();
+        case GOOD_SEE:
+            if (pop_best_see(move, SeeState::POSITIVE))
                 return true;
-            }
+            ++stage;
+        case BAD_SEE:
+            if (pop_best_see(move, SeeState::NEGATIVE))
+                return true;
     }
     return false;
 }
 
 template<movegen::MoveGenType MoveGenType>
-Move SortedMoveGen<MoveGenType>::pop_move(int move_idx){
-    // to implement element removal from a movelist object,
-    // the movelist is split into an unseen part first, and a seen part.
+bool SortedMoveGen<MoveGenType>::pop_best_see(Move& move, SeeState threshold){
+    for (Move& m: moves){
+        if (!m.processed()){
+            if (m == tt_move){
+                m.setProcessed(true);
+                continue;
+            }
 
-    // if the move is not in the last position, move it there.
-    if (move_idx != moves.num_left-1){
-        Move swap = moves[move_idx];
-        moves[move_idx] = moves[moves.num_left-1];
-        moves[moves.num_left-1] = swap;
-    }
+            if (m.see() == SeeState::NONE)
+                m.setSee(SEE::evaluate(pos, m, 0) ? SeeState::POSITIVE : SeeState::NEGATIVE);
 
-    moves.num_left--;
-    return moves[moves.num_left];
-}
-
-template<movegen::MoveGenType MoveGenType>
-Move SortedMoveGen<MoveGenType>::pop_best_score(){
-    int score;
-    int best_move_idx;
-    int best_move_score;
-    while (true){
-        best_move_score = WORST_MOVE_SCORE;
-        for (int i = 0; i < moves.num_left; i++){
-            score = moves[i].score();
-            if (score >= best_move_score){
-                best_move_score = score;
-                best_move_idx = i;
+            if (m.see() == threshold){
+                move = m;
+                return true;
             }
         }
-        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], 0))
-            break;
-        
-        moves[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
     }
-
-    return pop_move(best_move_idx);
+    return false;
 }
 
 template<movegen::MoveGenType MoveGenType>
