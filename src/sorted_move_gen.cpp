@@ -53,8 +53,8 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
         score += psm.get_ksm(piece, is_endgame, to, from);
     
     if (piece.type() != PieceType::PAWN && piece.type() != PieceType::KING){
-        score += 48 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value/150;
-        score -= 49 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value/150;
+        score += 8 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value / 25;
+        score -= 9 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value / 25;
     }
 
     if (check_squares[static_cast<int>(piece.type())] & Bitboard::fromSquare(to))
@@ -64,17 +64,19 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
     // to_value = piece_value(to) - piece_value(from) doesn't seem to work.
     // however, find a way to make these captures even better ?
     if (to_piece != Piece::NONE)
-        score += 119 * piece_value[static_cast<int>(to_piece.type())]/150;
+        score += 12 * piece_value[static_cast<int>(to_piece.type())] / 15
+                 + 100
+                 - piece_value[static_cast<int>(piece.type())] / 6;
 
     if (move.typeOf() == Move::PROMOTION)
-        score += 119 * piece_value[static_cast<int>(move.promotionType())]/150;
+        score += 12 * piece_value[static_cast<int>(move.promotionType())] / 15;
 
     assert(depth != DEPTH_UNSEARCHED);
     if (killer_moves[depth].in_buffer(move))
         score += 149;
 
     // cant be less than worst move score
-    score += history.get(stm == Color::WHITE, from.index(), to.index())/100;
+    score += history.get(stm == Color::WHITE, from.index(), to.index()) / 100;
 
     if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
         score += cont_history.get(prev_piece, prev_to, piece, to.index()) / 100;
