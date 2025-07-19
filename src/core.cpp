@@ -385,8 +385,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         // lmp
         if (!pv && !in_check && !is_capture && move_gen.index() > 3 + depth && !is_hit && eval < alpha)
             continue;
-
+        
         bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
+    
+        // SEE pruning
+        if (!pv && !in_check && !is_capture && !is_killer && move_gen.index() > 5 + depth / 2
+            && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - 250 - 10*depth))
+            continue;
+
         
         int new_depth = depth-1;
         int extension = 0;
