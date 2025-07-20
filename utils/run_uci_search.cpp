@@ -11,6 +11,8 @@ int main(){
     std::string input;
     bool running;
 
+    uci_engine.engine.load_state("saved_state.bin");
+
     if (!file.is_open()) {
         std::cerr << "failed to open file" << std::endl;
         return 1;

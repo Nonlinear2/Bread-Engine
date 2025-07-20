@@ -51,13 +51,21 @@ bool UCIAgent::process_uci_command(std::string command){
 
 std::vector<std::string> UCIAgent::split_string(std::string str){
     std::vector<std::string> split;
-    int head = 0;
-    for (int i = 0; i < str.length()+1; i++){
-        if ((str[i] == ' ') || (i == str.length())){
-            split.push_back(str.substr(head, i-head));
-            head = i + 1;
+    std::string current = "";
+    
+    for (int i = 0; i < str.length(); i++){
+        if (str[i] != ' ') {
+            current += str[i];
+        } else if (!current.empty()) {
+            split.push_back(current);
+            current = "";
         }
     }
+
+    if (!current.empty()) {
+        split.push_back(current);
+    }
+    
     return split;
 }
 
@@ -154,7 +162,8 @@ void UCIAgent::process_go(std::vector<std::string> command){
         return;
     } else {
         int think_time = get_think_time_from_go_command(command);
-        if (think_time == -1) return; // error occured
+        if (think_time == -1)
+            return; // error occured
         main_search_thread = std::thread(&Engine::iterative_deepening, &engine, SearchLimit(LimitType::Time, think_time));
     }
 }
