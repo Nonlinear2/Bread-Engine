@@ -88,8 +88,8 @@ class TranspositionTable {
 
     int hashfull();
 
-    void save_to_file(std::string file);
-    void load_from_file(std::string file);
+    void save_to_stream(std::ofstream& ofs);
+    void load_from_stream(std::ifstream& ifs);
 
     private:
     std::vector<TEntry> entries;

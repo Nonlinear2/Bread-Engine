@@ -39,6 +39,35 @@ void ContinuationHistory::apply_bonus(int prev_piece, int prev_to, int piece, in
         += (bonus - get(prev_piece, prev_to, piece, to) * std::abs(bonus) / MAX_HISTORY_BONUS);
 }
 
+void FromToHistory::save_to_stream(std::ofstream& ofs){
+    for (int i = 0; i < 2; i++){
+        for (const auto &v : history[i]) {
+            ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
+        }
+    }
+}
+
+void ContinuationHistory::save_to_stream(std::ofstream& ofs){
+    for (const auto &v : history) {
+        ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
+    }
+}
+
+
+void FromToHistory::load_from_stream(std::ifstream& ifs){
+    for (int i = 0; i < 2; i++){
+        for (size_t j = 0; j < history[i].size(); ++j){
+            ifs.read(reinterpret_cast<char*>(&history[i][j]), sizeof(int));
+        }
+    }
+}
+
+void ContinuationHistory::load_from_stream(std::ifstream& ifs){
+    for (size_t i = 0; i < history.size(); ++i){
+        ifs.read(reinterpret_cast<char*>(&history[i]), sizeof(int));
+    }
+}
+
 bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true if greater than threshold
     assert(SEE_KING_VALUE > piece_value[static_cast<int>(PieceType::QUEEN)]*10);
     const Square from_sq = move.from();

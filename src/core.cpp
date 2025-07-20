@@ -29,7 +29,7 @@ bool Engine::is_loss(int value){
 // we decrease the value if the checkmate is deeper in the search tree.
 int Engine::get_mate_in_moves(int value){
     int ply = MATE_VALUE - std::abs(value);
-    return (is_win(value) ? 1: -1)*(ply/2 + (ply%2 != 0)); 
+    return (is_win(value) ? 1: -1)*(ply/2 + (ply%2 != 0));
 }
 
 int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
@@ -57,6 +57,33 @@ bool Engine::update_interrupt_flag(){
             break;
     }
     return interrupt_flag;
+}
+
+void Engine::save_state(std::string file){
+    std::ofstream ofs(file, std::ios::binary | std::ios::out);
+    if (!ofs) {
+        std::cout << "Could not open file for writing." << std::endl;
+        return;
+    }
+
+    transposition_table.save_to_stream(ofs);
+    SortedMoveGen<movegen::MoveGenType::ALL>::history.save_to_stream(ofs);
+    SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.save_to_stream(ofs);
+
+    ofs.close();
+}
+
+void Engine::load_state(std::string file){
+    std::ifstream ifs(file, std::ios::binary | std::ios::in);
+    if (!ifs) {
+        std::cout << "Could not open file for reading." << std::endl;
+    }
+
+    transposition_table.load_from_stream(ifs);
+    SortedMoveGen<movegen::MoveGenType::ALL>::history.load_from_stream(ifs);
+    SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.load_from_stream(ifs);
+
+    ifs.close();
 }
 
 void Engine::update_run_time(){

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(bread_engine VERSION 1.5.1)
+project(bread_engine VERSION 1.5.2)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -10,6 +10,7 @@ set(bread_DEPENDENCIES ${CMAKE_CURRENT_SOURCE_DIR}/dependencies)
 set(bread_NEURAL_NETWORKS ${CMAKE_CURRENT_SOURCE_DIR}/neural_networks)
 
 set(bread_NNUE_MODEL_PATH "${bread_NEURAL_NETWORKS}/model_NNUE_2-40960_2x256_32_32_1_quant_layers")
+set(bread_DEBUG_UCI_COMMANDS_PATH "${bread_UTILS}/commands.txt")
 
 set(bread_INCLUDE_DIRS
     ${bread_DEPENDENCIES}
@@ -52,6 +53,8 @@ function(bread_configure bread_TARGET)
 
     target_compile_definitions(${bread_TARGET} PRIVATE bread_NNUE_MODEL_PATH="${bread_NNUE_MODEL_PATH}")
 
+    target_compile_definitions(${bread_TARGET} PRIVATE bread_DEBUG_UCI_COMMANDS_PATH="${bread_DEBUG_UCI_COMMANDS_PATH}")
+
     if (TARGET release)
         set_target_properties(release PROPERTIES OUTPUT_NAME "bread_engine_${CMAKE_PROJECT_VERSION}")
     endif()
@@ -72,9 +75,10 @@ bread_configure(tests SOURCES
     ${bread_UTILS}/unit_tests.cpp
 )
 
-bread_configure(parameter_tuning SOURCES
+bread_configure(uci_search SOURCES
     ${bread_SOURCE}
-    ${bread_UTILS}/parameter_optimisation.cpp
+    ${bread_SRC}/uci.cpp
+    ${bread_UTILS}/run_uci_search.cpp
 )
 
 bread_configure(search_position SOURCES
