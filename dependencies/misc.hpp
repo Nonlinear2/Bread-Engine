@@ -21,16 +21,47 @@ constexpr int BEST_MOVE_SCORE = 100'000;
 constexpr int WORST_MOVE_SCORE = -100'000;
 constexpr int BAD_SEE_TRESHOLD = 10'000;
 
-constexpr int WORST_VALUE = -31'998;
-constexpr int BEST_VALUE = 31'998;
-constexpr int TB_VALUE = 31'999;
-constexpr int MATE_VALUE = 32'600;
-constexpr int NO_VALUE = 32'601;
+constexpr int MAX_MATE_PLY = 200;
 
-constexpr int MAX_MATE_PLY = 1'00;
-constexpr int INFINITE_VALUE = 32'700;
+constexpr int BEST_VALUE = 32'498;
+constexpr int TB_VALUE = 32'499;
+constexpr int MATE_VALUE = 32'700;
+constexpr int NO_VALUE = 32'701;
+constexpr int INFINITE_VALUE = 32'702;
+
+
 constexpr int MAX_HISTORY_BONUS = 10'000;
 constexpr int SEE_KING_VALUE = 150'000;
+
+// |    value            |          name                    | is_valid  | is_mate   | is_decisive |
+// ================================================================================================
+// |       ...           |       xxx                        |   crash   | crash     | crash
+// |      -32702         | -INFINITE_VALUE                  |   false   | false     | crash
+// |      -32701         | -NO_VALUE                        |   false   | false     | crash
+// |      -32700         | -MATE_VALUE (mate in 0)          |   true    | true      | true
+// | -32699, ..., -32501 |       ...                        |   true    | true      | true
+// |      -32500         | -MATE_VALUE+200 (mate in 200)    |   true    | true      | true
+// |      -32499         | -TB_VALUE                        |   true    | false     | true
+
+// |      -32498         | -BEST_VALUE                      |   true    | false     | false
+// | -32498, ..., 32498  | valid eval range                 |   true    | false     | false
+// |       32498         | BEST_VALUE                       |   true    | false     | false
+
+// |       32499         | TB_VALUE                         |   true    | false     | true
+// |       32500         | MATE_VALUE-200 (mate in 200)     |   true    | true      | true
+// |  32501, ..., 32699  |       ...                        |   true    | true      | true
+// |       32700         | MATE_VALUE (mate in 0)           |   true    | true      | true
+// |       32701         | NO_VALUE                         |   false   | false     | crash
+// |       32702         | INFINITE_VALUE                   |   false   | false     | crash
+// |       ...           |       xxx                        |   crash   | crash     | crash
+
+constexpr int is_valid(int value);
+constexpr bool is_win(int value);
+constexpr bool is_loss(int value);
+constexpr bool is_decisive(int value);
+constexpr bool is_mate(int value);
+constexpr int increment_mate_ply(int value);
+constexpr int get_mate_in_moves(int value);
 
 const std::vector<int> piece_value = {
     150, // pawn

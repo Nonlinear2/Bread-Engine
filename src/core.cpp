@@ -4,34 +4,6 @@ void Engine::set_uci_display(bool v){
     display_uci = v;
 }
 
-int Engine::increment_mate_ply(int value){
-    assert(is_mate(value));
-    return (is_win(value) ? 1 : -1)*(std::abs(value) - 1);
-}
-
-bool Engine::is_mate(int value){
-    return (std::abs(value) >= MATE_VALUE - MAX_MATE_PLY && std::abs(value) <= MATE_VALUE);
-}
-
-bool Engine::is_decisive(int value){
-    return is_win(value) || is_loss(value);
-}
-
-bool Engine::is_win(int value){
-    return (value >= TB_VALUE);
-}
-
-bool Engine::is_loss(int value){
-    return (value <= -TB_VALUE);
-}
-
-// to make the engine prefer faster checkmates instead of stalling,
-// we decrease the value if the checkmate is deeper in the search tree.
-int Engine::get_mate_in_moves(int value){
-    int ply = MATE_VALUE - std::abs(value);
-    return (is_win(value) ? 1: -1)*(ply/2 + (ply%2 != 0));
-}
-
 int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
     float move_num = num_moves_out_of_book < 10 ? static_cast<float>(num_moves_out_of_book) : 10;
     float factor = 2 -  move_num / 10;
