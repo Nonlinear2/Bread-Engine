@@ -2,10 +2,10 @@
 
 // FIFO for killer moves
 void KillerMoves::add_move(int depth, Move move){
-    if (moves[depth][curr_idx] != move.move())
-        moves[depth][curr_idx] = move.move(); // avoid storing the same move multiple times.
-    curr_idx++;
-    curr_idx %= 3;
+    if (moves[depth][curr_idx[depth]] != move.move())
+        moves[depth][curr_idx[depth]] = move.move(); // avoid storing the same move multiple times.
+    curr_idx[depth]++;
+    curr_idx[depth] %= 3;
 }
 
 bool KillerMoves::in_buffer(int depth, Move move){

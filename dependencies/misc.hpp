@@ -114,7 +114,7 @@ struct Stack {
 class KillerMoves {
     public:
     std::array<std::array<uint16_t, 3>, ENGINE_MAX_DEPTH> moves = {};
-    int curr_idx = 0;
+    std::array<int, ENGINE_MAX_DEPTH> curr_idx = {};
 
     void add_move(int depth, Move move);
     bool in_buffer(int depth, Move move);
