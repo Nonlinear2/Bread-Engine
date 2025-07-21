@@ -26,8 +26,8 @@ constexpr int MAX_MATE_PLY = 200;
 constexpr int BEST_VALUE = 32'498;
 constexpr int TB_VALUE = 32'499;
 constexpr int MATE_VALUE = 32'700;
-constexpr int NO_VALUE = 32'701;
-constexpr int INFINITE_VALUE = 32'702;
+constexpr int INFINITE_VALUE = 32'701;
+constexpr int NO_VALUE = 32'702;
 
 
 constexpr int MAX_HISTORY_BONUS = 10'000;
@@ -36,8 +36,8 @@ constexpr int SEE_KING_VALUE = 150'000;
 // |    value            |          name                    | is_valid  | is_mate   | is_decisive |
 // ================================================================================================
 // |       ...           |       xxx                        |   crash   | crash     | crash
-// |      -32702         | -INFINITE_VALUE                  |   false   | false     | crash
-// |      -32701         | -NO_VALUE                        |   false   | false     | crash
+// |      -32702         | -NO_VALUE                        |   false   | false     | crash
+// |      -32701         | -INFINITE_VALUE                  |   false   | false     | crash
 // |      -32700         | -MATE_VALUE (mate in 0)          |   true    | true      | true
 // | -32699, ..., -32501 |       ...                        |   true    | true      | true
 // |      -32500         | -MATE_VALUE+200 (mate in 200)    |   true    | true      | true
@@ -51,23 +51,26 @@ constexpr int SEE_KING_VALUE = 150'000;
 // |       32500         | MATE_VALUE-200 (mate in 200)     |   true    | true      | true
 // |  32501, ..., 32699  |       ...                        |   true    | true      | true
 // |       32700         | MATE_VALUE (mate in 0)           |   true    | true      | true
-// |       32701         | NO_VALUE                         |   false   | false     | crash
-// |       32702         | INFINITE_VALUE                   |   false   | false     | crash
+// |       32701         | INFINITE_VALUE                   |   false   | false     | crash
+// |       32702         | NO_VALUE                         |   false   | false     | crash
 // |       ...           |       xxx                        |   crash   | crash     | crash
 
 constexpr int is_valid(int value){
-    assert(std::abs(value) <= INFINITE_VALUE);
-    return std::abs(value) < NO_VALUE;
+    assert(std::abs(value) <= NO_VALUE);
+    return std::abs(value) < INFINITE_VALUE;
+}
+
+constexpr bool is_mate(int value){
+    assert(std::abs(value) <= NO_VALUE);
+    return (std::abs(value) >= MATE_VALUE - MAX_MATE_PLY && std::abs(value) <= MATE_VALUE);
 }
 
 constexpr bool is_win(int value){
-    assert(std::abs(value) <= INFINITE_VALUE);
     assert(is_valid(value));
     return value >= TB_VALUE;
 }
 
 constexpr bool is_loss(int value){
-    assert(std::abs(value) <= INFINITE_VALUE);
     assert(is_valid(value));
     return value <= -TB_VALUE;
 }
@@ -76,10 +79,6 @@ constexpr bool is_decisive(int value){
     return is_win(value) || is_loss(value);
 }
 
-constexpr bool is_mate(int value){
-    assert(std::abs(value) <= INFINITE_VALUE);
-    return (std::abs(value) >= MATE_VALUE - MAX_MATE_PLY && std::abs(value) <= MATE_VALUE);
-}
 
 constexpr int increment_mate_ply(int value){
     assert(is_mate(value));
