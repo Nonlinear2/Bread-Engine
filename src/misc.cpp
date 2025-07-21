@@ -1,45 +1,5 @@
 #include "misc.hpp"
 
-constexpr int is_valid(int value){
-    assert(std::abs(value) <= INFINITE_VALUE);
-    return std::abs(value) < NO_VALUE;
-}
-
-constexpr bool is_win(int value){
-    assert(std::abs(value) <= INFINITE_VALUE);
-    assert(is_valid(value));
-    return value >= TB_VALUE;
-}
-
-constexpr bool is_loss(int value){
-    assert(std::abs(value) <= INFINITE_VALUE);
-    assert(is_valid(value));
-    return value <= -TB_VALUE;
-}
-
-constexpr bool is_decisive(int value){
-    return is_win(value) || is_loss(value);
-}
-
-constexpr bool is_mate(int value){
-    assert(std::abs(value) <= INFINITE_VALUE);
-    return (std::abs(value) >= MATE_VALUE - MAX_MATE_PLY && std::abs(value) <= MATE_VALUE);
-}
-
-constexpr int increment_mate_ply(int value){
-    assert(is_mate(value));
-    assert(is_mate(std::abs(value) - 1)); // make sure new value is still mate
-    return (is_win(value) ? 1 : -1)*(std::abs(value) - 1);
-}
-
-// to make the engine prefer faster checkmates instead of stalling,
-// we decrease the value if the checkmate is deeper in the search tree.
-constexpr int get_mate_in_moves(int value){
-    assert(is_mate(value));
-    int ply = MATE_VALUE - std::abs(value);
-    return (is_win(value) ? 1: -1)*(ply/2 + (ply%2 != 0));
-}
-
 // This is a circular buffer to implement FIFO for killer moves
 void CircularBuffer3::add_move(Move move){
     if (data[curr_idx] != move.move())

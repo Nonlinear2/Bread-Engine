@@ -55,13 +55,45 @@ constexpr int SEE_KING_VALUE = 150'000;
 // |       32702         | INFINITE_VALUE                   |   false   | false     | crash
 // |       ...           |       xxx                        |   crash   | crash     | crash
 
-constexpr int is_valid(int value);
-constexpr bool is_win(int value);
-constexpr bool is_loss(int value);
-constexpr bool is_decisive(int value);
-constexpr bool is_mate(int value);
-constexpr int increment_mate_ply(int value);
-constexpr int get_mate_in_moves(int value);
+constexpr int is_valid(int value){
+    assert(std::abs(value) <= INFINITE_VALUE);
+    return std::abs(value) < NO_VALUE;
+}
+
+constexpr bool is_win(int value){
+    assert(std::abs(value) <= INFINITE_VALUE);
+    assert(is_valid(value));
+    return value >= TB_VALUE;
+}
+
+constexpr bool is_loss(int value){
+    assert(std::abs(value) <= INFINITE_VALUE);
+    assert(is_valid(value));
+    return value <= -TB_VALUE;
+}
+
+constexpr bool is_decisive(int value){
+    return is_win(value) || is_loss(value);
+}
+
+constexpr bool is_mate(int value){
+    assert(std::abs(value) <= INFINITE_VALUE);
+    return (std::abs(value) >= MATE_VALUE - MAX_MATE_PLY && std::abs(value) <= MATE_VALUE);
+}
+
+constexpr int increment_mate_ply(int value){
+    assert(is_mate(value));
+    assert(is_mate(std::abs(value) - 1)); // make sure new value is still mate
+    return (is_win(value) ? 1 : -1)*(std::abs(value) - 1);
+}
+
+// to make the engine prefer faster checkmates instead of stalling,
+// we decrease the value if the checkmate is deeper in the search tree.
+constexpr int get_mate_in_moves(int value){
+    assert(is_mate(value));
+    int ply = MATE_VALUE - std::abs(value);
+    return (is_win(value) ? 1: -1)*(ply/2 + (ply%2 != 0));
+}
 
 const std::vector<int> piece_value = {
     150, // pawn
