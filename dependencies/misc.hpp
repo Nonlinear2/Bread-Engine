@@ -111,14 +111,17 @@ struct Stack {
     Piece moved_piece = Piece::NONE;
 };
 
-class CircularBuffer3 {
+class KillerMoves {
     public:
+    std::array<std::array<uint16_t, 3>, ENGINE_MAX_DEPTH> moves = {};
     int curr_idx = 0;
-    std::array<uint16_t, 3> data;
 
-    void add_move(Move move);
+    void add_move(int depth, Move move);
+    bool in_buffer(int depth, Move move);
+    void clear();
 
-    bool in_buffer(Move move);
+    void save_to_stream(std::ofstream& ofs);
+    void load_from_stream(std::ifstream& ifs);
 };
 
 enum LimitType {

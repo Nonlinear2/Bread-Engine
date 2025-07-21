@@ -40,6 +40,8 @@ class Engine {
 
     Move iterative_deepening(SearchLimit limit);
 
+    void clear_state();
+
     void save_state(std::string file);
     void load_state(std::string file);
 

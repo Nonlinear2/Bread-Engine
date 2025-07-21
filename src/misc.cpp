@@ -1,16 +1,36 @@
 #include "misc.hpp"
 
-// This is a circular buffer to implement FIFO for killer moves
-void CircularBuffer3::add_move(Move move){
-    if (data[curr_idx] != move.move())
-        data[curr_idx] = move.move(); // avoid storing the same move multiple times.
+// FIFO for killer moves
+void KillerMoves::add_move(int depth, Move move){
+    if (moves[depth][curr_idx] != move.move())
+        moves[depth][curr_idx] = move.move(); // avoid storing the same move multiple times.
     curr_idx++;
     curr_idx %= 3;
 }
 
-bool CircularBuffer3::in_buffer(Move move){
-    uint16_t move_val = move.move();
-    return data[0] == move_val || data[1] == move_val || data[2] == move_val;
+bool KillerMoves::in_buffer(int depth, Move move){
+    uint16_t val = move.move();
+    return moves[depth][0] == val || moves[depth][1] == val || moves[depth][2] == val;
+}
+
+void KillerMoves::clear(){
+    std::fill(moves.begin(), moves.end(), std::array<uint16_t, 3>());
+}
+
+void KillerMoves::save_to_stream(std::ofstream& ofs){
+    for (int i = 0; i < moves.size(); i++){
+        for (const auto &v : moves[i]) {
+            ofs.write(reinterpret_cast<const char*>(&v), sizeof(uint16_t));
+        }
+    }
+}
+
+void KillerMoves::load_from_stream(std::ifstream& ifs){
+    for (int i = 0; i < moves.size(); i++){
+        for (size_t j = 0; j < moves[i].size(); ++j){
+            ifs.read(reinterpret_cast<char*>(&moves[i][j]), sizeof(uint16_t));
+        }
+    }
 }
 
 void FromToHistory::clear(){
@@ -40,7 +60,7 @@ void ContinuationHistory::apply_bonus(int prev_piece, int prev_to, int piece, in
 }
 
 void FromToHistory::save_to_stream(std::ofstream& ofs){
-    for (int i = 0; i < 2; i++){
+    for (int i = 0; i < history.size(); i++){
         for (const auto &v : history[i]) {
             ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
         }
@@ -55,7 +75,7 @@ void ContinuationHistory::save_to_stream(std::ofstream& ofs){
 
 
 void FromToHistory::load_from_stream(std::ifstream& ifs){
-    for (int i = 0; i < 2; i++){
+    for (int i = 0; i < history.size(); i++){
         for (size_t j = 0; j < history[i].size(); ++j){
             ifs.read(reinterpret_cast<char*>(&history[i][j]), sizeof(int));
         }

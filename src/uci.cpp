@@ -19,9 +19,8 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "readyok" << std::endl;
 
     } else if (first == "ucinewgame"){
-        engine.transposition_table.clear();
-        SortedMoveGen<movegen::MoveGenType::ALL>::history.clear();
-        SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.clear();
+        engine.clear_state();
+
     } else if (first == "position"){
         process_position(parsed_command);
     
