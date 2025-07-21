@@ -9,7 +9,7 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "id author Nonlinear" << std::endl;
         std::cout << std::endl;
         std::cout << "option name SyzygyPath type string default <empty>" << std::endl;
-        std::cout << "option name hash type spin default 256 min 2 max 4096" << std::endl;
+        std::cout << "option name hash type spin default 256 min " << TT_MIN_SIZE << " max " << TT_MAX_SIZE << std::endl;
         std::cout << "option name nonsense type check default false" << std::endl;
         std::cout << "uciok" << std::endl;
     } else if (first == "setoption"){

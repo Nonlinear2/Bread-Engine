@@ -94,5 +94,4 @@ class TranspositionTable {
     private:
     std::vector<TEntry> entries;
     int size_mb;
-    int max_size_mb = 1024;
 };

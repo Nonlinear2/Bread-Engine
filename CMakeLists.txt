@@ -83,6 +83,7 @@ bread_configure(uci_search SOURCES
 
 bread_configure(search_position SOURCES
     ${bread_SOURCE}
+    ${bread_SRC}/uci.cpp
     ${bread_UTILS}/run_search.cpp
 )
 

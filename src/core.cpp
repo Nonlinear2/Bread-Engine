@@ -295,6 +295,7 @@ Move Engine::minimax_root(int depth, Stack* ss){
             alpha = pos_eval;
         }
     }
+    assert(alpha != -INFINITE_VALUE);
 
     transposition_table.store(zobrist_hash, alpha, NO_VALUE, depth, best_move,
         TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
@@ -408,17 +409,19 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         if (move == excluded_move)
             continue;
-
-        // lmp
-        if (!pv && !in_check && !is_capture && move_gen.index() > 3 + depth && !is_hit && eval < alpha)
-            continue;
-        
+            
         bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
-    
-        // SEE pruning
-        if (!pv && !in_check && !is_capture && !is_killer && move_gen.index() > 5 + depth / 2
-            && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - 250 - 10*depth))
-            continue;
+
+        if (move_gen.index() > 0){ // (!is_loss(max_value))
+            // lmp
+            if (!pv && !in_check && !is_capture && move_gen.index() > 3 + depth && !is_hit && eval < alpha)
+                continue;
+
+            // SEE pruning
+            if (!pv && !in_check && !is_capture && !is_killer && move_gen.index() > 5 + depth / 2
+                && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - 250 - 10*depth))
+                continue;
+        }
 
         
         int new_depth = depth-1;
@@ -487,15 +490,25 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         }
     }
 
-    if (move_gen.tt_move == Move::NO_MOVE && move_gen.empty()){ // avoid calling expensive try_outcome_eval function
-        // If board is in check, it is checkmate
-        // if there are no legal moves and it's not check, it is stalemate so eval is 0
-        max_value = pos.inCheck() ? -MATE_VALUE : 0;
-        // we know this eval is exact at any depth, but 
-        // we also don't want this eval to pollute the transposition table.
-        // the full move number will make sure it is replaced at some point.
-        transposition_table.store(zobrist_hash, max_value, NO_VALUE, 255, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
-        return max_value;
+    if (max_value == -INFINITE_VALUE){
+        if (move_gen.tt_move == Move::NO_MOVE && move_gen.empty()){ // avoid calling expensive try_outcome_eval function
+            // If board is in check, it is checkmate
+            // if there are no legal moves and it's not check, it is stalemate so eval is 0
+            max_value = pos.inCheck() ? -MATE_VALUE : 0;
+            // we know this eval is exact at any depth, but 
+            // we also don't want this eval to pollute the transposition table.
+            // the full move number will make sure it is replaced at some point.
+            transposition_table.store(zobrist_hash, max_value, NO_VALUE, 255, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
+            return max_value;
+        }
+
+        // if the move gen is not empty, the only legal move must be the excluded move
+        assert(excluded_move != Move::NO_MOVE);
+        assert(move_gen.tt_move == excluded_move);
+        assert(move_gen.index() == 1);
+
+        // we return a fail low to extend the search by 1
+        return alpha;
     }
 
     // if max eval was obtained because of a threefold repetition,
@@ -522,6 +535,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     }
     if (is_mate(max_value))
         max_value = increment_mate_ply(max_value);
+    
+    assert(max_value != -INFINITE_VALUE);
     transposition_table.store(zobrist_hash, max_value, static_eval, depth, best_move, node_type, static_cast<uint8_t>(pos.fullMoveNumber()));
 
     return max_value;
@@ -587,6 +602,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (stand_pat == NO_VALUE){
         stand_pat = pos.evaluate();
         if (stand_pat >= beta){
+            assert(stand_pat != -INFINITE_VALUE);
             transposition_table.store(zobrist_hash, stand_pat, stand_pat, DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
             return stand_pat;
         }
@@ -641,6 +657,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     }
 
     if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
+        assert(stand_pat != -INFINITE_VALUE);
         transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
         return stand_pat;
     }
@@ -648,12 +665,14 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (pos.halfMoveClock() + depth + QSEARCH_MAX_DEPTH >= 100)
         return max_value; // avoid storing history dependant evals.
 
-    if (depth == 0)
+    if (depth == 0){
+        assert(max_value != -INFINITE_VALUE);
         transposition_table.store(zobrist_hash, max_value,
             stand_pat,
             DEPTH_QSEARCH, best_move,
             max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
             static_cast<uint8_t>(pos.fullMoveNumber()));
+    }
 
     if (is_mate(max_value))
         max_value = increment_mate_ply(max_value);

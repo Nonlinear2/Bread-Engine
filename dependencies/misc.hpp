@@ -6,6 +6,9 @@
 
 using namespace chess;
 
+constexpr int TT_MIN_SIZE = 2;
+constexpr int TT_MAX_SIZE = 4096;
+
 constexpr int ENGINE_MAX_DEPTH = 63;
 constexpr int QSEARCH_MAX_DEPTH = 6;
 

@@ -56,8 +56,8 @@ void TranspositionTable::info(){
 void TranspositionTable::allocateMB(int new_size){
     assert((new_size & (new_size - 1)) == 0); // make sure the size is a power of 2
 
-    new_size = std::max(new_size, 0);
-    new_size = std::min(new_size, max_size_mb);
+    new_size = std::max(new_size, TT_MIN_SIZE);
+    new_size = std::min(new_size, TT_MAX_SIZE);
 
     size_mb = new_size;
 
