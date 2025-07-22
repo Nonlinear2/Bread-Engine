@@ -29,16 +29,6 @@ class Engine {
     Movelist root_moves;
     
     void set_uci_display(bool v);
-
-    int increment_mate_ply(int value);
-
-    bool is_mate(int value);
-
-    bool is_decisive(int value);
-    bool is_win(int value);
-    bool is_loss(int value);
-
-    int get_mate_in_moves(int value);
     
     int get_think_time(float time_left, int num_moves_out_of_book,
         int num_moves_until_time_control, int increment);
