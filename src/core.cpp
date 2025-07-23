@@ -31,6 +31,42 @@ bool Engine::update_interrupt_flag(){
     return interrupt_flag;
 }
 
+void Engine::clear_state(){
+    transposition_table.clear();
+    SortedMoveGen<movegen::MoveGenType::ALL>::history.clear();
+    SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.clear();
+    SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
+}
+
+void Engine::save_state(std::string file){
+    std::ofstream ofs(file, std::ios::binary | std::ios::out);
+    if (!ofs) {
+        std::cout << "Could not open file for writing." << std::endl;
+        return;
+    }
+
+    transposition_table.save_to_stream(ofs);
+    SortedMoveGen<movegen::MoveGenType::ALL>::history.save_to_stream(ofs);
+    SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.save_to_stream(ofs);
+    SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.save_to_stream(ofs);
+
+    ofs.close();
+}
+
+void Engine::load_state(std::string file){
+    std::ifstream ifs(file, std::ios::binary | std::ios::in);
+    if (!ifs) {
+        std::cout << "Could not open file for reading." << std::endl;
+    }
+
+    transposition_table.load_from_stream(ifs);
+    SortedMoveGen<movegen::MoveGenType::ALL>::history.load_from_stream(ifs);
+    SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.load_from_stream(ifs);
+    SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.load_from_stream(ifs);
+
+    ifs.close();
+}
+
 void Engine::update_run_time(){
     run_time = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::high_resolution_clock::now() - start_time
@@ -83,7 +119,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
     Move best_move = Move::NO_MOVE;
 
-    SortedMoveGen<movegen::MoveGenType::ALL>::clear_killer_moves();
+    SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
 
     nodes = 0;
     current_depth = 0;
@@ -354,8 +390,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         if (move == excluded_move)
             continue;
-
-        bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves[depth].in_buffer(move);
+            
+        bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.in_buffer(depth, move);
 
         if (is_valid(max_value) && !is_loss(max_value)){
             // lmp
@@ -430,7 +466,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         if (beta <= alpha){
             if (!is_capture)
                 move_gen.update_history(move, depth);
-            SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves[depth].add_move(move);
+            SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.add_move(depth, move);
             break;
         }
     }

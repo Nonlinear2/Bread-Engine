@@ -70,7 +70,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
         score += 119 * piece_value[static_cast<int>(move.promotionType())]/150;
 
     assert(depth != DEPTH_UNSEARCHED);
-    if (killer_moves[depth].in_buffer(move))
+    if (killer_moves.in_buffer(depth, move))
         score += 149;
 
     // cant be less than worst move score
@@ -194,11 +194,6 @@ bool SortedMoveGen<MoveGenType>::empty(){ return moves.empty(); }
 
 template<movegen::MoveGenType MoveGenType>
 inline int SortedMoveGen<MoveGenType>::index(){ return move_idx; }
-
-template<>
-void SortedMoveGen<movegen::MoveGenType::ALL>::clear_killer_moves(){
-    std::fill(killer_moves.begin(), killer_moves.end(), CircularBuffer3());
-}
 
 template<>
 void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, int depth){

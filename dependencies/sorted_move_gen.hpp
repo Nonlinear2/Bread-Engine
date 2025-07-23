@@ -22,7 +22,7 @@ class SortedMoveGen {
     public:
     static constexpr PieceSquareMaps psm = PieceSquareMaps();
 
-    static inline std::array<CircularBuffer3, ENGINE_MAX_DEPTH> killer_moves = {};
+    static inline KillerMoves killer_moves = KillerMoves();
     static inline FromToHistory history = FromToHistory();
     static inline ContinuationHistory cont_history = ContinuationHistory();
 
@@ -36,7 +36,6 @@ class SortedMoveGen {
     bool next(Move& move);
     bool empty();
     int index();
-    static void clear_killer_moves();
     void update_history(Move best_move, int depth);
     void update_cont_history(int piece, int to, int bonus);
     void set_score(Move& move);

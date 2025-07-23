@@ -56,8 +56,8 @@ void TranspositionTable::info(){
 void TranspositionTable::allocateMB(int new_size){
     assert((new_size & (new_size - 1)) == 0); // make sure the size is a power of 2
 
-    new_size = std::max(new_size, 0);
-    new_size = std::min(new_size, max_size_mb);
+    new_size = std::max(new_size, TT_MIN_SIZE);
+    new_size = std::min(new_size, TT_MAX_SIZE);
 
     size_mb = new_size;
 
@@ -120,28 +120,14 @@ int TranspositionTable::hashfull(){
     return used;
 }
 
-void TranspositionTable::save_to_file(std::string file){
-    std::ofstream ofs = std::ofstream(file, std::ios::binary | std::ios::out);
-    if (!ofs) {
-        std::cout << "Could not open file for writing." << std::endl;
-        return;
-    }
-
+void TranspositionTable::save_to_stream(std::ofstream& ofs){
     for (const auto& entry : entries) {
         ofs.write(reinterpret_cast<const char*>(&entry), sizeof(TEntry));
     }
-
-    ofs.close();
 }
 
-void TranspositionTable::load_from_file(std::string file){
-    std::ifstream ifs(file, std::ios::binary | std::ios::in);
-    if (!ifs) {
-        std::cout << "Could not open file for reading." << std::endl;
-    }
+void TranspositionTable::load_from_stream(std::ifstream& ifs){
     for (size_t i = 0; i < entries.size(); ++i) {
         ifs.read(reinterpret_cast<char*>(&entries[i]), sizeof(TEntry));
     }
-
-    ifs.close();
 }

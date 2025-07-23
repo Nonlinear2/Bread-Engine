@@ -1,16 +1,38 @@
 #include "misc.hpp"
 
-// This is a circular buffer to implement FIFO for killer moves
-void CircularBuffer3::add_move(Move move){
-    if (data[curr_idx] != move.move())
-        data[curr_idx] = move.move(); // avoid storing the same move multiple times.
-    curr_idx++;
-    curr_idx %= 3;
+// FIFO for killer moves
+void KillerMoves::add_move(int depth, Move move){
+    uint16_t val = move.move();
+    if (moves[depth][0] != val && moves[depth][1] != val) {
+        moves[depth][2] = moves[depth][1];
+        moves[depth][1] = moves[depth][0]; 
+        moves[depth][0] = val;
+    }
 }
 
-bool CircularBuffer3::in_buffer(Move move){
-    uint16_t move_val = move.move();
-    return data[0] == move_val || data[1] == move_val || data[2] == move_val;
+bool KillerMoves::in_buffer(int depth, Move move){
+    uint16_t val = move.move();
+    return moves[depth][0] == val || moves[depth][1] == val || moves[depth][2] == val;
+}
+
+void KillerMoves::clear(){
+    std::fill(&moves[0][0], &moves[0][0] + sizeof(moves) / sizeof(uint16_t), 0);
+}
+
+void KillerMoves::save_to_stream(std::ofstream& ofs){
+    for (int i = 0; i < ENGINE_MAX_DEPTH; i++){
+        for (const auto &v : moves[i]) {
+            ofs.write(reinterpret_cast<const char*>(&v), sizeof(uint16_t));
+        }
+    }
+}
+
+void KillerMoves::load_from_stream(std::ifstream& ifs){
+    for (int i = 0; i < ENGINE_MAX_DEPTH; i++){
+        for (auto &v : moves[i]) {
+            ifs.read(reinterpret_cast<char*>(&v), sizeof(uint16_t));
+        }
+    }
 }
 
 void FromToHistory::clear(){
@@ -37,6 +59,35 @@ void FromToHistory::apply_bonus(bool color, int from, int to, int bonus){
 void ContinuationHistory::apply_bonus(int prev_piece, int prev_to, int piece, int to, int bonus){
     get(prev_piece, prev_to, piece, to)
         += (bonus - get(prev_piece, prev_to, piece, to) * std::abs(bonus) / MAX_HISTORY_BONUS);
+}
+
+void FromToHistory::save_to_stream(std::ofstream& ofs){
+    for (int i = 0; i < history.size(); i++){
+        for (const auto &v : history[i]) {
+            ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
+        }
+    }
+}
+
+void ContinuationHistory::save_to_stream(std::ofstream& ofs){
+    for (const auto &v : history) {
+        ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
+    }
+}
+
+
+void FromToHistory::load_from_stream(std::ifstream& ifs){
+    for (int i = 0; i < history.size(); i++){
+        for (size_t j = 0; j < history[i].size(); ++j){
+            ifs.read(reinterpret_cast<char*>(&history[i][j]), sizeof(int));
+        }
+    }
+}
+
+void ContinuationHistory::load_from_stream(std::ifstream& ifs){
+    for (size_t i = 0; i < history.size(); ++i){
+        ifs.read(reinterpret_cast<char*>(&history[i]), sizeof(int));
+    }
 }
 
 bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true if greater than threshold

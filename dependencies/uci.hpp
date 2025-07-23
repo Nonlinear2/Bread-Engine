@@ -17,11 +17,11 @@ class UCIAgent {
     
     bool process_uci_command(std::string command);
 
+    static std::vector<std::string> split_string(std::string str);
+
     private:
     int cached_think_time;
     
-    std::vector<std::string> split_string(std::string str);
-
     void process_setoption(std::vector<std::string> command);
     
     void process_position(std::vector<std::string> command);

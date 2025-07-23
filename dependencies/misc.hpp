@@ -1,9 +1,13 @@
 #pragma once
 
 #include <array>
+#include <fstream>
 #include "chess.hpp"
 
 using namespace chess;
+
+constexpr int TT_MIN_SIZE = 2;
+constexpr int TT_MAX_SIZE = 4096;
 
 constexpr int ENGINE_MAX_DEPTH = 63;
 constexpr int QSEARCH_MAX_DEPTH = 6;
@@ -105,14 +109,16 @@ struct Stack {
     Piece moved_piece = Piece::NONE;
 };
 
-class CircularBuffer3 {
+class KillerMoves {
     public:
-    int curr_idx = 0;
-    std::array<uint16_t, 3> data;
+    uint16_t moves[ENGINE_MAX_DEPTH][3];
 
-    void add_move(Move move);
+    void add_move(int depth, Move move);
+    bool in_buffer(int depth, Move move);
+    void clear();
 
-    bool in_buffer(Move move);
+    void save_to_stream(std::ofstream& ofs);
+    void load_from_stream(std::ifstream& ifs);
 };
 
 enum LimitType {
@@ -135,6 +141,8 @@ class ContinuationHistory {
     void clear();
     int& get(int prev_piece, int prev_to, int piece, int to);
     void apply_bonus(int prev_piece, int prev_to, int piece, int to, int bonus);
+    void save_to_stream(std::ofstream& ofs);
+    void load_from_stream(std::ifstream& ifs);
 
     std::array<int, 64*12*64*12> history = {};
 };
@@ -144,6 +152,8 @@ class FromToHistory {
     void clear();
     int& get(bool color, int from, int to);
     void apply_bonus(bool color, int from, int to, int bonus);
+    void save_to_stream(std::ofstream& ofs);
+    void load_from_stream(std::ifstream& ifs);
 
     std::array<std::array<int, 64*64>, 2> history = {};
 };

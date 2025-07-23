@@ -9,7 +9,7 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "id author Nonlinear" << std::endl;
         std::cout << std::endl;
         std::cout << "option name SyzygyPath type string default <empty>" << std::endl;
-        std::cout << "option name hash type spin default 256 min 2 max 4096" << std::endl;
+        std::cout << "option name hash type spin default 256 min " << TT_MIN_SIZE << " max " << TT_MAX_SIZE << std::endl;
         std::cout << "option name nonsense type check default false" << std::endl;
         std::cout << "uciok" << std::endl;
     } else if (first == "setoption"){
@@ -19,9 +19,8 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "readyok" << std::endl;
 
     } else if (first == "ucinewgame"){
-        engine.transposition_table.clear();
-        SortedMoveGen<movegen::MoveGenType::ALL>::history.clear();
-        
+        engine.clear_state();
+
     } else if (first == "position"){
         process_position(parsed_command);
     
@@ -154,7 +153,8 @@ void UCIAgent::process_go(std::vector<std::string> command){
         return;
     } else {
         int think_time = get_think_time_from_go_command(command);
-        if (think_time == -1) return; // error occured
+        if (think_time == -1)
+            return; // error occured
         main_search_thread = std::thread(&Engine::iterative_deepening, &engine, SearchLimit(LimitType::Time, think_time));
     }
 }
