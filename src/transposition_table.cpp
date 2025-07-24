@@ -54,6 +54,7 @@ void TranspositionTable::info(){
 }
 
 void TranspositionTable::allocateMB(int new_size){
+    assert(new_size >= 2);
     assert((new_size & (new_size - 1)) == 0); // make sure the size is a power of 2
 
     new_size = std::max(new_size, TT_MIN_SIZE);
@@ -99,6 +100,7 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
 }
 
 TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
+    assert((entries.size() & (entries.size() - 1)) == 0);
     TEntry* entry = &entries[zobrist & (entries.size() - 1)];
     is_hit = (entry->zobrist_hash == zobrist);
 
@@ -127,7 +129,7 @@ void TranspositionTable::save_to_stream(std::ofstream& ofs){
 }
 
 void TranspositionTable::load_from_stream(std::ifstream& ifs){
-    for (size_t i = 0; i < entries.size(); ++i) {
-        ifs.read(reinterpret_cast<char*>(&entries[i]), sizeof(TEntry));
+    for (auto& entry : entries) {
+        ifs.read(reinterpret_cast<char*>(&entry), sizeof(TEntry));
     }
 }
