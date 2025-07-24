@@ -252,6 +252,8 @@ Move Engine::minimax_root(int depth, Stack* ss){
         new_depth += pos.inCheck();
         new_depth -= move_count > 2 && depth > 5 && !is_capture && !in_check;
 
+        new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
+
         if (move_count == 1){
             pos_eval = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
         } else {
@@ -287,10 +289,12 @@ Move Engine::minimax_root(int depth, Stack* ss){
 
 template<bool pv>
 int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
+    assert(ss - stack < SEARCH_STACK_SIZE); // avoid stack overflow
     assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
     assert(depth < ENGINE_MAX_DEPTH);
 
     nodes++;
+
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
     if (interrupt_flag || (depth >= 5 && update_interrupt_flag()))
         return NO_VALUE; // the value doesn't matter, it won't be used.
@@ -298,6 +302,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     // there are no repetition checks in qsearch as captures can never lead to repetition.
     if (pos.isRepetition(2) || pos.isHalfMoveDraw() || pos.isInsufficientMaterial())
         return 0;
+
+    if (ss - stack >= SEARCH_STACK_SIZE - 1)
+        return pos.evaluate();
 
     // transpositions will be checked inside of qsearch
     // if isRepetition(1), qsearch will not consider the danger of draw as it searches captures.
@@ -529,6 +536,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
 template<bool pv>
 int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
+    assert(ss - stack < SEARCH_STACK_SIZE); // avoid stack overflow
     // assert(pv || ((alpha == (beta-1)) && (alpha == (beta-1))));
     nodes++;
 
@@ -594,7 +602,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     assert(is_valid(stand_pat));
 
-    if (depth == -QSEARCH_MAX_DEPTH)
+    if (depth == -QSEARCH_MAX_DEPTH || ss - stack >= SEARCH_STACK_SIZE - 1)
         return stand_pat;
 
     alpha = std::max(alpha, stand_pat);

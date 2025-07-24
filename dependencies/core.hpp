@@ -17,8 +17,8 @@ class Engine {
     int current_depth = 0;
     std::atomic<SearchLimit> limit;
     std::atomic<bool> interrupt_flag = false;
-
-    Stack stack[ENGINE_MAX_DEPTH + QSEARCH_MAX_DEPTH + 2] = {};
+    
+    Stack stack[SEARCH_STACK_SIZE + 2] = {};
     Stack* root_ss = stack + 2;
 
     std::atomic<int> run_time;

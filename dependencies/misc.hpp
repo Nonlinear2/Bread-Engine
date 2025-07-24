@@ -12,6 +12,8 @@ constexpr int TT_MAX_SIZE = 4096;
 constexpr int ENGINE_MAX_DEPTH = 63;
 constexpr int QSEARCH_MAX_DEPTH = 6;
 
+constexpr int SEARCH_STACK_SIZE = 256;
+
 constexpr int BENCHMARK_DEPTH = 9;
 
 constexpr int DEPTH_UNSEARCHED = -1;

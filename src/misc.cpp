@@ -20,20 +20,21 @@ void KillerMoves::clear(){
 }
 
 void KillerMoves::save_to_stream(std::ofstream& ofs){
-    for (int i = 0; i < ENGINE_MAX_DEPTH; i++){
-        for (const auto &v : moves[i]) {
+    for (const auto& row : moves){
+        for (const auto& v : row) {
             ofs.write(reinterpret_cast<const char*>(&v), sizeof(uint16_t));
         }
     }
 }
 
 void KillerMoves::load_from_stream(std::ifstream& ifs){
-    for (int i = 0; i < ENGINE_MAX_DEPTH; i++){
-        for (auto &v : moves[i]) {
+    for (auto& row : moves){
+        for (auto& v : row) {
             ifs.read(reinterpret_cast<char*>(&v), sizeof(uint16_t));
         }
     }
 }
+
 
 void FromToHistory::clear(){
     std::fill(std::begin(history[0]), std::end(history[0]), 0);
@@ -62,31 +63,31 @@ void ContinuationHistory::apply_bonus(int prev_piece, int prev_to, int piece, in
 }
 
 void FromToHistory::save_to_stream(std::ofstream& ofs){
-    for (int i = 0; i < history.size(); i++){
-        for (const auto &v : history[i]) {
+    for (const auto& row : history){
+        for (const auto& v : row) {
             ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
         }
     }
 }
 
 void ContinuationHistory::save_to_stream(std::ofstream& ofs){
-    for (const auto &v : history) {
+    for (const auto& v : history) {
         ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
     }
 }
 
 
 void FromToHistory::load_from_stream(std::ifstream& ifs){
-    for (int i = 0; i < history.size(); i++){
-        for (size_t j = 0; j < history[i].size(); ++j){
-            ifs.read(reinterpret_cast<char*>(&history[i][j]), sizeof(int));
+    for (auto& row : history){
+        for (auto& v : row){
+            ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
         }
     }
 }
 
 void ContinuationHistory::load_from_stream(std::ifstream& ifs){
-    for (size_t i = 0; i < history.size(); ++i){
-        ifs.read(reinterpret_cast<char*>(&history[i]), sizeof(int));
+    for (auto& v : history) {
+        ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
     }
 }
 
