@@ -48,15 +48,14 @@ bool UCIAgent::process_uci_command(std::string command){
     return true;
 }
 
-std::vector<std::string> UCIAgent::split_string(std::string str){
+std::vector<std::string> UCIAgent::split_string(std::string str) {
+    std::stringstream ss(str);
+    std::string curr;
     std::vector<std::string> split;
-    int head = 0;
-    for (int i = 0; i < str.length()+1; i++){
-        if ((str[i] == ' ') || (i == str.length())){
-            split.push_back(str.substr(head, i-head));
-            head = i + 1;
-        }
-    }
+
+    while (ss >> curr)
+        split.push_back(curr);
+
     return split;
 }
 

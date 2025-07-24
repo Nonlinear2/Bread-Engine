@@ -371,7 +371,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         // maybe check for zugzwang?
         int null_move_eval;
         if (!pos.last_move_null() && excluded_move == Move::NO_MOVE
-            && eval > beta - depth*90 && is_valid(beta) && !is_decisive(beta)){
+            && eval > beta - depth*90 && is_regular_eval(beta)){
 
             int R = 2 + (eval >= beta) + depth / 4;
             ss->moved_piece = Piece::NONE;
@@ -406,21 +406,23 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         
         int new_depth = depth-1;
         int extension = 0;
-        if (is_hit && is_valid(transposition.value) && !is_win(transposition.value)
+        if (is_hit && is_regular_eval(transposition.value)
             && move == transposition.move && excluded_move == Move::NO_MOVE
             && depth >= 6 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
             && transposition.depth >= depth - 1)
         {
             int singular_beta = transposition.value - 10 - 6*depth;
 
-            ss->excluded_move = move;
-            value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss);
-            ss->excluded_move = Move::NO_MOVE;
-
-            if (interrupt_flag) return 0;
-
-            if (value < singular_beta)
-                extension = 1;
+            if (is_regular_eval(singular_beta)){
+                ss->excluded_move = move;
+                value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss);
+                ss->excluded_move = Move::NO_MOVE;
+    
+                if (interrupt_flag) return 0;
+    
+                if (value < singular_beta)
+                    extension = 1;
+            }
         }
 
         new_depth += extension;
