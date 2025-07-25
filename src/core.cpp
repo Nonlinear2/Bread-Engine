@@ -622,14 +622,15 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             if (stand_pat 
                 + piece_value[static_cast<int>(captured_piece.type())]
                 - piece_value[static_cast<int>(moved_piece.type())]
-                + 1300 < alpha)
+                + 1500 < alpha)
                 continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
 
             // SEE pruning
-            if (!SEE::evaluate(pos, move, alpha - stand_pat - 300))
+            if (!SEE::evaluate(pos, move, ((alpha-stand_pat)/150 - 2)*150))
                 continue;
     
-            if (!pv && stand_pat + 900 < alpha && !SEE::evaluate(pos, move, -550))
+            if (!pv && capture_gen.index() > 7
+                && stand_pat + 1000 < alpha && !SEE::evaluate(pos, move, -150))
                 continue;
         }
 
