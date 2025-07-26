@@ -113,6 +113,7 @@ struct Stack {
     Move excluded_move = Move::NO_MOVE;
     Move current_move = Move::NO_MOVE;
     Piece moved_piece = Piece::NONE;
+    int static_eval = NO_VALUE;
 };
 
 class KillerMoves {

@@ -359,6 +359,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     if (eval == NO_VALUE)
         eval = static_eval;
 
+    ss->static_eval = static_eval;
+
+    bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval) &&
+        ss->static_eval > (ss - 2)->static_eval;
+
     // pruning
     if (!pv && !in_check){
 
@@ -370,9 +375,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         }
 
         // reverse futility pruning
-        if (depth < 6 && eval - depth*150 - 281 >= beta){
+        if (depth < 6 && eval - depth*142 - 310 + 100*improving >= beta)
             return eval;
-        }
 
         // null move pruning
         // maybe check for zugzwang?
