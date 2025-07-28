@@ -434,6 +434,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     
                 if (value < singular_beta)
                     extension = 1;
+                else if (value >= beta && !is_decisive(value))
+                    return value;
             }
         }
 
