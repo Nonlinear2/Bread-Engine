@@ -148,7 +148,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 }
 
 template<movegen::MoveGenType MoveGenType>
-bool SortedMoveGen<MoveGenType>::pop_best_score(Move move){
+bool SortedMoveGen<MoveGenType>::pop_best_score(Move& move){
     int best_move_idx;
     while (true){
         int best_move_score = WORST_MOVE_SCORE;
