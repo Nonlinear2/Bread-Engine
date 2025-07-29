@@ -255,9 +255,9 @@ Move Engine::minimax_root(int depth, Stack* ss){
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
         if (move_count == 1){
-            pos_eval = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
+            pos_eval = -negamax<true>(new_depth, -beta, -alpha, ss + 1, false);
         } else {
-            pos_eval = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
+            pos_eval = -negamax<false>(new_depth, -beta, -alpha, ss + 1, true);
         }
 
         pos.restore_state(move);
@@ -288,7 +288,7 @@ Move Engine::minimax_root(int depth, Stack* ss){
 }
 
 template<bool pv>
-int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
+int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     assert(ss - stack < SEARCH_STACK_SIZE); // avoid stack overflow
     assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
     assert(depth < ENGINE_MAX_DEPTH);
@@ -375,7 +375,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         }
 
         // reverse futility pruning
-        if (depth < 6 && eval - depth*142 - 310 + 100*improving >= beta)
+        if (depth < 6 && eval - depth*(142 - 40*cutnode) - 310 + 100*improving >= beta)
             return eval;
 
         // null move pruning
@@ -388,7 +388,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             ss->moved_piece = Piece::NONE;
             ss->current_move = Move::NULL_MOVE;
             pos.makeNullMove();
-            null_move_eval = -negamax<false>(depth - R, -beta, -beta+1, ss + 1);
+            null_move_eval = -negamax<false>(depth - R, -beta, -beta+1, ss + 1, false);
             pos.unmakeNullMove();
             if (null_move_eval >= beta && !is_win(null_move_eval))
                 return null_move_eval;
@@ -427,7 +427,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
             if (is_regular_eval(singular_beta)){
                 ss->excluded_move = move;
-                value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss);
+                value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss, cutnode);
                 ss->excluded_move = Move::NO_MOVE;
     
                 if (interrupt_flag) return 0;
@@ -457,11 +457,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
         if (pv && (move_gen.index() == 0)){
-            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
+            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1, false);
         } else {
-            value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
+            value = -negamax<false>(new_depth, -beta, -alpha, ss + 1, true);
             if ((new_depth < depth-1) && (value > alpha)){
-                value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
+                value = -negamax<false>(depth-1, -beta, -alpha, ss + 1, !cutnode);
                 if (!is_capture)
                     move_gen.update_cont_history(ss->moved_piece, move.to().index(), 1000);
             }
