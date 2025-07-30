@@ -5,8 +5,8 @@ NnueBoard::NnueBoard() {synchronize();};
 NnueBoard::NnueBoard(std::string_view fen) {synchronize();};
 
 void NnueBoard::synchronize(){
-    nnue_.compute_accumulator(get_HKP(true), true);
-    nnue_.compute_accumulator(get_HKP(false), false);
+    nnue_.compute_accumulator(get_HKP(Color::WHITE), true);
+    nnue_.compute_accumulator(get_HKP(Color::BLACK), false);
 }
 
 bool NnueBoard::last_move_null(){
@@ -180,12 +180,15 @@ Move NnueBoard::tb_result_to_move(unsigned int tb_result){
     return move;
 }
 
-std::vector<int> NnueBoard::get_HKP(bool color){
+std::vector<int> NnueBoard::get_HKP(Color color){
     Bitboard occupied = occ();
 
     std::vector<int> active_features = std::vector<int>(occupied.count()-2);
 
-    int king_square;
+    int king_square = kingSq(color).index();
+
+    
+    bool mirror = king_square & 0xF0F0F0F0F0F0F0F; // checks if the king is on the right side of the board
 
     int curr_piece;
 
@@ -193,24 +196,28 @@ std::vector<int> NnueBoard::get_HKP(bool color){
     while (occupied){
         int sq = occupied.pop();
 
-        if (color){
-            curr_piece = piece_to_index_w[static_cast<int>(at(static_cast<Square>(sq)))];
-            sq = (63 - sq);
-        } else {
-            curr_piece = piece_to_index_b[static_cast<int>(at(static_cast<Square>(sq)))];
+        if (color == Color::WHITE)
+            curr_piece = static_cast<int>(at(static_cast<Square>(sq)));
+        else {
+            curr_piece = static_cast<int>(at(static_cast<Square>(sq)));
+            sq = 63 - sq; // flip board
+            curr_piece = (curr_piece + 6) % 12; // flip piece color
         }
 
-        sq += 7 - 2 * (sq % 8); // reverse row
+        if (mirror){
+            // mirror horizontally by flipping last 3 bits.
+            sq ^= 7;
+            king_square ^= 7;
+        }
 
-        if (curr_piece == 10){ // our king
-            king_square = sq;
-        } else if (curr_piece != 11) { // their king
-            active_features[idx] = sq + curr_piece*64;
+        assert(sq % 8 <= 4);
+
+        sq = ((sq >> 3) << 2) + (sq & 7); // equivalent to: sq = (sq / 8) * 4 + (sq % 8);
+
+        if (curr_piece != 11 && curr_piece != 10) { // their king / our king
+            active_features[idx] = sq + curr_piece*32 + king_square*320;
             idx++;
         }
-    }
-    for (int& feature: active_features){
-        feature += king_square*640;
     }
 
     return active_features;

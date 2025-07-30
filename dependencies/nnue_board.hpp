@@ -38,7 +38,7 @@ class NnueBoard: public Board {
     private:
     std::stack<Accumulator> accumulator_stack;
 
-    std::vector<int> get_HKP(bool color);
+    std::vector<int> get_HKP(Color color);
 
     modified_features get_modified_features(Move move, bool color);
 

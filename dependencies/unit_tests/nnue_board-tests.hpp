@@ -36,12 +36,12 @@ TEST_SUITE("Nnue Board"){
             cb.setFen(fens[i]);
 
             // white perspective
-            computed = cb.get_HKP(true);
+            computed = cb.get_HKP(Color::WHITE);
             std::sort(computed.begin(), computed.end());
             CHECK(computed == correct_w[i]);
 
             // black perspective
-            computed = cb.get_HKP(false);
+            computed = cb.get_HKP(Color::BLACK);
             std::sort(computed.begin(), computed.end());
             CHECK(computed == correct_b[i]);
         }
@@ -61,7 +61,7 @@ TEST_SUITE("Nnue Board"){
         for (auto fen: fens){
             cb.synchronize();
             for (int i = 0; i < 2; i++){
-                bool color = i ? true : false;
+                Color color = i ? Color::WHITE : Color::BLACK;
                 std::vector<int> active_features = cb.get_HKP(color);
 
                 // unoptimized but working way to compute accumulator:
