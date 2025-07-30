@@ -382,9 +382,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         // maybe check for zugzwang?
         int null_move_eval;
         if (!pos.last_move_null() && excluded_move == Move::NO_MOVE
-            && eval > beta - depth*90 && is_regular_eval(beta)){
+            && eval > beta + 130 - depth*80 && is_regular_eval(beta)){
 
-            int R = 2 + (eval >= beta) + depth / 4;
+            int R = 2 + (eval >= beta) + depth / 3;
             ss->moved_piece = Piece::NONE;
             ss->current_move = Move::NULL_MOVE;
             pos.makeNullMove();
