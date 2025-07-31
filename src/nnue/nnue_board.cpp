@@ -19,10 +19,10 @@ void NnueBoard::update_state(Move move){
 
     if (is_updatable_move(move)){
         // white
-        modified_features mod_features = get_modified_features(move, true);
+        modified_features mod_features = get_modified_features(move, Color::WHITE);
         nnue_.update_accumulator(mod_features, true);
         // black 
-        mod_features = get_modified_features(move, false);
+        mod_features = get_modified_features(move, Color::BLACK);
         nnue_.update_accumulator(mod_features, false);
         makeMove(move);
     } else {
@@ -180,15 +180,20 @@ Move NnueBoard::tb_result_to_move(unsigned int tb_result){
     return move;
 }
 
+int hm_state_to_feature(int sq, int curr_piece, int king_sq){
+    sq = ((sq >> 3) << 2) + (sq & 7); // equivalent to: sq = (sq / 8) * 4 + (sq % 8);
+    return sq + curr_piece*32 + king_sq*320;
+}
+
 std::vector<int> NnueBoard::get_HKP(Color color){
     Bitboard occupied = occ();
 
     std::vector<int> active_features = std::vector<int>(occupied.count()-2);
 
-    int king_square = kingSq(color).index();
+    int king_sq = kingSq(color).index();
 
     
-    bool mirror = king_square & 0xF0F0F0F0F0F0F0F; // checks if the king is on the right side of the board
+    bool mirror = king_sq & 0xF0F0F0F0F0F0F0F; // checks if the king is on the right side of the board
 
     int curr_piece;
 
@@ -207,17 +212,13 @@ std::vector<int> NnueBoard::get_HKP(Color color){
         if (mirror){
             // mirror horizontally by flipping last 3 bits.
             sq ^= 7;
-            king_square ^= 7;
+            king_sq ^= 7;
         }
 
         assert(sq % 8 <= 4);
 
-        sq = ((sq >> 3) << 2) + (sq & 7); // equivalent to: sq = (sq / 8) * 4 + (sq % 8);
-
-        if (curr_piece != 11 && curr_piece != 10) { // their king / our king
-            active_features[idx] = sq + curr_piece*32 + king_square*320;
-            idx++;
-        }
+        if (curr_piece != 11 && curr_piece != 10) // their king / our king
+            active_features[idx++] = hm_state_to_feature(sq, curr_piece, king_sq);
     }
 
     return active_features;
@@ -226,54 +227,38 @@ std::vector<int> NnueBoard::get_HKP(Color color){
 
 // assumes it is not a king move
 // this function must be called before pushing the move
-modified_features NnueBoard::get_modified_features(Move move, bool color){
-    int king_square = kingSq(color ? Color::WHITE : Color::BLACK).index();
+modified_features NnueBoard::get_modified_features(Move move, Color color){
+    int king_sq = kingSq(color).index();
     
-    int from;
-    int to;
-    int curr_piece_idx;
-    int capt_piece_idx;
+    int from = move.from().index();
+    int to = move.to().index();
+    int curr_piece = static_cast<int>(at(static_cast<Square>(from)));
+    int capt_piece = static_cast<int>(at(static_cast<Square>(to)));
 
     int added;
     int removed;
     int captured = -1;
 
-    from = move.from().index();
-    to = move.to().index();
-
-    Piece curr_piece = at(static_cast<Square>(from));
-    Piece capt_piece = at(static_cast<Square>(to));
-
-    if (color){
-        king_square = 63 - king_square;
+    if (color == Color::BLACK){
+        // flip board
+        king_sq = 63 - king_sq;
         from = 63 - from;
         to = 63 - to;
-        curr_piece_idx = piece_to_index_w[static_cast<int>(curr_piece)];
-    } else {
-        curr_piece_idx = piece_to_index_b[static_cast<int>(curr_piece)];
+        // flip piece color
+        curr_piece = (curr_piece + 6) % 12;
+        capt_piece = capt_piece == 12 ? 12 : (capt_piece + 6) % 12;
     }
 
-    king_square += 7 - 2 * (king_square % 8); // reverse row
-    from += 7 - 2 * (from % 8); // reverse row
-    to += 7 - 2 * (to % 8); // reverse row
-
-
-    added = to + (curr_piece_idx + king_square * 10) * 64;
+    added = hm_state_to_feature(to, curr_piece, king_sq);
     
-    removed = from + (curr_piece_idx + king_square * 10) * 64;
+    removed = hm_state_to_feature(from, curr_piece, king_sq);
 
-    if (capt_piece != Piece::NONE){
-        if (color){
-            capt_piece_idx = piece_to_index_w[static_cast<int>(capt_piece)];
-        } else {
-            capt_piece_idx = piece_to_index_b[static_cast<int>(capt_piece)];
-        }
-        captured = to + (capt_piece_idx + king_square * 10) * 64;
-    }
+    if (capt_piece != 12) // Piece::NONE
+        captured = hm_state_to_feature(to, capt_piece, king_sq);
 
     return modified_features(added, removed, captured);
 }
 
 bool NnueBoard::is_updatable_move(Move move){
-    return ((move.typeOf() == Move::NORMAL) && (kingSq(sideToMove()) != move.from()));
+    return (move.typeOf() == Move::NORMAL && kingSq(sideToMove()) != move.from());
 }

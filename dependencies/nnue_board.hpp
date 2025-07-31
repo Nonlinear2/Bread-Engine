@@ -38,9 +38,11 @@ class NnueBoard: public Board {
     private:
     std::stack<Accumulator> accumulator_stack;
 
+    static int hm_state_to_feature(int sq, int curr_piece, int king_sq);
+
     std::vector<int> get_HKP(Color color);
 
-    modified_features get_modified_features(Move move, bool color);
+    modified_features get_modified_features(Move move, Color color);
 
     bool is_updatable_move(Move move);
 };
