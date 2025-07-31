@@ -15,8 +15,8 @@ constexpr int int32_per_reg = 8;
 constexpr int int16_per_reg = 16;
 constexpr int int8_per_reg = 32;
 
-inline const int HKP_size = 40960; // 64*64*5*2
-inline const int acc_size = 256;
+inline const int HKP_size = 20480; // 64*64*5*2 / 2
+inline const int acc_size = 1024;
 
 const std::vector<int> piece_to_index_w = {
     9, // white pawn
@@ -98,7 +98,9 @@ class NNUE {
     // unclipped output is in accumulator
 
     // apply crelu16 and store
-    int8_t ft_clipped_output[acc_size*2];
+    int16_t ft_output_unclipped[acc_size];
+
+    int8_t ft_output[acc_size];
 
     /******
     Layer 2
@@ -180,6 +182,8 @@ class NNUE {
 
     void crelu16(int16_t *input, int8_t *output, int size);
     void crelu32(int32_t *input, int8_t *output, int size);
+
+    void ft_pairwise_mul(int16_t *acc, int16_t *output);
 
     NNUE();
     ~NNUE();

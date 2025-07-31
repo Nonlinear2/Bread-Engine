@@ -118,36 +118,32 @@ NNUE::~NNUE(){
 
 void NNUE::load_model(){
     // feature transformer
-    for (int i = 0; i < ft_input_size*ft_output_size; i++){
+    for (int i = 0; i < ft_input_size*ft_output_size; i++)
         ft_weights[i] = ft_weights_start[i];
-    }
-    for (int i = 0; i < ft_output_size; i++){
+
+    for (int i = 0; i < ft_output_size; i++)
         ft_bias[i] = ft_bias_start[i];
-    }
 
     // layer 2
-    for (int i = 0; i < l2_input_size*l2_output_size; i++){
+    for (int i = 0; i < l2_input_size*l2_output_size; i++)
         l2_weights[i] = l2_weights_start[i];
-    }
-    for (int i = 0; i < l2_output_size; i++){
+
+    for (int i = 0; i < l2_output_size; i++)
         l2_bias[i] = l2_bias_start[i];
-    }
 
     // layer 3
-    for (int i = 0; i < l3_input_size*l3_output_size; i++){
+    for (int i = 0; i < l3_input_size*l3_output_size; i++)
         l3_weights[i] = l3_weights_start[i];
-    }
-    for (int i = 0; i < l3_output_size; i++){
+
+    for (int i = 0; i < l3_output_size; i++)
         l3_bias[i] = l3_bias_start[i];
-    }
 
     // layer 4
-    for (int i = 0; i < l4_input_size*l4_output_size; i++){
+    for (int i = 0; i < l4_input_size*l4_output_size; i++)
         l4_weights[i] = l4_weights_start[i];
-    }
-    for (int i = 0; i < l4_output_size; i++){
+
+    for (int i = 0; i < l4_output_size; i++)
         l4_bias[i] = l4_bias_start[i];
-    }
 };
 
 void NNUE::compute_accumulator(const std::vector<int> active_features, bool color){
@@ -157,9 +153,8 @@ void NNUE::compute_accumulator(const std::vector<int> active_features, bool colo
     __m256i avx_regs[num_avx_registers];
 
     // load the bias from memory
-    for (int i = 0; i < num_avx_registers; i++){
+    for (int i = 0; i < num_avx_registers; i++)
         avx_regs[i] = _mm256_loadu_si256((const __m256i*)&ft_bias[i*int16_per_reg]); // load int16
-    }
 
     for (const int &a: active_features){
         for (int i = 0; i < num_avx_registers; i++){
@@ -303,11 +298,22 @@ void NNUE::crelu32(int32_t *input, int8_t *output, int size){
     }
 };
 
-int NNUE::run_cropped_nn(bool color){
-    crelu16(accumulator[color], &ft_clipped_output[0], acc_size);
-    crelu16(accumulator[!color], &ft_clipped_output[acc_size], acc_size);
+void ft_pairwise_mul(int16_t *acc, int16_t *output){
+    constexpr int num_chunks = acc_size / (2 * int16_per_reg);
+    for (int i = 0; i < num_chunks; i++){
+        __m256i input_1 = _mm256_loadu_si256((const __m256i*)&acc[i * int16_per_reg]); // load int16
+        __m256i input_2 = _mm256_loadu_si256((const __m256i*)&acc[acc_size / 2 + i * int16_per_reg]); // load int16
+        _mm256_storeu_si256((__m256i*)&output[i*int8_per_reg], _mm256_mullo_epi16(input_1, input_2)); // store int16
+    }
+}
 
-    run(ft_clipped_output, l2_unclipped_output, l2_input_size, l2_output_size, l2_weights, l2_bias);
+int NNUE::run_cropped_nn(bool color){
+    ft_pairwise_mul(accumulator[color], ft_output_unclipped);
+    ft_pairwise_mul(accumulator[!color], &ft_output_unclipped[acc_size / 2]);
+    
+    crelu16(ft_output_unclipped, ft_output, acc_size);
+
+    run(ft_output, l2_unclipped_output, l2_input_size, l2_output_size, l2_weights, l2_bias);
     crelu32(l2_unclipped_output, l2_clipped_output, l2_output_size);
 
     run(l2_clipped_output, l3_unclipped_output, l3_input_size, l3_output_size, l3_weights, l3_bias);
