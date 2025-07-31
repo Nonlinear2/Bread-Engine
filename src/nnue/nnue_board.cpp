@@ -195,16 +195,12 @@ std::vector<int> NnueBoard::get_HKP(Color color){
     
     bool mirror = king_sq & 0xF0F0F0F0F0F0F0F; // checks if the king is on the right side of the board
 
-    int curr_piece;
-
     int idx = 0;
     while (occupied){
         int sq = occupied.pop();
 
-        if (color == Color::WHITE)
-            curr_piece = static_cast<int>(at(static_cast<Square>(sq)));
-        else {
-            curr_piece = static_cast<int>(at(static_cast<Square>(sq)));
+        int curr_piece = static_cast<int>(at(static_cast<Square>(sq)));
+        if (color == Color::BLACK){
             sq = 63 - sq; // flip board
             curr_piece = (curr_piece + 6) % 12; // flip piece color
         }
