@@ -375,7 +375,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
 
         // reverse futility pruning
-        if (depth < 6 && eval - depth*(142 - 40*cutnode) - 310 + 100*improving >= beta)
+        if (depth < 6 && eval - depth*142 - 310 + 100*improving >= beta)
             return eval;
 
         // null move pruning
@@ -452,7 +452,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         new_depth -= move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
         new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
         new_depth -= tt_capture && !is_capture;
-        new_depth -= move_gen.index() > 10;
+        new_depth -= move_gen.index() > 12 - 4*cutnode;
 
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
