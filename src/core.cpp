@@ -382,7 +382,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         // maybe check for zugzwang?
         int null_move_eval;
         if (!pos.last_move_null() && excluded_move == Move::NO_MOVE
-            && eval > beta - depth*90 && is_regular_eval(beta)){
+            && eval > beta - depth*90 && is_regular(beta)){
 
             int R = 2 + (eval >= beta) + depth / 4;
             ss->moved_piece = Piece::NONE;
@@ -418,14 +418,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         
         int new_depth = depth-1;
         int extension = 0;
-        if (is_hit && is_regular_eval(transposition.value)
+        if (is_hit && is_regular(transposition.value)
             && move == transposition.move && excluded_move == Move::NO_MOVE
             && depth >= 6 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
             && transposition.depth >= depth - 1)
         {
             int singular_beta = transposition.value - 10 - 6*depth;
 
-            if (is_regular_eval(singular_beta)){
+            if (is_regular(singular_beta)){
                 ss->excluded_move = move;
                 value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss);
                 ss->excluded_move = Move::NO_MOVE;
@@ -548,6 +548,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     nodes++;
 
     int stand_pat = NO_VALUE;
+    int value;
+    Move move;
+    Move best_move = Move::NO_MOVE;
 
     // tablebase probe
     if (pos.probe_wdl(stand_pat))
@@ -556,19 +559,15 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (pos.isHalfMoveDraw()) 
         return 0;
 
-    int value;
-    Move move;
-    Move best_move = Move::NO_MOVE;
-
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = pos.hash();
 
-    // first we check for transposition. If it is outcome, it should have already been stored
-    // with an exact flag, so the stand pat will be correct anyways.
     SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(
         (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos
     );
-    
+
+    bool in_check = pos.inCheck();
+
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
     stand_pat = transposition.static_eval;
@@ -594,27 +593,29 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (beta <= alpha)
         return transposition.value;
 
-    if (is_valid(stand_pat) && stand_pat >= beta)
-        return stand_pat;
-
     capture_gen.set_tt_move(transposition.move);
 
-    if (!is_valid(stand_pat)){
-        stand_pat = pos.evaluate();
+    if (in_check)
+        stand_pat = NO_VALUE;
+    else {
+        if (!is_valid(stand_pat))
+            stand_pat = pos.evaluate();
+        
         if (stand_pat >= beta){
-            transposition_table.store(zobrist_hash, stand_pat, stand_pat, DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
+            if (!is_hit)
+                transposition_table.store(zobrist_hash, stand_pat, stand_pat, DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
             return stand_pat;
         }
     }
 
-    assert(is_valid(stand_pat));
+    assert(is_valid(stand_pat) || in_check);
 
     if (depth == -QSEARCH_MAX_DEPTH || ss - stack >= SEARCH_STACK_SIZE - 1)
-        return stand_pat;
+        return in_check ? clamp_to_regular(pos.evaluate() - 250) : stand_pat;
 
     alpha = std::max(alpha, stand_pat);
 
-    int max_value = stand_pat;
+    int max_value = in_check ? -INFINITE_VALUE : stand_pat;
 
     Square previous_to_square = ((ss - 1)->current_move).to();
 
@@ -625,8 +626,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         // delta pruning
         // move.score() is calculated with set_capture_score which is material difference.
         // 1500 is a safety margin
-        if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-            if (stand_pat 
+        if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square && !in_check){
+            if (stand_pat
                 + piece_value[static_cast<int>(captured_piece.type())]
                 - piece_value[static_cast<int>(moved_piece.type())]
                 + 1500 < alpha)
@@ -661,6 +662,13 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
         return stand_pat;
     }
+
+    if (max_value == -INFINITE_VALUE){
+        assert(in_check);
+        max_value = clamp_to_regular(pos.evaluate() - 400);
+    }
+
+    assert(is_valid(max_value));
 
     if (pos.halfMoveClock() + depth + QSEARCH_MAX_DEPTH >= 100)
         return max_value; // avoid storing history dependant evals.

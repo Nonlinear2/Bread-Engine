@@ -80,9 +80,13 @@ constexpr bool is_decisive(int value){
     return is_win(value) || is_loss(value);
 }
 
-constexpr bool is_regular_eval(int value, bool zws_safe = true){
+constexpr bool is_regular(int value, bool zws_safe = true){
     assert(std::abs(value) <= NO_VALUE);
     return std::abs(value) <= BEST_VALUE - (zws_safe ? 1 : 0);
+}
+
+constexpr int clamp_to_regular(int value){
+    return std::clamp(value, -BEST_VALUE, BEST_VALUE);
 }
 
 constexpr int increment_mate_ply(int value){
