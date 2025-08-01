@@ -319,12 +319,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
+    bool is_hit;
     
+    Color us = pos.sideToMove();
+
     SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(
         (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos, depth
     );
 
-    bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
     
     static_eval = eval = transposition.static_eval;
@@ -379,19 +381,21 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             return eval;
 
         // null move pruning
-        // maybe check for zugzwang?
-        int null_move_eval;
+        bool has_non_pawn = bool(pos.us(us)
+            ^ pos.pieces(PieceType::PAWN, us)
+            ^ Bitboard::fromSquare(pos.kingSq(us)));
+
         if (!pos.last_move_null() && excluded_move == Move::NO_MOVE
-            && eval > beta - depth*90 && is_regular_eval(beta)){
+            && has_non_pawn && eval > beta - depth*90 && is_regular_eval(beta)){
 
             int R = 2 + (eval >= beta) + depth / 4;
             ss->moved_piece = Piece::NONE;
             ss->current_move = Move::NULL_MOVE;
             pos.makeNullMove();
-            null_move_eval = -negamax<false>(depth - R, -beta, -beta+1, ss + 1);
+            int null_move_value = -negamax<false>(depth - R, -beta, -beta+1, ss + 1);
             pos.unmakeNullMove();
-            if (null_move_eval >= beta && !is_win(null_move_eval))
-                return null_move_eval;
+            if (null_move_value >= beta && !is_win(null_move_value))
+                return null_move_value;
         }
     }
 
