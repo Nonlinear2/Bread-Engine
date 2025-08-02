@@ -613,7 +613,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (depth == -QSEARCH_MAX_DEPTH || ss - stack >= SEARCH_STACK_SIZE - 1)
         return in_check ? clamp_to_regular(pos.evaluate() - 250) : stand_pat;
 
-    alpha = std::max(alpha, stand_pat);
+    if (!in_check)
+        alpha = std::max(alpha, stand_pat);
 
     int max_value = in_check ? -INFINITE_VALUE : stand_pat;
 
