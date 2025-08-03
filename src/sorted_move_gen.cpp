@@ -126,7 +126,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
     switch (stage){
         case TT_MOVE:
             ++stage;
-            if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.isCapture(tt_move))){
+            if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.inCheck() || pos.isCapture(tt_move))){
                 move = tt_move;
                 return true;
             }
