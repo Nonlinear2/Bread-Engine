@@ -595,9 +595,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     capture_gen.set_tt_move(transposition.move);
 
-    if (in_check)
-        stand_pat = NO_VALUE;
-    else {
+    if (!in_check){
         if (!is_valid(stand_pat))
             stand_pat = pos.evaluate();
         
@@ -610,8 +608,11 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     assert(is_valid(stand_pat) || in_check);
 
-    if (depth == -QSEARCH_MAX_DEPTH || ss - stack >= SEARCH_STACK_SIZE - 1)
-        return in_check ? clamp_to_regular(pos.evaluate() - 250) : stand_pat;
+    if (depth == -QSEARCH_MAX_DEPTH || ss - stack >= SEARCH_STACK_SIZE - 1){
+        if (in_check && !is_valid(stand_pat))
+            stand_pat = pos.evaluate();
+        return in_check ? clamp_to_regular(stand_pat - 250) : stand_pat;
+    }
 
     if (!in_check)
         alpha = std::max(alpha, stand_pat);
@@ -666,7 +667,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     if (max_value == -INFINITE_VALUE){
         assert(in_check);
-        max_value = clamp_to_regular(pos.evaluate() - 400);
+        if (in_check && !is_valid(stand_pat))
+            stand_pat = pos.evaluate();
+        max_value = clamp_to_regular(stand_pat - 400);
     }
 
     assert(is_valid(max_value));
@@ -676,7 +679,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     if (depth == 0)
         transposition_table.store(zobrist_hash, max_value,
-            stand_pat,
+            in_check ? NO_VALUE : stand_pat,
             DEPTH_QSEARCH, best_move,
             max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
             static_cast<uint8_t>(pos.fullMoveNumber()));
