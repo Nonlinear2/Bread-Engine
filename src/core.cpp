@@ -573,21 +573,21 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
     stand_pat = transposition.static_eval;
 
-    switch (transposition.flag){
-        case TFlag::EXACT:
-            return transposition.value;
-        case TFlag::LOWER_BOUND:
-            if (!pv)
+    if (!pv){
+        switch (transposition.flag){
+            case TFlag::EXACT:
+                return transposition.value;
+            case TFlag::LOWER_BOUND:
                 alpha = std::max(alpha, transposition.value);
-            stand_pat = std::max(stand_pat, transposition.value);
-            break;
-        case TFlag::UPPER_BOUND:
-            if (!pv)
+                stand_pat = std::max(stand_pat, transposition.value);
+                break;
+            case TFlag::UPPER_BOUND:
                 beta = std::min(beta, transposition.value);
-            stand_pat = std::min(stand_pat, transposition.value);
-            break;
-        default:
-            break;
+                stand_pat = std::min(stand_pat, transposition.value);
+                break;
+            default:
+                break;
+        }
     }
 
     // no need to store in transposition table as is already there.
