@@ -9,7 +9,8 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "id author Nonlinear" << std::endl;
         std::cout << std::endl;
         std::cout << "option name SyzygyPath type string default <empty>" << std::endl;
-        std::cout << "option name hash type spin default 256 min " << TT_MIN_SIZE << " max " << TT_MAX_SIZE << std::endl;
+        std::cout << "option name Hash type spin default 256 min " << TT_MIN_SIZE << " max " << TT_MAX_SIZE << std::endl;
+        std::cout << "option name Threads type spin default 1 min 1 max 1" << std::endl;
         std::cout << "option name nonsense type check default false" << std::endl;
         std::cout << "uciok" << std::endl;
     } else if (first == "setoption"){
@@ -26,6 +27,8 @@ bool UCIAgent::process_uci_command(std::string command){
     
     } else if (first == "bench"){
         process_bench(parsed_command);
+        tb_free();
+        return 0;
 
     } else if (first == "go"){
         interrupt_if_searching();
@@ -75,7 +78,7 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
         } else {
             std::cout << "info string tablebase loaded" << std::endl;
         }
-    } else if (option_name == "hash"){
+    } else if (option_name == "Hash"){
         int size = std::stoi(command[4]);
         if ((size & (size - 1)) == 0){
             size = std::clamp(size, 2, 4096);
@@ -84,6 +87,8 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
         } else {
             std::cout << "info string hash size must be a power of 2" << std::endl;
         }
+    } else if (option_name == "Threads"){
+       std::cout << "info string number of threads set to 1" << std::endl;
     } else if (option_name == "nonsense"){
         bool value = (command[4] == "true");
         engine.is_nonsense = value;
