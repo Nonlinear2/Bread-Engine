@@ -1,4 +1,4 @@
-#include "benchmark_engine.hpp"
+#include "benchmark.hpp"
 
 namespace Benchmark {
 

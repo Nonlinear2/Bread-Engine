@@ -1,3 +1,5 @@
+**/*.o
+/*.exe
 /build
 /.vscode
 /utils/commands.txt

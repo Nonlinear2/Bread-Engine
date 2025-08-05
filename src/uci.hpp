@@ -6,7 +6,7 @@
 #include <sstream>
 #include <thread>
 #include "core.hpp"
-#include "benchmark_engine.hpp"
+#include "benchmark.hpp"
 
 class UCIAgent {
     public:
