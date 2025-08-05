@@ -575,7 +575,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     switch (transposition.flag){
         case TFlag::EXACT:
-            return transposition.value;
+            if (!pv)
+                return transposition.value;
         case TFlag::LOWER_BOUND:
             if (!pv)
                 alpha = std::max(alpha, transposition.value);
