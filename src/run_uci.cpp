@@ -1,7 +1,14 @@
 #include "uci.hpp"
 #include <iostream>
+#include <string>
 
-int main(){
+int main(int argc, char* argv[]){
+
+    if (argc >= 2 && std::string(argv[1]) == "bench"){
+        Benchmark::benchmark_engine(BENCHMARK_DEPTH);
+        return 0;
+    }
+
     UCIAgent uci_engine = UCIAgent();
     std::string input;
     bool running;
