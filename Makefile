@@ -2,6 +2,7 @@ VERSION := 1.5.9
 
 CXX ?= g++
 EXE ?= bread_engine_$(VERSION)
+EXE += .exe
 
 CXXFLAGS ?= -std=c++20 -O3 -mavx2 -march=native
 INCLUDES := -Isrc -Isrc/extern -Isrc/extern/Fathom/src
