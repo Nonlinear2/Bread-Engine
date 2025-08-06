@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 file(READ "${CMAKE_SOURCE_DIR}/version.txt" bread_VERSION)
 
-project(bread_engine VERSION ${bread_VERSION})
+project(bread_engine VERSION ${bread_VERSION} LANGUAGES CXX)
 
 set(bread_DEFAULT_NAME "bread_engine_${CMAKE_PROJECT_VERSION}")
 
