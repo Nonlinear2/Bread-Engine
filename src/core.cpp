@@ -192,7 +192,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         if (interrupt_flag
             || is_mate(best_move.score())
             || (limit.type == LimitType::Depth && current_depth == limit.value)
-            || current_depth == ENGINE_MAX_DEPTH)
+            || current_depth >= ENGINE_MAX_DEPTH)
             break;
     }
 
@@ -210,7 +210,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
 }
 
 Move Engine::minimax_root(int depth, Stack* ss){
-    assert(depth < ENGINE_MAX_DEPTH);
+    assert(depth <= ENGINE_MAX_DEPTH);
 
     int alpha = -INFINITE_VALUE;
     int beta = INFINITE_VALUE;
@@ -291,7 +291,7 @@ template<bool pv>
 int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     assert(ss - stack < SEARCH_STACK_SIZE); // avoid stack overflow
     assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
-    assert(depth < ENGINE_MAX_DEPTH);
+    assert(depth <= ENGINE_MAX_DEPTH);
 
     nodes++;
 

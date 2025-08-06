@@ -1,5 +1,6 @@
 **/*.o
 /*.exe
 /build
+/makefile-build
 /.vscode
 /utils/commands.txt
