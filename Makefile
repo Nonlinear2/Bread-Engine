@@ -2,6 +2,7 @@ VERSION := $(shell cat version.txt)
 DEFAULT_NAME := bread_engine_$(VERSION).exe
 EXE ?= $(DEFAULT_NAME)
 CXX ?= clang++
+CC ?= clang
 BUILD_DIR := makefile-build
 
 .PHONY: all clean
@@ -27,7 +28,7 @@ $(BUILD_DIR)/$(DEFAULT_NAME): $(BUILD_DIR)/Makefile
 
 $(BUILD_DIR)/Makefile: CMakeLists.txt
 	mkdir -p $(BUILD_DIR)
-	cd $(BUILD_DIR) && cmake -G "Unix Makefiles" -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_BUILD_TYPE=Release ..
+	cd $(BUILD_DIR) && cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_BUILD_TYPE=Release ..
 
 clean:
 	rm -rf $(BUILD_DIR)
