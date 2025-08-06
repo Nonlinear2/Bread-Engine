@@ -21,7 +21,7 @@ int main(){
         running = uci_engine.process_uci_command(input);
         if (UCIAgent::split_string(input)[0] == "go")
             // avoid writing logic to check if the thread is running
-            std::this_thread::sleep_for(std::chrono::milliseconds(9000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         if (!running)
             break;
     }
@@ -30,7 +30,7 @@ int main(){
         uci_engine.main_search_thread.join();
     }
 
-    uci_engine.engine.save_state("saved_state.bin");
+    // uci_engine.engine.save_state("saved_state.bin");
     std::cout << "ok\n";
     return 0;
 }

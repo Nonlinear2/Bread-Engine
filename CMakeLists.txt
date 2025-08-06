@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
-project(bread_engine VERSION 1.5.10)
+
+file(READ "${CMAKE_SOURCE_DIR}/version.txt" bread_VERSION)
+
+project(bread_engine VERSION ${bread_VERSION})
+
+set(bread_DEFAULT_NAME "bread_engine_${CMAKE_PROJECT_VERSION}")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -58,8 +63,8 @@ function(bread_configure bread_TARGET)
 
     target_compile_definitions(${bread_TARGET} PRIVATE bread_DEBUG_UCI_COMMANDS_PATH="${bread_DEBUG_UCI_COMMANDS_PATH}")
 
-    if (TARGET release)
-        set_target_properties(release PROPERTIES OUTPUT_NAME "bread_engine_${CMAKE_PROJECT_VERSION}")
+    if (TARGET bread_engine)
+        set_target_properties(bread_engine PROPERTIES OUTPUT_NAME "${bread_DEFAULT_NAME}")
     endif()
 
     if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
@@ -67,7 +72,7 @@ function(bread_configure bread_TARGET)
     endif()
 endfunction(bread_configure)
 
-bread_configure(release SOURCES
+bread_configure(bread_engine SOURCES
     ${bread_SOURCE}
     ${bread_SRC}/uci.cpp
     ${bread_SRC}/run_uci.cpp
