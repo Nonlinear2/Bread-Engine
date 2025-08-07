@@ -5,6 +5,7 @@
 #include <iostream>
 #include "chess.hpp"
 #include "tbprobe.hpp"
+#include "constants.hpp"
 #include "misc.hpp"
 
 class Nonsense {

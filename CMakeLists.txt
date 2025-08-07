@@ -17,13 +17,15 @@ set(bread_NNUE_MODEL_PATH "${bread_NEURAL_NETWORKS}/model_NNUE_2-40960_2x256_32_
 set(bread_DEBUG_UCI_COMMANDS_PATH "${bread_UTILS}/commands.txt")
 
 set(bread_INCLUDE_DIRS
-    ${bread_SRC}    
+    ${bread_SRC}
     ${bread_SRC}/extern
     ${bread_SRC}/extern/Fathom/src
 )
 
 set(bread_SOURCE
     ${bread_SRC}/nonsense.cpp
+    ${bread_SRC}/see.cpp
+    ${bread_SRC}/history.cpp
     ${bread_SRC}/misc.cpp
     ${bread_SRC}/sorted_move_gen.cpp
     ${bread_SRC}/nnue/nnue.cpp
