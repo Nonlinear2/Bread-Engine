@@ -12,6 +12,12 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "option name Hash type spin default 256 min " << TT_MIN_SIZE << " max " << TT_MAX_SIZE << std::endl;
         std::cout << "option name Threads type spin default 1 min 1 max 1" << std::endl;
         std::cout << "option name Nonsense type check default false" << std::endl;
+        // spsa tune options
+        auto& tuneables = SPSA::get_values();
+        for (const auto& pair : tuneables) {
+            std::cout << "option name " << pair.first << " type spin default " << *pair.second << std::endl;
+        }
+
         std::cout << "uciok" << std::endl;
     } else if (first == "setoption"){
         process_setoption(parsed_command);
