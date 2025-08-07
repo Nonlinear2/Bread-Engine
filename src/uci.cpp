@@ -76,7 +76,7 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
         } else {
             std::cout << "info string tablebase loaded" << std::endl;
         }
-    } else if (option_name == "Hash"){
+    } else if (option_name == "hash"){
         int size = std::stoi(command[4]);
         if ((size & (size - 1)) == 0){
             size = std::clamp(size, 2, 4096);
@@ -85,12 +85,15 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
         } else {
             std::cout << "info string hash size must be a power of 2" << std::endl;
         }
-    } else if (option_name == "Threads"){
+    } else if (option_name == "threads"){
        std::cout << "info string number of threads set to 1" << std::endl;
     } else if (option_name == "nonsense"){
         bool value = (command[4] == "true");
         engine.is_nonsense = value;
         std::cout << "info string nonsense " << (value ? "activated" : "deactivated") << std::endl;
+    } else if (command.size() == 4){
+        // assume that user is trying to set an SPSA parameter
+        SPSA::try_set_value(option_name, command[4]);
     }
 }
 

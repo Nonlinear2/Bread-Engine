@@ -169,3 +169,9 @@ namespace SEE {
 bool evaluate(const Board& board, Move move, int threshold);
 PieceType pop_lva(const Board& board, Bitboard& occupied, const Bitboard& attackers, Color color);
 } // namespace SEE
+
+bool is_number(const std::string& s){
+    std::string::const_iterator it = s.begin();
+    while (it != s.end() && (std::isdigit(*it) || *it == "-")) ++it;
+    return !s.empty() && it == s.end();
+}
