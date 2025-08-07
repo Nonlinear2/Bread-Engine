@@ -1,5 +1,25 @@
 #include "core.hpp"
 
+int r_1 = 100;
+int r_2 = 250;
+int rfp_1 = 142;
+int rfp_2 = 310;
+int rfp_3 = 100;
+int nmp_1 = 90;
+int nmp_2 = 0;
+int lmp_1 = 100;
+int see_1 = 250;
+int see_2 = 10;
+int se_1 = 10;
+int se_2 = 6;
+int lmr_1 = 10;
+int cont_1 = 1000;
+int cont_2 = 200;
+int qs_fp_1 = 1500;
+int qs_see_1 = 300;
+int qs_p_1 = 1000;
+int qs_p_2 = 150;
+
 void Engine::set_uci_display(bool v){
     display_uci = v;
 }
@@ -368,21 +388,21 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     if (!pv && !in_check){
 
         // razoring
-        if (eval + 100*depth*depth + 250 < alpha){ 
+        if (eval + r_1*depth*depth + r_2 < alpha){ 
             eval = qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval.
             if (eval <= alpha)
                 return eval;
         }
 
         // reverse futility pruning
-        if (depth < 6 && eval - depth*142 - 310 + 100*improving >= beta)
+        if (depth < 6 && eval - depth*rfp_1  - rfp_2 + rfp_3*improving >= beta)
             return eval;
 
         // null move pruning
         // maybe check for zugzwang?
         int null_move_eval;
         if (!pos.last_move_null() && excluded_move == Move::NO_MOVE
-            && eval > beta - depth*90 && is_regular_eval(beta)){
+            && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta)){
 
             int R = 2 + (eval >= beta) + depth / 4;
             ss->moved_piece = Piece::NONE;
@@ -407,12 +427,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         if (is_valid(max_value) && !is_loss(max_value)){
             // lmp
             if (!pv && !in_check && !is_capture && move_gen.index() > 2 + depth + improving 
-                && !is_hit && eval - 100 * !improving < alpha)
+                && !is_hit && eval - lmp_1 * !improving < alpha)
                 continue;
 
             // SEE pruning
             if (!pv && !in_check && !is_capture && !is_killer && move_gen.index() > 5 + depth / 2
-                && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - 250 - 10*depth))
+                && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
                 continue;
         }
         
@@ -423,7 +443,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             && depth >= 6 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
             && transposition.depth >= depth - 1)
         {
-            int singular_beta = transposition.value - 10 - 6*depth;
+            int singular_beta = transposition.value - se_1 - se_2*depth;
 
             if (is_regular_eval(singular_beta)){
                 ss->excluded_move = move;
@@ -452,7 +472,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         new_depth -= move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
         new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
         new_depth -= tt_capture && !is_capture;
-        new_depth -= move_gen.index() > 10;
+        new_depth -= move_gen.index() > lmr_1;
 
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
@@ -463,10 +483,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             if ((new_depth < depth-1) && (value > alpha)){
                 value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
                 if (!is_capture)
-                    move_gen.update_cont_history(ss->moved_piece, move.to().index(), 1000);
+                    move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
             }
             else if (value < alpha && !is_capture)
-                move_gen.update_cont_history(ss->moved_piece, move.to().index(), -200);
+                move_gen.update_cont_history(ss->moved_piece, move.to().index(), -cont_2);
         }
 
         pos.restore_state(move);
@@ -629,15 +649,15 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             if (stand_pat 
                 + piece_value[static_cast<int>(captured_piece.type())]
                 - piece_value[static_cast<int>(moved_piece.type())]
-                + 1500 < alpha)
-                continue; // multiplication by 150 is to convert from pawn to "engine centipawns".
+                + qs_fp_1 < alpha)
+                continue;
 
             // SEE pruning
-            if (!SEE::evaluate(pos, move, ((alpha-stand_pat)/150 - 2)*150))
+            if (!SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
                 continue;
     
             if (!pv && capture_gen.index() > 7
-                && stand_pat + 1000 < alpha && !SEE::evaluate(pos, move, -150))
+                && stand_pat + qs_p_1 < alpha && !SEE::evaluate(pos, move, -qs_p_2))
                 continue;
         }
 
