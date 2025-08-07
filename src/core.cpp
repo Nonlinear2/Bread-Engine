@@ -1,24 +1,24 @@
 #include "core.hpp"
 
-int r_1 = 100;
-int r_2 = 250;
-int rfp_1 = 142;
-int rfp_2 = 310;
-int rfp_3 = 100;
-int nmp_1 = 90;
-int nmp_2 = 0;
-int lmp_1 = 100;
-int see_1 = 250;
-int see_2 = 10;
-int se_1 = 10;
-int se_2 = 6;
-int lmr_1 = 10;
-int cont_1 = 1000;
-int cont_2 = 200;
-int qs_fp_1 = 1500;
-int qs_see_1 = 300;
-int qs_p_1 = 1000;
-int qs_p_2 = 150;
+TUNEABLE(r_1, int, 100, 0, 500, 20, 0.002);
+TUNEABLE(r_2, int, 250, -100, 1000, 25, 0.002);
+TUNEABLE(rfp_1, int, 142, 0, 500, 25, 0.002);
+TUNEABLE(rfp_2, int, 310, 0, 1000, 50, 0.002);
+TUNEABLE(rfp_3, int, 100, -100, 1000, 20, 0.002);
+TUNEABLE(nmp_1, int, 90, -50, 250, 10, 0.002);
+TUNEABLE(nmp_2, int, 0, -300, 300, 15, 0.002);
+TUNEABLE(lmp_1, int, 100, -100, 500, 20, 0.002);
+TUNEABLE(see_1, int, 250, -100, 1000, 25, 0.002);
+TUNEABLE(see_2, int, 10, 0, 100, 0.5, 0.002);
+TUNEABLE(se_1, int, 10, -100, 100, 1, 0.002);
+TUNEABLE(se_2, int, 6, -100, 100, 1, 0.002);
+TUNEABLE(lmr_1, int, 10, 0, 23, 0.5, 0.002);
+TUNEABLE(cont_1, int, 1000, 0, 3000, 70, 0.002);
+TUNEABLE(cont_2, int, 200, 0, 1500, 35, 0.002);
+TUNEABLE(qs_fp_1, int, 1500, 0, 3000, 70, 0.002);
+TUNEABLE(qs_see_1, int, 300, 0, 900, 25, 0.002);
+TUNEABLE(qs_p_1, int, 1000, 0, 3000, 50, 0.002);
+TUNEABLE(qs_p_2, int, 150, 0, 900, 20, 0.002);
 
 void Engine::set_uci_display(bool v){
     display_uci = v;

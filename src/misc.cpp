@@ -34,3 +34,9 @@ void KillerMoves::load_from_stream(std::ifstream& ifs){
         }
     }
 }
+
+bool is_number_string(const std::string& s){
+    std::string::const_iterator it = s.begin();
+    while (it != s.end() && (std::isdigit(*it) || *it == '-')) ++it;
+    return !s.empty() && it == s.end();
+}

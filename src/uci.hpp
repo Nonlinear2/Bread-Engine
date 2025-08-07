@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
+#include "tune.hpp"
 #include "core.hpp"
 #include "benchmark.hpp"
 

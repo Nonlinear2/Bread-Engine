@@ -12,6 +12,7 @@
 #include "nonsense.hpp"
 #include "nnue_board.hpp"
 #include "sorted_move_gen.hpp"
+#include "tune.hpp"
 
 class Engine {
     public:

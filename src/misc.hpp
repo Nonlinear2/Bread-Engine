@@ -50,3 +50,5 @@ class SearchLimit {
     LimitType type;
     int value;
 };
+
+bool is_number_string(const std::string& s);

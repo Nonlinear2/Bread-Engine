@@ -11,7 +11,7 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "option name SyzygyPath type string default <empty>" << std::endl;
         std::cout << "option name Hash type spin default 256 min " << TT_MIN_SIZE << " max " << TT_MAX_SIZE << std::endl;
         std::cout << "option name Threads type spin default 1 min 1 max 1" << std::endl;
-        std::cout << "option name nonsense type check default false" << std::endl;
+        std::cout << "option name Nonsense type check default false" << std::endl;
         std::cout << "uciok" << std::endl;
     } else if (first == "setoption"){
         process_setoption(parsed_command);
@@ -61,10 +61,13 @@ std::vector<std::string> UCIAgent::split_string(std::string str) {
 }
 
 void UCIAgent::process_setoption(std::vector<std::string> command){
+    assert(command.size() >= 5); // setoption name ... value ...
     std::string option_name = command[2];
-    std::transform(option_name.begin(), option_name.end(), option_name.begin(), [](unsigned char c){ return std::tolower(c); });
-    if (option_name == "syzygypath"){
-        std::string path = command[4];
+    std::string option_value = command[4];
+
+    if (option_name == "SyzygyPath"){
+        std::string path = option_value;
+        // handle path containing spaces
         for (int i = 5; i < command.size(); i++){
             path += " " + command[i];
         }
@@ -76,8 +79,8 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
         } else {
             std::cout << "info string tablebase loaded" << std::endl;
         }
-    } else if (option_name == "hash"){
-        int size = std::stoi(command[4]);
+    } else if (option_name == "Hash"){
+        int size = std::stoi(option_value);
         if ((size & (size - 1)) == 0){
             size = std::clamp(size, 2, 4096);
             engine.transposition_table.allocateMB(size);
@@ -85,15 +88,14 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
         } else {
             std::cout << "info string hash size must be a power of 2" << std::endl;
         }
-    } else if (option_name == "threads"){
+    } else if (option_name == "Threads"){
        std::cout << "info string number of threads set to 1" << std::endl;
-    } else if (option_name == "nonsense"){
-        bool value = (command[4] == "true");
+    } else if (option_name == "Nonsense"){
+        bool value = (option_value == "true");
         engine.is_nonsense = value;
         std::cout << "info string nonsense " << (value ? "activated" : "deactivated") << std::endl;
-    } else if (command.size() == 4){
-        // assume that user is trying to set an SPSA parameter
-        SPSA::try_set_value(option_name, command[4]);
+    } else if (is_number_string(option_value) && SPSA::is_registered(option_name)){
+        SPSA::set_value(option_name, std::stoi(option_value));
     }
 }
 
