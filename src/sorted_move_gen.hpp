@@ -4,7 +4,10 @@
 
 #include "piece_square_tables.hpp"
 #include "nnue_board.hpp"
+#include "constants.hpp"
+#include "history.hpp"
 #include "misc.hpp"
+#include "see.hpp"
 #include "chess.hpp"
 
 enum GenerationStage: int{
