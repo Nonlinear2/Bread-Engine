@@ -1,5 +1,5 @@
 # Overview
-Bread engine is a chess engine written in C++. There is still a lot of room for improvement, but Bread is relatively strong (and probably unbeatable by humans). Currently, it is rated 2700 elo on the computer chess rating lists. Bread uses minimax search with NNUE (efficiently updatable neural network) as an evaluation function. The neural network is homemade and trained using lichess's open database with evaluated games.
+Bread is a superhuman chess engine written in C++. Currently, it is rated 2900 elo on the computer chess rating lists. Bread uses minimax search with NNUE (efficiently updatable neural network) as an evaluation function. The neural network is homemade and was originally trained using lichess's open database. More recently, the training has been done using games of self play.
 
 Bread engine does not have a graphical interface built in. However it supports the uci protocol, you can therefore run it on any chess graphical interface, such as [cute chess](https://github.com/cutechess/cutechess) or [arena](http://www.playwitharena.de/).
 
