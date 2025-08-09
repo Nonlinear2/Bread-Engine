@@ -5,7 +5,7 @@
 #include <set>
 #include <stdexcept>
 
-#define IS_TUNE 1
+// #define IS_TUNE 1
 
 namespace SPSA {
 
@@ -56,6 +56,6 @@ inline int get_value(const std::string& name){
             return true; \
         }();
 #else
-    #define TUNEABLE(type, name, value) \
-        constexpr type name = value
+    #define TUNEABLE(name, type, value, min, max, c, r) \
+        constexpr type name = value;
 #endif
