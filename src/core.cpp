@@ -311,6 +311,8 @@ template<bool pv>
 int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     assert(ss - stack < SEARCH_STACK_SIZE); // avoid stack overflow
     assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
+    assert(alpha < beta);
+    assert(pv || (alpha == beta - 1));
     assert(depth <= ENGINE_MAX_DEPTH);
 
     nodes++;
@@ -460,6 +462,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         }
 
         new_depth += extension;
+        new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
         ss->moved_piece = pos.at(move.from());
         ss->current_move = move;
@@ -468,25 +471,30 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         bool gives_check = pos.inCheck();
 
         // late move reductions
-        new_depth += gives_check;
-        new_depth -= move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
-        new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
-        new_depth -= tt_capture && !is_capture;
-        new_depth -= move_gen.index() > lmr_1;
+        int reduced_depth = new_depth;
+        reduced_depth += gives_check;
+        reduced_depth -= move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
+        reduced_depth -= depth > 5 && !is_hit && !is_killer; // IIR
+        reduced_depth -= tt_capture && !is_capture;
+        reduced_depth -= move_gen.index() > lmr_1;
+        reduced_depth = std::min(reduced_depth, ENGINE_MAX_DEPTH);
 
-        new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
+        if (move_gen.index() > 0 && depth > 2){
+            value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1);
 
-        if (pv && (move_gen.index() == 0)){
-            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
-        } else {
-            value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
-            if ((new_depth < depth-1) && (value > alpha)){
-                value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
+            if (value > alpha && reduced_depth < new_depth){
+                value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
                 if (!is_capture)
                     move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
-            }
-            else if (value < alpha && !is_capture)
+            } else if (value <= alpha && !is_capture)
                 move_gen.update_cont_history(ss->moved_piece, move.to().index(), -cont_2);
+
+        } else if (!pv || move_gen.index() > 0) {
+            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
+        }
+
+        if (pv && (move_gen.index() == 0 || value > alpha)) {
+            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
         }
 
         pos.restore_state(move);
@@ -564,7 +572,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 template<bool pv>
 int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(ss - stack < SEARCH_STACK_SIZE); // avoid stack overflow
-    // assert(pv || ((alpha == (beta-1)) && (alpha == (beta-1))));
+    assert(pv || (alpha == beta - 1));
+
     nodes++;
 
     int stand_pat = NO_VALUE;
@@ -595,7 +604,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     switch (transposition.flag){
         case TFlag::EXACT:
-            return transposition.value;
+            if (!pv)
+                return transposition.value;
+            break;
         case TFlag::LOWER_BOUND:
             if (!pv)
                 alpha = std::max(alpha, transposition.value);
