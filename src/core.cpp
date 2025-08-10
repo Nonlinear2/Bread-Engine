@@ -1,24 +1,24 @@
 #include "core.hpp"
 
-TUNEABLE(r_1, int, 139, 0, 500, 20, 0.002);
-TUNEABLE(r_2, int, 253, -100, 1000, 25, 0.002);
-TUNEABLE(rfp_1, int, 185, 0, 500, 25, 0.002);
-TUNEABLE(rfp_2, int, 265, 0, 1000, 50, 0.002);
-TUNEABLE(rfp_3, int, 123, -100, 1000, 20, 0.002);
-TUNEABLE(nmp_1, int, 89, -50, 250, 10, 0.002);
-TUNEABLE(nmp_2, int, 17, -300, 300, 15, 0.002);
-TUNEABLE(lmp_1, int, 86, -100, 500, 20, 0.002);
-TUNEABLE(see_1, int, 210, -100, 1000, 25, 0.002);
+TUNEABLE(r_1, int, 149, 0, 500, 20, 0.002);
+TUNEABLE(r_2, int, 262, -100, 1000, 25, 0.002);
+TUNEABLE(rfp_1, int, 196, 0, 500, 25, 0.002);
+TUNEABLE(rfp_2, int, 245, 0, 1000, 50, 0.002);
+TUNEABLE(rfp_3, int, 134, -100, 1000, 20, 0.002);
+TUNEABLE(nmp_1, int, 81, -50, 250, 10, 0.002);
+TUNEABLE(nmp_2, int, 14, -300, 300, 15, 0.002);
+TUNEABLE(lmp_1, int, 87, -100, 500, 20, 0.002);
+TUNEABLE(see_1, int, 173, -100, 1000, 25, 0.002);
 TUNEABLE(see_2, int, 10, 0, 100, 0.5, 0.002);
 TUNEABLE(se_1, int, 9, -100, 100, 1, 0.002);
 TUNEABLE(se_2, int, 5, -100, 100, 1, 0.002);
-TUNEABLE(lmr_1, int, 10, 0, 23, 0.5, 0.002);
-TUNEABLE(cont_1, int, 886, 0, 3000, 70, 0.002);
-TUNEABLE(cont_2, int, 223, 0, 1500, 35, 0.002);
-TUNEABLE(qs_fp_1, int, 1541, 0, 3000, 70, 0.002);
-TUNEABLE(qs_see_1, int, 306, 0, 900, 25, 0.002);
-TUNEABLE(qs_p_1, int, 1003, 0, 3000, 50, 0.002);
-TUNEABLE(qs_p_2, int, 157, 0, 900, 20, 0.002);
+TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
+TUNEABLE(cont_1, int, 912, 0, 3000, 70, 0.002);
+TUNEABLE(cont_2, int, 214, 0, 1500, 35, 0.002);
+TUNEABLE(qs_fp_1, int, 1549, 0, 3000, 70, 0.002);
+TUNEABLE(qs_see_1, int, 301, 0, 900, 25, 0.002);
+TUNEABLE(qs_p_1, int, 1016, 0, 3000, 50, 0.002);
+TUNEABLE(qs_p_2, int, 156, 0, 900, 20, 0.002);
 
 void Engine::set_uci_display(bool v){
     display_uci = v;

@@ -5,7 +5,7 @@
 #include <set>
 #include <stdexcept>
 
-// #define IS_TUNE 1
+#define IS_TUNE 1
 
 namespace SPSA {
 
