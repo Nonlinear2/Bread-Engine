@@ -395,7 +395,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         ss->static_eval > (ss - 2)->static_eval;
 
     // pruning
-    if (!in_check){
+    if (!pv && !in_check){
 
         // razoring
         if (eval + r_1*depth*depth + r_2 < alpha){ 
