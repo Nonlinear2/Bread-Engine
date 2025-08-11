@@ -271,6 +271,7 @@ Move Engine::negamax_root(int depth, Stack* ss){
         int new_depth = depth-1;
         new_depth += pos.inCheck();
         new_depth -= move_count > 2 && depth > 5 && !is_capture && !in_check;
+        new_depth -= move_count > 13;
 
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
@@ -278,6 +279,9 @@ Move Engine::negamax_root(int depth, Stack* ss){
             value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
         } else {
             value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
+            if (new_depth < depth-1 && value > alpha){
+                value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
+            }
         }
 
         pos.restore_state(move);
@@ -480,7 +484,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
         } else {
             value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
-            if ((new_depth < depth-1) && (value > alpha)){
+            if (new_depth < depth-1 && value > alpha){
                 value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
                 if (!is_capture)
                     move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
