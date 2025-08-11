@@ -181,7 +181,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     while (true){
         current_depth++;
 
-        best_move = minimax_root(current_depth, root_ss);
+        best_move = negamax_root(current_depth, root_ss);
 
         std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
         pv = pv_pmove.first;
@@ -229,7 +229,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     return best_move;
 }
 
-Move Engine::minimax_root(int depth, Stack* ss){
+Move Engine::negamax_root(int depth, Stack* ss){
     assert(depth <= ENGINE_MAX_DEPTH);
 
     int alpha = -INFINITE_VALUE;
@@ -258,7 +258,7 @@ Move Engine::minimax_root(int depth, Stack* ss){
 
     bool in_check = pos.inCheck();
 
-    int pos_eval;
+    int value;
     int move_count = 0;
     for (Move& move: root_moves){
         move_count++;
@@ -275,17 +275,17 @@ Move Engine::minimax_root(int depth, Stack* ss){
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
         if (move_count > 1 && depth > 2){
-            pos_eval = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
+            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
 
-            if (pos_eval > alpha && new_depth < depth-1)
-                pos_eval = -negamax<false>(depth-1, -alpha - 1, -alpha, ss + 1);
+            if (value > alpha && new_depth < depth-1)
+                value = -negamax<false>(depth-1, -alpha - 1, -alpha, ss + 1);
 
         } else if (move_count > 1){ // skip LMR
-            pos_eval = -negamax<false>(depth-1, -alpha - 1, -alpha, ss + 1);
+            value = -negamax<false>(depth-1, -alpha - 1, -alpha, ss + 1);
         }
 
-        if (move_count == 1 || pos_eval > alpha){
-            pos_eval = -negamax<true>(depth-1, -beta, -alpha, ss + 1);
+        if (move_count == 1 || value > alpha){
+            value = -negamax<true>(depth-1, -beta, -alpha, ss + 1);
         }
 
         pos.restore_state(move);
@@ -293,17 +293,17 @@ Move Engine::minimax_root(int depth, Stack* ss){
         if (interrupt_flag)
             return root_moves[0];
 
-        move.setScore(pos_eval);
+        move.setScore(value);
 
-        if (is_mate(pos_eval)) pos_eval = increment_mate_ply(pos_eval);
+        if (is_mate(value)) value = increment_mate_ply(value);
 
-        if (pos_eval > alpha){
+        if (value > alpha){
             best_move = move;
             // ! This preserves the order of the array after the current move.
             // ! Rotate also invalidates the "&move" reference.
             std::rotate(root_moves.begin(), root_moves.begin() + move_count - 1,
                 root_moves.begin() + move_count);
-            alpha = pos_eval;
+            alpha = value;
         }
     }
 
