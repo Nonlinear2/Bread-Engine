@@ -682,6 +682,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         return stand_pat;
     }
 
+    if (!is_decisive(max_value) && max_value > beta)
+        max_value = (2*max_value + beta) / 3;
+
     if (pos.halfMoveClock() + depth + QSEARCH_MAX_DEPTH >= 100)
         return max_value; // avoid storing history dependant evals.
 
