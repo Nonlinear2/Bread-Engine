@@ -274,10 +274,18 @@ Move Engine::minimax_root(int depth, Stack* ss){
 
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
-        if (move_count == 1){
-            pos_eval = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
-        } else {
-            pos_eval = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
+        if (move_count > 1 && depth > 2){
+            pos_eval = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
+
+            if (pos_eval > alpha && new_depth < depth-1)
+                pos_eval = -negamax<false>(depth-1, -alpha - 1, -alpha, ss + 1);
+
+        } else if (move_count > 1){ // skip LMR
+            pos_eval = -negamax<false>(depth-1, -alpha - 1, -alpha, ss + 1);
+        }
+
+        if (move_count == 1 || pos_eval > alpha){
+            pos_eval = -negamax<true>(depth-1, -beta, -alpha, ss + 1);
         }
 
         pos.restore_state(move);
@@ -462,7 +470,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         }
 
         new_depth += extension;
-        new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
         ss->moved_piece = pos.at(move.from());
         ss->current_move = move;
@@ -471,30 +478,29 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         bool gives_check = pos.inCheck();
 
         // late move reductions
-        int reduced_depth = new_depth;
-        reduced_depth += gives_check;
-        reduced_depth -= move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
-        reduced_depth -= depth > 5 && !is_hit && !is_killer; // IIR
-        reduced_depth -= tt_capture && !is_capture;
-        reduced_depth -= move_gen.index() > lmr_1;
-        reduced_depth = std::min(reduced_depth, ENGINE_MAX_DEPTH);
+        new_depth += gives_check;
+        new_depth -= move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
+        new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
+        new_depth -= tt_capture && !is_capture;
+        new_depth -= move_gen.index() > lmr_1;
+        new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
         if (move_gen.index() > 0 && depth > 2){
-            value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1);
+            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
 
-            if (value > alpha && reduced_depth < new_depth){
-                value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
+            if (value > alpha && new_depth < depth-1){
+                value = -negamax<false>(depth-1, -alpha - 1, -alpha, ss + 1);
                 if (!is_capture)
                     move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
             } else if (value <= alpha && !is_capture)
                 move_gen.update_cont_history(ss->moved_piece, move.to().index(), -cont_2);
 
-        } else if (!pv || move_gen.index() > 0) {
-            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
+        } else if (!pv || move_gen.index() > 0){
+            value = -negamax<false>(depth - 1, -alpha - 1, -alpha, ss + 1);
         }
 
-        if (pv && (move_gen.index() == 0 || value > alpha)) {
-            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
+        if (pv && (move_gen.index() == 0 || value > alpha)){
+            value = -negamax<true>(depth - 1, -beta, -alpha, ss + 1);
         }
 
         pos.restore_state(move);
