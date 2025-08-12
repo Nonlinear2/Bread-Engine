@@ -31,9 +31,8 @@ inline std::vector<std::string> fens = {
 
 int64_t sum(std::vector<int> values){
     int64_t total = 0;
-    for (int v: values){
+    for (int v: values)
         total += v;
-    }
     return total;
 }
 
@@ -45,9 +44,9 @@ void benchmark_nn(){
 
     auto start = std::chrono::high_resolution_clock::now();
     int num_iter = 10'000'000;
-    for (int i = 0; i < num_iter; i++){
+    for (int i = 0; i < num_iter; i++)
         board.evaluate();
-    }
+
     int mean = 1000*std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count()/num_iter;
     std::cout << "time taken: " << mean << " nanoseconds per call\n";
     std::cout << "============================== \n";
