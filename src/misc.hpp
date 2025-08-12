@@ -7,7 +7,7 @@
 
 using namespace chess;
 
-const std::vector<int> piece_value = {
+const int piece_value[] = {
     150, // pawn
     450, // knight
     450, // bishop
