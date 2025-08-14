@@ -147,7 +147,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     root_moves.clear();
 
     // initialize stack
-    for (int i = 0; i < ENGINE_MAX_DEPTH + QSEARCH_MAX_DEPTH + 2; i++){
+    for (int i = 0; i < SEARCH_STACK_SIZE + STACK_PADDING_SIZE; i++){
         stack[i] = Stack();
     }
 
