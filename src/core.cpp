@@ -573,7 +573,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (pos.probe_wdl(stand_pat))
         return stand_pat;
 
-    if (pos.isHalfMoveDraw()) 
+    if (pos.isRepetition(2) || pos.isHalfMoveDraw() || pos.isInsufficientMaterial())
         return 0;
 
     int value;
