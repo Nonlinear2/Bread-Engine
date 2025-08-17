@@ -619,7 +619,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     assert(is_regular_eval(stand_pat, false));
 
-    if (is_valid(transposition.value)
+    if (is_valid(transposition.value) && !is_decisive(transposition.value)
         && (
             transposition.flag == TFlag::EXACT 
             || (transposition.flag == TFlag::LOWER_BOUND && transposition.value >= stand_pat)
