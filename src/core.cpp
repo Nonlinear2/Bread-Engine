@@ -591,29 +591,38 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
-    stand_pat = transposition.static_eval;
 
+    // if (is_valid(transposition.value)){
     switch (transposition.flag){
         case TFlag::EXACT:
             return transposition.value;
         case TFlag::LOWER_BOUND:
             if (!pv)
                 alpha = std::max(alpha, transposition.value);
-            stand_pat = std::max(stand_pat, transposition.value);
             break;
         case TFlag::UPPER_BOUND:
             if (!pv)
                 beta = std::min(beta, transposition.value);
-            stand_pat = std::min(stand_pat, transposition.value);
             break;
         default:
             break;
     }
 
-    // no need to store in transposition table as is already there.
     if (beta <= alpha)
         return transposition.value;
+    // }
 
+    stand_pat = transposition.static_eval;
+
+    //!!! no check for whether stand pat is valid or not
+    if (is_valid(transposition.value)
+        && (
+            transposition.flag == TFlag::EXACT 
+            || (transposition.flag == TFlag::LOWER_BOUND && transposition.value >= stand_pat)
+            || (transposition.flag == TFlag::UPPER_BOUND && transposition.value <= stand_pat)
+            ))
+            stand_pat = transposition.value;
+        
     if (is_valid(stand_pat) && stand_pat >= beta)
         return stand_pat;
 
@@ -627,8 +636,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         }
     }
 
-    assert(is_valid(stand_pat));
-
+    assert(is_regular_eval(stand_pat, false));
+    
     if (depth == -QSEARCH_MAX_DEPTH || ss - stack >= SEARCH_STACK_SIZE - 1)
         return stand_pat;
 
