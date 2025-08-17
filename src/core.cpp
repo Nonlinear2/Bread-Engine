@@ -446,6 +446,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             int singular_beta = transposition.value - se_1 - se_2*depth;
 
             if (is_regular_eval(singular_beta)){
+                assert(new_depth / 2 > 0); // avoid excluded moves in qsearch
+
                 ss->excluded_move = move;
                 value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss);
                 ss->excluded_move = Move::NO_MOVE;
@@ -539,6 +541,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         return max_value;
     // we fall through without storing the eval in the TT.
 
+    assert(is_valid(max_value));
+
     TFlag node_type;
     if (beta <= alpha){ // this means there was a cutoff. So true eval is equal or higher
         node_type = TFlag::LOWER_BOUND;
@@ -551,12 +555,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         node_type = TFlag::EXACT;
     }
 
-    assert(is_valid(max_value));
-
     if (is_mate(max_value))
         max_value = increment_mate_ply(max_value);
 
-    transposition_table.store(zobrist_hash, max_value, static_eval, depth, best_move, node_type, static_cast<uint8_t>(pos.fullMoveNumber()));
+    if (excluded_move == Move::NO_MOVE)
+        transposition_table.store(zobrist_hash, max_value, static_eval, depth, best_move, node_type, static_cast<uint8_t>(pos.fullMoveNumber()));
 
     return max_value;
 }
