@@ -592,17 +592,15 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
 
-    if (is_valid(transposition.value)){
+    if (!pv && is_valid(transposition.value)){
         switch (transposition.flag){
             case TFlag::EXACT:
                 return transposition.value;
             case TFlag::LOWER_BOUND:
-                if (!pv)
-                    alpha = std::max(alpha, transposition.value);
+                alpha = std::max(alpha, transposition.value);
                 break;
             case TFlag::UPPER_BOUND:
-                if (!pv)
-                    beta = std::min(beta, transposition.value);
+                beta = std::min(beta, transposition.value);
                 break;
             default:
                 break;
