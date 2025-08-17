@@ -347,10 +347,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
     
-    static_eval = eval = transposition.static_eval;
-    eval = transposition.value;
-    move_gen.set_tt_move(transposition.move);
-    
     chess::Move excluded_move = ss->excluded_move;
     if (!pv && transposition.depth >= depth && excluded_move == Move::NO_MOVE && !pos.isRepetition(1)){
         switch (transposition.flag){
@@ -368,18 +364,24 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     }
 
     // we need to do a cutoff check because we updated alpha/beta.
-    // no need to store in transposition table as is already there.
     if (beta <= alpha)
         return transposition.value;
 
+    move_gen.set_tt_move(transposition.move);
     bool in_check = pos.inCheck();
 
-    if (static_eval == NO_VALUE)
+    static_eval = transposition.static_eval;
+    if (!is_valid(static_eval))
         static_eval = pos.evaluate();
-    if (eval == NO_VALUE)
-        eval = static_eval;
-
     ss->static_eval = static_eval;
+
+    eval = static_eval;
+    if (is_valid(transposition.value) && !is_decisive(transposition.value)
+        && (transposition.flag == TFlag::EXACT 
+            || (transposition.flag == TFlag::LOWER_BOUND && transposition.value >= eval)
+            || (transposition.flag == TFlag::UPPER_BOUND && transposition.value <= eval)
+        ))
+        eval = transposition.value;
 
     bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval) &&
         ss->static_eval > (ss - 2)->static_eval;
