@@ -614,7 +614,11 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     stand_pat = transposition.static_eval;
 
-    //!!! no check for whether stand pat is valid or not
+    if (!is_valid(stand_pat))
+        stand_pat = pos.evaluate();
+
+    assert(is_regular_eval(stand_pat, false));
+
     if (is_valid(transposition.value)
         && (
             transposition.flag == TFlag::EXACT 
@@ -623,20 +627,13 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             ))
             stand_pat = transposition.value;
         
-    if (is_valid(stand_pat) && stand_pat >= beta)
-        return stand_pat;
-
-    capture_gen.set_tt_move(transposition.move);
-
-    if (!is_valid(stand_pat)){
-        stand_pat = pos.evaluate();
-        if (stand_pat >= beta){
+    if (stand_pat >= beta){
+        if (!is_valid(transposition.static_eval))
             transposition_table.store(zobrist_hash, stand_pat, stand_pat, DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
-            return stand_pat;
-        }
+        return stand_pat;
     }
 
-    assert(is_regular_eval(stand_pat, false));
+    capture_gen.set_tt_move(transposition.move);
     
     if (depth == -QSEARCH_MAX_DEPTH || ss - stack >= SEARCH_STACK_SIZE - 1)
         return stand_pat;
