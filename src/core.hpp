@@ -17,12 +17,12 @@
 class Engine {
     public:
 
-    int nodes = 0;
+    int64_t nodes = 0;
     int current_depth = 0;
     std::atomic<SearchLimit> limit;
     std::atomic<bool> interrupt_flag = false;
     
-    Stack stack[SEARCH_STACK_SIZE + 2] = {};
+    Stack stack[SEARCH_STACK_SIZE + STACK_PADDING_SIZE] = {};
     Stack* root_ss = stack + 2;
 
     std::atomic<int> run_time;
