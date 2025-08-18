@@ -47,6 +47,7 @@ class SortedMoveGen {
     Move tt_move = Move::NO_MOVE;
     private:
     Movelist moves;
+    bool processed[chess::constants::MAX_MOVES];
     
     Bitboard attacked_by_pawn;
     std::vector<Bitboard> check_squares;
@@ -55,6 +56,5 @@ class SortedMoveGen {
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
     GenerationStage stage = TT_MOVE;
-    Move pop_move(int move_idx);
     Move pop_best_score();
 };
