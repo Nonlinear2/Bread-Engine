@@ -120,13 +120,19 @@ void SortedMoveGen<MoveGenType>::set_tt_move(Move move){
 }
 
 template<movegen::MoveGenType MoveGenType>
+bool SortedMoveGen<MoveGenType>::use_tt_move(){
+    return tt_move != Move::NO_MOVE 
+        && (MoveGenType == movegen::MoveGenType::ALL || pos.inCheck() || pos.isCapture(tt_move));
+}
+
+template<movegen::MoveGenType MoveGenType>
 bool SortedMoveGen<MoveGenType>::next(Move& move){
     move_idx++;
 
     switch (stage){
         case TT_MOVE:
             ++stage;
-            if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.inCheck() || pos.isCapture(tt_move))){
+            if (use_tt_move()){
                 move = tt_move;
                 return true;
             }
@@ -137,7 +143,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             for (int i = 0; i < moves.size(); i++){
                 set_score(moves[i]);
             }
-            if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.isCapture(tt_move)))
+            if (use_tt_move())
                 pop_move(std::find(moves.begin(), moves.end(), tt_move) - moves.begin());
             ++stage;
 

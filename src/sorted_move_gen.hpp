@@ -36,6 +36,7 @@ class SortedMoveGen {
     SortedMoveGen(int prev_piece, int prev_to, NnueBoard& pos, int depth);
     SortedMoveGen(int prev_piece, int prev_to, NnueBoard& pos);
     void set_tt_move(Move move);
+    bool use_tt_move();
     bool next(Move& move);
     bool empty();
     int index();
