@@ -18,6 +18,7 @@ set(bread_DEBUG_UCI_COMMANDS_PATH "${bread_UTILS}/commands.txt")
 
 set(bread_INCLUDE_DIRS
     ${bread_SRC}
+    ${bread_SRC}/nnue
     ${bread_SRC}/extern
     ${bread_SRC}/extern/Fathom/src
 )

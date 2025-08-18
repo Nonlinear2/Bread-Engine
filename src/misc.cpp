@@ -3,7 +3,7 @@
 // FIFO for killer moves
 void KillerMoves::add_move(int depth, Move move){
     uint16_t val = move.move();
-    if (moves[depth][0] != val && moves[depth][1] != val) {
+    if (moves[depth][0] != val && moves[depth][1] != val){
         moves[depth][2] = moves[depth][1];
         moves[depth][1] = moves[depth][0]; 
         moves[depth][0] = val;
@@ -20,19 +20,15 @@ void KillerMoves::clear(){
 }
 
 void KillerMoves::save_to_stream(std::ofstream& ofs){
-    for (const auto& row : moves){
-        for (const auto& v : row) {
+    for (const auto& row : moves)
+        for (const auto& v : row)
             ofs.write(reinterpret_cast<const char*>(&v), sizeof(uint16_t));
-        }
-    }
 }
 
 void KillerMoves::load_from_stream(std::ifstream& ifs){
-    for (auto& row : moves){
-        for (auto& v : row) {
+    for (auto& row : moves)
+        for (auto& v : row)
             ifs.read(reinterpret_cast<char*>(&v), sizeof(uint16_t));
-        }
-    }
 }
 
 bool is_number_string(const std::string& s){

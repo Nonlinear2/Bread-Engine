@@ -18,7 +18,7 @@ constexpr int int8_per_reg = 32;
 inline const int HKP_size = 40960; // 64*64*5*2
 inline const int acc_size = 256;
 
-const std::vector<int> piece_to_index_w = {
+const int piece_to_index_w[] = {
     9, // white pawn
     3, // white knight
     5, // white bishop
@@ -33,7 +33,7 @@ const std::vector<int> piece_to_index_w = {
     11, // black king
 };
 
-const std::vector<int> piece_to_index_b = {
+const int piece_to_index_b[] = {
     8, // white pawn
     2, // white knight
     4, // white bishop

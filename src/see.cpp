@@ -1,7 +1,7 @@
 #include "see.hpp"
 
 bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true if greater than threshold
-    assert(SEE_KING_VALUE > piece_value[static_cast<int>(PieceType::QUEEN)]*10);
+    assert(SEE_KING_VALUE > piece_value[static_cast<int>(PieceType::QUEEN)] * 10);
     const Square from_sq = move.from();
     const Square to_sq = move.to();
     PieceType next_piece = board.at(from_sq).type();

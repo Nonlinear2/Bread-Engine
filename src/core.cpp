@@ -103,15 +103,13 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(){
     for (int i = 0; i < current_depth; i++){
         bool is_hit;
         TTData transposition = transposition_table.probe(is_hit, pv_visitor.hash());
-        if (!is_hit || transposition.move == Move::NO_MOVE)
+        if (transposition.move == Move::NO_MOVE || pv_visitor.isRepetition(2)
+            || pv_visitor.isHalfMoveDraw() || pv_visitor.isInsufficientMaterial())
             break;
 
-        if (pv_visitor.isRepetition(2) || pv_visitor.isHalfMoveDraw() || pv_visitor.isInsufficientMaterial())
-            break;
-
-        if (i == 1){
+        if (i == 1)
             ponder_move = uci::moveToUci(transposition.move);
-        }
+
         pv += " " + uci::moveToUci(transposition.move);
         pv_visitor.makeMove(transposition.move);
     }
@@ -128,9 +126,11 @@ Move Engine::search(SearchLimit limit){
 };
 
 Move Engine::iterative_deepening(SearchLimit limit){
-    if (is_nonsense) srand((unsigned int)time(NULL));
-    if (is_nonsense && nonsense.should_bongcloud(pos.hash(), pos.fullMoveNumber()))
-        return nonsense.play_bongcloud(display_uci);
+    if (is_nonsense){
+        srand((unsigned int)time(NULL));
+        if (nonsense.should_bongcloud(pos.hash(), pos.fullMoveNumber()))
+            return nonsense.play_bongcloud(display_uci);
+    }
 
     this->limit = limit;
     start_time = std::chrono::high_resolution_clock::now();
@@ -203,7 +203,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
                 std::cout << " score cp " << best_move.score();
             }
             std::cout << " nodes " << nodes;
-            std::cout << " nps " << nodes*1000/run_time;
+            std::cout << " nps " << nodes * 1000 / run_time;
             std::cout << " time " << run_time;
             std::cout << " hashfull " << transposition_table.hashfull();
             std::cout << " pv" << pv << std::endl;
@@ -269,7 +269,7 @@ Move Engine::negamax_root(int depth, Stack* ss){
         ss->current_move = move;
         pos.update_state(move);
 
-        int new_depth = depth-1;
+        int new_depth = depth - 1;
         new_depth += pos.inCheck();
         new_depth -= move_count > 2 && depth > 5 && !is_capture && !in_check;
 
@@ -288,7 +288,8 @@ Move Engine::negamax_root(int depth, Stack* ss){
 
         move.setScore(value);
 
-        if (is_mate(value)) value = increment_mate_ply(value);
+        if (is_mate(value))
+            value = increment_mate_ply(value);
 
         if (value > alpha){
             best_move = move;
@@ -320,7 +321,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     if (interrupt_flag || (depth >= 5 && update_interrupt_flag()))
         return NO_VALUE; // the value doesn't matter, it won't be used.
 
-    // there are no repetition checks in qsearch as captures can never lead to repetition.
+    // a stalemate will be processed after the move generation
     if (pos.isRepetition(2) || pos.isHalfMoveDraw() || pos.isInsufficientMaterial())
         return 0;
 
@@ -382,8 +383,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
     ss->static_eval = static_eval;
 
-    bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval) &&
-        ss->static_eval > (ss - 2)->static_eval;
+    bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval)
+        && ss->static_eval > (ss - 2)->static_eval;
 
     // pruning
     if (!pv && !in_check){
@@ -409,7 +410,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             ss->moved_piece = Piece::NONE;
             ss->current_move = Move::NULL_MOVE;
             pos.makeNullMove();
-            null_move_eval = -negamax<false>(depth - R, -beta, -beta+1, ss + 1);
+            null_move_eval = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1);
             pos.unmakeNullMove();
             if (null_move_eval >= beta && !is_win(null_move_eval))
                 return null_move_eval;
@@ -438,6 +439,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         }
         
         int new_depth = depth-1;
+    
+        // singular extensions
         int extension = 0;
         if (is_hit && is_regular_eval(transposition.value)
             && move == transposition.move && excluded_move == Move::NO_MOVE
@@ -451,7 +454,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
                 value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss);
                 ss->excluded_move = Move::NO_MOVE;
     
-                if (interrupt_flag) return 0;
+                if (interrupt_flag)
+                    return 0;
     
                 if (value < singular_beta)
                     extension = 1;
@@ -679,7 +683,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     }
 
     if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
-        transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
+        transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH,
+            Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
         return stand_pat;
     }
 
