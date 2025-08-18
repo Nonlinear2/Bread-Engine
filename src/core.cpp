@@ -275,10 +275,18 @@ Move Engine::negamax_root(int depth, Stack* ss){
 
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
-        if (move_count == 1){
-            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
-        } else {
-            value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
+        if (move_count > 1 && depth > 2){
+            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
+
+            if (value > alpha && new_depth < depth-1)
+                value = -negamax<false>(depth-1, -alpha - 1, -alpha, ss + 1);
+
+        } else if (move_count > 1){ // skip LMR
+            value = -negamax<false>(depth-1, -alpha - 1, -alpha, ss + 1);
+        }
+
+        if (move_count == 1 || value > alpha){
+            value = -negamax<true>(depth-1, -beta, -alpha, ss + 1);
         }
 
         pos.restore_state(move);
