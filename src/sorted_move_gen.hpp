@@ -10,10 +10,17 @@
 #include "see.hpp"
 #include "chess.hpp"
 
-enum GenerationStage: int{
+enum GenerationStage: int {
     TT_MOVE,
     GENERATE_MOVES,
-    GET_MOVES,
+    GOOD_SEE,
+    BAD_SEE,
+};
+
+enum SeeScore: int {
+    BAD,
+    GOOD,
+    UNSEEN,
 };
 
 constexpr GenerationStage& operator++(GenerationStage& g) {
@@ -48,7 +55,8 @@ class SortedMoveGen {
     private:
     Movelist moves;
     bool processed[chess::constants::MAX_MOVES];
-    
+    SeeScore see[chess::constants::MAX_MOVES];
+
     Bitboard attacked_by_pawn;
     std::vector<Bitboard> check_squares;
     bool is_endgame;
@@ -56,5 +64,5 @@ class SortedMoveGen {
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
     GenerationStage stage = TT_MOVE;
-    Move pop_best_score();
+    Move pop_best_score(SeeScore see_value);
 };
