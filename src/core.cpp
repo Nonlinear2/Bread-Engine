@@ -477,9 +477,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         // late move reductions
         int reduced_depth = new_depth;
         reduced_depth += gives_check;
-        reduced_depth -= move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
+        reduced_depth -= move_gen.index() > 0 && !is_capture && !gives_check && !is_killer;
         reduced_depth -= tt_capture && !is_capture;
         reduced_depth -= move_gen.index() > lmr_1;
+        reduced_depth -= move_gen.index() > 5 && depth > 10;
+        reduced_depth -= depth > 6 && !improving;
 
         reduced_depth = std::min(reduced_depth, ENGINE_MAX_DEPTH);
 
