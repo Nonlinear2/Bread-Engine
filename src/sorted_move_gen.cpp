@@ -180,7 +180,8 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
                 best_move_idx = i;
             }
         }
-        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], -200))
+        if (best_move_score < -BAD_SEE_TRESHOLD
+            || (pos.isCapture(moves[best_move_idx]) && SEE::evaluate(pos, moves[best_move_idx], 0)))
             break;
         
         moves[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
