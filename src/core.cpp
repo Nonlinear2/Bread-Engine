@@ -402,8 +402,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
             // late move reductions
             new_depth += gives_check;
-            new_depth -= move_count > 1 && !is_capture && !gives_check && !is_killer;
-            new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
+            new_depth -= move_count > 1 && !is_capture && !gives_check;
+            new_depth -= depth > 5 && !is_hit; // IIR
             new_depth -= tt_capture && !is_capture;
             new_depth -= move_count > lmr_1;
 
@@ -430,6 +430,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             if (value > max_value){
                 max_value = value;
                 best_move = move;
+                if (root_node){
+                    // ! This preserves the order of the array after the current move.
+                    // ! Rotate also invalidates the "&move" reference.
+                    std::rotate(root_moves.begin(), root_moves.begin() + move_count - 1,
+                        root_moves.begin() + move_count);
+                }
             }
 
             alpha = std::max(alpha, value);
@@ -527,12 +533,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             if (value > max_value){
                 max_value = value;
                 best_move = move;
-                if (root_node){
-                    // ! This preserves the order of the array after the current move.
-                    // ! Rotate also invalidates the "&move" reference.
-                    std::rotate(root_moves.begin(), root_moves.begin() + move_count - 1,
-                        root_moves.begin() + move_count);
-                }
             }
 
             alpha = std::max(alpha, value);
