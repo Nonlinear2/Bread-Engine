@@ -160,11 +160,13 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 template<movegen::MoveGenType MoveGenType>
 Move SortedMoveGen<MoveGenType>::pop_best_score(SeeScore see_value){
     for (; curr_idx < moves.size(); curr_idx++){
-        if (see[curr_idx] == SeeScore::UNSEEN)
-            see[curr_idx] = SEE::evaluate(pos, moves[curr_idx], 0) ? SeeScore::GOOD : SeeScore::BAD;
-
-        if (see[curr_idx] == see_value && moves[curr_idx] != tt_move)
-            return moves[curr_idx++];
+        if (moves[curr_idx] != tt_move){
+            if (see[curr_idx] == SeeScore::UNSEEN)
+                see[curr_idx] = SEE::evaluate(pos, moves[curr_idx], 0) ? SeeScore::GOOD : SeeScore::BAD;
+    
+            if (see[curr_idx] == see_value)
+                return moves[curr_idx++];
+        }
     }
     return Move::NO_MOVE;
 }
