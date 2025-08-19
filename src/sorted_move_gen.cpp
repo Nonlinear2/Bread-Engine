@@ -142,15 +142,22 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             curr_idx = 0; // prepare idx for next stage
             ++stage;
 
-        case GOOD_SEE:
-            move = pop_best_score(SeeScore::GOOD);
+        case POSITIVE_SEE:
+            move = pop_best_score(SeeScore::POSITIVE);
+            if (move != Move::NO_MOVE)
+                return true;
+            curr_idx = 0; // prepare idx for next stage
+            ++stage;
+    
+        case ZERO_SEE:
+            move = pop_best_score(SeeScore::ZERO);
             if (move != Move::NO_MOVE)
                 return true;
             curr_idx = 0; // prepare idx for next stage
             ++stage;
 
-        case BAD_SEE:
-            move = pop_best_score(SeeScore::BAD);
+        case NEGATIVE_SEE:
+            move = pop_best_score(SeeScore::NEGATIVE);
             if (move != Move::NO_MOVE)
                 return true;
     }
@@ -161,8 +168,11 @@ template<movegen::MoveGenType MoveGenType>
 Move SortedMoveGen<MoveGenType>::pop_best_score(SeeScore see_value){
     for (; curr_idx < moves.size(); curr_idx++){
         if (moves[curr_idx] != tt_move){
-            if (see[curr_idx] == SeeScore::UNSEEN)
-                see[curr_idx] = SEE::evaluate(pos, moves[curr_idx], 0) ? SeeScore::GOOD : SeeScore::BAD;
+            if (see[curr_idx] == SeeScore::UNSEEN && see_value == SeeScore::POSITIVE)
+                see[curr_idx] = SEE::evaluate(pos, moves[curr_idx], 1) ? SeeScore::POSITIVE : SeeScore::NEGATIVE_OR_ZERO;
+            
+            if (see[curr_idx] == SeeScore::NEGATIVE_OR_ZERO && see_value == SeeScore::ZERO)
+                see[curr_idx] = SEE::evaluate(pos, moves[curr_idx], 0) ? SeeScore::ZERO : SeeScore::NEGATIVE;
     
             if (see[curr_idx] == see_value)
                 return moves[curr_idx++];
