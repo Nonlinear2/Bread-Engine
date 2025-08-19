@@ -139,19 +139,20 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 
         case GENERATE_MOVES:
             movegen::legalmoves<MoveGenType>(moves, pos);
+            num_left = moves.size();
+
             prepare_pos_data();
-            for (int i = 0; i < moves.size(); i++){
+            for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);
-            }
+
             if (use_tt_move())
                 pop_move(std::find(moves.begin(), moves.end(), tt_move) - moves.begin());
             ++stage;
 
         case GET_MOVES:
-            if (moves.num_left != 0){
-                move = pop_best_score();
+            move = pop_best_score();
+            if (move != Move::NO_MOVE)
                 return true;
-            }
     }
     return false;
 }
@@ -162,14 +163,14 @@ Move SortedMoveGen<MoveGenType>::pop_move(int move_idx){
     // the movelist is split into an unseen part first, and a seen part.
 
     // if the move is not in the last position, move it there.
-    if (move_idx != moves.num_left-1){
+    if (move_idx != num_left-1){
         Move swap = moves[move_idx];
-        moves[move_idx] = moves[moves.num_left-1];
-        moves[moves.num_left-1] = swap;
+        moves[move_idx] = moves[num_left-1];
+        moves[num_left-1] = swap;
     }
 
-    moves.num_left--;
-    return moves[moves.num_left];
+    num_left--;
+    return moves[num_left];
 }
 
 template<movegen::MoveGenType MoveGenType>
@@ -179,13 +180,17 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
     int best_move_score;
     while (true){
         best_move_score = WORST_MOVE_SCORE;
-        for (int i = 0; i < moves.num_left; i++){
+        for (int i = 0; i < num_left; i++){
             score = moves[i].score();
             if (score >= best_move_score){
                 best_move_score = score;
                 best_move_idx = i;
             }
         }
+
+        if (best_move_score == WORST_MOVE_SCORE)
+            return Move::NO_MOVE;
+
         if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], 0))
             break;
         

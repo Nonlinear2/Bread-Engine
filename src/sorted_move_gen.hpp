@@ -48,7 +48,8 @@ class SortedMoveGen {
     Move tt_move = Move::NO_MOVE;
     private:
     Movelist moves;
-    
+    int num_left;
+
     Bitboard attacked_by_pawn;
     std::vector<Bitboard> check_squares;
     bool is_endgame;
