@@ -13,16 +13,13 @@
 enum GenerationStage: int{
     TT_MOVE,
     GENERATE_MOVES,
-    POSITIVE_SEE,
-    ZERO_SEE,
-    NEGATIVE_SEE,
+    GOOD_SEE,
+    BAD_SEE,
 };   
 
 enum SeeScore: int {
-    NEGATIVE,
-    ZERO,
-    POSITIVE,
-    NEGATIVE_OR_ZERO,
+    BAD,
+    GOOD,
     UNSEEN,
 };
 
