@@ -139,17 +139,17 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                 see[i] = SeeScore::UNSEEN;
             }
             std::sort(moves.begin(), moves.end(), [](const Move a, const Move b){ return a.score() > b.score(); });
+            curr_idx = 0; // prepare idx for next stage
             ++stage;
 
         case GOOD_SEE:
-            curr_idx = 0;
             move = pop_best_score(SeeScore::GOOD);
             if (move != Move::NO_MOVE)
                 return true;
+            curr_idx = 0; // prepare idx for next stage
             ++stage;
-        
+
         case BAD_SEE:
-            curr_idx = 0;
             move = pop_best_score(SeeScore::BAD);
             if (move != Move::NO_MOVE)
                 return true;
@@ -163,7 +163,7 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(SeeScore see_value){
         if (see[curr_idx] == SeeScore::UNSEEN)
             see[curr_idx] = SEE::evaluate(pos, moves[curr_idx], 0) ? SeeScore::GOOD : SeeScore::BAD;
 
-        if (see[curr_idx] == see_value)
+        if (see[curr_idx] == see_value && moves[curr_idx] != tt_move)
             return moves[curr_idx++];
     }
     return Move::NO_MOVE;
