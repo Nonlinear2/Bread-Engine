@@ -138,18 +138,11 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                 set_score(moves[i]);
                 // only the tt_move is processed
                 processed[i] = (moves[i] == tt_move);
-                see[i] = SeeScore::UNSEEN;
             }
             ++stage;
 
-        case GOOD_SEE:
-            move = pop_best_score(SeeScore::GOOD);
-            if (move != Move::NO_MOVE)
-                return true;
-            ++stage;
-        
-        case BAD_SEE:
-            move = pop_best_score(SeeScore::BAD);
+        case GET_MOVES:
+            move = pop_best_score();
             if (move != Move::NO_MOVE)
                 return true;
     }
@@ -157,14 +150,14 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 }
 
 template<movegen::MoveGenType MoveGenType>
-Move SortedMoveGen<MoveGenType>::pop_best_score(SeeScore see_value){
+Move SortedMoveGen<MoveGenType>::pop_best_score(){
     int score;
     int best_move_idx;
     int best_move_score;
     while (true){
         best_move_score = WORST_MOVE_SCORE;
         for (int i = 0; i < moves.size(); i++){
-            if (!processed[i] && (see[i] == SeeScore::UNSEEN || see[i] == see_value)){
+            if (!processed[i]){
                 score = moves[i].score();
                 if (score >= best_move_score){
                     best_move_score = score;
@@ -172,15 +165,13 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(SeeScore see_value){
                 }
             }
         }
-    
         if (best_move_score == WORST_MOVE_SCORE)
             return Move::NO_MOVE;
-    
-        if (see[best_move_idx] == SeeScore::UNSEEN)
-            see[best_move_idx] = SEE::evaluate(pos, moves[best_move_idx], 0) ? SeeScore::GOOD : SeeScore::BAD;
-        
-        if (see[best_move_idx] == see_value)
+
+        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], 0))
             break;
+        
+        moves[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
     }
 
     processed[best_move_idx] = true;
