@@ -138,7 +138,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                 set_score(moves[i]);
                 see[i] = SeeScore::UNSEEN;
             }
-            std::sort(moves.begin(), moves.end(), [](const Move a, const Move b){ return a.score() > b.score(); });
+            std::stable_sort(moves.begin(), moves.end(), [](const Move a, const Move b){ return a.score() > b.score(); });
             curr_idx = 0; // prepare idx for next stage
             ++stage;
 
