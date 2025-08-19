@@ -133,7 +133,6 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 
         case GENERATE_MOVES:
             movegen::legalmoves<MoveGenType>(moves, pos);
-            std::fill_n(see, chess::constants::MAX_MOVES, SeeScore::UNSEEN);
             prepare_pos_data();
             for (int i = 0; i < moves.size(); i++){
                 set_score(moves[i]);
