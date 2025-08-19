@@ -596,44 +596,48 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
+
+    if (!pv && is_valid(transposition.value)){
+        switch (transposition.flag){
+            case TFlag::EXACT:
+                return transposition.value;
+            case TFlag::LOWER_BOUND:
+                alpha = std::max(alpha, transposition.value);
+                break;
+            case TFlag::UPPER_BOUND:
+                beta = std::min(beta, transposition.value);
+                break;
+            default:
+                break;
+        }
+
+        if (beta <= alpha)
+            return transposition.value;
+    }
+
     stand_pat = transposition.static_eval;
 
-    switch (transposition.flag){
-        case TFlag::EXACT:
-            return transposition.value;
-        case TFlag::LOWER_BOUND:
-            if (!pv)
-                alpha = std::max(alpha, transposition.value);
-            stand_pat = std::max(stand_pat, transposition.value);
-            break;
-        case TFlag::UPPER_BOUND:
-            if (!pv)
-                beta = std::min(beta, transposition.value);
-            stand_pat = std::min(stand_pat, transposition.value);
-            break;
-        default:
-            break;
-    }
+    if (!is_valid(stand_pat))
+        stand_pat = pos.evaluate();
 
-    // no need to store in transposition table as is already there.
-    if (beta <= alpha)
-        return transposition.value;
+    assert(is_regular_eval(stand_pat, false));
 
-    if (is_valid(stand_pat) && stand_pat >= beta)
+    if (is_valid(transposition.value) && !is_decisive(transposition.value)
+        && (
+            transposition.flag == TFlag::EXACT 
+            || (transposition.flag == TFlag::LOWER_BOUND && transposition.value >= stand_pat)
+            || (transposition.flag == TFlag::UPPER_BOUND && transposition.value <= stand_pat)
+            ))
+            stand_pat = transposition.value;
+        
+    if (stand_pat >= beta){
+        if (!is_hit)
+            transposition_table.store(zobrist_hash, stand_pat, stand_pat, DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
         return stand_pat;
+    }
 
     capture_gen.set_tt_move(transposition.move);
-
-    if (!is_valid(stand_pat)){
-        stand_pat = pos.evaluate();
-        if (stand_pat >= beta){
-            transposition_table.store(zobrist_hash, stand_pat, stand_pat, DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
-            return stand_pat;
-        }
-    }
-
-    assert(is_valid(stand_pat));
-
+    
     if (depth == -QSEARCH_MAX_DEPTH || ss - stack >= SEARCH_STACK_SIZE - 1)
         return stand_pat;
 
