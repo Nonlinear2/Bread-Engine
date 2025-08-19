@@ -161,12 +161,8 @@ template<movegen::MoveGenType MoveGenType>
 Move SortedMoveGen<MoveGenType>::pop_best_score(SeeScore see_value){
     for (; curr_idx < moves.size(); curr_idx++){
         if (moves[curr_idx] != tt_move){
-            if (see[curr_idx] == SeeScore::UNSEEN){
-                if (MoveGenType == movegen::MoveGenType::CAPTURE || pos.isCapture(moves[curr_idx]))
-                    see[curr_idx] = SEE::evaluate(pos, moves[curr_idx], -100) ? SeeScore::GOOD : SeeScore::BAD;
-                else
-                    see[curr_idx] = SeeScore::BAD;
-            }
+            if (see[curr_idx] == SeeScore::UNSEEN)
+                see[curr_idx] = SEE::evaluate(pos, moves[curr_idx], -200) ? SeeScore::GOOD : SeeScore::BAD;
     
             if (see[curr_idx] == see_value)
                 return moves[curr_idx++];
