@@ -136,13 +136,21 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             prepare_pos_data();
             for (int i = 0; i < moves.size(); i++){
                 set_score(moves[i]);
-                // only the tt_move is processed
-                processed[i] = (moves[i] == tt_move);
+                see[i] = SeeScore::UNSEEN;
             }
+            std::sort(moves.begin(), moves.end(), [](const Move a, const Move b){ return a.score() > b.score(); });
             ++stage;
 
-        case GET_MOVES:
-            move = pop_best_score();
+        case GOOD_SEE:
+            curr_idx = 0;
+            move = pop_best_score(SeeScore::GOOD);
+            if (move != Move::NO_MOVE)
+                return true;
+            ++stage;
+        
+        case BAD_SEE:
+            curr_idx = 0;
+            move = pop_best_score(SeeScore::BAD);
             if (move != Move::NO_MOVE)
                 return true;
     }
@@ -150,32 +158,15 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 }
 
 template<movegen::MoveGenType MoveGenType>
-Move SortedMoveGen<MoveGenType>::pop_best_score(){
-    int score;
-    int best_move_idx;
-    int best_move_score;
-    while (true){
-        best_move_score = WORST_MOVE_SCORE;
-        for (int i = 0; i < moves.size(); i++){
-            if (!processed[i]){
-                score = moves[i].score();
-                if (score >= best_move_score){
-                    best_move_score = score;
-                    best_move_idx = i;
-                }
-            }
-        }
-        if (best_move_score == WORST_MOVE_SCORE)
-            return Move::NO_MOVE;
+Move SortedMoveGen<MoveGenType>::pop_best_score(SeeScore see_value){
+    for (; curr_idx < moves.size(); curr_idx++){
+        if (see[curr_idx] == SeeScore::UNSEEN)
+            see[curr_idx] = SEE::evaluate(pos, moves[curr_idx], 0) ? SeeScore::GOOD : SeeScore::BAD;
 
-        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], 0))
-            break;
-        
-        moves[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
+        if (see[curr_idx] == see_value)
+            return moves[curr_idx++];
     }
-
-    processed[best_move_idx] = true;
-    return moves[best_move_idx];
+    return Move::NO_MOVE;
 }
 
 template<movegen::MoveGenType MoveGenType>
