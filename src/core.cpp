@@ -335,7 +335,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
     int static_eval, eval;
     int max_value = -INFINITE_VALUE;
-    Move best_move;
+    Move best_move = Move::NO_MOVE;
     Move move;
     int value;
 
@@ -500,7 +500,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         if (value > max_value){
             max_value = value;
-            best_move = move;
+            if (value > alpha)
+                best_move = move;
         }
 
         alpha = std::max(alpha, value);
