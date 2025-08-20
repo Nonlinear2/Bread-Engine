@@ -678,7 +678,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
         if (value > max_value){
             max_value = value;
-            best_move = move;
+            if (value > alpha)
+                best_move = move;
         }
 
         alpha = std::max(alpha, value);
