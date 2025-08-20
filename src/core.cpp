@@ -588,6 +588,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = pos.hash();
 
+    bool in_check = pos.inCheck();
+
     // first we check for transposition. If it is outcome, it should have already been stored
     // with an exact flag, so the stand pat will be correct anyways.
     SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(
@@ -643,7 +645,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     alpha = std::max(alpha, stand_pat);
 
-    int max_value = stand_pat;
+    int max_value = in_check ? -INFINITE_VALUE : stand_pat;
 
     Square previous_to_square = ((ss - 1)->current_move).to();
 
@@ -651,23 +653,25 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         Piece captured_piece = pos.at(move.to());
         Piece moved_piece = pos.at(move.from());
 
-        // delta pruning
-        // move.score() is calculated with set_capture_score which is material difference.
-        // 1500 is a safety margin
-        if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-            if (stand_pat 
-                + piece_value[static_cast<int>(captured_piece.type())]
-                - piece_value[static_cast<int>(moved_piece.type())]
-                + qs_fp_1 < alpha)
-                continue;
-
-            // SEE pruning
-            if (!SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
-                continue;
+        if (max_value > -INFINITE_VALUE && !is_loss(max_value)){
+            // delta pruning
+            // move.score() is calculated with set_capture_score which is material difference.
+            // 1500 is a safety margin
+            if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
+                if (stand_pat 
+                    + piece_value[static_cast<int>(captured_piece.type())]
+                    - piece_value[static_cast<int>(moved_piece.type())]
+                    + qs_fp_1 < alpha)
+                    continue;
     
-            if (!pv && capture_gen.index() > 7
-                && stand_pat + qs_p_1 < alpha && !SEE::evaluate(pos, move, -qs_p_2))
-                continue;
+                // SEE pruning
+                if (!SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
+                    continue;
+        
+                if (!pv && capture_gen.index() > 7
+                    && stand_pat + qs_p_1 < alpha && !SEE::evaluate(pos, move, -qs_p_2))
+                    continue;
+            }
         }
 
         ss->moved_piece = moved_piece;
@@ -691,6 +695,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
         return stand_pat;
     }
+
+    if (max_value == -INFINITE_VALUE)
+        max_value = stand_pat;
 
     if (pos.halfMoveClock() + depth + QSEARCH_MAX_DEPTH >= 100)
         return max_value; // avoid storing history dependant evals.
