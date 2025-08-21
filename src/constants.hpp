@@ -12,7 +12,7 @@ constexpr int QSEARCH_MAX_DEPTH = 6;
 constexpr int SEARCH_STACK_SIZE = 256;
 constexpr int STACK_PADDING_SIZE = 2;
 
-constexpr int BENCHMARK_DEPTH = 9;
+constexpr int BENCHMARK_DEPTH = 10;
 
 constexpr int DEPTH_UNSEARCHED = -1;
 constexpr int DEPTH_QSEARCH = 0;
