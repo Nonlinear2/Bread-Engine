@@ -269,6 +269,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
 
+    SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(
+        root_node ? root_moves : NULL, (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos, depth
+    );
+
     if (root_node){
         if (root_moves.empty()){
             movegen::legalmoves(root_moves, pos);
@@ -285,10 +289,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
                 m.setScore(NO_VALUE);
         }
     }
-
-    SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(
-        root_node ? root_moves : NULL, (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos, depth
-    );
 
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
