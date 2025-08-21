@@ -1,7 +1,7 @@
 #include "sorted_move_gen.hpp"
 
 template<>
-SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Move* to_search, int prev_piece, 
+SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Movelist* to_search, int prev_piece, 
     int prev_to, NnueBoard& pos, int depth):
     to_search(to_search), prev_piece(prev_piece), prev_to(prev_to), pos(pos), depth(depth) {};
 
@@ -123,8 +123,12 @@ void SortedMoveGen<MoveGenType>::set_tt_move(Move move){
 template<movegen::MoveGenType MoveGenType>
 bool SortedMoveGen<MoveGenType>::next(Move& move){
     move_idx++;
-    if (to_search != NULL)
-        return to_search[move_idx];
+    if (to_search != NULL){
+        if (move_idx == to_search->size())
+            return false;
+        move = (*to_search)[move_idx];
+        return true;
+    }
 
     switch (stage){
         case TT_MOVE:

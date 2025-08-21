@@ -33,7 +33,7 @@ class SortedMoveGen {
     int prev_to;
     NnueBoard& pos;
 
-    SortedMoveGen(Move* to_search, int prev_piece, int prev_to, NnueBoard& pos, int depth);
+    SortedMoveGen(Movelist* to_search, int prev_piece, int prev_to, NnueBoard& pos, int depth);
     SortedMoveGen(int prev_piece, int prev_to, NnueBoard& pos);
     void set_tt_move(Move move);
     bool next(Move& move);
@@ -51,7 +51,7 @@ class SortedMoveGen {
     Bitboard attacked_by_pawn;
     std::vector<Bitboard> check_squares;
     bool is_endgame;
-    Move* to_search;
+    Movelist* to_search;
 
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;

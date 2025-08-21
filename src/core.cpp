@@ -270,7 +270,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     uint64_t zobrist_hash = pos.hash();
 
     SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(
-        root_node ? root_moves : NULL, (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos, depth
+        root_node ? &root_moves : NULL, (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos, depth
     );
 
     if (root_node){
