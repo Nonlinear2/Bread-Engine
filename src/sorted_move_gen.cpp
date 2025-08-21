@@ -1,8 +1,9 @@
 #include "sorted_move_gen.hpp"
 
 template<>
-SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(
-    int prev_piece, int prev_to, NnueBoard& pos, int depth): prev_piece(prev_piece), prev_to(prev_to), pos(pos), depth(depth) {};
+SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Move* to_search, int prev_piece, 
+    int prev_to, NnueBoard& pos, int depth):
+    to_search(to_search), prev_piece(prev_piece), prev_to(prev_to), pos(pos), depth(depth) {};
 
 template<>
 SortedMoveGen<movegen::MoveGenType::CAPTURE>::SortedMoveGen(
@@ -122,6 +123,8 @@ void SortedMoveGen<MoveGenType>::set_tt_move(Move move){
 template<movegen::MoveGenType MoveGenType>
 bool SortedMoveGen<MoveGenType>::next(Move& move){
     move_idx++;
+    if (root_node)
+        return 
 
     switch (stage){
         case TT_MOVE:

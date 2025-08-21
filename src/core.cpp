@@ -269,10 +269,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
 
-    SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(
-        (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos, depth
-    );
-
     if (root_node){
         if (root_moves.empty()){
             movegen::legalmoves(root_moves, pos);
@@ -289,6 +285,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
                 m.setScore(NO_VALUE);
         }
     }
+
+    SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(
+        root_node ? root_moves : NULL, (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos, depth
+    );
 
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
@@ -362,186 +362,106 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     }
 
     bool tt_capture = transposition.move != Move::NO_MOVE && pos.isCapture(transposition.move);
-    if (root_node){
-        int move_count = -1;
-        for (Move& move: root_moves){
-            move_count++;
-            bool is_capture = pos.isCapture(move);
+    while (move_gen.next(move)){
+        bool is_capture = pos.isCapture(move);
 
-            int new_depth = depth-1;
+        if (move == excluded_move)
+            continue;
+            
+        bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.in_buffer(depth, move);
+
+        if (is_valid(max_value) && !is_loss(max_value)){
+            // lmp
+            if (!pv && !in_check && !is_capture && move_gen.index() > 2 + depth + improving 
+                && !is_hit && eval - lmp_1 * !improving < alpha)
+                continue;
+
+            // SEE pruning
+            if (!pv && !in_check && !is_capture && !is_killer && move_gen.index() > 5 + depth / 2
+                && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
+                continue;
+        }
         
-            // singular extensions
-            int extension = 0;
-            if (is_hit && is_regular_eval(transposition.value)
-                && move == transposition.move && excluded_move == Move::NO_MOVE
-                && depth >= 6 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
-                && transposition.depth >= depth - 1)
-            {
-                int singular_beta = transposition.value - se_1 - se_2*depth;
+        int new_depth = depth-1;
+    
+        // singular extensions
+        int extension = 0;
+        if (is_hit && is_regular_eval(transposition.value)
+            && move == transposition.move && excluded_move == Move::NO_MOVE
+            && depth >= 6 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
+            && transposition.depth >= depth - 1)
+        {
+            int singular_beta = transposition.value - se_1 - se_2*depth;
 
-                if (is_regular_eval(singular_beta)){
-                    ss->excluded_move = move;
-                    value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss);
-                    ss->excluded_move = Move::NO_MOVE;
-        
-                    if (interrupt_flag)
-                        return 0;
-        
-                    if (value < singular_beta)
-                        extension = 1;
-                }
-            }
-
-            new_depth += extension;
-
-            ss->moved_piece = pos.at(move.from());
-            ss->current_move = move;
-            pos.update_state(move);
-
-            bool gives_check = pos.inCheck();
-
-            // late move reductions
-            new_depth += gives_check;
-            new_depth -= move_count > 1 && !is_capture && !gives_check;
-            new_depth -= depth > 5 && !is_hit; // IIR
-            new_depth -= tt_capture && !is_capture;
-            new_depth -= move_count > lmr_1;
-
-            new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
-
-            if (pv && (move_count == 0)){
-                value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
-            } else {
-                value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
-                if ((new_depth < depth-1) && (value > alpha)){
-                    value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
-                    if (!is_capture)
-                        move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
-                }
-                else if (value < alpha && !is_capture)
-                    move_gen.update_cont_history(ss->moved_piece, move.to().index(), -cont_2);
-            }
-
-            pos.restore_state(move);
-
-            if (interrupt_flag)
-                return 0;
-
-            if (value > max_value){
-                max_value = value;
-                best_move = move;
-                if (root_node){
-                    // ! This preserves the order of the array after the current move.
-                    // ! Rotate also invalidates the "&move" reference.
-                    std::rotate(root_moves.begin(), root_moves.begin() + move_count - 1,
-                        root_moves.begin() + move_count);
-                }
-            }
-
-            alpha = std::max(alpha, value);
-            if (beta <= alpha){
-                if (!is_capture)
-                    move_gen.update_history(move, depth);
-                SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.add_move(depth, move);
-                break;
+            if (is_regular_eval(singular_beta)){
+                ss->excluded_move = move;
+                value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss);
+                ss->excluded_move = Move::NO_MOVE;
+    
+                if (interrupt_flag)
+                    return 0;
+    
+                if (value < singular_beta)
+                    extension = 1;
+                else if (value >= beta && !is_decisive(value))
+                    return value;
             }
         }
-    } else {
-        while (move_gen.next(move)){
-            bool is_capture = pos.isCapture(move);
 
-            if (move == excluded_move)
-                continue;
-                
-            bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.in_buffer(depth, move);
+        new_depth += extension;
 
-            if (is_valid(max_value) && !is_loss(max_value)){
-                // lmp
-                if (!pv && !in_check && !is_capture && move_gen.index() > 2 + depth + improving 
-                    && !is_hit && eval - lmp_1 * !improving < alpha)
-                    continue;
+        ss->moved_piece = pos.at(move.from());
+        ss->current_move = move;
+        pos.update_state(move);
 
-                // SEE pruning
-                if (!pv && !in_check && !is_capture && !is_killer && move_gen.index() > 5 + depth / 2
-                    && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
-                    continue;
-            }
-            
-            int new_depth = depth-1;
-        
-            // singular extensions
-            int extension = 0;
-            if (is_hit && is_regular_eval(transposition.value)
-                && move == transposition.move && excluded_move == Move::NO_MOVE
-                && depth >= 6 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
-                && transposition.depth >= depth - 1)
-            {
-                int singular_beta = transposition.value - se_1 - se_2*depth;
+        bool gives_check = pos.inCheck();
 
-                if (is_regular_eval(singular_beta)){
-                    ss->excluded_move = move;
-                    value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss);
-                    ss->excluded_move = Move::NO_MOVE;
-        
-                    if (interrupt_flag)
-                        return 0;
-        
-                    if (value < singular_beta)
-                        extension = 1;
-                    else if (value >= beta && !is_decisive(value))
-                        return value;
-                }
-            }
+        // late move reductions
+        new_depth += gives_check;
+        new_depth -= move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
+        new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
+        new_depth -= tt_capture && !is_capture;
+        new_depth -= move_gen.index() > lmr_1;
 
-            new_depth += extension;
+        new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
-            ss->moved_piece = pos.at(move.from());
-            ss->current_move = move;
-            pos.update_state(move);
-
-            bool gives_check = pos.inCheck();
-
-            // late move reductions
-            new_depth += gives_check;
-            new_depth -= move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
-            new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
-            new_depth -= tt_capture && !is_capture;
-            new_depth -= move_gen.index() > lmr_1;
-
-            new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
-
-            if (pv && (move_gen.index() == 0)){
-                value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
-            } else {
-                value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
-                if ((new_depth < depth-1) && (value > alpha)){
-                    value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
-                    if (!is_capture)
-                        move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
-                }
-                else if (value < alpha && !is_capture)
-                    move_gen.update_cont_history(ss->moved_piece, move.to().index(), -cont_2);
-            }
-
-            pos.restore_state(move);
-
-            if (interrupt_flag) return 0;
-        
-            if (root_node)
-                move.setScore(value);
-
-            if (value > max_value){
-                max_value = value;
-                best_move = move;
-            }
-
-            alpha = std::max(alpha, value);
-            if (beta <= alpha){
+        if (pv && (move_gen.index() == 0)){
+            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
+        } else {
+            value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
+            if ((new_depth < depth-1) && (value > alpha)){
+                value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
                 if (!is_capture)
-                    move_gen.update_history(move, depth);
-                SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.add_move(depth, move);
-                break;
+                    move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
             }
+            else if (value < alpha && !is_capture)
+                move_gen.update_cont_history(ss->moved_piece, move.to().index(), -cont_2);
+        }
+
+        pos.restore_state(move);
+
+        if (interrupt_flag) return 0;
+    
+        if (root_node)
+            move.setScore(value);
+
+        if (value > max_value){
+            max_value = value;
+            best_move = move;
+            if (root_node){
+                // ! This preserves the order of the array after the current move.
+                // ! Rotate also invalidates the "&move" reference.
+                std::rotate(root_moves.begin(), root_moves.begin() + move_count - 1,
+                    root_moves.begin() + move_count);
+            }
+        }
+
+        alpha = std::max(alpha, value);
+        if (beta <= alpha){
+            if (!is_capture)
+                move_gen.update_history(move, depth);
+            SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.add_move(depth, move);
+            break;
         }
     }
 
