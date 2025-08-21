@@ -2,13 +2,14 @@
 
 #include <array>
 
+#include "chess.hpp"
 #include "piece_square_tables.hpp"
 #include "nnue_board.hpp"
 #include "constants.hpp"
 #include "history.hpp"
 #include "misc.hpp"
 #include "see.hpp"
-#include "chess.hpp"
+#include "tune.hpp"
 
 enum GenerationStage: int{
     TT_MOVE,

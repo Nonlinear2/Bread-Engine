@@ -170,7 +170,7 @@ struct PieceSquareMaps {
 
     constexpr int get_psm(Piece piece, Square from_sq, Square to_sq) const {
         int piece_idx = static_cast<int>(piece);
-        piece_idx = (piece_idx-(piece_idx > 5))*64;
+        piece_idx = (piece_idx - (piece_idx > 5)) * 64;
         return all_psm[piece_idx + to_sq.index()] - all_psm[piece_idx + from_sq.index()];
     }
 
