@@ -123,8 +123,8 @@ void SortedMoveGen<MoveGenType>::set_tt_move(Move move){
 template<movegen::MoveGenType MoveGenType>
 bool SortedMoveGen<MoveGenType>::next(Move& move){
     move_idx++;
-    if (root_node)
-        return 
+    if (to_search != NULL)
+        return to_search[move_idx];
 
     switch (stage){
         case TT_MOVE:

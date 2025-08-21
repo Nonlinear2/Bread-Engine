@@ -443,7 +443,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         if (interrupt_flag) return 0;
     
         if (root_node)
-            move.setScore(value);
+            root_moves[move_gen.index()].setScore(value);
 
         if (value > max_value){
             max_value = value;
@@ -451,8 +451,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             if (root_node){
                 // ! This preserves the order of the array after the current move.
                 // ! Rotate also invalidates the "&move" reference.
-                std::rotate(root_moves.begin(), root_moves.begin() + move_count - 1,
-                    root_moves.begin() + move_count);
+                std::rotate(root_moves.begin(), root_moves.begin() + move_gen.index(),
+                    root_moves.begin() + move_gen.index() + 1);
             }
         }
 
