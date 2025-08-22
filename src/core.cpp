@@ -450,7 +450,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             best_move = move;
             if (root_node){
                 // ! This preserves the order of the array after the current move.
-                // ! Rotate also invalidates the "&move" reference.
+                // ! Rotate invalidates root_moves[move_gen.index()].
                 std::rotate(root_moves.begin(), root_moves.begin() + move_gen.index(),
                     root_moves.begin() + move_gen.index() + 1);
             }
