@@ -51,7 +51,7 @@ class SortedMoveGen {
     Bitboard attacked_by_pawn;
     std::vector<Bitboard> check_squares;
     bool is_endgame;
-    Movelist* to_search;
+    Movelist* to_search = NULL;
 
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;

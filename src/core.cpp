@@ -370,7 +370,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             
         bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.in_buffer(depth, move);
 
-        if (is_valid(max_value) && !is_loss(max_value)){
+        if (!root_node && is_valid(max_value) && !is_loss(max_value)){
             // lmp
             if (!pv && !in_check && !is_capture && move_gen.index() > 2 + depth + improving 
                 && !is_hit && eval - lmp_1 * !improving < alpha)
@@ -386,7 +386,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     
         // singular extensions
         int extension = 0;
-        if (is_hit && is_regular_eval(transposition.value)
+        if (!root_node && is_hit && is_regular_eval(transposition.value)
             && move == transposition.move && excluded_move == Move::NO_MOVE
             && depth >= 6 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
             && transposition.depth >= depth - 1)
