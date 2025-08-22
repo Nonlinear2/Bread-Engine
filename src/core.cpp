@@ -478,7 +478,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
         new_depth -= tt_capture && !is_capture;
         new_depth -= move_gen.index() > lmr_1;
-        new_depth -= move_gen.index() > 5 && depth > 6 && !improving;
+        new_depth -= depth > 6 && !improving;
 
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
