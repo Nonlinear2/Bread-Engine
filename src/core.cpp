@@ -420,7 +420,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         new_depth -= move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
         new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
         new_depth -= tt_capture && !is_capture;
-        new_depth -= move_gen.index() > lmr_1;
+        new_depth -= move_gen.index() > lmr_1 && !root_node;
 
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
@@ -515,8 +515,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     if (is_mate(max_value))
         max_value = increment_mate_ply(max_value);
 
-    if (!root_node)
-        transposition_table.store(zobrist_hash, max_value, static_eval, depth, best_move, node_type, static_cast<uint8_t>(pos.fullMoveNumber()));
+    transposition_table.store(zobrist_hash, max_value, static_eval, depth, best_move, node_type, static_cast<uint8_t>(pos.fullMoveNumber()));
 
     return max_value;
 }
