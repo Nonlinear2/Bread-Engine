@@ -240,6 +240,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     nodes++;
 
     const bool root_node = ss == root_ss;
+    assert(!root_node || pos.isGameOver().second == GameResult::NONE);
 
     if (root_node)
         pos.synchronize();
@@ -273,21 +274,19 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         root_node ? &root_moves : NULL, (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos, depth
     );
 
-    if (root_node){
-        if (root_moves.empty()){
-            movegen::legalmoves(root_moves, pos);
-            assert(!root_moves.empty());
+    if (root_node && root_moves.empty()){
+        movegen::legalmoves(root_moves, pos);
+        assert(!root_moves.empty());
 
-            move_gen.prepare_pos_data();
-            for (int i = 0; i < root_moves.size(); i++)
-                move_gen.set_score(root_moves[i]);
+        move_gen.prepare_pos_data();
+        for (int i = 0; i < root_moves.size(); i++)
+            move_gen.set_score(root_moves[i]);
 
-            std::stable_sort(root_moves.begin(), root_moves.end(),
-                [](const Move a, const Move b){ return a.score() > b.score(); });
+        std::stable_sort(root_moves.begin(), root_moves.end(),
+            [](const Move a, const Move b){ return a.score() > b.score(); });
 
-            for (Move& m: root_moves)
-                m.setScore(NO_VALUE);
-        }
+        for (Move& m: root_moves)
+            m.setScore(NO_VALUE);
     }
 
     bool is_hit;
@@ -341,7 +340,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         }
 
         // reverse futility pruning
-        if (depth < 6 && eval - depth*rfp_1  - rfp_2 + rfp_3*improving >= beta)
+        if (depth < 6 && eval - depth*rfp_1 - rfp_2 + rfp_3*improving >= beta)
             return eval;
 
         // null move pruning
@@ -399,7 +398,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
                 ss->excluded_move = Move::NO_MOVE;
     
                 if (interrupt_flag)
-                    return 0;
+                    return NO_VALUE;
     
                 if (value < singular_beta)
                     extension = 1;
@@ -440,8 +439,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         pos.restore_state(move);
 
-        if (interrupt_flag) return 0;
-    
+        if (interrupt_flag)
+            return NO_VALUE;
+
         if (root_node)
             root_moves[move_gen.index()].setScore(value);
 
@@ -515,7 +515,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     if (is_mate(max_value))
         max_value = increment_mate_ply(max_value);
 
-    transposition_table.store(zobrist_hash, max_value, static_eval, depth, best_move, node_type, static_cast<uint8_t>(pos.fullMoveNumber()));
+    if (!root_node)
+        transposition_table.store(zobrist_hash, max_value, static_eval, depth, best_move, node_type, static_cast<uint8_t>(pos.fullMoveNumber()));
 
     return max_value;
 }
