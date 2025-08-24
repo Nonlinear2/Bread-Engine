@@ -182,7 +182,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
     while (true){
         current_depth++;
 
-        best_move = negamax_root(current_depth, root_ss);
+        negamax<true>(current_depth, -INFINITE_VALUE, INFINITE_VALUE, root_ss);
+        best_move = root_moves[0];
 
         std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
         pv = pv_pmove.first;
@@ -230,85 +231,6 @@ Move Engine::iterative_deepening(SearchLimit limit){
     return best_move;
 }
 
-Move Engine::negamax_root(int depth, Stack* ss){
-    assert(depth <= ENGINE_MAX_DEPTH);
-
-    int alpha = -INFINITE_VALUE;
-    int beta = INFINITE_VALUE;
-    Move best_move = Move::NO_MOVE;
-    uint64_t zobrist_hash = pos.hash();
-    pos.synchronize();
-    
-    if (root_moves.empty()){
-        movegen::legalmoves(root_moves, pos);
-        assert(!root_moves.empty());
-        SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(
-            (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos, depth
-        );
-
-        move_gen.prepare_pos_data();
-        for (int i = 0; i < root_moves.size(); i++)
-            move_gen.set_score(root_moves[i]);
-
-        std::stable_sort(root_moves.begin(), root_moves.end(),
-            [](const Move a, const Move b){ return a.score() > b.score(); });
-
-        for (Move& m: root_moves)
-            m.setScore(NO_VALUE);
-    }
-
-    bool in_check = pos.inCheck();
-
-    int value;
-    int move_count = 0;
-    for (Move& move: root_moves){
-        move_count++;
-        bool is_capture = pos.isCapture(move);
-
-        ss->moved_piece = pos.at(move.from());
-        ss->current_move = move;
-        pos.update_state(move);
-
-        int new_depth = depth - 1;
-        new_depth += pos.inCheck();
-        new_depth -= move_count > 2 && depth > 5 && !is_capture && !in_check;
-
-        new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
-
-        if (move_count == 1){
-            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
-        } else {
-            value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
-        }
-
-        pos.restore_state(move);
-
-        if (interrupt_flag)
-            return root_moves[0];
-
-        move.setScore(value);
-
-        if (is_mate(value))
-            value = increment_mate_ply(value);
-
-        if (value > alpha){
-            best_move = move;
-            // ! This preserves the order of the array after the current move.
-            // ! Rotate also invalidates the "&move" reference.
-            std::rotate(root_moves.begin(), root_moves.begin() + move_count - 1,
-                root_moves.begin() + move_count);
-            alpha = value;
-        }
-    }
-
-    assert(alpha != -INFINITE_VALUE);
-
-    transposition_table.store(zobrist_hash, alpha, NO_VALUE, depth, best_move,
-        TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
-
-    return best_move;
-}
-
 template<bool pv>
 int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     assert(ss - stack < SEARCH_STACK_SIZE); // avoid stack overflow
@@ -316,6 +238,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     assert(depth <= ENGINE_MAX_DEPTH);
 
     nodes++;
+
+    const bool root_node = ss == root_ss;
+    assert(!root_node || pos.isGameOver().second == GameResult::NONE);
+
+    if (root_node)
+        pos.synchronize();
 
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
     if (interrupt_flag || (depth >= 5 && update_interrupt_flag()))
@@ -341,10 +269,25 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
-    
+
     SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(
-        (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos, depth
+        root_node ? &root_moves : NULL, (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos, depth
     );
+
+    if (root_node && root_moves.empty()){
+        movegen::legalmoves(root_moves, pos);
+        assert(!root_moves.empty());
+
+        move_gen.prepare_pos_data();
+        for (int i = 0; i < root_moves.size(); i++)
+            move_gen.set_score(root_moves[i]);
+
+        std::stable_sort(root_moves.begin(), root_moves.end(),
+            [](const Move a, const Move b){ return a.score() > b.score(); });
+
+        for (Move& m: root_moves)
+            m.setScore(NO_VALUE);
+    }
 
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
@@ -354,7 +297,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     move_gen.set_tt_move(transposition.move);
     
     chess::Move excluded_move = ss->excluded_move;
-    if (!pv && transposition.depth >= depth && excluded_move == Move::NO_MOVE && !pos.isRepetition(1)){
+    if (!root_node && !pv && transposition.depth >= depth && excluded_move == Move::NO_MOVE && !pos.isRepetition(1)){
         switch (transposition.flag){
             case TFlag::EXACT:
                 return transposition.value;
@@ -387,7 +330,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         && ss->static_eval > (ss - 2)->static_eval;
 
     // pruning
-    if (!pv && !in_check){
+    if (!root_node && !pv && !in_check){
 
         // razoring
         if (eval + r_1*depth*depth + r_2 < alpha){ 
@@ -397,7 +340,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         }
 
         // reverse futility pruning
-        if (depth < 6 && eval - depth*rfp_1  - rfp_2 + rfp_3*improving >= beta)
+        if (depth < 6 && eval - depth*rfp_1 - rfp_2 + rfp_3*improving >= beta)
             return eval;
 
         // null move pruning
@@ -426,7 +369,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             
         bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.in_buffer(depth, move);
 
-        if (is_valid(max_value) && !is_loss(max_value)){
+        if (!root_node && is_valid(max_value) && !is_loss(max_value)){
             // lmp
             if (!pv && !in_check && !is_capture && move_gen.index() > 2 + depth + improving 
                 && !is_hit && eval - lmp_1 * !improving < alpha)
@@ -442,7 +385,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     
         // singular extensions
         int extension = 0;
-        if (is_hit && is_regular_eval(transposition.value)
+        if (!root_node && is_hit && is_regular_eval(transposition.value)
             && move == transposition.move && excluded_move == Move::NO_MOVE
             && depth >= 6 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
             && transposition.depth >= depth - 1)
@@ -455,7 +398,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
                 ss->excluded_move = Move::NO_MOVE;
     
                 if (interrupt_flag)
-                    return 0;
+                    return NO_VALUE;
     
                 if (value < singular_beta)
                     extension = 1;
@@ -473,7 +416,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         bool gives_check = pos.inCheck();
 
         // late move reductions
-        new_depth += gives_check;
+        new_depth += gives_check && !root_node;
         new_depth -= move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
         new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
         new_depth -= tt_capture && !is_capture;
@@ -496,12 +439,22 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         pos.restore_state(move);
 
-        if (interrupt_flag) return 0;
+        if (interrupt_flag)
+            return NO_VALUE;
+
+        if (root_node)
+            root_moves[move_gen.index()].setScore(value);
 
         if (value > max_value){
             max_value = value;
             if (value > alpha)
                 best_move = move;
+            if (root_node){
+                // ! This preserves the order of the array after the current move.
+                // ! Rotate invalidates root_moves[move_gen.index()].
+                std::rotate(root_moves.begin(), root_moves.begin() + move_gen.index(),
+                    root_moves.begin() + move_gen.index() + 1);
+            }
         }
 
         alpha = std::max(alpha, value);
@@ -514,6 +467,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     }
 
     if (!is_valid(max_value)){
+        assert(!root_node);
         if (move_gen.tt_move == Move::NO_MOVE && move_gen.empty()){ // avoid calling expensive try_outcome_eval function
             // If board is in check, it is checkmate
             // if there are no legal moves and it's not check, it is stalemate so eval is 0
@@ -541,7 +495,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     // one TT entry which is completely fine.
     // what about evaluations higher in the tree where pos.isRepetition(1) is false?
     // these evals are not history dependent as they mean that one side can force a draw.
-    if ((max_value == 0 && pos.isRepetition(1)) || pos.halfMoveClock() + depth >= 100)
+    if (!root_node && ((max_value == 0 && pos.isRepetition(1)) || pos.halfMoveClock() + depth >= 100))
         return max_value;
     // we fall through without storing the eval in the TT.
 
