@@ -1,8 +1,9 @@
 #include "sorted_move_gen.hpp"
 
 template<>
-SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(
-    int prev_piece, int prev_to, NnueBoard& pos, int depth): prev_piece(prev_piece), prev_to(prev_to), pos(pos), depth(depth) {};
+SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Movelist* to_search, int prev_piece, 
+    int prev_to, NnueBoard& pos, int depth):
+    to_search(to_search), prev_piece(prev_piece), prev_to(prev_to), pos(pos), depth(depth) {};
 
 template<>
 SortedMoveGen<movegen::MoveGenType::CAPTURE>::SortedMoveGen(
@@ -122,6 +123,12 @@ void SortedMoveGen<MoveGenType>::set_tt_move(Move move){
 template<movegen::MoveGenType MoveGenType>
 bool SortedMoveGen<MoveGenType>::next(Move& move){
     move_idx++;
+    if (to_search != NULL){
+        if (move_idx == to_search->size())
+            return false;
+        move = (*to_search)[move_idx];
+        return true;
+    }
 
     switch (stage){
         case TT_MOVE:
@@ -180,7 +187,7 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
                 best_move_idx = i;
             }
         }
-        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], 0))
+        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], -200))
             break;
         
         moves[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
