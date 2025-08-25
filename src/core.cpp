@@ -593,7 +593,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     capture_gen.set_tt_move(transposition.move);
     
-    if (depth == -QSEARCH_MAX_DEPTH || ss - stack >= SEARCH_STACK_SIZE - 1)
+    if (depth <= -QSEARCH_MAX_DEPTH - pv || ss - stack >= SEARCH_STACK_SIZE - 1)
         return stand_pat;
 
     alpha = std::max(alpha, stand_pat);
