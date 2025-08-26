@@ -1,5 +1,18 @@
 #include "sorted_move_gen.hpp"
 
+TUNEABLE(endg, int, 11, 0, 32, 0.5, 0.002);
+TUNEABLE(psm_1, int, 69, 0, 1000, 20, 0.002);
+TUNEABLE(psm_2, int, 114, 0, 1000, 20, 0.002);
+TUNEABLE(att_1, int, 55, 0, 500, 10, 0.002);
+TUNEABLE(att_2, int, 48, 0, 500, 10, 0.002);
+TUNEABLE(chk_1, int, 168, 0, 1000, 20, 0.002);
+TUNEABLE(cpt, int, 152, 0, 1000, 20, 0.002);
+TUNEABLE(prm, int, 115, 0, 1000, 20, 0.002);
+TUNEABLE(kil, int, 129, 0, 1000, 25, 0.002);
+TUNEABLE(his, int, 139, 0, 1000, 20, 0.002);
+TUNEABLE(chis, int, 117, 0, 1000, 20, 0.002);
+TUNEABLE(chk_2, int, 361, 0, 2000, 20, 0.002);
+
 template<>
 SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Movelist* to_search, int prev_piece, 
     int prev_to, NnueBoard& pos, int depth):
@@ -31,7 +44,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::prepare_pos_data(){
         0, // king
     };
 
-    is_endgame = occ.count() <= 11;
+    is_endgame = occ.count() <= endg;
 }
 
 // set move score to be sorted later
@@ -49,36 +62,36 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
     int score = 0;
 
     if (piece != Piece::WHITEKING && piece != Piece::BLACKKING)
-        score += psm.get_psm(piece, from, to);
+        score += psm_1 * psm.get_psm(piece, from, to) / 100;
     else
-        score += psm.get_ksm(piece, is_endgame, to, from);
+        score += psm_2 * psm.get_ksm(piece, is_endgame, to, from) / 100;
     
     if (piece.type() != PieceType::PAWN && piece.type() != PieceType::KING){
-        score += 48 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value/150;
-        score -= 49 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value/150;
+        score += att_1 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value / 150;
+        score -= att_2 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value / 150;
     }
 
     if (check_squares[static_cast<int>(piece.type())] & Bitboard::fromSquare(to))
-        score += 160;
+        score += chk_1;
 
     // captures should be searched early, so
     // to_value = piece_value(to) - piece_value(from) doesn't seem to work.
     // however, find a way to make these captures even better ?
     if (to_piece != Piece::NONE)
-        score += 119 * piece_value[static_cast<int>(to_piece.type())]/150;
+        score += cpt * piece_value[static_cast<int>(to_piece.type())] / 150;
 
     if (move.typeOf() == Move::PROMOTION)
-        score += 119 * piece_value[static_cast<int>(move.promotionType())]/150;
+        score += prm * piece_value[static_cast<int>(move.promotionType())] / 150;
 
     assert(depth != DEPTH_UNSEARCHED);
     if (killer_moves.in_buffer(depth, move))
-        score += 149;
+        score += kil;
 
     // cant be less than worst move score
-    score += history.get(stm == Color::WHITE, from.index(), to.index())/100;
+    score += his * history.get(stm == Color::WHITE, from.index(), to.index()) / 10'000;
 
     if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
-        score += cont_history.get(prev_piece, prev_to, piece, to.index()) / 100;
+        score += chis * cont_history.get(prev_piece, prev_to, piece, to.index()) / 10'000;
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -108,7 +121,7 @@ void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
     const int to_piece_type = static_cast<int>(pos.at(move.to()).type());
 
     int score = piece_value[to_piece_type] - piece_value[piece_type]
-        + 360 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
+        + chk_2 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
