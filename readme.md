@@ -1,7 +1,7 @@
 # Overview
-Bread is a superhuman chess engine written in C++. Currently, it is rated 2900 elo on the computer chess rating lists. Bread uses minimax search with NNUE (efficiently updatable neural network) as an evaluation function. The neural network is homemade and was originally trained using lichess's open database. More recently, the training has been done using games of self play.
+Bread is a superhuman chess engine written in C++. Currently, it is rated 3000 elo on the computer chess rating lists. Bread uses minimax search with NNUE (efficiently updatable neural network) as an evaluation function. The neural network is homemade and trained using games of self play since version 1.3.0. Originally, the network was trained using lichess's open database.
 
-Bread engine does not have a graphical interface built in. However it supports the uci protocol, you can therefore run it on any chess graphical interface, such as [cute chess](https://github.com/cutechess/cutechess) or [arena](http://www.playwitharena.de/).
+Bread engine does not have a graphical interface built in. However it supports the uci protocol, you can therefore run it on any chess graphical interface, such as [en croissant](https://encroissant.org/) or [cute chess](https://github.com/cutechess/cutechess).
 
 # Installation
 
@@ -31,7 +31,7 @@ and the engine will return the best move. You can find more details on the [uci 
 
 **You need Cmake and a C++ compiler installed.**
 
-The build has been tested using compilers MSVC 19.38, Clang 17.0 and GCC 13.1.
+The build has been tested using compilers Clang 20.1.7 and GCC 13.1.0.
 
 ### Windows
 
@@ -47,13 +47,6 @@ This will generate a build folder with the executable.
 ### Linux
 
 Run the script `compile_script_for_linux.sh`. The executable will be generated in the `build` folder.
-
-## Run the engine on a chess graphical interface:
-### Cute chess
-You can download cute chess [here](https://github.com/cutechess/cutechess/releases).
-To add the engine select: tools -> settings -> engines -> + -> command, and choose the engine's executable.
-
-To play a game against the engine, select: game -> new and choose the settings you want.
 
 # Custom commands
 
