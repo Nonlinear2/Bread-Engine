@@ -543,6 +543,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = pos.hash();
 
+    bool in_check = pos.inCheck();
+
     // first we check for transposition. If it is outcome, it should have already been stored
     // with an exact flag, so the stand pat will be correct anyways.
     SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(
@@ -628,7 +630,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         ss->moved_piece = moved_piece;
         ss->current_move = move;
         pos.update_state(move);
-        value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
+        value = -qsearch<pv>(-beta, -alpha, depth-1 + in_check, ss + 1);
         pos.restore_state(move);
 
         if (value > max_value){
