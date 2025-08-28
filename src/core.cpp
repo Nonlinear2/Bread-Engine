@@ -323,6 +323,16 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         
     ss->static_eval = static_eval;
 
+    eval = static_eval;
+    if (is_valid(transposition.value) && !is_decisive(transposition.value)
+        && (
+            transposition.flag == TFlag::EXACT 
+            || (transposition.flag == TFlag::LOWER_BOUND && transposition.value >= eval)
+            || (transposition.flag == TFlag::UPPER_BOUND && transposition.value <= eval)
+            ))
+            eval = transposition.value;
+
+
     bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval)
         && ss->static_eval > (ss - 2)->static_eval;
 
