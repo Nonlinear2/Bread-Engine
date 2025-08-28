@@ -349,7 +349,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         if (!pos.last_move_null() && excluded_move == Move::NO_MOVE
             && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta)){
 
-            int R = 2 + (eval >= beta) + depth / 4;
+            int R = 2 + std::clamp(eval - beta / 160, -1, 3) + depth / 4;
             ss->moved_piece = Piece::NONE;
             ss->current_move = Move::NULL_MOVE;
             pos.makeNullMove();
