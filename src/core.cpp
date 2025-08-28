@@ -619,11 +619,11 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             // SEE pruning
             if (!SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
                 continue;
-    
-            if (!pv && capture_gen.index() > 7
-                && stand_pat + qs_p_1 < alpha && !SEE::evaluate(pos, move, -qs_p_2))
-                continue;
-        }
+            }
+
+        if (!pv && capture_gen.index() > 7
+            && stand_pat + qs_p_1 < alpha && !SEE::evaluate(pos, move, -qs_p_2))
+            continue;
 
         ss->moved_piece = moved_piece;
         ss->current_move = move;
