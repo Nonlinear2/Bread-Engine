@@ -59,9 +59,19 @@ int main(){
     // std::string input_;
     // std::getline(std::cin, input_);
 
+    // NnueBoard cb;
+    // cb.setFen("4k3/8/8/8/8/8/8/3QK3 w - - 0 1");
+    // auto f = cb.get_features();
+    // for (auto v: f.first)
+    //     std::cout << v << " ";
+    // std::cout << std::endl;
+    // for (auto v: f.second)
+    //     std::cout << v << " ";
+    // std::cout << cb.evaluate() << std::endl;
+
     NnueBoard cb;
     cb.setFen(constants::STARTPOS);
     cb.synchronize();
-    // std::cout << cb.evaluate() << std::endl;
+    std::cout << cb.evaluate() << std::endl;
     return 0;
 }   
