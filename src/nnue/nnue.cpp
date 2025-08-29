@@ -165,7 +165,7 @@ int32_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int32_t* bias){
         __m256i prod = _mm256_maddubs_epi16(
             input_chunk,
             _mm256_loadu_si256((const __m256i*)&weights[i*int8_per_reg]) //load int8
-        );
+        ); // outputs int16
         prod = _mm256_madd_epi16(prod, one); // hadd pairs to int32 to avoid overflows in int16
         result = _mm256_add_epi32(result, prod);
     }
@@ -191,8 +191,9 @@ void NNUE::crelu16(int16_t *input, int8_t *output, int size){
     for (int i = 0; i < num_regs; i++){
         __m256i in_1 = _mm256_loadu_si256((const __m256i*)&input[(2*i)*int16_per_reg]); // load int16
         __m256i in_2 = _mm256_loadu_si256((const __m256i*)&input[(2*i+1)*int16_per_reg]); // load int16
-        __m256i out = _mm256_max_epi8(_mm256_packus_epi16(in_1, in_2), zero); // packs saturates at 255, so only max is applied
-        out = _mm256_permute4x64_epi64(out, 0b11011000);
+        // packs sets negative values to 0 and saturates at 255, which effectively applies relu
+        __m256i out = _mm256_packus_epi16(in_1, in_2);
+        out = _mm256_permute4x64_epi64(out, 0b11011000); // undo the packus shuffle
         _mm256_storeu_si256((__m256i*)&output[i*int8_per_reg], out); // store int8
     }
 };
@@ -202,5 +203,5 @@ int NNUE::run_cropped_nn(bool color){
     crelu16(accumulator[!color], &ft_clipped_output[ACC_SIZE], ACC_SIZE);
 
     int16_t output = run_output_layer(ft_clipped_output, l1_weights, l1_bias);
-    return output / 64;
+    return output / 64; // 255 * true output
 };

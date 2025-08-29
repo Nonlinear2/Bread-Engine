@@ -90,8 +90,6 @@ class NNUE {
     // also, output is scaled back by 64, so total scale is still only 127. as we only do integer division,
     // error caused by the division is max 1/127.
     
-    int32_t l1_output[32];
-    
     // max output value is 1*(127*127) + bias, the max possible output with the max possible weight.
     // this is 16129+bias which is less than the max int16 if bias is less than (int16_max - 16129)/(127*64) = 2.04
 
