@@ -73,5 +73,15 @@ int main(){
     cb.setFen(constants::STARTPOS);
     cb.synchronize();
     std::cout << cb.evaluate() << std::endl;
+    cb.update_state(uci::uciToMove(cb, "e2e4"));
+    cb.update_state(uci::uciToMove(cb, "e7e5"));
+    cb.update_state(uci::uciToMove(cb, "g1f3"));
+    cb.update_state(uci::uciToMove(cb, "d8g5"));
+    cb.update_state(uci::uciToMove(cb, "f3g5"));
+    cb.update_state(uci::uciToMove(cb, "f8d6"));
+    cb.update_state(uci::uciToMove(cb, "f1e2"));
+    cb.update_state(uci::uciToMove(cb, "d6f8"));
+    cb.update_state(uci::uciToMove(cb, "e1g1"));
+    std::cout << cb.evaluate() << std::endl;
     return 0;
-}   
+}

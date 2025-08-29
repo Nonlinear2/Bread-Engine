@@ -275,13 +275,13 @@ modified_features NnueBoard::get_modified_features(Move move, bool color){
     }
 
     if (capt_piece != Piece::NONE){
-        bool capt_piece_color = curr_piece.color() == Color::BLACK; // white: 0, black: 1
-        int capt_piece_idx = int(curr_piece.type());
+        bool capt_piece_color = capt_piece.color() == Color::BLACK; // white: 0, black: 1
+        int capt_piece_idx = int(capt_piece.type());
 
         if (color)
-            captured = 384 * piece_color + capt_piece_idx*64 + to;
+            captured = 384 * capt_piece_color + capt_piece_idx*64 + to;
         else
-            captured = 384 * !piece_color + capt_piece_idx*64 + (to ^ 56);
+            captured = 384 * !capt_piece_color + capt_piece_idx*64 + (to ^ 56);
     }
 
     return modified_features(added, removed, captured);
