@@ -3,12 +3,15 @@
 #include <fstream>
 #include <array>
 #include "constants.hpp"
+#include "chess.hpp"
+
+using namespace chess;
 
 class ContinuationHistory {
     public:
     void clear();
-    int& get(int prev_piece, int prev_to, int piece, int to);
-    void apply_bonus(int prev_piece, int prev_to, int piece, int to, int bonus);
+    int& get(Piece prev_piece, Square prev_to, Piece piece, Square to);
+    void apply_bonus(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus);
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
@@ -18,8 +21,8 @@ class ContinuationHistory {
 class FromToHistory {
     public:
     void clear();
-    int& get(bool color, int from, int to);
-    void apply_bonus(bool color, int from, int to, int bonus);
+    int& get(bool color, Square from, Square to);
+    void apply_bonus(bool color, Square from, Square to, int bonus);
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 

@@ -30,18 +30,18 @@ class SortedMoveGen {
     static inline FromToHistory history = FromToHistory();
     static inline ContinuationHistory cont_history = ContinuationHistory();
 
-    int prev_piece;
-    int prev_to;
+    Piece prev_piece;
+    Square prev_to;
     NnueBoard& pos;
 
-    SortedMoveGen(Movelist* to_search, int prev_piece, int prev_to, NnueBoard& pos, int depth);
-    SortedMoveGen(int prev_piece, int prev_to, NnueBoard& pos);
+    SortedMoveGen(Movelist* to_search, Piece prev_piece, Square prev_to, NnueBoard& pos, int depth);
+    SortedMoveGen(Piece prev_piece, Square prev_to, NnueBoard& pos);
     void set_tt_move(Move move);
     bool next(Move& move);
     bool empty();
     int index();
     void update_history(Move best_move, int depth);
-    void update_cont_history(int piece, int to, int bonus);
+    void update_cont_history(Piece piece, Square to, int bonus);
     void set_score(Move& move);
     void prepare_pos_data();
 
