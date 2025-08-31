@@ -19,16 +19,21 @@ int main(int argc, char* argv[]){
             Board board = Board();
 
             for (int i = 0; i < std::stoi(parsed[1]); i++){
-                board.setFen(constants::STARTPOS);
-                for (int i = 0; i < 10; i++){
-                    if (std::get<1>(board.isGameOver()) != GameResult::NONE)
-                        break;
-                    movegen::legalmoves(move_list, board);
-                    board.makeMove(move_list[rng()%move_list.size()]);
-                }
+                do {
+                    board.setFen(constants::STARTPOS);
+                    for (int i = 0; i < 10; i++){
+                        movegen::legalmoves(move_list, board);
+                        board.makeMove(move_list[rng()%move_list.size()]);
+                        if (std::get<1>(board.isGameOver()) != GameResult::NONE)
+                            break;
+                    }
+                } while (std::get<1>(board.isGameOver()) != GameResult::NONE);
+
                 std::cout << "info string genfens " << board.getFen() << std::endl;
             }
-            return 0;
+
+            if (argc >= 3 && std::string(argv[2]) == "quit")
+                return 0;
         }
     }
 
