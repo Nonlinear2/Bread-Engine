@@ -21,21 +21,21 @@ bool NnueBoard::last_move_null(){
 }
 
 void NnueBoard::update_state(Move move){
-    makeMove(move);
-    // accumulator_stack.push(nnue_.accumulator);
+    // makeMove(move);
+    accumulator_stack.push(nnue_.accumulator);
 
-    // if (is_updatable_move(move)){
-    //     // white
-    //     modified_features mod_features = get_modified_features(move, true);
-    //     nnue_.update_accumulator(mod_features, true);
-    //     // black 
-    //     mod_features = get_modified_features(move, false);
-    //     nnue_.update_accumulator(mod_features, false);
-    //     makeMove(move);
-    // } else {
-    //     makeMove(move);
-    //     synchronize();
-    // }
+    if (is_updatable_move(move)){
+        // white
+        // modified_features mod_features = get_modified_features(move, true);
+        // nnue_.update_accumulator(mod_features, true);
+        // // black 
+        // mod_features = get_modified_features(move, false);
+        // nnue_.update_accumulator(mod_features, false);
+        makeMove(move);
+    } else {
+        makeMove(move);
+        // synchronize();
+    }
 }
 
 void NnueBoard::restore_state(Move move){
