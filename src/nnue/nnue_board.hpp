@@ -1,6 +1,7 @@
 #pragma once 
 
 #include <stack>
+#include <random>
 
 #include "chess.hpp"
 #include "tbprobe.hpp"
@@ -36,6 +37,10 @@ class NnueBoard: public Board {
     Move tb_result_to_move(unsigned int tb_result);
     
     private:
+    std::random_device rdev;
+    std::mt19937 rgen;
+    std::uniform_int_distribution<int> idist;
+
     std::stack<Accumulator> accumulator_stack;
 
     std::vector<int> get_HKP(bool color);

@@ -1,8 +1,15 @@
 #include "nnue_board.hpp"
 
-NnueBoard::NnueBoard() {synchronize();};
+NnueBoard::NnueBoard() {
+    std::mt19937 rgen(rdev());
+    std::uniform_int_distribution<int> idist(-BEST_VALUE, BEST_VALUE);
+    synchronize();};
 
-NnueBoard::NnueBoard(std::string_view fen) {synchronize();};
+NnueBoard::NnueBoard(std::string_view fen) {
+    std::mt19937 rgen(rdev());
+    std::uniform_int_distribution<int> idist(-BEST_VALUE, BEST_VALUE);
+    synchronize();
+};
 
 void NnueBoard::synchronize(){
     nnue_.compute_accumulator(get_HKP(true), true);
@@ -14,21 +21,21 @@ bool NnueBoard::last_move_null(){
 }
 
 void NnueBoard::update_state(Move move){
+    makeMove(move);
+    // accumulator_stack.push(nnue_.accumulator);
 
-    accumulator_stack.push(nnue_.accumulator);
-
-    if (is_updatable_move(move)){
-        // white
-        modified_features mod_features = get_modified_features(move, true);
-        nnue_.update_accumulator(mod_features, true);
-        // black 
-        mod_features = get_modified_features(move, false);
-        nnue_.update_accumulator(mod_features, false);
-        makeMove(move);
-    } else {
-        makeMove(move);
-        synchronize();
-    }
+    // if (is_updatable_move(move)){
+    //     // white
+    //     modified_features mod_features = get_modified_features(move, true);
+    //     nnue_.update_accumulator(mod_features, true);
+    //     // black 
+    //     mod_features = get_modified_features(move, false);
+    //     nnue_.update_accumulator(mod_features, false);
+    //     makeMove(move);
+    // } else {
+    //     makeMove(move);
+    //     synchronize();
+    // }
 }
 
 void NnueBoard::restore_state(Move move){
@@ -40,7 +47,8 @@ void NnueBoard::restore_state(Move move){
 }
 
 int NnueBoard::evaluate(){
-    return std::clamp(nnue_.run_cropped_nn(sideToMove() == Color::WHITE), -BEST_VALUE, BEST_VALUE);
+    return idist(rgen);
+    // return std::clamp(nnue_.run_cropped_nn(sideToMove() == Color::WHITE), -BEST_VALUE, BEST_VALUE);
 }
 
 bool NnueBoard::try_outcome_eval(int& eval){
