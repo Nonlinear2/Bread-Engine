@@ -384,13 +384,15 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
                 continue;
             
             // continuation history pruning
-            if (move_gen.cont_history.get(prev_piece, prev_to, ss->moved_piece, move.to()) < -30'000)
+            if (move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -30'000)
                 continue;
         }
 
         int new_depth = depth-1;
     
         // singular extensions
+        // we need to be careful regarding stack variables as they can get modified by the singular search
+        // as it uses the same stack element
         int extension = 0;
         if (!root_node && is_hit && is_regular_eval(transposition.value)
             && move == transposition.move && excluded_move == Move::NO_MOVE
