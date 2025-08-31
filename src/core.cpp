@@ -383,6 +383,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             if (!pv && !in_check && !is_capture && !is_killer && move_gen.index() > 5 + depth / 2
                 && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
                 continue;
+            
+            // continuation history pruning
+            if (move_gen.cont_history.get(prev_piece, prev_to, ss->moved_piece, move.to()) < -30'000)
+                continue;
         }
 
         int new_depth = depth-1;
