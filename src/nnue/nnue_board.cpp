@@ -1,10 +1,10 @@
 #include "nnue_board.hpp"
 
-NnueBoard::NnueBoard(): rgen(rdev()), idist(-BEST_VALUE, BEST_VALUE) {
+NnueBoard::NnueBoard(): rgen(1020), idist(-BEST_VALUE, BEST_VALUE) {
     synchronize();
 };
 
-NnueBoard::NnueBoard(std::string_view fen): rgen(rdev()), idist(-BEST_VALUE, BEST_VALUE) {
+NnueBoard::NnueBoard(std::string_view fen): rgen(1020), idist(-BEST_VALUE, BEST_VALUE) {
     synchronize();
 };
 

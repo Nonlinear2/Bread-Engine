@@ -20,7 +20,7 @@ int main(int argc, char* argv[]){
 
             for (int i = 0; i < std::stoi(parsed[1]); i++){
                 board.setFen(constants::STARTPOS);
-                for (int i = 0; i < 7; i++){
+                for (int i = 0; i < 10; i++){
                     if (std::get<1>(board.isGameOver()) != GameResult::NONE)
                         break;
                     movegen::legalmoves(move_list, board);
