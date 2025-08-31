@@ -1,13 +1,10 @@
 #include "nnue_board.hpp"
 
-NnueBoard::NnueBoard() {
-    std::mt19937 rgen(rdev());
-    std::uniform_int_distribution<int> idist(-BEST_VALUE, BEST_VALUE);
-    synchronize();};
+NnueBoard::NnueBoard(): rgen(rdev()), idist(-BEST_VALUE, BEST_VALUE) {
+    synchronize();
+};
 
-NnueBoard::NnueBoard(std::string_view fen) {
-    std::mt19937 rgen(rdev());
-    std::uniform_int_distribution<int> idist(-BEST_VALUE, BEST_VALUE);
+NnueBoard::NnueBoard(std::string_view fen): rgen(rdev()), idist(-BEST_VALUE, BEST_VALUE) {
     synchronize();
 };
 
