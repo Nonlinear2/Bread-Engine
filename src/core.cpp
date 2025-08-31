@@ -371,7 +371,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             continue;
 
         bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.in_buffer(depth, move);
-        ss->moved_piece = pos.at(move.from());
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
             // lmp
@@ -413,6 +412,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         new_depth += extension;
 
+        ss->moved_piece = pos.at(move.from());
         ss->current_move = move;
         pos.update_state(move);
 
