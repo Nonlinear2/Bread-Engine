@@ -384,7 +384,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
                 continue;
             
             // continuation history pruning
-            if (move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -1000 - 1000 * depth)
+            if (depth < 4 && move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -8'000)
                 continue;
         }
 
