@@ -28,7 +28,9 @@ int main(int argc, char* argv[]){
                 }
                 std::cout << "info string genfens " << board.getFen() << std::endl;
             }
-            return 0;
+
+            if (argc >= 3 && std::string(argv[2]) == "quit")
+                return 0;
         }
     }
 
