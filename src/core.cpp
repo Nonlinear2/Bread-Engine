@@ -382,11 +382,20 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             if (!pv && !in_check && !is_capture && !is_killer && move_gen.index() > 5 + depth / 2
                 && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
                 continue;
+            
+            // continuation history pruning
+            if (!is_capture && !in_check
+                && prev_piece != int(Piece::NONE)
+                && prev_to != int(Square::underlying::NO_SQ)
+                && move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -8000 - 500 * depth)
+                continue;
         }
 
         int new_depth = depth-1;
     
         // singular extensions
+        // we need to be careful regarding stack variables as they can get modified by the singular search
+        // as it uses the same stack element
         int extension = 0;
         if (!root_node && is_hit && is_regular_eval(transposition.value)
             && move == transposition.move && excluded_move == Move::NO_MOVE
