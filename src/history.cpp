@@ -9,19 +9,19 @@ void ContinuationHistory::clear(){
     std::fill(std::begin(history), std::end(history), 0);
 }
 
-int& FromToHistory::get(bool color, int from, int to){
-    return history[color][from*64 + to];
+int& FromToHistory::get(bool color, Square from, Square to){
+    return history[color][from.index()*64 + to.index()];
 }
 
-int& ContinuationHistory::get(int prev_piece, int prev_to, int piece, int to){
-    return history[prev_piece * 64*12*64 + prev_to * 12*64 + piece * 64 + to];
+int& ContinuationHistory::get(Piece prev_piece, Square prev_to, Piece piece, Square to){
+    return history[prev_piece * 64*12*64 + prev_to.index() * 12*64 + piece * 64 + to.index()];
 }
 
-void FromToHistory::apply_bonus(bool color, int from, int to, int bonus){
+void FromToHistory::apply_bonus(bool color, Square from, Square to, int bonus){
     get(color, from, to) += bonus - get(color, from, to) * std::abs(bonus) / MAX_HISTORY_BONUS;
 }
 
-void ContinuationHistory::apply_bonus(int prev_piece, int prev_to, int piece, int to, int bonus){
+void ContinuationHistory::apply_bonus(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus){
     get(prev_piece, prev_to, piece, to) += bonus - get(prev_piece, prev_to, piece, to)
         * std::abs(bonus) / MAX_HISTORY_BONUS;
 }
