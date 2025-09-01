@@ -266,12 +266,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     Move best_move = Move::NO_MOVE;
     Move move;
     int value;
+    Piece prev_piece = (ss - 1)->moved_piece;
+    Square prev_to = (ss - 1)->current_move.to();
 
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
 
     SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(
-        root_node ? &root_moves : NULL, (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos, depth
+        root_node ? &root_moves : NULL, prev_piece, prev_to, pos, depth
     );
 
     if (root_node && root_moves.empty()){
@@ -367,7 +369,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         if (move == excluded_move)
             continue;
-            
+
         bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.in_buffer(depth, move);
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
@@ -380,11 +382,20 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             if (!pv && !in_check && !is_capture && !is_killer && move_gen.index() > 5 + depth / 2
                 && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
                 continue;
+            
+            // continuation history pruning
+            if (!is_capture && !in_check
+                && prev_piece != int(Piece::NONE)
+                && prev_to != int(Square::underlying::NO_SQ)
+                && move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -8000 - 500 * depth)
+                continue;
         }
-        
+
         int new_depth = depth-1;
     
         // singular extensions
+        // we need to be careful regarding stack variables as they can get modified by the singular search
+        // as it uses the same stack element
         int extension = 0;
         if (!root_node && is_hit && is_regular_eval(transposition.value)
             && move == transposition.move && excluded_move == Move::NO_MOVE
@@ -432,10 +443,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             if ((new_depth < depth-1) && (value > alpha)){
                 value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
                 if (!is_capture)
-                    move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
+                    move_gen.update_cont_history(ss->moved_piece, move.to(), cont_1);
             }
             else if (value < alpha && !is_capture)
-                move_gen.update_cont_history(ss->moved_piece, move.to().index(), -cont_2);
+                move_gen.update_cont_history(ss->moved_piece, move.to(), -cont_2);
         }
 
         pos.restore_state(move);
