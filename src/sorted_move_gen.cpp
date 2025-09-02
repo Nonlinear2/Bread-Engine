@@ -14,13 +14,13 @@ TUNEABLE(chis, int, 117, 0, 1000, 20, 0.002);
 TUNEABLE(chk_2, int, 361, 0, 2000, 20, 0.002);
 
 template<>
-SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Movelist* to_search, int prev_piece, 
-    int prev_to, NnueBoard& pos, int depth):
+SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
+    Square prev_to, NnueBoard& pos, int depth):
     to_search(to_search), prev_piece(prev_piece), prev_to(prev_to), pos(pos), depth(depth) {};
 
 template<>
 SortedMoveGen<movegen::MoveGenType::CAPTURE>::SortedMoveGen(
-    int prev_piece, int prev_to, NnueBoard& pos): prev_piece(prev_piece), prev_to(prev_to), pos(pos) {};
+    Piece prev_piece, Square prev_to, NnueBoard& pos): prev_piece(prev_piece), prev_to(prev_to), pos(pos) {};
 
 template<>
 void SortedMoveGen<movegen::MoveGenType::ALL>::prepare_pos_data(){
@@ -55,9 +55,9 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
     const Square from = move.from();
     const Square to = move.to();
     const Piece piece = pos.at(from);
-    assert(piece.type() != PieceType::NONE);
     const Piece to_piece = pos.at(to);
     const int from_value = piece_value[static_cast<int>(piece.type())];
+    assert(piece.type() != PieceType::NONE);
 
     int score = 0;
 
@@ -220,16 +220,16 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, in
     bool color = pos.sideToMove() == Color::WHITE;
     int bonus = std::min(depth*depth*32 + 20, 1000);
 
-    history.apply_bonus(color, best_move.from().index(), best_move.to().index(), bonus);
+    history.apply_bonus(color, best_move.from(), best_move.to(), bonus);
 
     for (int i = 0; i < moves.size(); i++){
         if (moves[i] != best_move && !pos.isCapture(moves[i]))
-            history.apply_bonus(color, moves[i].from().index(), moves[i].to().index(), -bonus);
+            history.apply_bonus(color, moves[i].from(), moves[i].to(), -bonus);
     }
 }
 
 template<>
-void SortedMoveGen<movegen::MoveGenType::ALL>::update_cont_history(int piece, int to, int bonus){
+void SortedMoveGen<movegen::MoveGenType::ALL>::update_cont_history(Piece piece, Square to, int bonus){
     if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
         cont_history.apply_bonus(prev_piece, prev_to, piece, to, bonus);
 }
