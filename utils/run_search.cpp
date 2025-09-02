@@ -70,18 +70,19 @@ int main(){
     // std::cout << cb.evaluate() << std::endl;
 
     NnueBoard cb;
-    cb.setFen(constants::STARTPOS);
+    // cb.setFen(constants::STARTPOS);
+    cb.setFen("4k3/8/8/8/8/8/8/3QK3 w - - 0 1");
     cb.synchronize();
     std::cout << cb.evaluate() << std::endl;
-    cb.update_state(uci::uciToMove(cb, "e2e4"));
-    cb.update_state(uci::uciToMove(cb, "e7e5"));
-    cb.update_state(uci::uciToMove(cb, "g1f3"));
-    cb.update_state(uci::uciToMove(cb, "d8g5"));
-    cb.update_state(uci::uciToMove(cb, "f3g5"));
-    cb.update_state(uci::uciToMove(cb, "f8d6"));
-    cb.update_state(uci::uciToMove(cb, "f1e2"));
-    cb.update_state(uci::uciToMove(cb, "d6f8"));
-    cb.update_state(uci::uciToMove(cb, "e1g1"));
-    std::cout << cb.evaluate() << std::endl;
+    // cb.update_state(uci::uciToMove(cb, "e2e4"));
+    // cb.update_state(uci::uciToMove(cb, "e7e5"));
+    // cb.update_state(uci::uciToMove(cb, "g1f3"));
+    // cb.update_state(uci::uciToMove(cb, "d8g5"));
+    // cb.update_state(uci::uciToMove(cb, "f3g5"));
+    // cb.update_state(uci::uciToMove(cb, "f8d6"));
+    // cb.update_state(uci::uciToMove(cb, "f1e2"));
+    // cb.update_state(uci::uciToMove(cb, "d6f8"));
+    // cb.update_state(uci::uciToMove(cb, "e1g1"));
+    // std::cout << cb.evaluate() << std::endl;
     return 0;
 }
