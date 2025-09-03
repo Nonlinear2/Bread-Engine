@@ -332,13 +332,10 @@ swap lanes of the second register and vertical sum:
 1\. d4 Nf6 2. Nf3 c5 3. g3 cxd4 4. Nxd4 e5 5. Nf3 Nc6 6. Bg2 d5 7. O-O Be7 8. c4 d4 9. b4 e4 10. Ng5 Bxb4 11. a3 Ba5 12. Nd2 Bc3 13. Rb1 e3 14. fxe3 O-O 15. Nde4 Ng4 16. h3 Nge5 17. Qc2 f5 18. Nxc3 dxc3 19. Nf3 Qf6 20. Rb3 Qg6 21. Rxc3 Qxg3 22. Nxe5 Qxe5 23. Bb2 Be6 24. Rf4 Qf6 25. Rd3 Ne5 26. Rb3 Rfe8 27. Rb5 Bd7 28. Bxb7 Rad8 29. Rc5 Qb6 30. Bd5+ Kh8 31. Bd4 Qh6 32. Qc3 Ng6 33. Rf3 Re7 34. Ra5 Rb8 35. Ra6 Qg5+ 36. Kh2 f4 37. Rxa7 Nh4 38. Rxf4 Nf5 39. Rf3 Qh5 40. Bf6 Nh4 41. Rf2 Ng6 42. Bxg7+ Rxg7 43. Rxd7 Qe5+ 44. Qxe5 Nxe5 45. Rxg7 Kxg7 46. c5 Rc8 47. Rf5 Nc6 48. Rg5+ Kf6 49. Rh5 Kg6 50. Rh4 Ne5 51. Re4 Kf5 52. c6 Nxc6 53. Re6 Na5 54. Kg3 Rc3 55. a4 Ra3 56. Rb6 Rxa4 57. e4+ Ke5 58. e3 Rxe4 59. Bxe4 Kxe4 60. Kf2 h5 61. Rd6 Nb3 62. Rh6 Nc5 63. Rxh5 Nd3+ 64. Ke2 Nc5 65. h4 Nd7 66. Rg5 Nf6 67. Rg6 Nh5 68. Kf2 Kd3 69. Kf3 Kd2 70. Kg4 Kxe3 71. Kxh5 Ke4 72. Kg4 Kd4 73. h5 Kd3 74. h6 Ke4 75. h7 Kd3 76. h8=Q Kc4 77. Qc3+ Kxc3 78. Kf3 Kd4 79. Rg5 Kd3 80. Rg4 Kc2 81. Ke2 Kc3 82. Re4 Kb2 83. Kd2 Kb3 84. Rd4 Kb2 85. Rd3 Kb1 86. Kc3 Ka1 87. Kb3 Kb1 88. Rd1# 1-0
 
 # Acknowledgements
-[lichess's open database](https://database.lichess.org/) for training data for the neural network.
 
-[stockfish](https://stockfishchess.org/) for their documentation and training evaluations.
+[stockfish](https://stockfishchess.org/) for their amazing community.
 
-[tensorflow](https://www.tensorflow.org/)
-
-[onnx runtime](https://onnxruntime.ai/)
+[bullet](https://github.com/jw1912/bullet) 
 
 [sebastian lague](https://www.youtube.com/watch?v=U4ogK0MIzqk&t=1174s) for inspiring me to do this project
 
