@@ -8,7 +8,7 @@
   <a href="https://github.com/Nonlinear2/Bread-Engine/releases">
     <img src="https://img.shields.io/github/v/release/Nonlinear2/Bread-Engine?include_prereleases&style=for-the-badge&label=Lastest%20Release&labelColor=%23950502&color=%23013c5a">
   </a>
-  <a href="https://github.com/Nonlinear2/Bread-Engine/releases">
+  <a>
     <img src="https://img.shields.io/github/license/Nonlinear2/Bread-Engine?style=for-the-badge&labelColor=%23950502&color=%23950502">
   </a>
 </p>
@@ -30,13 +30,29 @@ Bread engine does not have a graphical interface built in. However it supports t
 </td></tr>
 </table>
 
+You can download precompiled binaries for Windows in the <a href="https://github.com/Nonlinear2/Bread-Engine/releases"><kbd>Release Section</kbd></a>.
+
+To use the engine on Linux, you need to build the project yourself.
+
+## How to build the project yourself
+
+You need Cmake and a C++ compiler installed. The build has been tested using compilers Clang 20.1.7 and GCC 13.1.0.
+
 ### Windows
 
-***You can download precompiled binaries for Windows in the release section.***
 
-### Linux
+Clone the repository, open a command line, navigate to the project's root directory and type:
+```powershell
+mkdir build
+cd build
+cmake ..
+cmake --build . --target release --config release
+```
+This will generate a build folder with the executable.
 
-To use the engine on Linux, you need to build the project yourself. You can find more details on how to do this below.
+## Linux
+
+Run the script `compile_script_for_linux.sh`. The executable will be generated in the `build` folder.
 
 ---
 
@@ -49,27 +65,6 @@ go movetime 3000
 ```
 
 and the engine will return the best move.
-
-## Build the project yourself
-
-**You need Cmake and a C++ compiler installed.**
-
-The build has been tested using compilers Clang 20.1.7 and GCC 13.1.0.
-
-### Windows
-
-Clone the repository, open a command line, navigate to the project's root directory and type:
-```powershell
-mkdir build
-cd build
-cmake ..
-cmake --build . --target release --config release
-```
-This will generate a build folder with the executable.
-
-### Linux
-
-Run the script `compile_script_for_linux.sh`. The executable will be generated in the `build` folder.
 
 # Custom commands
 
