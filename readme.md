@@ -1,11 +1,34 @@
-# Overview
-Bread is a superhuman chess engine written in C++. Currently, it is rated 3000 elo on the computer chess rating lists. Bread uses minimax search with NNUE (efficiently updatable neural network) as an evaluation function. The neural network is homemade and trained using games of self play since version 1.3.0. Originally, the network was trained using lichess's open database.
+<h1 align="center">Bread Engine</h1>
+<h4 align="center">A superhuman chess engine written in C++.</h4>
 
-Bread engine does not have a graphical interface built in. However it supports the uci protocol, you can therefore run it on any chess graphical interface, such as [en croissant](https://encroissant.org/) or [cute chess](https://github.com/cutechess/cutechess).
+<p align="center">
+  <a>
+    <img src="https://img.shields.io/badge/Architectures-x86%2C%20x64-%23f78b04?style=for-the-badge&labelColor=%23013c5a&color=%23013c5a">
+  </a>
+  <a href="https://github.com/Nonlinear2/Bread-Engine/releases">
+    <img src="https://img.shields.io/github/v/release/Nonlinear2/Bread-Engine?include_prereleases&style=for-the-badge&label=Lastest%20Release&labelColor=%23950502&color=%23013c5a">
+  </a>
+  <a href="https://github.com/Nonlinear2/Bread-Engine/releases">
+    <img src="https://img.shields.io/github/license/Nonlinear2/Bread-Engine?style=for-the-badge&labelColor=%23950502&color=%23950502">
+  </a>
+</p>
+
+# Overview
+Bread is rated around 3000 elo on the computer chess rating lists.
+
+It uses minimax search, along with an efficiently updatable neural network trained from zero knowledge. The neural network is homemade and trained using games of self play.
+
+Bread engine does not have a graphical interface built in. However it supports the UCI protocol, you can therefore run it on any chess graphical interface, such as <a href="https://encroissant.org/"><kbd>En Croissant</kbd></a> or <a href="https://github.com/cutechess/cutechess"><kbd>Cute Chess</kbd></a>.
 
 # Installation
 
-*Please note that the engine requires a cpu with AVX2 support.*
+<table>
+<tr><td bgcolor="#fff3cd">
+  
+**Please note:** The engine requires a CPU with **AVX2** support.
+
+</td></tr>
+</table>
 
 ### Windows
 
@@ -22,10 +45,10 @@ If you want to check whether everything is working properly, you can run the exe
 ```console
 uci
 position startpos
-go movetime 5000
+go movetime 3000
 ```
 
-and the engine will return the best move. You can find more details on the [uci protocol](https://www.wbec-ridderkerk.nl/html/UCIProtocol.html) webpage.
+and the engine will return the best move.
 
 ## Build the project yourself
 
