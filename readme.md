@@ -319,24 +319,37 @@ swap lanes of the second register and vertical sum:
 - Bread Engine 0.0.9 vs chess.com's Magnus Carlsen bot 1-0:
 
 ```
-1. d4 Nf6 2. Nf3 d5 3. c4 e6 4. Nc3 Be7 5. cxd5 exd5 6. Bf4 O-O 7. e3 Nh5 8. Be5 Nc6 9. h3 Be6 10. Bh2 Nf6 11. Bd3 Nb4 12. Bb1 c5 13. dxc5 Bxc5 14. O-O Nc6 15. Bc2
-Rc8 16. Rc1 a6 17. Bg3 Ba7 18. Qe2 d4 19. Rfd1 Re8 20. Bh4 b5 21. Ne4 Bc4 22. Qe1 Bxa2 23. b3 Bb6 24. Qe2 Rxe4 25. Bxe4 Bxb3 26. Bxh7+ Kh8 27. Bc2 Bc4 28. Bd3 Bb3
-29. Bc2 Bc4 30. Bd3 Bb3 31. Bf5 Bxd1 32. Qxd1 Rc7 33. Bg3 Ne7 34. Bxc7 Bxc7 35. Qxd4 Kg8 36. Qa7 Ne8 37. Bc2 a5 38. Qc5 Nd6 39. Rd1 Qd7 40. Nd4 Nec8 41. Qh5 g6 42.
-Bxg6 fxg6 43. Qxg6+ Kf8 44. e4 b4 45. Rd3 Qe8 46. Qh6+ Ke7 47. e5 Bb6 48. Nf5+ Kd8 49. Nxd6 Bxf2+ 50. Kxf2 Nxd6 51. Qxd6+ Kc8 52. Qa6+ Kb8 53. Rd6 Qf7+ 54. Kg1 Qc7
-55. Rb6+ Qxb6+ 56. Qxb6+ Kc8 57. Qxa5 b3 58. Qc3+ Kd7 59. Qxb3 Ke8 60. Qe6+ Kf8 61. Qf6+ Ke8 62. h4 Kd7 63. e6+ Kd6 64. e7+ Kd7 65. Qf8 Kc6 66. e8=Q+ Kd5 67. Qf5+
+1. d4 Nf6 2. Nf3 d5 3. c4 e6 4. Nc3 Be7 5. cxd5 exd5 6. Bf4 O-O 7. e3 Nh5 8. Be5
+Nc6 9. h3 Be6 10. Bh2 Nf6 11. Bd3 Nb4 12. Bb1 c5 13. dxc5 Bxc5 14. O-O Nc6 15. Bc2
+Rc8 16. Rc1 a6 17. Bg3 Ba7 18. Qe2 d4 19. Rfd1 Re8 20. Bh4 b5 21. Ne4 Bc4 22.
+Qe1 Bxa2 23. b3 Bb6 24. Qe2 Rxe4 25. Bxe4 Bxb3 26. Bxh7+ Kh8 27. Bc2 Bc4 28. Bd3 Bb3
+29. Bc2 Bc4 30. Bd3 Bb3 31. Bf5 Bxd1 32. Qxd1 Rc7 33. Bg3 Ne7 34. Bxc7 Bxc7 35.
+Qxd4 Kg8 36. Qa7 Ne8 37. Bc2 a5 38. Qc5 Nd6 39. Rd1 Qd7 40. Nd4 Nec8 41. Qh5 g6 42.
+Bxg6 fxg6 43. Qxg6+ Kf8 44. e4 b4 45. Rd3 Qe8 46. Qh6+ Ke7 47. e5 Bb6 48. Nf5+
+Kd8 49. Nxd6 Bxf2+ 50. Kxf2 Nxd6 51. Qxd6+ Kc8 52. Qa6+ Kb8 53. Rd6 Qf7+ 54. Kg1 Qc7
+55. Rb6+ Qxb6+ 56. Qxb6+ Kc8 57. Qxa5 b3 58. Qc3+ Kd7 59. Qxb3 Ke8 60. Qe6+ Kf8 61.
+Qf6+ Ke8 62. h4 Kd7 63. e6+ Kd6 64. e7+ Kd7 65. Qf8 Kc6 66. e8=Q+ Kd5 67. Qf5+
 Kd4 68. Qee4+ Kc3 69. Qc5+ Kb2 70. Qec2+ Ka1 71. Qa3#
 ```
 
-- Bread Engine 0.0.4 vs chess.com's Hikaru Nakamura bot 1-0:
+- Bread Engine 1.6.0 vs Simple Eval 1-0:
 
 ```
-1. d4 Nf6 2. Nf3 c5 3. g3 cxd4 4. Nxd4 e5 5. Nf3 Nc6 6. Bg2 d5 7. O-O Be7 8. c4 d4 9. b4 e4 10. Ng5 Bxb4 11. a3 Ba5 12. Nd2 Bc3 13. Rb1 e3 14. fxe3 O-O 15. Nde4 Ng4
-16. h3 Nge5 17. Qc2 f5 18. Nxc3 dxc3 19. Nf3 Qf6 20. Rb3 Qg6 21. Rxc3 Qxg3 22. Nxe5 Qxe5 23. Bb2 Be6 24. Rf4 Qf6 25. Rd3 Ne5 26. Rb3 Rfe8 27. Rb5 Bd7 28. Bxb7 Rad8
-29. Rc5 Qb6 30. Bd5+ Kh8 31. Bd4 Qh6 32. Qc3 Ng6 33. Rf3 Re7 34. Ra5 Rb8 35. Ra6 Qg5+ 36. Kh2 f4 37. Rxa7 Nh4 38. Rxf4 Nf5 39. Rf3 Qh5 40. Bf6 Nh4 41. Rf2 Ng6 42.
-Bxg7+ Rxg7 43. Rxd7 Qe5+ 44. Qxe5 Nxe5 45. Rxg7 Kxg7 46. c5 Rc8 47. Rf5 Nc6 48. Rg5+ Kf6 49. Rh5 Kg6 50. Rh4 Ne5 51. Re4 Kf5 52. c6 Nxc6 53. Re6 Na5 54. Kg3 Rc3 55.
-a4 Ra3 56. Rb6 Rxa4 57. e4+ Ke5 58. e3 Rxe4 59. Bxe4 Kxe4 60. Kf2 h5 61. Rd6 Nb3 62. Rh6 Nc5 63. Rxh5 Nd3+ 64. Ke2 Nc5 65. h4 Nd7 66. Rg5 Nf6 67. Rg6 Nh5 68. Kf2 Kd3
-69. Kf3 Kd2 70. Kg4 Kxe3 71. Kxh5 Ke4 72. Kg4 Kd4 73. h5 Kd3 74. h6 Ke4 75. h7 Kd3 76. h8=Q Kc4 77. Qc3+ Kxc3 78. Kf3 Kd4 79. Rg5 Kd3 80. Rg4 Kc2 81. Ke2 Kc3 82. Re4
-Kb2 83. Kd2 Kb3 84. Rd4 Kb2 85. Rd3 Kb1 86. Kc3 Ka1 87. Kb3 Kb1 88. Rd1# 1-0
+1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7 5. f4 c5 6. Nf3 Nc6 7. Be3 cxd4 8. Nxd4
+Qb6 9. Qd2 Nxd4 10. Bxd4 Bc5 11. Na4 Qc6 12. Nxc5 Nxc5 13. Qa5 Nd7 14. O-O-O a6
+15. Qa3 Nb8 16. Rd3 Qc7 17. Bc5 f6 18. Be2 Qf7 19. Re1 fxe5 20. fxe5 Qf4+ 21.
+Kb1 Nc6 22. Rh3 g6 23. Bd3 Qg5 24. Rf1 d4 25. Rxh7 Rxh7 26. Bxg6+ Kd7 27. Bxd4
+Nxe5 28. Bxh7 a5 29. Be4 Qe7 30. Qxe7+ Kxe7 31. Bxe5 a4 32. Bf6+ Kd6 33. Rd1+
+Kc5 34. Rf1 Kb5 35. Bd4 Bd7 36. Rf4 Bc6 37. Bd3+ Ka5 38. Bc3+ Kb6 39. g4 Rg8 40.
+h4 Re8 41. Bd4+ Ka5 42. Bc3+ Kb6 43. Bd4+ Ka5 44. b4+ axb3 45. Bc3+ Kb6 46. Bd4+
+Kc7 47. Be5+ Kb6 48. axb3 Kc5 49. Bd4+ Kd5 50. c4+ Kd6 51. Bc3 e5 52. Rf6+ Ke7
+53. Rf2 e4 54. Be2 Kd8 55. Kb2 e3 56. Rf6 Ke7 57. g5 Rg8 58. b4 Kd8 59. Re6 Re8
+60. Bf6+ Kd7 61. Rxe8 Kxe8 62. Kc3 Be4 63. Kd4 Bc2 64. Kxe3 Kf7 65. c5 Ke6 66.
+Bf3 Kd7 67. Kd2 Bf5 68. Ke3 Bg6 69. Be5 Ke6 70. Bf6 Kd7 71. c6+ bxc6 72. Bg4+
+Kd6 73. h5 Bb1 74. Bd4 Bc2 75. Bc5+ Kd5 76. Bf3+ Ke5 77. Bd4+ Kf5 78. Bf6 Bb3
+79. h6 Bg8 80. Bxc6 Kg4 81. g6 Kf5 82. h7 Bxh7 83. gxh7 Kxf6 84. b5 Ke7 85. b6
+Kd6 86. b7 Kc5 87. b8=Q Kxc6 88. h8=Q Kd5 89. Qb5+ Ke6 90. Qd7+ Kxd7 91. Qf6 Kc7
+92. Kd4 Kc8 93. Kc5 Kd7 94. Qf7+ Kd8 95. Kb6 Kc8 96. Qc7# 1-0
 ```
 
 # Acknowledgements
