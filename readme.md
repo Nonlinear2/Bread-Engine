@@ -169,7 +169,7 @@ Let's consider a simple deep neural network, taking 768 inputs corresponding to 
 ### Feature sets
 There are many different choices for the input feature representation, and the choice mainly depends on how much training data is available. 
 For now, Bread uses a 768 input feature set described by (color, square, piece) for the perspective of the side to move, and the other perspective.
-The two perspectives are each run through the same set of weights 40960->256 and concatenated into a single vector, with the side to move perspective first, and the other second. This effectively encodes the side to move in the network evaluation.
+The two perspectives are each run through the same set of weights and concatenated into a single vector, with the side to move perspective first, and the other second. This effectively encodes the side to move in the network evaluation.
 
 ### Quantization
 An important way to speed up the neural network is to use quantization with SIMD vectorization on the cpu (unfortunately, gpu's aren't usually suited for chess engines as minimax is difficult to paralellize because of alpha beta pruning (for a multithreading approach for chess engines, see [lazy SMP](https://www.chessprogramming.org/Lazy_SMP)). Also, the data transfer latency between cpu and gpu is too high).
