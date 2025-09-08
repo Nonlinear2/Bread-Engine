@@ -1,5 +1,12 @@
 VERSION := $(shell cat version.txt)
-DEFAULT_NAME := bread_engine_$(VERSION).exe
+
+ifeq ($(OS),Windows_NT)
+    SUFFIX := .exe
+else
+    SUFFIX :=
+endif
+
+DEFAULT_NAME := bread_engine_$(VERSION)$(SUFFIX)
 EXE ?= $(DEFAULT_NAME)
 CXX ?= clang++
 
