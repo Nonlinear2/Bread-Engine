@@ -56,9 +56,7 @@ inline int get_value(const std::string& name){
             return true; \
         }();
 #else
-    #define TUNEABLE(name, type, value, min, max, c, r) \
-        constexpr type name = value;
+    #define TUNEABLE(name, type, value, min, max, c, r) constexpr type name = value;
 #endif
 
-#define UNACTIVE_TUNEABLE(name, type, value, min, max, c, r) \
-        constexpr type name = value;
+#define UNACTIVE_TUNEABLE(name, type, value, min, max, c, r) constexpr type name = value;
