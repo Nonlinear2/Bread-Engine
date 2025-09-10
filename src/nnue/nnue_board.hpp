@@ -35,10 +35,10 @@ class NnueBoard: public Board {
 
     Move tb_result_to_move(unsigned int tb_result);
     
+    std::pair<std::vector<int>, std::vector<int>> get_features();
     private:
     std::stack<Accumulator> accumulator_stack;
 
-    std::vector<int> get_HKP(bool color);
 
     modified_features get_modified_features(Move move, bool color);
 
