@@ -236,6 +236,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     assert(ss - stack < SEARCH_STACK_SIZE); // avoid stack overflow
     assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
     assert(depth <= ENGINE_MAX_DEPTH);
+    assert(alpha < beta);
+    assert(pv || (alpha == beta - 1));
 
     nodes++;
 
@@ -436,17 +438,22 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
-        if (pv && (move_gen.index() == 0)){
-            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
-        } else {
-            value = -negamax<false>(new_depth, -beta, -alpha, ss + 1);
-            if ((new_depth < depth-1) && (value > alpha)){
-                value = -negamax<false>(depth-1, -beta, -alpha, ss + 1);
+        if (move_gen.index() > 0 && depth > 2){
+            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
+
+            if (value > alpha && new_depth < depth-1){
+                value = -negamax<false>(depth-1, -alpha - 1, -alpha, ss + 1);
                 if (!is_capture)
-                    move_gen.update_cont_history(ss->moved_piece, move.to(), cont_1);
-            }
-            else if (value < alpha && !is_capture)
-                move_gen.update_cont_history(ss->moved_piece, move.to(), -cont_2);
+                    move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
+            } else if (value <= alpha && !is_capture)
+                move_gen.update_cont_history(ss->moved_piece, move.to().index(), -cont_2);
+
+        } else if (!pv || move_gen.index() > 0){
+            value = -negamax<false>(depth - 1, -alpha - 1, -alpha, ss + 1);
+        }
+
+        if (pv && (move_gen.index() == 0 || value > alpha)){
+            value = -negamax<true>(depth - 1, -beta, -alpha, ss + 1);
         }
 
         pos.restore_state(move);
@@ -536,7 +543,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 template<bool pv>
 int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(ss - stack < SEARCH_STACK_SIZE); // avoid stack overflow
-    // assert(pv || ((alpha == (beta-1)) && (alpha == (beta-1))));
+    assert(pv || (alpha == beta - 1));
+
     nodes++;
 
     int stand_pat = NO_VALUE;
@@ -567,6 +575,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (!pv && is_valid(transposition.value)){
         switch (transposition.flag){
             case TFlag::EXACT:
+            if (!pv)
                 return transposition.value;
             case TFlag::LOWER_BOUND:
                 alpha = std::max(alpha, transposition.value);
