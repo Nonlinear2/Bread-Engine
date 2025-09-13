@@ -10,10 +10,6 @@ void NnueBoard::synchronize(){
     nnue_.compute_accumulator(features.second, false);
 }
 
-bool NnueBoard::last_move_null(){
-    return (prev_states_.back().hash == (hash()^Zobrist::sideToMove()));
-}
-
 void NnueBoard::update_state(Move move){
 
     accumulator_stack.push(nnue_.accumulator);
