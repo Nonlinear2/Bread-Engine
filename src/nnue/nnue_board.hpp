@@ -17,8 +17,6 @@ class NnueBoard: public Board {
     
     void synchronize();
 
-    bool last_move_null();
-
     void update_state(Move move);
 
     void restore_state(Move move);
