@@ -56,6 +56,20 @@ NNUE class
 *********/
 
 NNUE::NNUE(){
+    ft_weights = static_cast<int16_t*>(
+        operator new[](sizeof(int16_t)*INPUT_SIZE*ACC_SIZE, std::align_val_t{32})
+    );
+    ft_bias = static_cast<int16_t*>(
+        operator new[](sizeof(int16_t)*ACC_SIZE, std::align_val_t{32})
+    );
+
+    l1_weights = static_cast<int8_t*>(
+        operator new[](sizeof(int8_t)*l1_input_size*l1_output_size, std::align_val_t{32})
+    );
+    l1_bias = static_cast<int32_t*>(
+        operator new[](sizeof(int32_t)*l1_output_size, std::align_val_t{32})
+    );
+
     load_model();
 };
 
