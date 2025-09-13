@@ -50,12 +50,8 @@ class NNUE {
     // otherways it would be an array of pointers pointing to scattered memory locations, 
     // which would be slower and unpractical.
     // weights are stored in row major
-    int16_t* ft_weights = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*INPUT_SIZE*ACC_SIZE, std::align_val_t{32})
-    );
-    int16_t* ft_bias = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*ACC_SIZE, std::align_val_t{32})
-    );
+    int16_t* ft_weights;
+    int16_t* ft_bias;
 
     // all computations happen in int16. Scale is 127
     // to make sure that even after accumulation no overflows happen : there can be a maximum of 30 active input features,
@@ -80,12 +76,8 @@ class NNUE {
     static constexpr int l1_input_size = 2*ACC_SIZE;
     static constexpr int l1_output_size = 32;
 
-    int8_t* l1_weights = static_cast<int8_t*>(
-        operator new[](sizeof(int8_t)*l1_input_size*l1_output_size, std::align_val_t{32})
-    );
-    int32_t* l1_bias = static_cast<int32_t*>(
-        operator new[](sizeof(int32_t)*l1_output_size, std::align_val_t{32})
-    );
+    int8_t* l1_weights;
+    int32_t* l1_bias;
 
     // also, output is scaled back by 64, so total scale is still only 127. as we only do integer division,
     // error caused by the division is max 1/127.

@@ -56,6 +56,20 @@ NNUE class
 *********/
 
 NNUE::NNUE(){
+    ft_weights = static_cast<int16_t*>(
+        operator new[](sizeof(int16_t)*INPUT_SIZE*ACC_SIZE, std::align_val_t{32})
+    );
+    ft_bias = static_cast<int16_t*>(
+        operator new[](sizeof(int16_t)*ACC_SIZE, std::align_val_t{32})
+    );
+
+    l1_weights = static_cast<int8_t*>(
+        operator new[](sizeof(int8_t)*l1_input_size*l1_output_size, std::align_val_t{32})
+    );
+    l1_bias = static_cast<int32_t*>(
+        operator new[](sizeof(int32_t)*l1_output_size, std::align_val_t{32})
+    );
+
     load_model();
 };
 
@@ -83,6 +97,22 @@ void NNUE::load_model(){
     for (int i = 0; i < l1_output_size; i++){
         l1_bias[i] = l1_bias_start[i];
     }
+};
+
+inline __m256i _mm256_add8x256_epi32(__m256i* inputs){ // horizontal add 8 int32 avx registers.
+    inputs[0] = _mm256_hadd_epi32(inputs[0], inputs[1]);
+    inputs[2] = _mm256_hadd_epi32(inputs[2], inputs[3]);
+    inputs[4] = _mm256_hadd_epi32(inputs[4], inputs[5]);
+    inputs[6] = _mm256_hadd_epi32(inputs[6], inputs[7]);
+
+    inputs[0] = _mm256_hadd_epi32(inputs[0], inputs[2]);
+    inputs[4] = _mm256_hadd_epi32(inputs[4], inputs[6]);
+
+    return _mm256_add_epi32(
+        // swap lanes of the two regs
+        _mm256_permute2x128_si256(inputs[0], inputs[4], 0b00110001),
+        _mm256_permute2x128_si256(inputs[0], inputs[4], 0b00100000)
+    );
 };
 
 void NNUE::compute_accumulator(const std::vector<int> active_features, bool color){
@@ -152,6 +182,29 @@ void NNUE::update_accumulator(const modified_features m_features, bool color){
     }
 };
 
+// void run_hidden_layer(int8_t* input, int in_size, int32_t* output, int out_size){
+
+//     __m256i output_chunks[int32_per_reg];
+//     const __m256i one = _mm256_set1_epi16(1);
+
+//     for (int j = 0; j < num_output_chunks; j++){
+//         __m256i result = _mm256_set1_epi32(0);
+//         for (int i = 0; i < num_input_chunks; i++){
+//             __m256i input_chunk = _mm256_loadu_epi8(&input[i*int8_per_reg]);
+//             for (int k = 0; k < int32_per_reg; k++){
+//                 output_chunks[k] = _mm256_maddubs_epi16(
+//                     input_chunk,
+//                     _mm256_loadu_epi8(&this->weights[(j*int32_per_reg+k) * this->input_size + i*int8_per_reg])
+//                 );
+//                 output_chunks[k] = _mm256_madd_epi16(output_chunks[k], one); // hadd pairs to int32
+//             }
+//             result = _mm256_add_epi32(result, _mm256_add8x256_epi32(output_chunks));
+//         }
+//         result = _mm256_add_epi32(result, _mm256_loadu_epi32(&this->bias[j*int32_per_reg]));
+//         result = _mm256_srai_epi32(result, 6); // this integer divides the result by 64 to scale back the output.
+//         _mm256_storeu_epi32(&output[j*int32_per_reg], result);
+//     }
+// };
 
 int32_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int32_t* bias){
     constexpr int input_size = 2*ACC_SIZE;
