@@ -41,7 +41,7 @@ void NnueBoard::restore_state(Move move){
 }
 
 int NnueBoard::evaluate(){
-    return std::clamp(nnue_.run_cropped_nn(sideToMove() == Color::WHITE), -BEST_VALUE, BEST_VALUE);
+    return std::clamp(nnue_.run(sideToMove() == Color::WHITE), -BEST_VALUE, BEST_VALUE);
 }
 
 bool NnueBoard::try_outcome_eval(int& eval){

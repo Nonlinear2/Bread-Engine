@@ -182,29 +182,30 @@ void NNUE::update_accumulator(const modified_features m_features, bool color){
     }
 };
 
-// void run_hidden_layer(int8_t* input, int in_size, int32_t* output, int out_size){
+void NNUE::run_hidden_layer(int8_t* input, int32_t* output, int input_size, int output_size, int8_t* weights, int32_t* bias){
+    const int num_input_chunks = input_size/int8_per_reg;
+    const int num_output_chunks = output_size/int32_per_reg;
 
-//     __m256i output_chunks[int32_per_reg];
-//     const __m256i one = _mm256_set1_epi16(1);
+    __m256i output_chunks[int32_per_reg];
+    const __m256i one = _mm256_set1_epi16(1);
 
-//     for (int j = 0; j < num_output_chunks; j++){
-//         __m256i result = _mm256_set1_epi32(0);
-//         for (int i = 0; i < num_input_chunks; i++){
-//             __m256i input_chunk = _mm256_loadu_epi8(&input[i*int8_per_reg]);
-//             for (int k = 0; k < int32_per_reg; k++){
-//                 output_chunks[k] = _mm256_maddubs_epi16(
-//                     input_chunk,
-//                     _mm256_loadu_epi8(&this->weights[(j*int32_per_reg+k) * this->input_size + i*int8_per_reg])
-//                 );
-//                 output_chunks[k] = _mm256_madd_epi16(output_chunks[k], one); // hadd pairs to int32
-//             }
-//             result = _mm256_add_epi32(result, _mm256_add8x256_epi32(output_chunks));
-//         }
-//         result = _mm256_add_epi32(result, _mm256_loadu_epi32(&this->bias[j*int32_per_reg]));
-//         result = _mm256_srai_epi32(result, 6); // this integer divides the result by 64 to scale back the output.
-//         _mm256_storeu_epi32(&output[j*int32_per_reg], result);
-//     }
-// };
+    for (int j = 0; j < num_output_chunks; j++){
+        __m256i result = _mm256_loadu_si256((const __m256i*)&bias[j*int32_per_reg]);
+        for (int i = 0; i < num_input_chunks; i++){
+            __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]); // load int8
+            for (int k = 0; k < int32_per_reg; k++){
+                output_chunks[k] = _mm256_maddubs_epi16(
+                    input_chunk,
+                    _mm256_loadu_si256((const __m256i*)&weights[(j*int32_per_reg+k) * input_size + i*int8_per_reg]) //load int8
+                );
+                output_chunks[k] = _mm256_madd_epi16(output_chunks[k], one); // hadd pairs to int32
+            }
+            result = _mm256_add_epi32(result, _mm256_add8x256_epi32(output_chunks));
+        }
+        result = _mm256_srai_epi32(result, 6); // this integer divides the result by 64 which is the scale.
+        _mm256_storeu_si256((__m256i*)&output[j*int32_per_reg], result); // store int32
+    }
+};
 
 int32_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int32_t* bias){
     constexpr int input_size = 2*ACC_SIZE;
@@ -251,7 +252,7 @@ void NNUE::crelu16(int16_t *input, int8_t *output, int size){
     }
 };
 
-int NNUE::run_cropped_nn(bool color){
+int NNUE::run(bool color){
     crelu16(accumulator[color], &ft_clipped_output[0], ACC_SIZE);
     crelu16(accumulator[!color], &ft_clipped_output[ACC_SIZE], ACC_SIZE);
 

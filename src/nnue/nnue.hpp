@@ -86,18 +86,22 @@ class NNUE {
     // this is 16129+bias which is less than the max int16 if bias is less than (int16_max - 16129)/(127*64) = 2.04
 
     // output is not scaled back by 64, so scale is 64*127 times true output.
+    void load_model();
+
+    void compute_accumulator(const std::vector<int> active_features, bool color);
+    void update_accumulator(const modified_features m_features, bool color);
+
     int32_t run_output_layer(int8_t* input, int8_t* weights, int32_t* bias);
+
+    void run_hidden_layer(int8_t* input, int32_t* output, int input_size, int output_size, int8_t* weights, int32_t* bias);
+    
+    int run(bool color);
 
     void crelu16(int16_t *input, int8_t *output, int size);
 
     NNUE();
     ~NNUE();
 
-    void load_model();
 
-    void compute_accumulator(const std::vector<int> active_features, bool color);
 
-    void update_accumulator(const modified_features m_features, bool color);
-
-    int run_cropped_nn(bool color);
 };
