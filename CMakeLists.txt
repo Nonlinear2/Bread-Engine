@@ -92,8 +92,3 @@ bread_configure(search_position SOURCES
     ${bread_SRC}/uci.cpp
     ${bread_UTILS}/run_search.cpp
 )
-
-bread_configure(data_gen SOURCES
-    ${bread_SOURCE}
-    ${bread_UTILS}/data_gen.cpp
-)
