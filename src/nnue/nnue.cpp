@@ -70,6 +70,14 @@ NNUE::NNUE(){
         operator new[](sizeof(int32_t)*l1_output_size, std::align_val_t{32})
     );
 
+    l2_weights = static_cast<int8_t*>(
+        operator new[](sizeof(int8_t)*l2_input_size*l2_output_size, std::align_val_t{32})
+    );
+
+    l2_bias = static_cast<int32_t*>(
+        operator new[](sizeof(int32_t)*l2_output_size, std::align_val_t{32})
+    );
+
     load_model();
 };
 
@@ -79,6 +87,9 @@ NNUE::~NNUE(){
 
     operator delete[](l1_weights, std::align_val_t(32));
     operator delete[](l1_bias, std::align_val_t(32));
+
+    operator delete[](l2_weights, std::align_val_t(32));
+    operator delete[](l2_bias, std::align_val_t(32));
 };
 
 void NNUE::load_model(){
@@ -252,10 +263,38 @@ void NNUE::crelu16(int16_t *input, int8_t *output, int size){
     }
 };
 
+// input size must be a multiple of 32
+// there is no max size.
+void NNUE::crelu32(int32_t *input, int8_t *output, int size){
+
+    assert(size % int8_per_reg == 0);
+
+    const int num_regs = size / int8_per_reg;
+    const __m256i zero = _mm256_setzero_si256();
+
+    for (int i = 0; i < num_regs; i++){
+        __m256i in_1 = _mm256_loadu_si256((const __m256i*)&input[(4*i)*int32_per_reg]); // load int32
+        __m256i in_2 = _mm256_loadu_si256((const __m256i*)&input[(4*i+1)*int32_per_reg]); // load int32
+        __m256i in_3 = _mm256_loadu_si256((const __m256i*)&input[(4*i+2)*int32_per_reg]); // load int32
+        __m256i in_4 = _mm256_loadu_si256((const __m256i*)&input[(4*i+3)*int32_per_reg]); // load int32
+
+        in_1 = _mm256_permute4x64_epi64(_mm256_packs_epi32(in_1, in_2), 0b10'00'11'01);
+        in_3 = _mm256_permute4x64_epi64(_mm256_packs_epi32(in_3, in_4), 0b10'00'11'01);
+
+        __m256i out = _mm256_packs_epi16(in_1, in_3);
+        out = _mm256_max_epi8(out, zero); // packs saturates at 127, so only max is applied
+        out = _mm256_permute4x64_epi64(out, 0b01'11'00'10);
+        _mm256_storeu_si256((__m256i*)&output[i*int8_per_reg], out); // store int8
+    }
+};
+
 int NNUE::run(bool color){
     crelu16(accumulator[color], &ft_clipped_output[0], ACC_SIZE);
     crelu16(accumulator[!color], &ft_clipped_output[ACC_SIZE], ACC_SIZE);
 
-    int output = run_output_layer(ft_clipped_output, l1_weights, l1_bias);
+    run_hidden_layer(ft_clipped_output, l1_unclipped_output, l1_input_size, l1_output_size, l1_weights, l1_bias);
+    crelu32(l1_unclipped_output, l1_clipped_output, l1_output_size);
+
+    int output = run_output_layer(l1_clipped_output, l2_weights, l2_bias);
     return output / 32; // 64 * 255 * true_output / 32 = 510 * true_output so roughly scale which is 600
 };
