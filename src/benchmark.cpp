@@ -72,7 +72,7 @@ void benchmark_engine(int depth){
         cb.setFen(fen);
 
         // print info to terminal
-        std::cout << engine.current_depth << std::endl;
+        std::cout << engine.root_depth << std::endl;
     }
     engine.transposition_table.info();
     std::cout << "============================== \n";

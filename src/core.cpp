@@ -100,7 +100,7 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(){
 
     Board pv_visitor = pos;
 
-    for (int i = 0; i < current_depth; i++){
+    for (int i = 0; i < root_depth; i++){
         bool is_hit;
         TTData transposition = transposition_table.probe(is_hit, pv_visitor.hash());
         if (transposition.move == Move::NO_MOVE || pv_visitor.isRepetition(2)
@@ -143,7 +143,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
 
     nodes = 0;
-    current_depth = 0;
+    root_depth = 0;
 
     root_moves.clear();
 
@@ -180,9 +180,9 @@ Move Engine::iterative_deepening(SearchLimit limit){
     };
 
     while (true){
-        current_depth++;
+        root_depth++;
 
-        negamax<true>(current_depth, -INFINITE_VALUE, INFINITE_VALUE, root_ss);
+        negamax<true>(root_depth, -INFINITE_VALUE, INFINITE_VALUE, root_ss);
         best_move = root_moves[0];
 
         std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
@@ -197,7 +197,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
         if (display_uci){
             // do not count interrupted searches in depth
-            std::cout << "info depth " << current_depth - interrupt_flag;
+            std::cout << "info depth " << root_depth - interrupt_flag;
             if (is_mate(best_move.score())){
                 std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
             } else {
@@ -213,8 +213,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
         // should the search really stop if there is a mate for the oponent?
         if (interrupt_flag
             || is_mate(best_move.score())
-            || (limit.type == LimitType::Depth && current_depth == limit.value)
-            || current_depth >= ENGINE_MAX_DEPTH)
+            || (limit.type == LimitType::Depth && root_depth == limit.value)
+            || root_depth >= ENGINE_MAX_DEPTH)
             break;
     }
 
@@ -552,6 +552,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     Move move;
     Move best_move = Move::NO_MOVE;
 
+    int ply = ss - root_ss;
+
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = pos.hash();
 
@@ -641,7 +643,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         ss->moved_piece = moved_piece;
         ss->current_move = move;
         pos.update_state(move);
-        value = -qsearch<pv>(-beta, -alpha, depth-1 + (in_check && pv), ss + 1);
+        value = -qsearch<pv>(-beta, -alpha, depth-1 + (in_check && ply < 2*root_depth), ss + 1);
         pos.restore_state(move);
 
         if (value > max_value){
