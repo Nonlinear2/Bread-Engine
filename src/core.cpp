@@ -604,7 +604,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     }
 
     capture_gen.set_tt_move(transposition.move);
-    
+    bool in_check = pos.inCheck();
+
     if (depth == -QSEARCH_MAX_DEPTH || ss - stack >= SEARCH_STACK_SIZE - 1)
         return stand_pat;
 
@@ -640,7 +641,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         ss->moved_piece = moved_piece;
         ss->current_move = move;
         pos.update_state(move);
-        value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
+        value = -qsearch<pv>(-beta, -alpha, depth-1 + (in_check && pv), ss + 1);
         pos.restore_state(move);
 
         if (value > max_value){
