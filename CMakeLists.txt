@@ -58,6 +58,10 @@ function(bread_configure bread_TARGET)
 
     add_executable(${bread_TARGET} ${bread_SOURCES})
 
+    if(UNIX)
+        target_link_libraries(${bread_TARGET} PRIVATE atomic)
+    endif()
+
     target_include_directories(${bread_TARGET} PRIVATE ${bread_INCLUDE_DIRS})
     
     target_compile_definitions(${bread_TARGET} PRIVATE bread_VERSION="${CMAKE_PROJECT_VERSION}")
