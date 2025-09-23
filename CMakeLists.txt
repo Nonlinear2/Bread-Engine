@@ -58,7 +58,9 @@ function(bread_configure bread_TARGET)
 
     add_executable(${bread_TARGET} ${bread_SOURCES})
 
-    target_link_libraries(${bread_TARGET} PRIVATE atomic)
+    if(UNIX)
+        target_link_libraries(${bread_TARGET} PRIVATE atomic)
+    endif()
 
     target_include_directories(${bread_TARGET} PRIVATE ${bread_INCLUDE_DIRS})
     
