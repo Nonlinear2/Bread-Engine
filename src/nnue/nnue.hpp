@@ -50,12 +50,8 @@ class NNUE {
     // otherways it would be an array of pointers pointing to scattered memory locations, 
     // which would be slower and unpractical.
     // weights are stored in row major
-    int16_t* ft_weights = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*INPUT_SIZE*ACC_SIZE, std::align_val_t{32})
-    );
-    int16_t* ft_bias = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*ACC_SIZE, std::align_val_t{32})
-    );
+    int16_t* ft_weights;
+    int16_t* ft_bias;
 
     // all computations happen in int16. Scale is 127
     // to make sure that even after accumulation no overflows happen : there can be a maximum of 30 active input features,
@@ -71,21 +67,17 @@ class NNUE {
     Layer 1
     *******/
 
-    // 2*acc_size -> 32
+    // 2*acc_size -> 1
 
     // int8 weights with scale 64. Multiplication outputs in int16, so no overflows,
     // and sum is computed in int32. Maximum weights times maximum input with accumulation is 127*127*512 = 8258048
     // maximum bias is therefore (2,147,483,647-8,258,048)/32 = 66850799 which is totally fine.
     
     static constexpr int l1_input_size = 2*ACC_SIZE;
-    static constexpr int l1_output_size = 32;
+    static constexpr int l1_output_size = 1;
 
-    int8_t* l1_weights = static_cast<int8_t*>(
-        operator new[](sizeof(int8_t)*l1_input_size*l1_output_size, std::align_val_t{32})
-    );
-    int32_t* l1_bias = static_cast<int32_t*>(
-        operator new[](sizeof(int32_t)*l1_output_size, std::align_val_t{32})
-    );
+    int8_t* l1_weights;
+    int32_t* l1_bias;
 
     // also, output is scaled back by 64, so total scale is still only 127. as we only do integer division,
     // error caused by the division is max 1/127.
