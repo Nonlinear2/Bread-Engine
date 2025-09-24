@@ -70,14 +70,6 @@ NNUE::NNUE(){
         operator new[](sizeof(int32_t)*l1_output_size, std::align_val_t{32})
     );
 
-    l2_weights = static_cast<int8_t*>(
-        operator new[](sizeof(int8_t)*l2_input_size*l2_output_size, std::align_val_t{32})
-    );
-
-    l2_bias = static_cast<int32_t*>(
-        operator new[](sizeof(int32_t)*l2_output_size, std::align_val_t{32})
-    );
-
     load_model();
 };
 

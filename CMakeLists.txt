@@ -58,6 +58,10 @@ function(bread_configure bread_TARGET)
 
     add_executable(${bread_TARGET} ${bread_SOURCES})
 
+    if(UNIX)
+        target_link_libraries(${bread_TARGET} PRIVATE atomic)
+    endif()
+
     target_include_directories(${bread_TARGET} PRIVATE ${bread_INCLUDE_DIRS})
     
     target_compile_definitions(${bread_TARGET} PRIVATE bread_VERSION="${CMAKE_PROJECT_VERSION}")
@@ -91,9 +95,4 @@ bread_configure(search_position SOURCES
     ${bread_SOURCE}
     ${bread_SRC}/uci.cpp
     ${bread_UTILS}/run_search.cpp
-)
-
-bread_configure(data_gen SOURCES
-    ${bread_SOURCE}
-    ${bread_UTILS}/data_gen.cpp
 )

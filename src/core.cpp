@@ -350,7 +350,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         // null move pruning
         // maybe check for zugzwang?
         int null_move_eval;
-        if (!pos.last_move_null() && excluded_move == Move::NO_MOVE
+        if ((ss - 1)->current_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
             && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta)){
 
             int R = 2 + (eval >= beta) + depth / 4 + tt_capture;
@@ -429,7 +429,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         // late move reductions
         new_depth += gives_check && !root_node;
-        new_depth -= move_gen.index() > 1 && !is_capture && !gives_check && !is_killer;
+        new_depth -= move_gen.index() > 1 && !is_capture;
         new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
         new_depth -= tt_capture && !is_capture;
         new_depth -= move_gen.index() > lmr_1;
