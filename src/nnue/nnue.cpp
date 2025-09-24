@@ -210,28 +210,46 @@ void NNUE::run_hidden_layer(int8_t* input, int32_t* output, int input_size, int 
     }
 };
 
+// int32_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int32_t* bias){
+//     constexpr int input_size = 2*ACC_SIZE;
+//     constexpr int num_input_chunks = input_size/int8_per_reg;
+
+//     const __m256i one = _mm256_set1_epi16(1);
+
+//     __m256i result = _mm256_set1_epi32(0);
+//     for (int i = 0; i < num_input_chunks; i++){
+//         __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]); // load int8
+//         __m256i prod = _mm256_maddubs_epi16(
+//             input_chunk,
+//             _mm256_loadu_si256((const __m256i*)&weights[i*int8_per_reg]) //load int8
+//         ); // outputs int16
+//         prod = _mm256_madd_epi16(prod, one); // hadd pairs to int32 to avoid overflows in int16
+//         result = _mm256_add_epi32(result, prod);
+//     }
+
+//     // accumulate together
+//     result = _mm256_hadd_epi32(result, result);
+
+//     int32_t out_ptr[8];
+//     _mm256_storeu_si256((__m256i*)out_ptr, result);
+
+//     return out_ptr[0] + out_ptr[1] + out_ptr[4] + out_ptr[5] + bias[0];
+// };
+
+
 int32_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int32_t* bias){
-    constexpr int input_size = 2*ACC_SIZE;
-    constexpr int num_input_chunks = input_size/int8_per_reg;
 
-    const __m256i one = _mm256_set1_epi16(1);
+    // 32 int8s per register, so the whole input can be loaded.
+    __m256i input_reg = _mm256_loadu_si256((const __m256i*)input); // load int8
 
-    __m256i result = _mm256_set1_epi32(0);
-    for (int i = 0; i < num_input_chunks; i++){
-        __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]); // load int8
-        __m256i prod = _mm256_maddubs_epi16(
-            input_chunk,
-            _mm256_loadu_si256((const __m256i*)&weights[i*int8_per_reg]) //load int8
-        ); // outputs int16
-        prod = _mm256_madd_epi16(prod, one); // hadd pairs to int32 to avoid overflows in int16
-        result = _mm256_add_epi32(result, prod);
-    }
-
+    __m256i result = _mm256_maddubs_epi16(input_reg, _mm256_loadu_si256((const __m256i*)weights)); // load int8
+    // output now in epi16
+    result = _mm256_madd_epi16(result, _mm256_set1_epi16(1)); // hadd pairs to int32 to avoid overflows in int16
     // accumulate together
     result = _mm256_hadd_epi32(result, result);
 
     int32_t out_ptr[8];
-    _mm256_storeu_si256((__m256i*)out_ptr, result);
+    _mm256_storeu_si256((__m256i*)out_ptr, result); // store int32
 
     return out_ptr[0] + out_ptr[1] + out_ptr[4] + out_ptr[5] + bias[0];
 };
