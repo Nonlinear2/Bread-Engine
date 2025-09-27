@@ -64,10 +64,10 @@ NNUE::NNUE(){
     );
 
     l1_weights = static_cast<int8_t*>(
-        operator new[](sizeof(int8_t)*l1_input_size*l1_output_size, std::align_val_t{32})
+        operator new[](sizeof(int8_t)*L1_INPUT_SIZE*L1_OUTPUT_SIZE, std::align_val_t{32})
     );
     l1_bias = static_cast<int32_t*>(
-        operator new[](sizeof(int32_t)*l1_output_size, std::align_val_t{32})
+        operator new[](sizeof(int32_t)*L1_OUTPUT_SIZE, std::align_val_t{32})
     );
 
     load_model();
@@ -91,10 +91,10 @@ void NNUE::load_model(){
     }
 
     // layer 1
-    for (int i = 0; i < l1_input_size*l1_output_size; i++){
+    for (int i = 0; i < L1_INPUT_SIZE*L1_OUTPUT_SIZE; i++){
         l1_weights[i] = l1_weights_start[i];
     }
-    for (int i = 0; i < l1_output_size; i++){
+    for (int i = 0; i < L1_OUTPUT_SIZE; i++){
         l1_bias[i] = l1_bias_start[i];
     }
 };
@@ -169,16 +169,15 @@ void NNUE::update_accumulator(const modified_features m_features, bool color){
 
 int32_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int32_t* bias){
     constexpr int input_size = 2*ACC_SIZE;
-    constexpr int num_input_chunks = input_size/int8_per_reg;
 
     const __m256i one = _mm256_set1_epi16(1);
 
     __m256i result = _mm256_set1_epi32(0);
-    for (int i = 0; i < num_input_chunks; i++){
-        __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]); // load int8
+    for (int i = 0; i < input_size; i += int8_per_reg){
+        __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i]); // load int8
         __m256i prod = _mm256_maddubs_epi16(
             input_chunk,
-            _mm256_loadu_si256((const __m256i*)&weights[i*int8_per_reg]) //load int8
+            _mm256_loadu_si256((const __m256i*)&weights[i]) //load int8
         ); // outputs int16
         prod = _mm256_madd_epi16(prod, one); // hadd pairs to int32 to avoid overflows in int16
         result = _mm256_add_epi32(result, prod);

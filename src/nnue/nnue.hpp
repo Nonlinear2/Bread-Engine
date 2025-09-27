@@ -73,8 +73,8 @@ class NNUE {
     // and sum is computed in int32. Maximum weights times maximum input with accumulation is 127*127*512 = 8258048
     // maximum bias is therefore (2,147,483,647-8,258,048)/32 = 66850799 which is totally fine.
     
-    static constexpr int l1_input_size = 2*ACC_SIZE;
-    static constexpr int l1_output_size = 1;
+    static constexpr int L1_INPUT_SIZE = 2*ACC_SIZE;
+    static constexpr int L1_OUTPUT_SIZE = 1;
 
     int8_t* l1_weights;
     int32_t* l1_bias;
