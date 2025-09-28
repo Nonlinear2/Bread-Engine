@@ -28,6 +28,10 @@
         return _mm256_set1_epi16(i);
     }
 
+    inline vec_int32 set1_epi32(int i) {
+        return _mm256_set1_epi32(i);
+    }
+
     inline vec_int8 load_epi8(int8_t* ptr) {
         return _mm256_loadu_si256((const __m256i*)ptr);
     }
@@ -89,9 +93,22 @@
         return _mm256_add_epi16(v1, v2);
     }
 
+    inline vec_int32 add_epi32(vec_int32 v1, vec_int32 v2) {
+        return _mm256_add_epi32(v1, v2);
+    }
+
     inline vec_int16 sub_epi16(vec_int16 v1, vec_int16 v2) {
         return _mm256_sub_epi16(v1, v2);
     }
+
+    inline vec_int32 madd_epi16(vec_int16 v1, vec_int16 v2) {
+        return _mm256_madd_epi16(v1, v2);
+    }
+
+    inline vec_int32 hadd_epi32(vec_int32 v1, vec_int32 v2) {
+        return _mm256_hadd_epi32(v1, v2);
+    }
+
 #else
     #error "bread requires the AVX2 instruction set to run."
 #endif

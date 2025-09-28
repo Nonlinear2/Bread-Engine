@@ -170,24 +170,21 @@ void NNUE::update_accumulator(const modified_features m_features, bool color){
 int32_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int32_t* bias){
     constexpr int input_size = 2*ACC_SIZE;
 
-    const __m256i one = _mm256_set1_epi16(1);
+    const vec_int16 one = set1_epi16(1);
 
-    __m256i result = _mm256_set1_epi32(0);
+    vec_int32 result = set1_epi32(0);
     for (int i = 0; i < input_size; i += INT8_PER_REG){
-        __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i]); // load int8
-        __m256i prod = _mm256_maddubs_epi16(
-            input_chunk,
-            _mm256_loadu_si256((const __m256i*)&weights[i]) //load int8
-        ); // outputs int16
-        prod = _mm256_madd_epi16(prod, one); // hadd pairs to int32 to avoid overflows in int16
-        result = _mm256_add_epi32(result, prod);
+        vec_int8 input_chunk = load_epi8(&input[i]);
+        vec_int16 prod = _mm256_maddubs_epi16(input_chunk, load_epi8(&weights[i]));
+        // madd pairs to int32 to avoid overflows in int16
+        result = add_epi32(result, _mm256_madd_epi16(prod, one));
     }
 
     // accumulate together
-    result = _mm256_hadd_epi32(result, result);
+    result = hadd_epi32(result, result);
 
     int32_t out_ptr[8];
-    _mm256_storeu_si256((__m256i*)out_ptr, result);
+    store_epi32(out_ptr, result);
 
     return out_ptr[0] + out_ptr[1] + out_ptr[4] + out_ptr[5] + bias[0];
 };
