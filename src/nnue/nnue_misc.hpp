@@ -84,6 +84,14 @@
     inline vec_int16 min_epi16(vec_int16 v1, vec_int16 v2) {
         return _mm256_min_epi16(v1, v2);
     }
+
+    inline vec_int16 add_epi16(vec_int16 v1, vec_int16 v2) {
+        return _mm256_add_epi16(v1, v2);
+    }
+
+    inline vec_int16 sub_epi16(vec_int16 v1, vec_int16 v2) {
+        return _mm256_sub_epi16(v1, v2);
+    }
 #else
     #error "bread requires the AVX2 instruction set to run."
 #endif

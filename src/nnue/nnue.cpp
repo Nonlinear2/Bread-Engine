@@ -99,66 +99,70 @@ void NNUE::compute_accumulator(const std::vector<int> active_features, bool colo
     // we have 256 int16 to process, and there are 16 avx registers which can hold 16 int16.
     // therefore we need only one pass to the registers.
 
-    __m256i avx_regs[NUM_AVX_REGISTERS];
+    constexpr int num_chunks = ACC_SIZE / INT16_PER_REG;
+
+    vec_int16 registers[num_chunks];
 
     // load the bias from memory
-    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-        avx_regs[i] = _mm256_loadu_si256((const __m256i*)&ft_bias[i*INT16_PER_REG]); // load int16
+    for (int i = 0; i < num_chunks; i++){
+        registers[i] = load_epi16(&ft_bias[i*INT16_PER_REG]);
     }
 
     for (const int &a: active_features){
-        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+        for (int i = 0; i < num_chunks; i++){
             // a*acc size is the index of the a-th row. We then accumulate the weights.
-            avx_regs[i] = _mm256_add_epi16(
-                avx_regs[i],
-                _mm256_loadu_si256((const __m256i*)&ft_weights[a*ACC_SIZE + i*INT16_PER_REG]) // load int16
+            registers[i] = add_epi16(
+                registers[i],
+                load_epi16(&ft_weights[a*ACC_SIZE + i*INT16_PER_REG])
                 );
         }
     }
     // store the result in the accumulator
-    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-        _mm256_storeu_si256((__m256i*)&accumulator[color][i*INT16_PER_REG], avx_regs[i]); // store int16
+    for (int i = 0; i < num_chunks; i++){
+        store_epi16(&accumulator[color][i*INT16_PER_REG], registers[i]);
     }
 };
 
 void NNUE::update_accumulator(const modified_features m_features, bool color){
+    constexpr int num_chunks = ACC_SIZE / INT16_PER_REG;
 
-    __m256i avx_regs[NUM_AVX_REGISTERS];
+    vec_int16 registers[num_chunks];
 
     // load the accumulator
-    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-        avx_regs[i] = _mm256_loadu_si256((const __m256i*)&accumulator[color][i*INT16_PER_REG]); // load int16
+    for (int i = 0; i < num_chunks; i++){
+        registers[i] = load_epi16(&accumulator[color][i*INT16_PER_REG]); 
     }
 
     // added feature
-    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+    for (int i = 0; i < num_chunks; i++){
         // m_features.added*acc_size is the index of the added featured row. We then accumulate the weights.
-        avx_regs[i] = _mm256_add_epi16(
-            avx_regs[i],
-            _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.added*ACC_SIZE + i*INT16_PER_REG]) // load int16
+        registers[i] = add_epi16(
+            registers[i],
+            load_epi16(&ft_weights[m_features.added*ACC_SIZE + i*INT16_PER_REG])
             );
     }
+
     // removed feature
-    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+    for (int i = 0; i < num_chunks; i++){
         // m_features.removed*acc_size is to get the right column.
-        avx_regs[i] = _mm256_sub_epi16(
-            avx_regs[i],
-            _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.removed*ACC_SIZE + i*INT16_PER_REG]) // load int16
+        registers[i] = sub_epi16(
+            registers[i],
+            load_epi16(&ft_weights[m_features.removed*ACC_SIZE + i*INT16_PER_REG])
             );
     }
 
     if (m_features.captured != -1){
-        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-            avx_regs[i] = _mm256_sub_epi16(
-                avx_regs[i],
-                _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.captured*ACC_SIZE + i*INT16_PER_REG]) // load int16
+        for (int i = 0; i < num_chunks; i++){
+            registers[i] = sub_epi16(
+                registers[i],
+                load_epi16(&ft_weights[m_features.captured*ACC_SIZE + i*INT16_PER_REG])
                 );
         }
     }
 
     //store the result in the accumulator
-    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-        _mm256_storeu_si256((__m256i*)&accumulator[color][i*INT16_PER_REG], avx_regs[i]); // store int16
+    for (int i = 0; i < num_chunks; i++){
+        store_epi16(&accumulator[color][i*INT16_PER_REG], registers[i]);
     }
 };
 
