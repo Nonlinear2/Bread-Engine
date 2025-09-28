@@ -9,14 +9,13 @@
 #include <stdio.h>
 #include <chess.hpp>
 #include <immintrin.h>
-
-constexpr int NUM_AVX_REGISTERS = 16;
-constexpr int INT32_PER_REG = 8;
-constexpr int INT16_PER_REG = 16;
-constexpr int INT8_PER_REG = 32;
+#include "nnue_misc.hpp"
 
 constexpr int INPUT_SIZE = 768;
 constexpr int ACC_SIZE = 256;
+
+static constexpr int L1_INPUT_SIZE = 2*ACC_SIZE;
+static constexpr int L1_OUTPUT_SIZE = 1;
 
 struct modified_features {
     int added;
@@ -72,9 +71,6 @@ class NNUE {
     // int8 weights with scale 64. Multiplication outputs in int16, so no overflows,
     // and sum is computed in int32. Maximum weights times maximum input with accumulation is 127*127*512 = 8258048
     // maximum bias is therefore (2,147,483,647-8,258,048)/32 = 66850799 which is totally fine.
-    
-    static constexpr int L1_INPUT_SIZE = 2*ACC_SIZE;
-    static constexpr int L1_OUTPUT_SIZE = 1;
 
     int8_t* l1_weights;
     int32_t* l1_bias;
@@ -87,10 +83,6 @@ class NNUE {
 
     // output is not scaled back by 64, so scale is 64*127 times true output.
     int32_t run_output_layer(int8_t* input, int8_t* weights, int32_t* bias);
-
-    void crelu32_to_8(int32_t *input, int8_t *output, int size);
-    void crelu16_to_8(int16_t *input, int8_t *output, int size);
-
 
     NNUE();
     ~NNUE();

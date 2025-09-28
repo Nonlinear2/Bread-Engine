@@ -31,6 +31,7 @@ set(bread_SOURCE
     ${bread_SRC}/sorted_move_gen.cpp
     ${bread_SRC}/nnue/nnue.cpp
     ${bread_SRC}/nnue/nnue_board.cpp
+    ${bread_SRC}/nnue/nnue_misc.cpp
     ${bread_SRC}/transposition_table.cpp
     ${bread_SRC}/core.cpp
     ${bread_SRC}/benchmark.cpp
