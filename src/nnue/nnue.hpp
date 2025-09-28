@@ -60,7 +60,7 @@ class NNUE {
     // unclipped output is in accumulator
 
     // apply crelu16 and store
-    int8_t ft_clipped_output[ACC_SIZE*2];
+    int16_t ft_clipped_output[ACC_SIZE*2];
 
     /******
     Layer 1
@@ -72,7 +72,7 @@ class NNUE {
     // and sum is computed in int32. Maximum weights times maximum input with accumulation is 127*127*512 = 8258048
     // maximum bias is therefore (2,147,483,647-8,258,048)/32 = 66850799 which is totally fine.
 
-    int8_t* l1_weights;
+    int16_t* l1_weights;
     int32_t* l1_bias;
 
     // also, output is scaled back by 64, so total scale is still only 127. as we only do integer division,
@@ -82,7 +82,7 @@ class NNUE {
     // this is 16129+bias which is less than the max int16 if bias is less than (int16_max - 16129)/(127*64) = 2.04
 
     // output is not scaled back by 64, so scale is 64*127 times true output.
-    int32_t run_output_layer(int8_t* input, int8_t* weights, int32_t* bias);
+    int32_t run_output_layer(int16_t* input, int16_t* weights, int32_t* bias);
 
     NNUE();
     ~NNUE();
