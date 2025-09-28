@@ -188,5 +188,5 @@ int NNUE::run_cropped_nn(bool color){
     crelu16_to_16(accumulator[!color], &ft_clipped_output[ACC_SIZE], ACC_SIZE);
 
     int output = run_output_layer(ft_clipped_output, l1_weights, l1_bias);
-    return output / 32; // 64 * 255 * true_output / 32 = 510 * true_output so roughly scale which is 600
+    return (output * 600) / (64 * 255); // scale is 600
 };
