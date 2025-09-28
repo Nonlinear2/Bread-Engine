@@ -1,7 +1,5 @@
 #include "nnue_misc.hpp"
 
-// input size must be a multiple of 32
-// there is no max size.
 void NNUE_UTILS::crelu32_to_8(int32_t *input, int8_t *output, int size){
 
     assert(size % INT8_PER_REG == 0);
@@ -25,13 +23,11 @@ void NNUE_UTILS::crelu32_to_8(int32_t *input, int8_t *output, int size){
     }
 }
 
-// input size must be a multiple of 32
-// there is no max size.
-void NNUE_UTILS::crelu16_to_8(int16_t *input, int8_t *output, int input_size){
+void NNUE_UTILS::crelu16_to_8(int16_t *input, int8_t *output, int size){
 
-    assert(input_size % INT8_PER_REG == 0);
+    assert(size % INT8_PER_REG == 0);
 
-    const int num_regs = input_size / INT8_PER_REG;
+    const int num_regs = size / INT8_PER_REG;
     const __m256i zero = _mm256_setzero_si256();
 
     for (int i = 0; i < num_regs; i++){
@@ -40,6 +36,24 @@ void NNUE_UTILS::crelu16_to_8(int16_t *input, int8_t *output, int input_size){
         // packs sets negative values to 0 and saturates at 255, which effectively applies relu
         __m256i out = _mm256_packus_epi16(in_1, in_2);
         out = _mm256_permute4x64_epi64(out, 0b11011000); // undo the packus shuffle
+        _mm256_storeu_si256((__m256i*)&output[i*INT8_PER_REG], out); // store int8
+    }
+}
+
+void NNUE_UTILS::crelu16_to_16(int16_t *input, int16_t *output, int size){
+
+    assert(size % INT8_PER_REG == 0);
+
+    const int num_regs = size / INT16_PER_REG;
+    const __m256i zero = _mm256_setzero_si256();
+    const __m256i qscale = _mm256_set1_epi16(255);
+
+    for (int i = 0; i < num_regs; i++){
+        __m256i in = _mm256_loadu_si256((const __m256i*)&input[i*INT16_PER_REG]); // load int16
+        // packs sets negative values to 0 and saturates at 255, which effectively applies relu
+
+        __m256i out = _mm256_min_epi16(qscale, _mm256_max_epi16(in, zero));
+
         _mm256_storeu_si256((__m256i*)&output[i*INT8_PER_REG], out); // store int8
     }
 }

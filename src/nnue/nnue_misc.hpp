@@ -11,6 +11,8 @@ constexpr int INT8_PER_REG = 32;
 namespace NNUE_UTILS {
 
 void crelu32_to_8(int32_t *input, int8_t *output, int size);
-void crelu16_to_8(int16_t *input, int8_t *output, int input_size);
+void crelu16_to_8(int16_t *input, int8_t *output, int size);
+
+void crelu16_to_16(int16_t *input, int16_t *output, int size);
 
 }; // namespace NNUE_UTILS
