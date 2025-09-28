@@ -37,7 +37,7 @@ extern "C" {
     extern const int16_t ft_weights_start[];
     extern const int16_t ft_bias_start[];
 
-    extern const int8_t l1_weights_start[];
+    extern const int16_t l1_weights_start[];
     extern const int32_t l1_bias_start[];
 };
 
@@ -59,7 +59,7 @@ NNUE::NNUE(){
         operator new[](sizeof(int16_t)*ACC_SIZE, std::align_val_t{32})
     );
 
-    l1_weights = static_cast<int8_t*>(
+    l1_weights = static_cast<int16_t*>(
         operator new[](sizeof(int8_t)*L1_INPUT_SIZE*L1_OUTPUT_SIZE, std::align_val_t{32})
     );
     l1_bias = static_cast<int32_t*>(
@@ -167,31 +167,25 @@ void NNUE::update_accumulator(const modified_features m_features, bool color){
 };
 
 
-int32_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int32_t* bias){
+int32_t NNUE::run_output_layer(int16_t* input, int16_t* weights, int32_t* bias){
     constexpr int input_size = 2*ACC_SIZE;
 
     const vec_int16 one = set1_epi16(1);
 
     vec_int32 result = set1_epi32(0);
-    for (int i = 0; i < input_size; i += INT8_PER_REG){
-        vec_int8 input_chunk = load_epi8(&input[i]);
-        vec_int16 prod = _mm256_maddubs_epi16(input_chunk, load_epi8(&weights[i]));
+    for (int i = 0; i < input_size; i += INT16_PER_REG){
+        vec_int16 input_chunk = load_epi16(&input[i]);
+        vec_int32 prod = madd_epi16(input_chunk, mullo_epi16(input_chunk, load_epi16(&weights[i])));
         // madd pairs to int32 to avoid overflows in int16
-        result = add_epi32(result, _mm256_madd_epi16(prod, one));
+        result = add_epi32(result, prod);
     }
 
-    // accumulate together
-    result = hadd_epi32(result, result);
-
-    int32_t out_ptr[8];
-    store_epi32(out_ptr, result);
-
-    return out_ptr[0] + out_ptr[1] + out_ptr[4] + out_ptr[5] + bias[0];
+    return reduce1_epi32(result) / 255 + bias[0];
 };
 
 int NNUE::run_cropped_nn(bool color){
-    crelu16_to_8(accumulator[color], &ft_clipped_output[0], ACC_SIZE);
-    crelu16_to_8(accumulator[!color], &ft_clipped_output[ACC_SIZE], ACC_SIZE);
+    crelu16_to_16(accumulator[color], &ft_clipped_output[0], ACC_SIZE);
+    crelu16_to_16(accumulator[!color], &ft_clipped_output[ACC_SIZE], ACC_SIZE);
 
     int output = run_output_layer(ft_clipped_output, l1_weights, l1_bias);
     return output / 32; // 64 * 255 * true_output / 32 = 510 * true_output so roughly scale which is 600

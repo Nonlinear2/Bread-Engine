@@ -77,6 +77,11 @@
         return _mm256_permute4x64_epi64(v, mask);
     }
 
+    template<int mask>
+    inline vec_int32 permute2x128_si256(vec_int32 v1, vec_int32 v2) {
+        return _mm256_permute2x128_si256(v1, v2, mask);
+    }
+
     inline vec_int8 max_epi8(vec_int8 v1, vec_int8 v2) {
         return _mm256_max_epi8(v1, v2);
     }
@@ -109,6 +114,10 @@
         return _mm256_hadd_epi32(v1, v2);
     }
 
+    inline vec_int16 mullo_epi16(vec_int16 v1, vec_int16 v2) {
+        return _mm256_mullo_epi16(v1, v2);
+    }
+
 #else
     #error "bread requires the AVX2 instruction set to run."
 #endif
@@ -124,5 +133,8 @@ void crelu32_to_8(int32_t *input, int8_t *output, int size);
 void crelu16_to_8(int16_t *input, int8_t *output, int size);
 
 void crelu16_to_16(int16_t *input, int16_t *output, int size);
+
+int32_t reduce1_epi32(vec_int32& input); // horizontal add 1 int32 avx register.
+vec_int32 reduce8_epi32(vec_int32* inputs);
 
 }; // namespace NNUE_UTILS
