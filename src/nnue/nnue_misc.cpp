@@ -41,19 +41,15 @@ void NNUE_UTILS::crelu16_to_8(int16_t *input, int8_t *output, int size){
 
 void NNUE_UTILS::crelu16_to_16(int16_t *input, int16_t *output, int size){
 
-    assert(size % INT8_PER_REG == 0);
+    assert(size % INT16_PER_REG == 0);
 
-    const int num_regs = size / INT16_PER_REG;
     const vec_int16 zero = setzero_epi16();
     const vec_int16 qscale = set1_epi16(255);
 
-    for (int i = 0; i < num_regs; i++){
-        vec_int16 in = load_epi16(&input[i*INT16_PER_REG]);
-        // packs sets negative values to 0 and saturates at 255, which effectively applies relu
-
+    for (int i = 0; i < size; i += INT16_PER_REG){
+        vec_int16 in = load_epi16(&input[i]);
         vec_int16 out = min_epi16(qscale, max_epi16(in, zero));
-
-        store_epi16(&output[i*INT8_PER_REG], out);
+        store_epi16(&output[i], out);
     }
 }
 

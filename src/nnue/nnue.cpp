@@ -60,7 +60,7 @@ NNUE::NNUE(){
     );
 
     l1_weights = static_cast<int16_t*>(
-        operator new[](sizeof(int8_t)*L1_INPUT_SIZE*L1_OUTPUT_SIZE, std::align_val_t{32})
+        operator new[](sizeof(int16_t)*L1_INPUT_SIZE*L1_OUTPUT_SIZE, std::align_val_t{32})
     );
     l1_bias = static_cast<int32_t*>(
         operator new[](sizeof(int32_t)*L1_OUTPUT_SIZE, std::align_val_t{32})
