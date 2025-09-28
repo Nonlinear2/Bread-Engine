@@ -1,0 +1,58 @@
+#include "nnue_misc.hpp"
+
+void NNUE_UTILS::crelu32_to_8(int32_t *input, int8_t *output, int size){
+
+    assert(size % INT8_PER_REG == 0);
+
+    const int num_regs = size / INT8_PER_REG;
+    const vec_int8 zero = setzero_epi8();
+
+    for (int i = 0; i < num_regs; i++){
+        vec_int32 in_1 = load_epi32(&input[(4*i)*INT32_PER_REG]);
+        vec_int32 in_2 = load_epi32(&input[(4*i+1)*INT32_PER_REG]);
+        vec_int32 in_3 = load_epi32(&input[(4*i+2)*INT32_PER_REG]);
+        vec_int32 in_4 = load_epi32(&input[(4*i+3)*INT32_PER_REG]);
+
+        in_1 = permute4x64_epi64<0b10'00'11'01>(packs_epi32(in_1, in_2));
+        in_3 = permute4x64_epi64<0b10'00'11'01>(packs_epi32(in_3, in_4));
+
+        vec_int8 out = packs_epi16(in_1, in_3);
+        out = max_epi8(out, zero); // packs saturates at 127, so only max is applied
+        out = permute4x64_epi64<0b01'11'00'10>(out);
+        store_epi8(&output[i*INT8_PER_REG], out);
+    }
+}
+
+void NNUE_UTILS::crelu16_to_8(int16_t *input, int8_t *output, int size){
+
+    assert(size % INT8_PER_REG == 0);
+
+    const int num_regs = size / INT8_PER_REG;
+
+    for (int i = 0; i < num_regs; i++){
+        vec_int16 in_1 = load_epi16(&input[(2*i)*INT16_PER_REG]);
+        vec_int16 in_2 = load_epi16(&input[(2*i+1)*INT16_PER_REG]);
+        // packs sets negative values to 0 and saturates at 255, which effectively applies relu
+        vec_int8 out = packus_epi16(in_1, in_2);
+        out = permute4x64_epi64<0b11'01'10'00>(out); // undo the packus shuffle
+        store_epi8(&output[i*INT8_PER_REG], out);
+    }
+}
+
+void NNUE_UTILS::crelu16_to_16(int16_t *input, int16_t *output, int size){
+
+    assert(size % INT8_PER_REG == 0);
+
+    const int num_regs = size / INT16_PER_REG;
+    const vec_int16 zero = setzero_epi16();
+    const vec_int16 qscale = set1_epi16(255);
+
+    for (int i = 0; i < num_regs; i++){
+        vec_int16 in = load_epi16(&input[i*INT16_PER_REG]);
+        // packs sets negative values to 0 and saturates at 255, which effectively applies relu
+
+        vec_int16 out = min_epi16(qscale, max_epi16(in, zero));
+
+        store_epi16(&output[i*INT8_PER_REG], out);
+    }
+}
