@@ -103,66 +103,66 @@ void NNUE::compute_accumulator(const std::vector<int> active_features, bool colo
     // we have 256 int16 to process, and there are 16 avx registers which can hold 16 int16.
     // therefore we need only one pass to the registers.
 
-    __m256i avx_regs[num_avx_registers];
+    __m256i avx_regs[NUM_AVX_REGISTERS];
 
     // load the bias from memory
-    for (int i = 0; i < num_avx_registers; i++){
-        avx_regs[i] = _mm256_loadu_si256((const __m256i*)&ft_bias[i*int16_per_reg]); // load int16
+    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+        avx_regs[i] = _mm256_loadu_si256((const __m256i*)&ft_bias[i*INT16_PER_REG]); // load int16
     }
 
     for (const int &a: active_features){
-        for (int i = 0; i < num_avx_registers; i++){
+        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
             // a*acc size is the index of the a-th row. We then accumulate the weights.
             avx_regs[i] = _mm256_add_epi16(
                 avx_regs[i],
-                _mm256_loadu_si256((const __m256i*)&ft_weights[a*ACC_SIZE + i*int16_per_reg]) // load int16
+                _mm256_loadu_si256((const __m256i*)&ft_weights[a*ACC_SIZE + i*INT16_PER_REG]) // load int16
                 );
         }
     }
     // store the result in the accumulator
-    for (int i = 0; i < num_avx_registers; i++){
-        _mm256_storeu_si256((__m256i*)&accumulator[color][i*int16_per_reg], avx_regs[i]); // store int16
+    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+        _mm256_storeu_si256((__m256i*)&accumulator[color][i*INT16_PER_REG], avx_regs[i]); // store int16
     }
 };
 
 void NNUE::update_accumulator(const modified_features m_features, bool color){
 
-    __m256i avx_regs[num_avx_registers];
+    __m256i avx_regs[NUM_AVX_REGISTERS];
 
     // load the accumulator
-    for (int i = 0; i < num_avx_registers; i++){
-        avx_regs[i] = _mm256_loadu_si256((const __m256i*)&accumulator[color][i*int16_per_reg]); // load int16
+    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+        avx_regs[i] = _mm256_loadu_si256((const __m256i*)&accumulator[color][i*INT16_PER_REG]); // load int16
     }
 
     // added feature
-    for (int i = 0; i < num_avx_registers; i++){
+    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
         // m_features.added*acc_size is the index of the added featured row. We then accumulate the weights.
         avx_regs[i] = _mm256_add_epi16(
             avx_regs[i],
-            _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.added*ACC_SIZE + i*int16_per_reg]) // load int16
+            _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.added*ACC_SIZE + i*INT16_PER_REG]) // load int16
             );
     }
     // removed feature
-    for (int i = 0; i < num_avx_registers; i++){
+    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
         // m_features.removed*acc_size is to get the right column.
         avx_regs[i] = _mm256_sub_epi16(
             avx_regs[i],
-            _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.removed*ACC_SIZE + i*int16_per_reg]) // load int16
+            _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.removed*ACC_SIZE + i*INT16_PER_REG]) // load int16
             );
     }
 
     if (m_features.captured != -1){
-        for (int i = 0; i < num_avx_registers; i++){
+        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
             avx_regs[i] = _mm256_sub_epi16(
                 avx_regs[i],
-                _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.captured*ACC_SIZE + i*int16_per_reg]) // load int16
+                _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.captured*ACC_SIZE + i*INT16_PER_REG]) // load int16
                 );
         }
     }
 
     //store the result in the accumulator
-    for (int i = 0; i < num_avx_registers; i++){
-        _mm256_storeu_si256((__m256i*)&accumulator[color][i*int16_per_reg], avx_regs[i]); // store int16
+    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+        _mm256_storeu_si256((__m256i*)&accumulator[color][i*INT16_PER_REG], avx_regs[i]); // store int16
     }
 };
 
@@ -173,7 +173,7 @@ int32_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int32_t* bias){
     const __m256i one = _mm256_set1_epi16(1);
 
     __m256i result = _mm256_set1_epi32(0);
-    for (int i = 0; i < input_size; i += int8_per_reg){
+    for (int i = 0; i < input_size; i += INT8_PER_REG){
         __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i]); // load int8
         __m256i prod = _mm256_maddubs_epi16(
             input_chunk,
@@ -194,26 +194,51 @@ int32_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int32_t* bias){
 
 // input size must be a multiple of 32
 // there is no max size.
-void NNUE::crelu16(int16_t *input, int8_t *output, int size){
+void NNUE::crelu32_to_8(int32_t *input, int8_t *output, int size){
 
-    assert(size % int8_per_reg == 0);
+    assert(size % INT8_PER_REG == 0);
 
-    const int num_regs = size / int8_per_reg;
+    const int num_regs = size / INT8_PER_REG;
     const __m256i zero = _mm256_setzero_si256();
 
     for (int i = 0; i < num_regs; i++){
-        __m256i in_1 = _mm256_loadu_si256((const __m256i*)&input[(2*i)*int16_per_reg]); // load int16
-        __m256i in_2 = _mm256_loadu_si256((const __m256i*)&input[(2*i+1)*int16_per_reg]); // load int16
+        __m256i in_1 = _mm256_loadu_si256((const __m256i*)&input[(4*i)*INT32_PER_REG]); // load int32
+        __m256i in_2 = _mm256_loadu_si256((const __m256i*)&input[(4*i+1)*INT32_PER_REG]); // load int32
+        __m256i in_3 = _mm256_loadu_si256((const __m256i*)&input[(4*i+2)*INT32_PER_REG]); // load int32
+        __m256i in_4 = _mm256_loadu_si256((const __m256i*)&input[(4*i+3)*INT32_PER_REG]); // load int32
+
+        in_1 = _mm256_permute4x64_epi64(_mm256_packs_epi32(in_1, in_2), 0b10'00'11'01);
+        in_3 = _mm256_permute4x64_epi64(_mm256_packs_epi32(in_3, in_4), 0b10'00'11'01);
+
+        __m256i out = _mm256_packs_epi16(in_1, in_3);
+        out = _mm256_max_epi8(out, zero); // packs saturates at 127, so only max is applied
+        out = _mm256_permute4x64_epi64(out, 0b01'11'00'10);
+        _mm256_storeu_si256((__m256i*)&output[i*INT8_PER_REG], out); // store int8
+    }
+};
+
+// input size must be a multiple of 32
+// there is no max size.
+void NNUE::crelu16_to_8(int16_t *input, int8_t *output, int input_size){
+
+    assert(input_size % INT8_PER_REG == 0);
+
+    const int num_regs = input_size / INT8_PER_REG;
+    const __m256i zero = _mm256_setzero_si256();
+
+    for (int i = 0; i < num_regs; i++){
+        __m256i in_1 = _mm256_loadu_si256((const __m256i*)&input[(2*i)*INT16_PER_REG]); // load int16
+        __m256i in_2 = _mm256_loadu_si256((const __m256i*)&input[(2*i+1)*INT16_PER_REG]); // load int16
         // packs sets negative values to 0 and saturates at 255, which effectively applies relu
         __m256i out = _mm256_packus_epi16(in_1, in_2);
         out = _mm256_permute4x64_epi64(out, 0b11011000); // undo the packus shuffle
-        _mm256_storeu_si256((__m256i*)&output[i*int8_per_reg], out); // store int8
+        _mm256_storeu_si256((__m256i*)&output[i*INT8_PER_REG], out); // store int8
     }
 };
 
 int NNUE::run_cropped_nn(bool color){
-    crelu16(accumulator[color], &ft_clipped_output[0], ACC_SIZE);
-    crelu16(accumulator[!color], &ft_clipped_output[ACC_SIZE], ACC_SIZE);
+    crelu16_to_8(accumulator[color], &ft_clipped_output[0], ACC_SIZE);
+    crelu16_to_8(accumulator[!color], &ft_clipped_output[ACC_SIZE], ACC_SIZE);
 
     int output = run_output_layer(ft_clipped_output, l1_weights, l1_bias);
     return output / (255 * 32); // 64 * 255 * 255 * true_output / 32 = 510 * true_output so roughly scale which is 600

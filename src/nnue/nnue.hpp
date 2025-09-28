@@ -10,10 +10,10 @@
 #include <chess.hpp>
 #include <immintrin.h>
 
-constexpr int num_avx_registers = 16;
-constexpr int int32_per_reg = 8;
-constexpr int int16_per_reg = 16;
-constexpr int int8_per_reg = 32;
+constexpr int NUM_AVX_REGISTERS = 16;
+constexpr int INT32_PER_REG = 8;
+constexpr int INT16_PER_REG = 16;
+constexpr int INT8_PER_REG = 32;
 
 constexpr int INPUT_SIZE = 768;
 constexpr int ACC_SIZE = 256;
@@ -88,7 +88,9 @@ class NNUE {
     // output is not scaled back by 64, so scale is 64*127 times true output.
     int32_t run_output_layer(int8_t* input, int8_t* weights, int32_t* bias);
 
-    void crelu16(int16_t *input, int8_t *output, int size);
+    void crelu32_to_8(int32_t *input, int8_t *output, int size);
+    void crelu16_to_8(int16_t *input, int8_t *output, int size);
+
 
     NNUE();
     ~NNUE();
