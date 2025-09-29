@@ -35,7 +35,7 @@ $(BUILD_DIR)/$(DEFAULT_NAME): $(BUILD_DIR)/Makefile
 
 $(BUILD_DIR)/Makefile: CMakeLists.txt
 	mkdir -p $(BUILD_DIR)
-	cd $(BUILD_DIR) && cmake -G "Unix Makefiles" -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_BUILD_TYPE=Release ..
+	cd $(BUILD_DIR) && cmake -G "Unix Makefiles" -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
 
 clean:
 	rm -rf $(BUILD_DIR)
