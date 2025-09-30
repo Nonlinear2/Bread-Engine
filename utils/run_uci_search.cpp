@@ -21,7 +21,7 @@ int main(){
         running = uci_engine.process_uci_command(input);
         if (UCIAgent::split_string(input)[0] == "go")
             // avoid writing logic to check if the thread is running
-            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(4000));
         if (!running)
             break;
     }
