@@ -237,17 +237,16 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
     assert(depth <= ENGINE_MAX_DEPTH);
 
-    nodes++;
-
     const bool root_node = ss == root_ss;
     assert(!root_node || pos.isGameOver().second == GameResult::NONE);
 
     if (root_node)
         pos.synchronize();
 
-    // we check can_return only at depth 5 or higher to avoid doing it at all nodes
-    if (interrupt_flag || (depth >= 5 && update_interrupt_flag()))
+    if (interrupt_flag || update_interrupt_flag())
         return NO_VALUE; // the value doesn't matter, it won't be used.
+
+    nodes++;
 
     // a stalemate will be processed after the move generation
     if (pos.isRepetition(2) || pos.isHalfMoveDraw() || pos.isInsufficientMaterial())
