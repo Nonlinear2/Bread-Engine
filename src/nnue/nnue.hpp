@@ -12,7 +12,7 @@
 #include "nnue_misc.hpp"
 
 constexpr int INPUT_SIZE = 768;
-constexpr int ACC_SIZE = 256;
+constexpr int ACC_SIZE = 512;
 
 static constexpr int L1_INPUT_SIZE = 2*ACC_SIZE;
 static constexpr int L1_OUTPUT_SIZE = 1;
