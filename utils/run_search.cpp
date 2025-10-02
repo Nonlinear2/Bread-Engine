@@ -71,7 +71,7 @@ int main(){
 
     NnueBoard cb;
     // cb.setFen(constants::STARTPOS);
-    cb.setFen("r2q1rk1/pp1bbpp1/2pp1nn1/3Pp3/P1P1P1Pp/2NB1P2/1P6/R1BQR1K1 b - - 0 16");
+    cb.setFen("7b/8/1P6/2K5/2N5/3P4/5pkp/8 w - - 0 1");
     cb.synchronize();
     std::cout << cb.evaluate() << std::endl;
     // cb.update_state(uci::uciToMove(cb, "e2e4"));

@@ -86,10 +86,10 @@ void NNUE::load_model(){
         ft_bias[i] = ft_bias_start[i];
 
     // layer 1
-    for (int i = 0; i < L1_WEIGHTS_SIZE; i++)
+    for (int i = 0; i < BUCKETED_L1_WEIGHTS_SIZE; i++)
         l1_weights[i] = l1_weights_start[i];
 
-    for (int i = 0; i < L1_BIAS_SIZE; i++)
+    for (int i = 0; i < BUCKETED_L1_BIAS_SIZE; i++)
         l1_bias[i] = l1_bias_start[i];
 };
 
@@ -186,7 +186,6 @@ int32_t NNUE::run_output_layer(int16_t* input, int16_t* weights, int32_t* bias, 
 int NNUE::run_cropped_nn(bool color, int piece_count){
     constexpr int pieces_per_bucket = 32 / OUTPUT_BUCKET_COUNT;
     int bucket = (piece_count - 2) / pieces_per_bucket;
-    // std::cout << bucket << std::endl;
 
     crelu16_to_16(accumulator[color], &ft_clipped_output[0], ACC_SIZE);
     crelu16_to_16(accumulator[!color], &ft_clipped_output[ACC_SIZE], ACC_SIZE);
