@@ -53,17 +53,17 @@ NNUE class
 
 NNUE::NNUE(){
     ft_weights = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*INPUT_SIZE*ACC_SIZE, std::align_val_t{32})
+        operator new[](sizeof(int16_t)*L0_WEIGHTS_SIZE, std::align_val_t{32})
     );
     ft_bias = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*ACC_SIZE, std::align_val_t{32})
+        operator new[](sizeof(int16_t)*L0_BIAS_SIZE, std::align_val_t{32})
     );
 
     l1_weights = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*L1_INPUT_SIZE*L1_OUTPUT_SIZE, std::align_val_t{32})
+        operator new[](sizeof(int16_t)*BUCKETED_L1_WEIGHTS_SIZE, std::align_val_t{32})
     );
     l1_bias = static_cast<int32_t*>(
-        operator new[](sizeof(int32_t)*L1_OUTPUT_SIZE, std::align_val_t{32})
+        operator new[](sizeof(int32_t)*BUCKETED_L1_BIAS_SIZE, std::align_val_t{32})
     );
 
     load_model();
@@ -79,20 +79,18 @@ NNUE::~NNUE(){
 
 void NNUE::load_model(){
     // feature transformer
-    for (int i = 0; i < INPUT_SIZE*ACC_SIZE; i++){
+    for (int i = 0; i < L0_WEIGHTS_SIZE; i++)
         ft_weights[i] = ft_weights_start[i];
-    }
-    for (int i = 0; i < ACC_SIZE; i++){
+
+    for (int i = 0; i < L0_BIAS_SIZE; i++)
         ft_bias[i] = ft_bias_start[i];
-    }
 
     // layer 1
-    for (int i = 0; i < L1_INPUT_SIZE*L1_OUTPUT_SIZE; i++){
+    for (int i = 0; i < BUCKETED_L1_WEIGHTS_SIZE; i++)
         l1_weights[i] = l1_weights_start[i];
-    }
-    for (int i = 0; i < L1_OUTPUT_SIZE; i++){
+
+    for (int i = 0; i < BUCKETED_L1_BIAS_SIZE; i++)
         l1_bias[i] = l1_bias_start[i];
-    }
 };
 
 void NNUE::compute_accumulator(const std::vector<int> active_features, bool color){
@@ -167,7 +165,7 @@ void NNUE::update_accumulator(const modified_features m_features, bool color){
 };
 
 
-int32_t NNUE::run_output_layer(int16_t* input, int16_t* weights, int32_t* bias){
+int32_t NNUE::run_output_layer(int16_t* input, int16_t* weights, int32_t* bias, int bucket){
     constexpr int input_size = 2*ACC_SIZE;
 
     const vec_int16 one = set1_epi16(1);
@@ -175,18 +173,23 @@ int32_t NNUE::run_output_layer(int16_t* input, int16_t* weights, int32_t* bias){
     vec_int32 result = set1_epi32(0);
     for (int i = 0; i < input_size; i += INT16_PER_REG){
         vec_int16 input_chunk = load_epi16(&input[i]);
-        vec_int32 prod = madd_epi16(input_chunk, mullo_epi16(input_chunk, load_epi16(&weights[i])));
+        vec_int16 weight_chunk = load_epi16(&weights[bucket * L1_WEIGHTS_SIZE + i]);
+        vec_int32 prod = madd_epi16(input_chunk, mullo_epi16(input_chunk, weight_chunk));
+
         // madd pairs to int32 to avoid overflows in int16
         result = add_epi32(result, prod);
     }
 
-    return reduce1_epi32(result) / 255 + bias[0];
+    return reduce1_epi32(result) / 255 + bias[bucket];
 };
 
-int NNUE::run_cropped_nn(bool color){
+int NNUE::run_cropped_nn(bool color, int piece_count){
+    constexpr int pieces_per_bucket = 32 / OUTPUT_BUCKET_COUNT;
+    int bucket = (piece_count - 2) / pieces_per_bucket;
+
     crelu16_to_16(accumulator[color], &ft_clipped_output[0], ACC_SIZE);
     crelu16_to_16(accumulator[!color], &ft_clipped_output[ACC_SIZE], ACC_SIZE);
 
-    int output = run_output_layer(ft_clipped_output, l1_weights, l1_bias);
+    int output = run_output_layer(ft_clipped_output, l1_weights, l1_bias, bucket);
     return (output * 600) / (64 * 255); // scale is 600
 };

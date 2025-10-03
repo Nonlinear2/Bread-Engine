@@ -14,8 +14,19 @@
 constexpr int INPUT_SIZE = 768;
 constexpr int ACC_SIZE = 512;
 
-static constexpr int L1_INPUT_SIZE = 2*ACC_SIZE;
-static constexpr int L1_OUTPUT_SIZE = 1;
+constexpr int OUTPUT_BUCKET_COUNT = 8;
+
+constexpr int L1_INPUT_SIZE = 2 * ACC_SIZE;
+constexpr int L1_OUTPUT_SIZE = 1;
+
+constexpr int L0_WEIGHTS_SIZE = INPUT_SIZE * ACC_SIZE;
+constexpr int L0_BIAS_SIZE = ACC_SIZE;
+
+constexpr int L1_WEIGHTS_SIZE = L1_INPUT_SIZE * L1_OUTPUT_SIZE;
+constexpr int L1_BIAS_SIZE = L1_OUTPUT_SIZE;
+
+constexpr int BUCKETED_L1_WEIGHTS_SIZE = OUTPUT_BUCKET_COUNT * L1_WEIGHTS_SIZE;
+constexpr int BUCKETED_L1_BIAS_SIZE = OUTPUT_BUCKET_COUNT * L1_BIAS_SIZE;
 
 struct modified_features {
     int added;
@@ -82,7 +93,7 @@ class NNUE {
     // this is 16129+bias which is less than the max int16 if bias is less than (int16_max - 16129)/(127*64) = 2.04
 
     // output is not scaled back by 64, so scale is 64*127 times true output.
-    int32_t run_output_layer(int16_t* input, int16_t* weights, int32_t* bias);
+    int32_t run_output_layer(int16_t* input, int16_t* weights, int32_t* bias, int bucket);
 
     NNUE();
     ~NNUE();
@@ -93,5 +104,5 @@ class NNUE {
 
     void update_accumulator(const modified_features m_features, bool color);
 
-    int run_cropped_nn(bool color);
+    int run_cropped_nn(bool color, int piece_count);
 };
