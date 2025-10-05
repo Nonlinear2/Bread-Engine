@@ -148,7 +148,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     root_moves.clear();
 
     // initialize stack
-    for (int i = 0; i < SEARCH_STACK_SIZE + STACK_PADDING_SIZE; i++){
+    for (int i = 0; i < MAX_PLY + STACK_PADDING_SIZE; i++){
         stack[i] = Stack();
     }
 
@@ -233,7 +233,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
 template<bool pv>
 int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
-    assert(ss - stack < SEARCH_STACK_SIZE); // avoid stack overflow
+    assert(ss - stack < MAX_PLY); // avoid stack overflow
     assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
     assert(depth <= ENGINE_MAX_DEPTH);
 
@@ -253,7 +253,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     if (pos.isRepetition(2) || pos.isHalfMoveDraw() || pos.isInsufficientMaterial())
         return 0;
 
-    if (ss - stack >= SEARCH_STACK_SIZE - 1)
+    if (ss - stack >= MAX_PLY - 1)
         return pos.evaluate();
 
     // transpositions will be checked inside of qsearch
@@ -535,7 +535,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
 template<bool pv>
 int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
-    assert(ss - stack < SEARCH_STACK_SIZE); // avoid stack overflow
+    assert(ss - stack < MAX_PLY); // avoid stack overflow
     // assert(pv || ((alpha == (beta-1)) && (alpha == (beta-1))));
     nodes++;
 
@@ -605,7 +605,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     capture_gen.set_tt_move(transposition.move);
     
-    if (depth == -QSEARCH_MAX_DEPTH || ss - stack >= SEARCH_STACK_SIZE - 1)
+    if (depth == -QSEARCH_MAX_DEPTH || ss - stack >= MAX_PLY - 1)
         return stand_pat;
 
     alpha = std::max(alpha, stand_pat);

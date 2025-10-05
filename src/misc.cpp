@@ -31,8 +31,28 @@ void KillerMoves::load_from_stream(std::ifstream& ifs){
             ifs.read(reinterpret_cast<char*>(&v), sizeof(uint16_t));
 }
 
+AccumulatorsStack::AccumulatorsStack(){
+    idx = 0;
+}
+
+Accumulators& AccumulatorsStack::push_empty(){
+    assert(idx < MAX_PLY + 1);
+    idx++;
+    return top();
+}
+
+Accumulators& AccumulatorsStack::top(){
+    return stack[idx];
+}
+
+void AccumulatorsStack::pop(){
+    assert(idx > 0);
+    idx--;
+}
+
 bool is_number_string(const std::string& s){
     std::string::const_iterator it = s.begin();
-    while (it != s.end() && (std::isdigit(*it) || *it == '-')) ++it;
+    while (it != s.end() && (std::isdigit(*it) || *it == '-'))
+        ++it;
     return !s.empty() && it == s.end();
 }

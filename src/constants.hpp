@@ -2,6 +2,35 @@
 
 #include <assert.h>
 #include <cmath>
+#include <array>
+
+/*************
+NNUE constants
+*************/
+
+constexpr int INPUT_SIZE = 768;
+constexpr int ACC_SIZE = 512;
+
+constexpr int OUTPUT_BUCKET_COUNT = 8;
+
+constexpr int L1_INPUT_SIZE = 2 * ACC_SIZE;
+constexpr int L1_OUTPUT_SIZE = 1;
+
+constexpr int L0_WEIGHTS_SIZE = INPUT_SIZE * ACC_SIZE;
+constexpr int L0_BIAS_SIZE = ACC_SIZE;
+
+constexpr int L1_WEIGHTS_SIZE = L1_INPUT_SIZE * L1_OUTPUT_SIZE;
+constexpr int L1_BIAS_SIZE = L1_OUTPUT_SIZE;
+
+constexpr int BUCKETED_L1_WEIGHTS_SIZE = OUTPUT_BUCKET_COUNT * L1_WEIGHTS_SIZE;
+constexpr int BUCKETED_L1_BIAS_SIZE = OUTPUT_BUCKET_COUNT * L1_BIAS_SIZE;
+
+using Accumulator = std::array<int16_t, ACC_SIZE>;
+using Accumulators = std::array<Accumulator, 2>;
+
+/****************
+general constants
+****************/
 
 constexpr int TT_MIN_SIZE = 2;
 constexpr int TT_MAX_SIZE = 4096;
@@ -9,7 +38,7 @@ constexpr int TT_MAX_SIZE = 4096;
 constexpr int ENGINE_MAX_DEPTH = 63;
 constexpr int QSEARCH_MAX_DEPTH = 6;
 
-constexpr int SEARCH_STACK_SIZE = 256;
+constexpr int MAX_PLY = 256;
 constexpr int STACK_PADDING_SIZE = 2;
 
 constexpr int BENCHMARK_DEPTH = 10;

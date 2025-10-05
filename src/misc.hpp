@@ -51,4 +51,16 @@ class SearchLimit {
     int value;
 };
 
+class AccumulatorsStack {
+    public:
+    AccumulatorsStack();
+    Accumulators& push_empty();
+    Accumulators& top();
+    void pop();
+
+    private:
+    std::array<Accumulators, MAX_PLY + 1> stack;
+    int idx;
+};
+
 bool is_number_string(const std::string& s);
