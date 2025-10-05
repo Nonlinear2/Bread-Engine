@@ -37,8 +37,7 @@ AccumulatorsStack::AccumulatorsStack(){
 
 Accumulators& AccumulatorsStack::push_empty(){
     assert(idx < MAX_PLY + 1);
-    idx++;
-    return top();
+    return stack[++idx];
 }
 
 Accumulators& AccumulatorsStack::top(){
