@@ -11,6 +11,8 @@
 #include <immintrin.h>
 #include "nnue_misc.hpp"
 
+using namespace chess;
+
 constexpr int INPUT_SIZE = 768;
 constexpr int ACC_SIZE = 512;
 
@@ -39,17 +41,10 @@ struct modified_features {
         captured(captured) {};
 };
 
-class Accumulator {
-    public:
-    int16_t* operator[](bool color);
-
-    int16_t accumulator[2*ACC_SIZE]; 
-};
-
 class NNUE {
     public:
-    Accumulator accumulator; // array stored on the stack, as it will change often
-    
+    std::array<std::array<int16_t, ACC_SIZE>, 2> accumulator;
+
     /*****************
     Feature transformer
     ******************/
@@ -100,9 +95,9 @@ class NNUE {
 
     void load_model();
 
-    void compute_accumulator(const std::vector<int> active_features, bool color);
+    void compute_accumulator(const std::vector<int> active_features, Color color);
 
-    void update_accumulator(const modified_features m_features, bool color);
+    void update_accumulator(const modified_features m_features, Color color);
 
-    int run_cropped_nn(bool color, int piece_count);
+    int run_cropped_nn(Color color, int piece_count);
 };
