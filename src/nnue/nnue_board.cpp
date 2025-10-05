@@ -6,8 +6,8 @@ NnueBoard::NnueBoard(std::string_view fen) {synchronize();};
 
 void NnueBoard::synchronize(){
     auto features = get_features();
-    nnue_.compute_accumulator(features.first, true);
-    nnue_.compute_accumulator(features.second, false);
+    nnue_.compute_accumulator(features.first, Color::WHITE);
+    nnue_.compute_accumulator(features.second, Color::BLACK);
 }
 
 void NnueBoard::update_state(Move move){
@@ -16,11 +16,12 @@ void NnueBoard::update_state(Move move){
 
     if (is_updatable_move(move)){
         // white
-        modified_features mod_features = get_modified_features(move, true);
-        nnue_.update_accumulator(mod_features, true);
-        // black 
-        mod_features = get_modified_features(move, false);
-        nnue_.update_accumulator(mod_features, false);
+        modified_features mod_features = get_modified_features(move, Color::WHITE);
+        nnue_.update_accumulator(mod_features, Color::WHITE);
+
+        // black
+        mod_features = get_modified_features(move, Color::BLACK);
+        nnue_.update_accumulator(mod_features, Color::BLACK);
         makeMove(move);
     } else {
         makeMove(move);
@@ -37,7 +38,7 @@ void NnueBoard::restore_state(Move move){
 }
 
 int NnueBoard::evaluate(){
-    return std::clamp(nnue_.run_cropped_nn(sideToMove() == Color::WHITE, occ().count()), -BEST_VALUE, BEST_VALUE);
+    return std::clamp(nnue_.run_cropped_nn(sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
 }
 
 bool NnueBoard::try_outcome_eval(int& eval){
@@ -243,7 +244,7 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 
 // this function must be called before pushing the move
 // it assumes it it not castling, en passant or a promotion
-modified_features NnueBoard::get_modified_features(Move move, bool color){
+modified_features NnueBoard::get_modified_features(Move move, Color color){
     int from;
     int to;
     int curr_piece_idx;
@@ -262,7 +263,7 @@ modified_features NnueBoard::get_modified_features(Move move, bool color){
     bool piece_color = curr_piece.color() == Color::BLACK; // white: 0, black: 1
     int piece_idx = int(curr_piece.type());
 
-    if (color) { // white (yes this is confusing and inconsistent with piece color)
+    if (color == Color::WHITE) {
         added = 384 * piece_color + piece_idx*64 + to;
         removed = 384 * piece_color + piece_idx*64 + from;
     } else {
@@ -274,7 +275,7 @@ modified_features NnueBoard::get_modified_features(Move move, bool color){
         bool capt_piece_color = capt_piece.color() == Color::BLACK; // white: 0, black: 1
         int capt_piece_idx = int(capt_piece.type());
 
-        if (color)
+        if (color == Color::WHITE)
             captured = 384 * capt_piece_color + capt_piece_idx*64 + to;
         else
             captured = 384 * !capt_piece_color + capt_piece_idx*64 + (to ^ 56);
