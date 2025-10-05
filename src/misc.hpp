@@ -2,6 +2,7 @@
 
 #include <array>
 #include <fstream>
+#include <vector>
 #include "constants.hpp"
 #include "chess.hpp"
 
@@ -59,7 +60,7 @@ class AccumulatorsStack {
     void pop();
 
     private:
-    std::array<Accumulators, MAX_PLY + 1> stack;
+    std::vector<Accumulators> stack = std::vector<Accumulators>(MAX_PLY + 1);
     int idx;
 };
 
