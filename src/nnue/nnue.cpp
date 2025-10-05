@@ -44,9 +44,11 @@ extern "C" {
 /****************
 Accumulator class
 ****************/
+
 int16_t* Accumulator::operator[](bool color){
     return color ? &accumulator[0] : &accumulator[ACC_SIZE];
 };
+
 /*********
 NNUE class
 *********/
