@@ -25,9 +25,7 @@ class NnueBoard: public Board {
 
     bool try_outcome_eval(int& eval);
 
-
     bool probe_wdl(int& eval);
-
 
     bool probe_root_dtz(Move& move, Movelist& moves, bool generate_moves);
 
@@ -36,7 +34,7 @@ class NnueBoard: public Board {
     std::pair<std::vector<int>, std::vector<int>> get_features();
 
     private:
-    std::stack<std::array<std::array<int16_t, ACC_SIZE>, 2>> accumulator_stack;
+    AccumulatorsStack accumulators_stack;
 
     modified_features get_modified_features(Move move, Color color);
 

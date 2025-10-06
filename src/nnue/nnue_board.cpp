@@ -1,31 +1,42 @@
 #include "nnue_board.hpp"
 
-NnueBoard::NnueBoard() {synchronize();};
+NnueBoard::NnueBoard() {
+    accumulators_stack.push_empty();
+    synchronize();
+};
 
-NnueBoard::NnueBoard(std::string_view fen) {synchronize();};
+NnueBoard::NnueBoard(std::string_view fen) {
+    accumulators_stack.push_empty();
+    synchronize();
+};
 
 void NnueBoard::synchronize(){
+    Accumulators& new_accs = accumulators_stack.top();
     auto features = get_features();
-    nnue_.compute_accumulator(features.first, Color::WHITE);
-    nnue_.compute_accumulator(features.second, Color::BLACK);
+    nnue_.compute_accumulator(new_accs[(int)Color::WHITE], features.first);
+    nnue_.compute_accumulator(new_accs[(int)Color::BLACK], features.second);
 }
 
 void NnueBoard::update_state(Move move){
 
-    accumulator_stack.push(nnue_.accumulator);
+    Accumulators& prev_accs = accumulators_stack.top();
+    Accumulators& new_accs = accumulators_stack.push_empty();
 
     if (is_updatable_move(move)){
         // white
         modified_features mod_features = get_modified_features(move, Color::WHITE);
-        nnue_.update_accumulator(mod_features, Color::WHITE);
+        nnue_.update_accumulator(prev_accs[(int)Color::WHITE], new_accs[(int)Color::WHITE], mod_features);
 
         // black
         mod_features = get_modified_features(move, Color::BLACK);
-        nnue_.update_accumulator(mod_features, Color::BLACK);
+        nnue_.update_accumulator(prev_accs[(int)Color::BLACK], new_accs[(int)Color::BLACK], mod_features);
+
         makeMove(move);
     } else {
         makeMove(move);
-        synchronize();
+        auto features = get_features();
+        nnue_.compute_accumulator(new_accs[(int)Color::WHITE], features.first);
+        nnue_.compute_accumulator(new_accs[(int)Color::BLACK], features.second);
     }
 }
 
@@ -33,12 +44,11 @@ void NnueBoard::restore_state(Move move){
     unmakeMove(move);
 
     // last layer accumulators will never be used with this implementation.
-    nnue_.accumulator = accumulator_stack.top();
-    accumulator_stack.pop();
+    accumulators_stack.pop();
 }
 
 int NnueBoard::evaluate(){
-    return std::clamp(nnue_.run_cropped_nn(sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
+    return std::clamp(nnue_.run(accumulators_stack.top(), sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
 }
 
 bool NnueBoard::try_outcome_eval(int& eval){
@@ -178,36 +188,6 @@ Move NnueBoard::tb_result_to_move(unsigned int tb_result){
     return move;
 }
 
-// const int piece_to_index_w[] = {
-//     9, // white pawn
-//     3, // white knight
-//     5, // white bishop
-//     1, // white rook
-//     7, // white queen
-//     10, // white king
-//     8, // black pawn
-//     2, // black knight
-//     4, // black bishop
-//     0, // black rook
-//     6, // black queen
-//     11, // black king
-// };
-
-// const int piece_to_index_b[] = {
-//     8, // white pawn
-//     2, // white knight
-//     4, // white bishop
-//     0, // white rook
-//     6, // white queen
-//     11, // white king
-//     9, // black pawn
-//     3, // black knight
-//     5, // black bishop
-//     1, // black rook
-//     7, // black queen
-//     10, // black king
-// };
-
 std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
     Bitboard occupied = occ();
 
@@ -219,13 +199,6 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
     int idx = 0;
     while (occupied){
         int sq = occupied.pop();
-
-        // let c = usize::from(piece & 8 > 0);
-        // let pc = 64 * usize::from(piece & 7);
-        // let sq = usize::from(square);
-
-        // let stm = [0, 384][c] + pc + sq;
-        // let ntm = [384, 0][c] + pc + (sq ^ 56);
 
         curr_piece = at(static_cast<Square>(sq));
         bool color = curr_piece.color() == Color::BLACK; // white: 0, black: 1

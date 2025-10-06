@@ -22,7 +22,7 @@ class Engine {
     std::atomic<SearchLimit> limit;
     std::atomic<bool> interrupt_flag = false;
     
-    Stack stack[SEARCH_STACK_SIZE + STACK_PADDING_SIZE] = {};
+    Stack stack[MAX_PLY + STACK_PADDING_SIZE] = {};
     Stack* root_ss = stack + 2;
 
     std::atomic<int> run_time;
