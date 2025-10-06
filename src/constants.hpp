@@ -9,7 +9,7 @@ NNUE constants
 *************/
 
 constexpr int INPUT_SIZE = 768;
-constexpr int ACC_SIZE = 512;
+constexpr int ACC_SIZE = 1024;
 
 constexpr int OUTPUT_BUCKET_COUNT = 8;
 
