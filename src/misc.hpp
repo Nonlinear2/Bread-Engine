@@ -2,6 +2,7 @@
 
 #include <array>
 #include <fstream>
+#include <vector>
 #include "constants.hpp"
 #include "chess.hpp"
 
@@ -49,6 +50,18 @@ class SearchLimit {
     
     LimitType type;
     int value;
+};
+
+class AccumulatorsStack {
+    public:
+    AccumulatorsStack();
+    Accumulators& push_empty();
+    Accumulators& top();
+    void pop();
+
+    private:
+    std::vector<Accumulators> stack = std::vector<Accumulators>(MAX_PLY + 1);
+    int idx;
 };
 
 bool is_number_string(const std::string& s);

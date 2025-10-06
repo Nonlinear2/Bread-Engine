@@ -9,26 +9,10 @@
 #include <stdio.h>
 #include <chess.hpp>
 #include <immintrin.h>
+#include "constants.hpp"
 #include "nnue_misc.hpp"
 
 using namespace chess;
-
-constexpr int INPUT_SIZE = 768;
-constexpr int ACC_SIZE = 512;
-
-constexpr int OUTPUT_BUCKET_COUNT = 8;
-
-constexpr int L1_INPUT_SIZE = 2 * ACC_SIZE;
-constexpr int L1_OUTPUT_SIZE = 1;
-
-constexpr int L0_WEIGHTS_SIZE = INPUT_SIZE * ACC_SIZE;
-constexpr int L0_BIAS_SIZE = ACC_SIZE;
-
-constexpr int L1_WEIGHTS_SIZE = L1_INPUT_SIZE * L1_OUTPUT_SIZE;
-constexpr int L1_BIAS_SIZE = L1_OUTPUT_SIZE;
-
-constexpr int BUCKETED_L1_WEIGHTS_SIZE = OUTPUT_BUCKET_COUNT * L1_WEIGHTS_SIZE;
-constexpr int BUCKETED_L1_BIAS_SIZE = OUTPUT_BUCKET_COUNT * L1_BIAS_SIZE;
 
 struct modified_features {
     int added;
@@ -43,7 +27,6 @@ struct modified_features {
 
 class NNUE {
     public:
-    std::array<std::array<int16_t, ACC_SIZE>, 2> accumulator;
 
     /*****************
     Feature transformer
@@ -95,9 +78,9 @@ class NNUE {
 
     void load_model();
 
-    void compute_accumulator(const std::vector<int> active_features, Color color);
+    void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features);
 
-    void update_accumulator(const modified_features m_features, Color color);
+    void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const modified_features m_features);
 
-    int run_cropped_nn(Color color, int piece_count);
+    int run(Accumulators& accumulators, Color stm, int piece_count);
 };

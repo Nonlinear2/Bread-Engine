@@ -87,7 +87,7 @@ void NNUE::load_model(){
         l1_bias[i] = l1_bias_start[i];
 };
 
-void NNUE::compute_accumulator(const std::vector<int> active_features, Color color){
+void NNUE::compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features){
     // we have 256 int16 to process, and there are 16 avx registers which can hold 16 int16.
     // therefore we need only one pass to the registers.
 
@@ -112,18 +112,19 @@ void NNUE::compute_accumulator(const std::vector<int> active_features, Color col
 
     // store the result in the accumulator
     for (int i = 0; i < num_chunks; i++){
-        store_epi16(&accumulator[static_cast<int>(color)][i*INT16_PER_REG], registers[i]);
+        store_epi16(&new_acc[i*INT16_PER_REG], registers[i]);
     }
 };
 
-void NNUE::update_accumulator(const modified_features m_features, Color color){
+void NNUE::update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const modified_features m_features){
+
     constexpr int num_chunks = ACC_SIZE / INT16_PER_REG;
 
     vec_int16 registers[num_chunks];
 
     // load the accumulator
     for (int i = 0; i < num_chunks; i++){
-        registers[i] = load_epi16(&accumulator[color][i*INT16_PER_REG]); 
+        registers[i] = load_epi16(&prev_acc[i*INT16_PER_REG]); 
     }
 
     // added feature
@@ -155,7 +156,7 @@ void NNUE::update_accumulator(const modified_features m_features, Color color){
 
     //store the result in the accumulator
     for (int i = 0; i < num_chunks; i++){
-        store_epi16(&accumulator[color][i*INT16_PER_REG], registers[i]);
+        store_epi16(&new_acc[i*INT16_PER_REG], registers[i]);
     }
 };
 
@@ -178,12 +179,12 @@ int32_t NNUE::run_output_layer(int16_t* input, int16_t* weights, int32_t* bias, 
     return reduce1_epi32(result) / 255 + bias[bucket];
 };
 
-int NNUE::run_cropped_nn(Color color, int piece_count){
+int NNUE::run(Accumulators& accumulators, Color stm, int piece_count){
     constexpr int pieces_per_bucket = 32 / OUTPUT_BUCKET_COUNT;
     int bucket = (piece_count - 2) / pieces_per_bucket;
 
-    crelu16_to_16(accumulator[color].data(), &ft_clipped_output[0], ACC_SIZE);
-    crelu16_to_16(accumulator[!color].data(), &ft_clipped_output[ACC_SIZE], ACC_SIZE);
+    crelu16_to_16(accumulators[stm].data(), &ft_clipped_output[0], ACC_SIZE);
+    crelu16_to_16(accumulators[!stm].data(), &ft_clipped_output[ACC_SIZE], ACC_SIZE);
 
     int output = run_output_layer(ft_clipped_output, l1_weights, l1_bias, bucket);
     return (output * 600) / (64 * 255); // scale is 600
