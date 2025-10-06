@@ -12,6 +12,7 @@ TUNEABLE(kil, int, 129, 0, 1000, 25, 0.002);
 TUNEABLE(his, int, 139, 0, 1000, 20, 0.002);
 TUNEABLE(chis, int, 117, 0, 1000, 20, 0.002);
 TUNEABLE(chk_2, int, 361, 0, 2000, 20, 0.002);
+TUNEABLE(bst, int, 200, 0, 1500, 20, 0.002);
 
 template<>
 SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
@@ -200,7 +201,7 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
                 best_move_idx = i;
             }
         }
-        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], -200))
+        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], -bst))
             break;
         
         moves[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
