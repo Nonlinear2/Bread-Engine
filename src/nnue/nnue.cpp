@@ -161,31 +161,33 @@ void NNUE::update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const
 };
 
 
-int32_t NNUE::run_output_layer(int16_t* input, int16_t* weights, int32_t* bias, int bucket){
-    constexpr int input_size = 2*ACC_SIZE;
+int32_t NNUE::run_L1(Accumulators& accumulators, Color stm, int bucket){
 
     const vec_int16 one = set1_epi16(1);
-
+    const vec_int16 zero = setzero_epi16();
+    const vec_int16 qscale = set1_epi16(255);
     vec_int32 result = set1_epi32(0);
-    for (int i = 0; i < input_size; i += INT16_PER_REG){
-        vec_int16 input_chunk = load_epi16(&input[i]);
-        vec_int16 weight_chunk = load_epi16(&weights[bucket * L1_WEIGHTS_SIZE + i]);
-        vec_int32 prod = madd_epi16(input_chunk, mullo_epi16(input_chunk, weight_chunk));
+
+    for (int i = 0; i < L1_INPUT_SIZE; i += INT16_PER_REG){
+        int16_t* data = accumulators[i < ACC_SIZE ? (bool)stm : !stm].data();
+    
+        vec_int16 in = load_epi16(&data[i % ACC_SIZE]);
+        in = min_epi16(qscale, max_epi16(in, zero));
+
+        vec_int16 weight_chunk = load_epi16(&l1_weights[bucket * L1_WEIGHTS_SIZE + i]);
+        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
 
         // madd pairs to int32 to avoid overflows in int16
         result = add_epi32(result, prod);
     }
 
-    return reduce1_epi32(result) / 255 + bias[bucket];
+    return reduce1_epi32(result) / 255 + l1_bias[bucket];
 };
 
 int NNUE::run(Accumulators& accumulators, Color stm, int piece_count){
     constexpr int pieces_per_bucket = 32 / OUTPUT_BUCKET_COUNT;
     int bucket = (piece_count - 2) / pieces_per_bucket;
 
-    crelu16_to_16(accumulators[stm].data(), &ft_clipped_output[0], ACC_SIZE);
-    crelu16_to_16(accumulators[!stm].data(), &ft_clipped_output[ACC_SIZE], ACC_SIZE);
-
-    int output = run_output_layer(ft_clipped_output, l1_weights, l1_bias, bucket);
+    int output = run_L1(accumulators, stm, bucket);
     return (output * 600) / (64 * 255); // scale is 600
 };
