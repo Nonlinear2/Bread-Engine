@@ -21,10 +21,6 @@ UNACTIVE_TUNEABLE(qs_see_1, int, 298, 0, 900, 25, 0.002);
 UNACTIVE_TUNEABLE(qs_p_1, int, 1003, 0, 3000, 50, 0.002);
 UNACTIVE_TUNEABLE(qs_p_2, int, 166, 0, 900, 20, 0.002);
 
-void Engine::set_uci_display(bool v){
-    display_uci = v;
-}
-
 int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
     float move_num = num_moves_out_of_book < 10 ? static_cast<float>(num_moves_out_of_book) : 10;
     float factor = 2 -  move_num / 10;
@@ -129,7 +125,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     if (is_nonsense){
         srand((unsigned int)time(NULL));
         if (nonsense.should_bongcloud(pos.hash(), pos.fullMoveNumber()))
-            return nonsense.play_bongcloud(display_uci);
+            return nonsense.play_bongcloud();
     }
 
     this->limit = limit;
@@ -156,26 +152,21 @@ Move Engine::iterative_deepening(SearchLimit limit){
     Movelist tb_moves;
     if (pos.probe_root_dtz(tb_move, tb_moves, is_nonsense)){
         update_run_time();
-        if (display_uci){
-            std::cout << "info depth 0";
-            std::cout << " score cp " << tb_move.score();
-            std::cout << " nodes 0 nps 0";
-            std::cout << " time " << run_time;
-            std::cout << " hashfull " << transposition_table.hashfull();
-        }
+        std::cout << "info depth 0";
+        std::cout << " score cp " << tb_move.score();
+        std::cout << " nodes 0 nps 0";
+        std::cout << " time " << run_time;
+        std::cout << " hashfull " << transposition_table.hashfull();
+
         if (is_nonsense && tb_move.score() == TB_VALUE){
             tb_move = nonsense.worst_winning_move(tb_move, tb_moves);
             tb_move.setScore(TB_VALUE);
-            if (display_uci){
-                std::cout << " pv " << uci::moveToUci(tb_move) << std::endl;
-                std::cout << "bestmove " << uci::moveToUci(tb_move) << std::endl;
-            }
-            return tb_move;
-        }
-        if (display_uci){
             std::cout << " pv " << uci::moveToUci(tb_move) << std::endl;
             std::cout << "bestmove " << uci::moveToUci(tb_move) << std::endl;
+            return tb_move;
         }
+        std::cout << " pv " << uci::moveToUci(tb_move) << std::endl;
+        std::cout << "bestmove " << uci::moveToUci(tb_move) << std::endl;
         return tb_move;
     };
 
@@ -195,20 +186,18 @@ Move Engine::iterative_deepening(SearchLimit limit){
         if (run_time == 0)
             run_time = 1; // avoid division by 0;
 
-        if (display_uci){
-            // do not count interrupted searches in depth
-            std::cout << "info depth " << current_depth - interrupt_flag;
-            if (is_mate(best_move.score())){
-                std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
-            } else {
-                std::cout << " score cp " << best_move.score();
-            }
-            std::cout << " nodes " << nodes;
-            std::cout << " nps " << nodes * 1000 / run_time;
-            std::cout << " time " << run_time;
-            std::cout << " hashfull " << transposition_table.hashfull();
-            std::cout << " pv" << pv << std::endl;
+        // do not count interrupted searches in depth
+        std::cout << "info depth " << current_depth - interrupt_flag;
+        if (is_mate(best_move.score())){
+            std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
+        } else {
+            std::cout << " score cp " << best_move.score();
         }
+        std::cout << " nodes " << nodes;
+        std::cout << " nps " << nodes * 1000 / run_time;
+        std::cout << " time " << run_time;
+        std::cout << " hashfull " << transposition_table.hashfull();
+        std::cout << " pv" << pv << std::endl;
 
         // should the search really stop if there is a mate for the oponent?
         if (interrupt_flag
@@ -218,15 +207,14 @@ Move Engine::iterative_deepening(SearchLimit limit){
             break;
     }
 
-    if (is_nonsense && display_uci)
+    if (is_nonsense)
         nonsense.display_info();
 
-    if (display_uci){
-        std::cout << "bestmove " << uci::moveToUci(best_move);
-        if (ponder_move.size() > 0)
-            std::cout << " ponder " << ponder_move;
-        std::cout << std::endl;
-    }
+    std::cout << "bestmove " << uci::moveToUci(best_move);
+    if (ponder_move.size() > 0)
+        std::cout << " ponder " << ponder_move;
+    std::cout << std::endl;
+
     interrupt_flag = false;
     return best_move;
 }
