@@ -71,7 +71,7 @@ class NNUE {
     // this is 16129+bias which is less than the max int16 if bias is less than (int16_max - 16129)/(127*64) = 2.04
 
     // output is not scaled back by 64, so scale is 64*127 times true output.
-    int32_t run_output_layer(int16_t* input, int16_t* weights, int32_t* bias, int bucket);
+    int32_t run_L1(Accumulators& accumulators, Color stm, int bucket);
 
     NNUE();
     ~NNUE();
