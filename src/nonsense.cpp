@@ -51,10 +51,53 @@ Move Nonsense::play_bongcloud(bool display_info){
     }
 }
 
-Move Nonsense::worst_winning_move(Move move, Movelist moves){
+bool Nonsense::is_theoretical_win(Board& pos){
+    Color stm = pos.sideToMove();
+    if (pos.them(stm).count() > 1)
+        return false;
+    
+    // queen or rook
+    if (pos.pieces(PieceType::QUEEN, stm) || pos.pieces(PieceType::ROOK, stm))
+        return true;
+
+    // enough pawns
+    if (pos.pieces(PieceType::PAWN).count() >= 2)
+        return true;
+
+    // bishops
+    if (pos.pieces(PieceType::BISHOP).count() > 2
+        || !Square::same_color(pos.pieces(PieceType::BISHOP).lsb(), pos.pieces(PieceType::BISHOP).msb()))
+        return true;
+
+    // knights
+    if (pos.pieces(PieceType::KNIGHT).count() > 2)
+        return true;
+
+    // bishops and knights
+    if (pos.pieces(PieceType::KNIGHT) && pos.pieces(PieceType::BISHOP))
+        return true;
+    
+    return false;
+}
+
+Move Nonsense::worst_winning_move(Board pos, Move move, Movelist moves){
     Move worst_winning_move = move;
     for (auto move: moves){
         if (move.score() != TB_VALUE)
+            continue;
+
+        pos.makeMove(move);
+        Movelist next_moves;
+        movegen::legalmoves(next_moves, pos);
+        bool loses_material = false;
+        for (Move m: next_moves)
+            if (pos.isCapture(m)){
+                loses_material = true;
+                break;
+            }
+        pos.unmakeMove(move);
+        
+        if (loses_material)
             continue;
 
         if (move.typeOf() == Move::ENPASSANT){
@@ -69,7 +112,8 @@ Move Nonsense::worst_winning_move(Move move, Movelist moves){
                 worst_winning_move = move;
                 break;
             }
-        }
+        } else if (pos.at(move.from()).type() == PieceType::PAWN)
+            worst_winning_move = move;
     }
     return worst_winning_move;
 }

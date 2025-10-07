@@ -6,6 +6,7 @@
 #include "chess.hpp"
 #include "tbprobe.hpp"
 #include "constants.hpp"
+#include "see.hpp"
 #include "misc.hpp"
 
 class Nonsense {
@@ -37,7 +38,9 @@ class Nonsense {
     void display_info();
     bool should_bongcloud(uint64_t hash, int move_number);
     Move play_bongcloud(bool display_info);
-    Move worst_winning_move(Move move, Movelist moves);
+
+    bool is_theoretical_win(Board& pos);
+    Move worst_winning_move(Board pos, Move move, Movelist moves);
     private:
     static constexpr uint64_t starting_pos_hash = 5060803636482931868;
     bool is_bongcloud = false;

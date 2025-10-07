@@ -164,7 +164,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
             std::cout << " hashfull " << transposition_table.hashfull();
         }
         if (is_nonsense && tb_move.score() == TB_VALUE){
-            tb_move = nonsense.worst_winning_move(tb_move, tb_moves);
+            tb_move = nonsense.worst_winning_move(pos, tb_move, tb_moves);
             tb_move.setScore(TB_VALUE);
             if (display_uci){
                 std::cout << " pv " << uci::moveToUci(tb_move) << std::endl;
@@ -220,6 +220,13 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
     if (is_nonsense && display_uci)
         nonsense.display_info();
+
+    if (is_nonsense && nonsense.is_theoretical_win(pos)){
+        Movelist legal_moves;
+        movegen::legalmoves(legal_moves, pos);
+        best_move = nonsense.worst_winning_move(pos, best_move, legal_moves);
+        best_move.setScore(BEST_VALUE - 1);
+    }
 
     if (display_uci){
         std::cout << "bestmove " << uci::moveToUci(best_move);
