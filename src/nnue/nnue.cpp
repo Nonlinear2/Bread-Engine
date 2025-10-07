@@ -183,7 +183,7 @@ int32_t NNUE::run_L1(Accumulators& accumulators, Color stm, int bucket){
 
     for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
         vec_int16 in = load_epi16(&nstm_data[i]);
-        in = min_epi16(qscale, max_epi16(in, zero));
+        in = crelu16_to_16(in, zero, qscale);
 
         vec_int16 weight_chunk = load_epi16(&l1_weights[bucket * L1_WEIGHTS_SIZE + ACC_SIZE + i]);
         vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));

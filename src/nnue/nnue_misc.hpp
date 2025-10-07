@@ -129,12 +129,11 @@ constexpr int INT8_PER_REG = sizeof(vec_int8) / sizeof(int8_t);
 
 namespace NNUE_UTILS {
 
-void crelu32_to_8(int32_t *input, int8_t *output, int size);
-void crelu16_to_8(int16_t *input, int8_t *output, int size);
+vec_int8 crelu32_to_8(vec_int32 in_1, vec_int32 in_2, vec_int32 in_3, vec_int32 in_4, vec_int8 zero);
+vec_int8 crelu16_to_8(vec_int16 in_1, vec_int16 in_2);
+vec_int16 crelu16_to_16(vec_int16 in, vec_int16 zero, vec_int16 qscale);
 
-void crelu16_to_16(int16_t *input, int16_t *output, int size);
-
-int32_t reduce1_epi32(vec_int32& input); // horizontal add 1 int32 avx register.
+int32_t reduce1_epi32(vec_int32 input); // horizontal add 1 int32 avx register.
 vec_int32 reduce8_epi32(vec_int32* inputs);
 
 }; // namespace NNUE_UTILS
