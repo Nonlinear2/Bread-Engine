@@ -15,16 +15,17 @@ bool Nonsense::should_bongcloud(uint64_t hash, int move_number){
     return (is_bongcloud || hash == starting_pos_hash);
 }
 
-Move Nonsense::play_bongcloud(){
+Move Nonsense::play_bongcloud(bool display_info){
     if (is_bongcloud){
-        std::cout << "info depth 91";
-        std::cout << " score mate 78";
-        std::cout << " nodes 149597870700 nps 299792458";
-        std::cout << " time 0";
-        std::cout << " hashfull 0";
-        std::cout << " pv e1e2" << std::endl;
-        std::cout << "bestmove e1e2" << std::endl;
-        
+        if (display_info){
+            std::cout << "info depth 91";
+            std::cout << " score mate 78";
+            std::cout << " nodes 149597870700 nps 299792458";
+            std::cout << " time 0";
+            std::cout << " hashfull 0";
+            std::cout << " pv e1e2" << std::endl;
+            std::cout << "bestmove e1e2" << std::endl;
+        }
         is_bongcloud = false;
         Move move = Move::make(Square(Square::underlying::SQ_E1),
                                              Square(Square::underlying::SQ_E2),
@@ -32,14 +33,15 @@ Move Nonsense::play_bongcloud(){
         move.setScore(10);
         return move;
     } else {
-        std::cout << "info depth 1";
-        std::cout << " score cp 0";
-        std::cout << " nodes 10 nps 3";
-        std::cout << " time 0";
-        std::cout << " hashfull 0";
-        std::cout << " pv e2e4" << std::endl;
-        std::cout << "bestmove e2e4" << std::endl;
-
+        if (display_info){
+            std::cout << "info depth 1";
+            std::cout << " score cp 0";
+            std::cout << " nodes 10 nps 3";
+            std::cout << " time 0";
+            std::cout << " hashfull 0";
+            std::cout << " pv e2e4" << std::endl;
+            std::cout << "bestmove e2e4" << std::endl;
+        }
         is_bongcloud = true;
         Move move = Move::make(Square(Square::underlying::SQ_E2),
                                              Square(Square::underlying::SQ_E4),

@@ -32,6 +32,8 @@ class Engine {
 
     Movelist root_moves;
     
+    void set_uci_display(bool v);
+    
     int get_think_time(float time_left, int num_moves_out_of_book,
         int num_moves_until_time_control, int increment);
 
@@ -51,6 +53,8 @@ class Engine {
 
     private:
     friend class UCIAgent;
+
+    bool display_uci = true;
 
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 
