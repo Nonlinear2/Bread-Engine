@@ -14,6 +14,8 @@
 #include "sorted_move_gen.hpp"
 #include "tune.hpp"
 
+int nnue_evaluate(NnueBoard& pos);
+
 class Engine {
     public:
 
@@ -54,7 +56,11 @@ class Engine {
 
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 
-    Nonsense nonsense = Nonsense();
+    bool root_tb_hit;
+    Move tb_move;
+    Movelist tb_moves;
+
+    int (*evaluate)(NnueBoard& pos) = nnue_evaluate;
 
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove();
