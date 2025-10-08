@@ -12,20 +12,20 @@
 
 namespace Nonsense {
 
-const std::vector<int> nonsense_piece_value = {
-    100, 
+static const std::vector<int> nonsense_piece_value = {
+    0, 
     // pawn
-    1150, 
+    2250,
     // knight
-    900,
+    1800,
     // bishop
-    350, 
+    -400,
     // rook
-    150, 
+    -700,
     // queen
     300, 
     // king
-    0, 
+    0,
     // none
 };
 
@@ -63,7 +63,7 @@ bool loses_material(Board& pos, Move move);
 int endgame_nonsense_evaluate(NnueBoard& pos);
 
 static constexpr uint64_t starting_pos_hash = 5060803636482931868;
-bool is_bongcloud = false;
+static bool is_bongcloud = false;
 
 } // namespace Nonsense
 

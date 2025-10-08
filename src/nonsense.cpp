@@ -144,5 +144,5 @@ int Nonsense::endgame_nonsense_evaluate(NnueBoard& pos){
         material_eval += (pos.pieces(pt, stm).count() - pos.pieces(pt, !stm).count())
             * nonsense_piece_value[static_cast<int>(pt)];
 
-    return std::clamp((standard_eval + material_eval) / 3, -BEST_VALUE, BEST_VALUE);
+    return std::clamp((standard_eval + material_eval) / 5, -BEST_VALUE, BEST_VALUE);
 }

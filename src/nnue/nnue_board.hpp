@@ -21,6 +21,8 @@ class NnueBoard: public Board {
 
     void restore_state(Move move);
 
+    int evaluate();
+
     bool try_outcome_eval(int& eval);
 
     bool probe_wdl(int& eval);
@@ -31,8 +33,8 @@ class NnueBoard: public Board {
     
     std::pair<std::vector<int>, std::vector<int>> get_features();
 
-    AccumulatorsStack accumulators_stack;
     private:
+    AccumulatorsStack accumulators_stack;
 
     modified_features get_modified_features(Move move, Color color);
 

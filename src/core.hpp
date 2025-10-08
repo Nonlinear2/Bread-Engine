@@ -50,6 +50,7 @@ class Engine {
     void load_state(std::string file);
 
     std::atomic<bool> is_nonsense = false;
+    bool nonsense_active = false;
 
     private:
     friend class UCIAgent;

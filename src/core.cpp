@@ -23,7 +23,7 @@ UNACTIVE_TUNEABLE(qs_p_2, int, 166, 0, 900, 20, 0.002);
 
 
 int nnue_evaluate(NnueBoard& pos){
-    return std::clamp(pos.nnue_.run(pos.accumulators_stack.top(), pos.sideToMove(), pos.occ().count()), -BEST_VALUE, BEST_VALUE);
+    return pos.evaluate();
 }
 
 int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
@@ -154,25 +154,26 @@ Move Engine::iterative_deepening(SearchLimit limit){
     }
 
     root_tb_hit = pos.probe_root_dtz(tb_move, root_moves, is_nonsense);
-    if (root_tb_hit){
+    if (root_tb_hit && (!is_nonsense || tb_move.score() != TB_VALUE)){
         update_run_time();
         std::cout << "info depth 0";
         std::cout << " score cp " << tb_move.score();
         std::cout << " nodes 0 nps 0";
         std::cout << " time " << run_time;
         std::cout << " hashfull " << transposition_table.hashfull();
-
-        if (!is_nonsense || tb_move.score() != TB_VALUE){
-            std::cout << " pv " << uci::moveToUci(tb_move) << std::endl;
-            std::cout << "bestmove " << uci::moveToUci(tb_move) << std::endl;
-            return tb_move;
-        }
+        std::cout << " pv " << uci::moveToUci(tb_move) << std::endl;
+        std::cout << "bestmove " << uci::moveToUci(tb_move) << std::endl;
+        return tb_move;
     };
 
-    if (is_nonsense && Nonsense::is_theoretical_win(pos))
+    if (is_nonsense && Nonsense::is_theoretical_win(pos)){
+        clear_state();
         evaluate = Nonsense::endgame_nonsense_evaluate;
-    else
+        nonsense_active = true;
+    } else {
         evaluate = nnue_evaluate;
+        nonsense_active = false;
+    }
 
     while (true){
         current_depth++;
@@ -476,6 +477,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             // If board is in check, it is checkmate
             // if there are no legal moves and it's not check, it is stalemate so eval is 0
             max_value = pos.inCheck() ? -MATE_VALUE : 0;
+
+            if (nonsense_active && (bool)pos.pieces(PieceType::PAWN))
+                max_value = std::max(max_value, 0);
+
             // we know this eval is exact at any depth, but 
             // we also don't want this eval to pollute the transposition table.
             // the full move number will make sure it is replaced at some point.
@@ -646,6 +651,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     }
 
     if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
+        if (nonsense_active && (bool)pos.pieces(PieceType::PAWN))
+            stand_pat = std::max(stand_pat, 0);
         transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH,
             Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
         return stand_pat;

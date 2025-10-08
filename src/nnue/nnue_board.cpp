@@ -47,6 +47,10 @@ void NnueBoard::restore_state(Move move){
     accumulators_stack.pop();
 }
 
+int NnueBoard::evaluate(){
+    return std::clamp(nnue_.run(accumulators_stack.top(), sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
+}
+
 bool NnueBoard::try_outcome_eval(int& eval){
     // we dont want history dependent data to be stored in the TT.
     // the evaluation stored in the TT should only depend on the
