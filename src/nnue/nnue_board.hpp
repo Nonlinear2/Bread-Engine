@@ -25,12 +25,6 @@ class NnueBoard: public Board {
 
     bool try_outcome_eval(int& eval);
 
-    bool probe_wdl(int& eval);
-
-    bool probe_root_dtz(Move& move, Movelist& moves, bool generate_moves);
-
-    Move tb_result_to_move(unsigned int tb_result);
-    
     std::pair<std::vector<int>, std::vector<int>> get_features();
 
     private:
