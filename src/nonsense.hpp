@@ -55,7 +55,7 @@ static inline std::vector<std::string> rick_astley_lyrics = {
 
 void display_info();
 bool should_bongcloud(uint64_t hash, int move_number);
-Move play_bongcloud(bool display_info);
+Move play_bongcloud();
 
 bool is_theoretical_win(Board& pos);
 Move worst_winning_move(Board pos, Move suggested_move, Movelist moves, bool from_tb);
