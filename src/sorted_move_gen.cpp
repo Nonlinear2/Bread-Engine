@@ -1,17 +1,18 @@
 #include "sorted_move_gen.hpp"
 
 TUNEABLE(endg, int, 11, 0, 32, 0.5, 0.002);
-TUNEABLE(psm_1, int, 69, 0, 1000, 20, 0.002);
-TUNEABLE(psm_2, int, 114, 0, 1000, 20, 0.002);
-TUNEABLE(att_1, int, 55, 0, 500, 10, 0.002);
-TUNEABLE(att_2, int, 48, 0, 500, 10, 0.002);
-TUNEABLE(chk_1, int, 168, 0, 1000, 20, 0.002);
-TUNEABLE(cpt, int, 152, 0, 1000, 20, 0.002);
-TUNEABLE(prm, int, 115, 0, 1000, 20, 0.002);
-TUNEABLE(kil, int, 129, 0, 1000, 25, 0.002);
-TUNEABLE(his, int, 139, 0, 1000, 20, 0.002);
-TUNEABLE(chis, int, 117, 0, 1000, 20, 0.002);
-TUNEABLE(chk_2, int, 361, 0, 2000, 20, 0.002);
+TUNEABLE(psm_1, int, 14, 0, 1000, 20, 0.002);
+TUNEABLE(psm_2, int, 127, 0, 1000, 20, 0.002);
+TUNEABLE(att_1, int, 46, 0, 500, 10, 0.002);
+TUNEABLE(att_2, int, 54, 0, 500, 10, 0.002);
+TUNEABLE(chk_1, int, 160, 0, 1000, 20, 0.002);
+TUNEABLE(cpt, int, 153, 0, 1000, 20, 0.002);
+TUNEABLE(prm, int, 102, 0, 1000, 20, 0.002);
+TUNEABLE(kil, int, 134, 0, 1000, 25, 0.002);
+TUNEABLE(his, int, 153, 0, 1000, 20, 0.002);
+TUNEABLE(chis, int, 129, 0, 1000, 20, 0.002);
+TUNEABLE(chk_2, int, 348, 0, 2000, 20, 0.002);
+TUNEABLE(bst, int, 218, 0, 1500, 20, 0.002);
 
 template<>
 SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
@@ -200,7 +201,7 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
                 best_move_idx = i;
             }
         }
-        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], -200))
+        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], -bst))
             break;
         
         moves[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
