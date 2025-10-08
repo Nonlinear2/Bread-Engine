@@ -246,7 +246,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         return 0;
 
     if (ss - stack >= MAX_PLY - 1)
-        return pos.evaluate();
+        return evaluate(pos);
 
     // transpositions will be checked inside of qsearch
     // if isRepetition(1), qsearch will not consider the danger of draw as it searches captures.
@@ -314,7 +314,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     bool in_check = pos.inCheck();
 
     if (static_eval == NO_VALUE)
-        static_eval = pos.evaluate();
+        static_eval = evaluate(pos);
     if (eval == NO_VALUE)
         eval = static_eval;
 
@@ -577,7 +577,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     stand_pat = transposition.static_eval;
 
     if (!is_valid(stand_pat))
-        stand_pat = pos.evaluate();
+        stand_pat = evaluate(pos);
 
     assert(is_regular_eval(stand_pat, false));
 
