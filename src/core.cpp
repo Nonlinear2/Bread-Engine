@@ -150,7 +150,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
     Move tb_move;
     Movelist tb_moves;
-    if (pos.probe_root_dtz(tb_move, tb_moves, is_nonsense)){
+    if (TB::probe_root_dtz(pos, tb_move, tb_moves, is_nonsense)){
         update_run_time();
         std::cout << "info depth 0";
         std::cout << " score cp " << tb_move.score();
@@ -161,10 +161,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
         if (is_nonsense && tb_move.score() == TB_VALUE){
             tb_move = nonsense.worst_winning_move(tb_move, tb_moves);
             tb_move.setScore(TB_VALUE);
-            std::cout << " pv " << uci::moveToUci(tb_move) << std::endl;
-            std::cout << "bestmove " << uci::moveToUci(tb_move) << std::endl;
-            return tb_move;
         }
+
         std::cout << " pv " << uci::moveToUci(tb_move) << std::endl;
         std::cout << "bestmove " << uci::moveToUci(tb_move) << std::endl;
         return tb_move;
@@ -530,7 +528,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     int stand_pat = NO_VALUE;
 
     // tablebase probe
-    if (pos.probe_wdl(stand_pat))
+    if (TB::probe_wdl(pos, stand_pat))
         return stand_pat;
 
     if (pos.isHalfMoveDraw()) 
