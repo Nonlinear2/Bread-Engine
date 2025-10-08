@@ -222,9 +222,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         nonsense.display_info();
 
     if (is_nonsense && nonsense.is_theoretical_win(pos)){
-        Movelist legal_moves;
-        movegen::legalmoves(legal_moves, pos);
-        best_move = nonsense.worst_winning_move(pos, best_move, legal_moves);
+        best_move = nonsense.worst_winning_move(pos, best_move, root_moves);
         best_move.setScore(BEST_VALUE - 1);
     }
 

@@ -3,7 +3,7 @@
 #include <iostream>
 
 int main(){
-    // Engine engine = Engine();
+    Engine engine = Engine();
 
     // std::vector<std::string> fens = {
     //     // "r2qkbnr/1pp2ppp/p1p5/4p3/4P1b1/5N1P/PPPP1PP1/RNBQ1RK1 b kq - 0 6",
@@ -30,15 +30,12 @@ int main(){
     //     // std::cout << cb.evaluate() << std::endl;
     //     // engine.search(fens[i], SearchLimit(LimitType::Depth, 11));
     // }
-    // NnueBoard cb;
-    // cb.setFen(constants::STARTPOS);
-    // cb.synchronize();
+    engine.is_nonsense = true;
 
-    // chess::Move best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Nodes, 300));
-    // cb.setFen("rnbqkbnr/pp1p1ppp/2p5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR b KQkq - 1 3");
-    // cb.synchronize();
-    // best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Nodes, 300));
-    // std::cout << "score: " << best_move.score() << std::endl;
+    NnueBoard cb;
+    cb.setFen("8/8/8/8/8/4k1n1/5pK1/8 b - - 3 27");
+    cb.synchronize();
+    engine.search(cb.getFen(), SearchLimit(LimitType::Depth, 5));
 
     // UCIAgent uci_engine = UCIAgent();
     // std::string input;
@@ -69,11 +66,11 @@ int main(){
     //     std::cout << v << " ";
     // std::cout << cb.evaluate() << std::endl;
 
-    NnueBoard cb;
+    // NnueBoard cb;
     // cb.setFen(constants::STARTPOS);
-    cb.setFen("7b/8/1P6/2K5/2N5/3P4/5pkp/8 w - - 0 1");
-    cb.synchronize();
-    std::cout << cb.evaluate() << std::endl;
+    // cb.setFen("7b/8/1P6/2K5/2N5/3P4/5pkp/8 w - - 0 1");
+    // cb.synchronize();
+    // std::cout << cb.evaluate() << std::endl;
     // cb.update_state(uci::uciToMove(cb, "e2e4"));
     // cb.update_state(uci::uciToMove(cb, "e7e5"));
     // cb.update_state(uci::uciToMove(cb, "g1f3"));

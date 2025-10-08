@@ -65,8 +65,9 @@ bool Nonsense::is_theoretical_win(Board& pos){
         return true;
 
     // bishops
-    if (pos.pieces(PieceType::BISHOP).count() > 2
-        || !Square::same_color(pos.pieces(PieceType::BISHOP).lsb(), pos.pieces(PieceType::BISHOP).msb()))
+    if (pos.pieces(PieceType::BISHOP).count() >= 2
+        && (pos.pieces(PieceType::BISHOP) & 0x55aa55aa55aa55aa) // has a light square bishop 
+        && (pos.pieces(PieceType::BISHOP) & 0xaa55aa55aa55aa55)) // has a dark square bishop 
         return true;
 
     // knights
@@ -87,6 +88,11 @@ Move Nonsense::worst_winning_move(Board pos, Move move, Movelist moves){
             continue;
 
         pos.makeMove(move);
+        if (pos.isRepetition(1) || pos.isRepetition(2)){
+            pos.unmakeMove(move);
+            continue;
+        }
+
         Movelist next_moves;
         movegen::legalmoves(next_moves, pos);
         bool loses_material = false;
