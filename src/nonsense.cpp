@@ -20,7 +20,7 @@ Move Nonsense::play_bongcloud(bool display_info){
         if (display_info){
             std::cout << "info depth 91";
             std::cout << " score mate 78";
-            std::cout << " nodes 149597870700 nps 299792458";
+            std::cout << " nodes 0 nps 0";
             std::cout << " time 0";
             std::cout << " hashfull 0";
             std::cout << " pv e1e2" << std::endl;
@@ -36,7 +36,7 @@ Move Nonsense::play_bongcloud(bool display_info){
         if (display_info){
             std::cout << "info depth 1";
             std::cout << " score cp 0";
-            std::cout << " nodes 10 nps 3";
+            std::cout << " nodes 0 nps 0";
             std::cout << " time 0";
             std::cout << " hashfull 0";
             std::cout << " pv e2e4" << std::endl;
@@ -81,46 +81,70 @@ bool Nonsense::is_theoretical_win(Board& pos){
     return false;
 }
 
-Move Nonsense::worst_winning_move(Board pos, Move move, Movelist moves){
-    Move worst_winning_move = move;
+bool Nonsense::loses_material(Board& pos, Move move){
+    pos.makeMove(move);
+    Movelist next_moves;
+    movegen::legalmoves(next_moves, pos);
+    bool loses_material = false;
+    for (Move m: next_moves)
+        if (pos.isCapture(m)){
+            loses_material = true;
+            break;
+        }
+    pos.unmakeMove(move);
+    return loses_material;
+}
+
+Move Nonsense::worst_winning_move(Board pos, Move suggested_move, Movelist moves, bool from_tb){
+    Move worst_winning_move = suggested_move;
+    
     for (auto move: moves){
-        if (move.score() != TB_VALUE)
+        if (from_tb && move.score() != TB_VALUE)
             continue;
 
+        // avoid repetitions
         pos.makeMove(move);
         if (pos.isRepetition(1) || pos.isRepetition(2)){
             pos.unmakeMove(move);
             continue;
         }
-
-        Movelist next_moves;
-        movegen::legalmoves(next_moves, pos);
-        bool loses_material = false;
-        for (Move m: next_moves)
-            if (pos.isCapture(m)){
-                loses_material = true;
-                break;
-            }
         pos.unmakeMove(move);
-        
-        if (loses_material)
+
+        // avoid moves that lose material
+        if (loses_material(pos, move))
             continue;
-
-        if (move.typeOf() == Move::ENPASSANT){
+        // if current worst move loses material and new one does not, update
+        else if (loses_material(pos, worst_winning_move))
             worst_winning_move = move;
-            break;
-        } else if (move.typeOf() == Move::PROMOTION){
+
+        if (move.typeOf() == Move::ENPASSANT)
+            return move;
+        else if (move.typeOf() == Move::PROMOTION){
             PieceType promotion = move.promotionType();
-            if (promotion == PieceType::ROOK)
+            // if we can safely promote to a knight or bishop, do so.
+            if (promotion == PieceType::KNIGHT || promotion == PieceType::BISHOP)
+                return move;
+
+            // always prefer rook promotions to queen promotions
+            if (worst_winning_move.promotionType() == PieceType::QUEEN && promotion == PieceType::ROOK)
                 worst_winning_move = move;
 
-            if (promotion == PieceType::KNIGHT || promotion == PieceType::BISHOP){
-                worst_winning_move = move;
-                break;
-            }
         } else if (pos.at(move.from()).type() == PieceType::PAWN)
             worst_winning_move = move;
     }
     return worst_winning_move;
 }
 
+
+int Nonsense::endgame_nonsense_evaluate(NnueBoard& pos){
+    Color stm = pos.sideToMove();
+    assert(pos.us(stm).count() == 1 || pos.them(stm).count() == 1); // make sure we are in a vs king endgame
+
+    int standard_eval = pos.evaluate();
+    int material_eval = 0;
+    for (PieceType pt: {PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP, PieceType::ROOK, PieceType::QUEEN})
+        material_eval += (pos.pieces(pt, stm).count() - pos.pieces(pt, !stm).count())
+            * nonsense_piece_value[static_cast<int>(pt)];
+
+    return std::clamp((standard_eval + material_eval) / 3, -BEST_VALUE, BEST_VALUE);
+}
