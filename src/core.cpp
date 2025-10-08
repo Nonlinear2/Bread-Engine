@@ -215,12 +215,11 @@ Move Engine::iterative_deepening(SearchLimit limit){
         best_move.setScore(BEST_VALUE - 1);
     }
 
-    if (display_uci){
-        std::cout << "bestmove " << uci::moveToUci(best_move);
-        if (ponder_move.size() > 0)
-            std::cout << " ponder " << ponder_move;
-        std::cout << std::endl;
-    }
+    std::cout << "bestmove " << uci::moveToUci(best_move);
+    if (ponder_move.size() > 0)
+        std::cout << " ponder " << ponder_move;
+    std::cout << std::endl;
+
     interrupt_flag = false;
     return best_move;
 }
