@@ -57,10 +57,9 @@ void display_info();
 bool should_bongcloud(uint64_t hash, int move_number);
 Move play_bongcloud();
 
-bool is_theoretical_win(Board& pos);
-Move worst_winning_move(Board pos, Move suggested_move, Movelist moves, bool from_tb);
-bool loses_material(Board& pos, Move move);
 int endgame_nonsense_evaluate(NnueBoard& pos);
+bool is_theoretical_win(Board& pos, bool queen_rook);
+bool is_bad_checkmate(NnueBoard& pos);
 
 static constexpr uint64_t starting_pos_hash = 5060803636482931868;
 static bool is_bongcloud = false;

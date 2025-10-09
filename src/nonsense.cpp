@@ -49,13 +49,13 @@ Move Nonsense::play_bongcloud(){
     }
 }
 
-bool Nonsense::is_theoretical_win(Board& pos){
+bool Nonsense::is_theoretical_win(Board& pos, bool queen_rook){
     Color stm = pos.sideToMove();
     if (pos.them(stm).count() > 1)
         return false;
-    
+
     // queen or rook
-    if (pos.pieces(PieceType::QUEEN, stm) || pos.pieces(PieceType::ROOK, stm))
+    if (queen_rook && (pos.pieces(PieceType::QUEEN, stm) || pos.pieces(PieceType::ROOK, stm)))
         return true;
 
     // enough pawns
@@ -79,61 +79,6 @@ bool Nonsense::is_theoretical_win(Board& pos){
     return false;
 }
 
-bool Nonsense::loses_material(Board& pos, Move move){
-    pos.makeMove(move);
-    Movelist next_moves;
-    movegen::legalmoves(next_moves, pos);
-    bool loses_material = false;
-    for (Move m: next_moves)
-        if (pos.isCapture(m)){
-            loses_material = true;
-            break;
-        }
-    pos.unmakeMove(move);
-    return loses_material;
-}
-
-Move Nonsense::worst_winning_move(Board pos, Move suggested_move, Movelist moves, bool from_tb){
-    Move worst_winning_move = suggested_move;
-    
-    for (auto move: moves){
-        if (from_tb && move.score() != TB_VALUE)
-            continue;
-
-        // avoid repetitions
-        pos.makeMove(move);
-        if (pos.isRepetition(1) || pos.isRepetition(2)){
-            pos.unmakeMove(move);
-            continue;
-        }
-        pos.unmakeMove(move);
-
-        // avoid moves that lose material
-        if (loses_material(pos, move))
-            continue;
-        // if current worst move loses material and new one does not, update
-        else if (loses_material(pos, worst_winning_move))
-            worst_winning_move = move;
-
-        if (move.typeOf() == Move::ENPASSANT)
-            return move;
-        else if (move.typeOf() == Move::PROMOTION){
-            PieceType promotion = move.promotionType();
-            // if we can safely promote to a knight or bishop, do so.
-            if (promotion == PieceType::KNIGHT || promotion == PieceType::BISHOP)
-                return move;
-
-            // always prefer rook promotions to queen promotions
-            if (worst_winning_move.promotionType() == PieceType::QUEEN && promotion == PieceType::ROOK)
-                worst_winning_move = move;
-
-        } else if (pos.at(move.from()).type() == PieceType::PAWN)
-            worst_winning_move = move;
-    }
-    return worst_winning_move;
-}
-
-
 int Nonsense::endgame_nonsense_evaluate(NnueBoard& pos){
     Color stm = pos.sideToMove();
     assert(pos.us(stm).count() == 1 || pos.them(stm).count() == 1); // make sure we are in a vs king endgame
@@ -145,4 +90,9 @@ int Nonsense::endgame_nonsense_evaluate(NnueBoard& pos){
             * nonsense_piece_value[static_cast<int>(pt)];
 
     return std::clamp((standard_eval + material_eval) / 5, -BEST_VALUE, BEST_VALUE);
+}
+
+bool Nonsense::is_bad_checkmate(NnueBoard& pos){
+    return (bool)pos.pieces(PieceType::PAWN)
+        || (is_theoretical_win(pos, false) && (pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK)));
 }
