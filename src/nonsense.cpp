@@ -88,8 +88,10 @@ int Nonsense::endgame_nonsense_evaluate(NnueBoard& pos){
     for (PieceType pt: {PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP, PieceType::ROOK, PieceType::QUEEN})
         material_eval += (pos.pieces(pt, stm).count() - pos.pieces(pt, !stm).count())
             * nonsense_piece_value[static_cast<int>(pt)];
+    material_eval += (material_eval > 0 ? -1 : 1)
+        * Square::distance(pos.kingSq(stm), pos.kingSq(!stm))*(5 + 8*!pos.pieces(PieceType::PAWN));
 
-    return std::clamp((standard_eval / 8 + material_eval), -BEST_VALUE, BEST_VALUE);
+    return std::clamp((standard_eval / 6 + material_eval), -BEST_VALUE, BEST_VALUE);
 }
 
 bool Nonsense::is_bad_checkmate(NnueBoard& pos){
