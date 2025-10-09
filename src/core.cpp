@@ -166,7 +166,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         return tb_move;
     };
 
-    if (is_nonsense && Nonsense::is_theoretical_win(pos, true)){
+    if (is_nonsense && Nonsense::is_theoretical_win(pos)){
         clear_state();
         evaluate = Nonsense::endgame_nonsense_evaluate;
         nonsense_active = true;

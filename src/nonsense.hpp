@@ -13,20 +13,13 @@
 namespace Nonsense {
 
 static const std::vector<int> nonsense_piece_value = {
-    0, 
-    // pawn
-    2250,
-    // knight
-    1800,
-    // bishop
-    -400,
-    // rook
-    -700,
-    // queen
-    300, 
-    // king
-    0,
-    // none
+    150, // pawn
+    900, // knight
+    400, // bishop
+    -200, // rook
+    -500, // queen
+    0,  // king
+    0, // none
 };
 
 static constexpr int rick_astley_odds = 5;
@@ -58,7 +51,7 @@ bool should_bongcloud(uint64_t hash, int move_number);
 Move play_bongcloud();
 
 int endgame_nonsense_evaluate(NnueBoard& pos);
-bool is_theoretical_win(Board& pos, bool queen_rook);
+bool is_theoretical_win(Board& pos);
 bool is_bad_checkmate(NnueBoard& pos);
 
 static constexpr uint64_t starting_pos_hash = 5060803636482931868;

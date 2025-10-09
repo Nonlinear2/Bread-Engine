@@ -49,13 +49,13 @@ Move Nonsense::play_bongcloud(){
     }
 }
 
-bool Nonsense::is_theoretical_win(Board& pos, bool queen_rook){
+bool Nonsense::is_theoretical_win(Board& pos){
     Color stm = pos.sideToMove();
     if (pos.them(stm).count() > 1)
         return false;
 
     // queen or rook
-    if (queen_rook && (pos.pieces(PieceType::QUEEN, stm) || pos.pieces(PieceType::ROOK, stm)))
+    if (pos.pieces(PieceType::QUEEN, stm) || pos.pieces(PieceType::ROOK, stm))
         return true;
 
     // enough pawns
@@ -89,10 +89,13 @@ int Nonsense::endgame_nonsense_evaluate(NnueBoard& pos){
         material_eval += (pos.pieces(pt, stm).count() - pos.pieces(pt, !stm).count())
             * nonsense_piece_value[static_cast<int>(pt)];
 
-    return std::clamp((standard_eval + material_eval) / 5, -BEST_VALUE, BEST_VALUE);
+    return std::clamp((standard_eval / 8 + material_eval), -BEST_VALUE, BEST_VALUE);
 }
 
 bool Nonsense::is_bad_checkmate(NnueBoard& pos){
+    if (pos.halfMoveClock() >= 70)
+        return false; // avoid not checkmating with queen or rook when there is no other choice
+
     return (bool)pos.pieces(PieceType::PAWN)
-        || (is_theoretical_win(pos, false) && (pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK)));
+        || (pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK));
 }
