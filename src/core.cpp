@@ -163,7 +163,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     }
 
     bool root_tb_hit = TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
-    if (root_tb_hit && (!is_nonsense || best_move.score() != TB_VALUE)){
+    if (root_tb_hit && (!is_nonsense || best_move.score() != TB_VALUE || Nonsense::only_knight_bishop(pos))){
         update_run_time();
         std::cout << "info depth 0";
         std::cout << " score cp " << best_move.score();
@@ -189,6 +189,10 @@ Move Engine::iterative_deepening(SearchLimit limit){
             clear_state();
             evaluate = activate ? Nonsense::evaluate : nnue_evaluate;
         }
+
+        // move quickly
+        if (evaluate == Nonsense::evaluate && limit.type == LimitType::Time)
+            this->limit = SearchLimit(LimitType::Time, std::min(limit.value, 200));
     }
 
     while (true){
