@@ -554,7 +554,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     // tablebase probe
     if (TB::probe_wdl(pos, stand_pat))
     {
-        if (evaluate == Nonsense::evaluate && is_bad_position)
+        if (evaluate == Nonsense::evaluate && Nonsense::is_bad_position(pos))
             return 0;
   
         return stand_pat;
@@ -669,8 +669,10 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     }
 
     if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
+
         if (evaluate == Nonsense::evaluate && Nonsense::is_bad_position(pos))
             stand_pat = 0;
+
         transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH,
             Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
         return stand_pat;
