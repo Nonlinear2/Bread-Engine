@@ -154,24 +154,22 @@ Move Engine::iterative_deepening(SearchLimit limit){
         stack[i] = Stack();
     }
 
-    Move tb_move;
-    Movelist tb_moves;
-    if (TB::probe_root_dtz(pos, tb_move, tb_moves, is_nonsense)){
+    if (TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense)){
         update_run_time();
         std::cout << "info depth 0";
-        std::cout << " score cp " << tb_move.score();
+        std::cout << " score cp " << best_move.score();
         std::cout << " nodes 0 nps 0";
         std::cout << " time " << run_time;
         std::cout << " hashfull " << transposition_table.hashfull();
 
-        if (is_nonsense && tb_move.score() == TB_VALUE){
-            tb_move = nonsense.worst_winning_move(tb_move, tb_moves);
-            tb_move.setScore(TB_VALUE);
+        if (is_nonsense && best_move.score() == TB_VALUE){
+            best_move = nonsense.worst_winning_move(best_move, root_moves);
+            best_move.setScore(TB_VALUE);
         }
 
-        std::cout << " pv " << uci::moveToUci(tb_move) << std::endl;
-        std::cout << "bestmove " << uci::moveToUci(tb_move) << std::endl;
-        return tb_move;
+        std::cout << " pv " << uci::moveToUci(best_move) << std::endl;
+        std::cout << "bestmove " << uci::moveToUci(best_move) << std::endl;
+        return best_move;
     };
 
     while (true){
