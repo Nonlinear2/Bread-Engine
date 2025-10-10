@@ -303,8 +303,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     }
 
     bool is_hit;
-    TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
-    
+    TTData transposition = evaluate == Nonsense::evaluate ? TTData() : transposition_table.probe(is_hit, zobrist_hash);
+
     static_eval = eval = transposition.static_eval;
     eval = transposition.value;
     move_gen.set_tt_move(transposition.move);
@@ -564,9 +564,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
         if (evaluate == Nonsense::evaluate && stand_pat != 0){
             if (Nonsense::only_knight_bishop(pos) == Nonsense::is_winning_side(pos))
-                return TB_VALUE;
+                return BEST_VALUE - (ss - stack); // best_value - ply
             else
-                return -TB_VALUE;
+                return -BEST_VALUE + (ss - stack);
         }
 
         return stand_pat;
@@ -589,7 +589,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     );
     
     bool is_hit;
-    TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
+    TTData transposition = evaluate == Nonsense::evaluate ? TTData() : transposition_table.probe(is_hit, zobrist_hash);
 
     if (!pv && is_valid(transposition.value)){
         switch (transposition.flag){
