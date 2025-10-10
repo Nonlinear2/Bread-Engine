@@ -175,13 +175,13 @@ Move Engine::iterative_deepening(SearchLimit limit){
     if (is_nonsense) {
         bool activate = evaluate == nnue_evaluate &&
                         (root_tb_hit || Nonsense::should_use_nonsense_eval(pos)) &&
-                        !Nonsense::only_bishop_knights_left(pos);
+                        Nonsense::is_bad_position(pos);
 
         // deactivate nonsense when a knight / bishop knight position is reached.
-        bool deactivate = evaluate == Nonsense::evaluate &&
-                        Nonsense::only_bishop_knights_left(pos);
+        bool deactivate = evaluate == Nonsense::evaluate && !Nonsense::is_bad_position(pos);
 
         assert(!activate || !deactivate);
+
         if (activate || deactivate) {
             clear_state();
             evaluate = activate ? Nonsense::evaluate : nnue_evaluate;
@@ -491,7 +491,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             // if there are no legal moves and it's not check, it is stalemate so eval is 0
             max_value = pos.inCheck() ? -MATE_VALUE : 0;
 
-            if (evaluate == Nonsense::evaluate && Nonsense::is_bad_checkmate(pos))
+            if (evaluate == Nonsense::evaluate && Nonsense::is_bad_position(pos))
                 max_value = 0;
 
             // we know this eval is exact at any depth, but 
@@ -554,8 +554,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     // tablebase probe
     if (TB::probe_wdl(pos, stand_pat))
     {
-        if (evaluate == Nonsense::evaluate && (pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK)))
-            return 0;     
+        if (evaluate == Nonsense::evaluate && is_bad_position)
+            return 0;
+  
         return stand_pat;
     }
 
@@ -668,7 +669,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     }
 
     if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
-        if (evaluate == Nonsense::evaluate && Nonsense::is_bad_checkmate(pos))
+        if (evaluate == Nonsense::evaluate && Nonsense::is_bad_position(pos))
             stand_pat = 0;
         transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH,
             Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));

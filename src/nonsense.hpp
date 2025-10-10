@@ -50,10 +50,9 @@ void display_info();
 Move play_bongcloud(const Board& pos);
 
 bool should_use_nonsense_eval(Board& pos);
-bool only_bishop_knights_left(Board& pos);
 
 int evaluate(NnueBoard& pos);
-bool is_bad_checkmate(NnueBoard& pos);
+bool is_bad_position(NnueBoard& pos);
 
 } // namespace Nonsense
 

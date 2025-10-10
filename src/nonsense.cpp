@@ -77,14 +77,6 @@ bool Nonsense::should_use_nonsense_eval(Board& pos){
     return false;
 }
 
-bool only_bishop_knights_left(Board& pos){
-    return (
-        pos.pieces() == (pos.pieces(PieceType::KING) 
-                        & pos.pieces(PieceType::KNIGHT)
-                        & pos.pieces(PieceType::BISHOP))
-    );
-}
-
 int Nonsense::evaluate(NnueBoard& pos){
     Color stm = pos.sideToMove();
 
@@ -115,9 +107,9 @@ int Nonsense::evaluate(NnueBoard& pos){
     return std::clamp((standard_eval / 5 + material_eval), -BEST_VALUE, BEST_VALUE);
 }
 
-bool Nonsense::is_bad_checkmate(NnueBoard& pos){
-    if (pos.halfMoveClock() >= 70)
-        return false; // avoid not checkmating with queen or rook when there is no other choice
+bool Nonsense::is_bad_position(NnueBoard& pos){
+    // if (pos.halfMoveClock() >= 70)
+    //     return false; // avoid not checkmating with queen or rook when there is no other choice
 
     return (bool)pos.pieces(PieceType::PAWN)
         || (pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK));
