@@ -81,18 +81,32 @@ bool Nonsense::is_theoretical_win(Board& pos){
 
 int Nonsense::endgame_nonsense_evaluate(NnueBoard& pos){
     Color stm = pos.sideToMove();
+
     assert(pos.us(stm).count() == 1 || pos.them(stm).count() == 1); // make sure we are in a vs king endgame
+    bool winning_side = pos.us(stm).count() > 1;
 
     int standard_eval = pos.evaluate();
-    int material_eval = 0;
-    for (PieceType pt: {PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP, PieceType::ROOK, PieceType::QUEEN})
-        material_eval += (pos.pieces(pt, stm).count() - pos.pieces(pt, !stm).count())
-            * nonsense_piece_value[static_cast<int>(pt)];
+    if (pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK)){
+        if (winning_side)
+            standard_eval = std::min(0, standard_eval);
+        else
+            standard_eval = std::max(0, standard_eval);
+    }
 
-    material_eval += (pos.us(stm).count() == 1 ? 1 : -1)
+    int material_eval = (winning_side ? -1 : 1)
         * Square::distance(pos.kingSq(stm), pos.kingSq(!stm))*(5 + 8*!pos.pieces(PieceType::PAWN));
 
-    return std::clamp((standard_eval / 6 + material_eval), -BEST_VALUE, BEST_VALUE);
+    Bitboard pawns = pos.pieces(PieceType::PAWN);
+    while (pawns){
+        Square sq = pawns.pop();
+        material_eval += (winning_side ? -1 : 1) * psm.get_psm(pos.at(sq), sq);
+    }
+
+    for (PieceType pt: {PieceType::KNIGHT, PieceType::BISHOP})
+        material_eval += (pos.pieces(pt, stm).count() - pos.pieces(pt, !stm).count())
+            * nonsense_piece_value[static_cast<int>(pt)];
+    
+    return std::clamp((standard_eval / 5 + material_eval), -BEST_VALUE, BEST_VALUE);
 }
 
 bool Nonsense::is_bad_checkmate(NnueBoard& pos){
