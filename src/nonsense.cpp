@@ -46,6 +46,7 @@ Move Nonsense::play_bongcloud(const Board& pos){
         king_move.setScore(0);
         return king_move;
     }
+    return Move::NO_MOVE;
 }
 
 bool Nonsense::should_use_nonsense_eval(Board& pos){
