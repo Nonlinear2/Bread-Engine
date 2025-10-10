@@ -496,6 +496,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             // if there are no legal moves and it's not check, it is stalemate so eval is 0
             max_value = pos.inCheck() ? -MATE_VALUE : 0;
 
+            // if it should be checkmate, but there are not only bishops and knights, then say the position is winning
             if (evaluate == Nonsense::evaluate && !Nonsense::only_knight_bishop(pos) && max_value == -MATE_VALUE){
                 assert(!Nonsense::is_winning_side(pos));
                 max_value = TB_VALUE;
@@ -681,7 +682,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
 
-        if (evaluate == Nonsense::evaluate && !Nonsense::only_knight_bishop(pos) && max_value == -MATE_VALUE){
+        if (evaluate == Nonsense::evaluate && !Nonsense::only_knight_bishop(pos) && stand_pat == -MATE_VALUE){
             assert(!Nonsense::is_winning_side(pos));
             stand_pat = TB_VALUE;
         }
