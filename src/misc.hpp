@@ -6,18 +6,26 @@
 #include "piece_square_tables.hpp"
 #include "constants.hpp"
 #include "chess.hpp"
+#include "tune.hpp"
+
+TUNEABLE(p_v, int, 150, 0, 2000, 20, 0.002);
+TUNEABLE(n_v, int, 450, 0, 2000, 25, 0.002);
+TUNEABLE(b_v, int, 450, 0, 2000, 35, 0.002);
+TUNEABLE(r_v, int, 750, 0, 5000, 50, 0.002);
+TUNEABLE(q_v, int, 1350, 0, 8000, 100, 0.002);
+TUNEABLE(k_v, int, 300, 0, 2000, 30, 0.002);
 
 using namespace chess;
 
 constexpr PieceSquareMaps psm = PieceSquareMaps();
 
 const std::vector<int> piece_value = {
-    150, // pawn
-    450, // knight
-    450, // bishop
-    750, // rook
-    1350, // queen
-    300, // king
+    p_v, // pawn
+    n_v, // knight
+    b_v, // bishop
+    r_v, // rook
+    q_v, // queen
+    k_v, // king
     0, // none
 };
 

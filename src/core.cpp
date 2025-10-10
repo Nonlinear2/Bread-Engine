@@ -1,31 +1,31 @@
 #include "core.hpp"
 
 
-TUNEABLE(r_1, int, 164, 0, 500, 20, 0.002);
-TUNEABLE(r_2, int, 279, -100, 1000, 25, 0.002);
-TUNEABLE(rfp_1, int, 159, 0, 500, 25, 0.002);
-TUNEABLE(rfp_2, int, 53, 0, 1000, 50, 0.002);
-TUNEABLE(rfp_3, int, 144, -100, 1000, 20, 0.002);
-TUNEABLE(nmp_1, int, 84, -50, 250, 10, 0.002);
-TUNEABLE(nmp_2, int, 24, -300, 300, 15, 0.002);
-TUNEABLE(lmp_1, int, 117, -100, 500, 20, 0.002);
-TUNEABLE(see_1, int, 89, -100, 1000, 25, 0.002);
-TUNEABLE(see_2, int, 10, 0, 100, 0.5, 0.002);
-TUNEABLE(se_1, int, 8, -100, 100, 1, 0.002);
-TUNEABLE(se_2, int, 1, -100, 100, 1, 0.002);
-TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
-TUNEABLE(cont_1, int, 945, 0, 3000, 70, 0.002);
-TUNEABLE(cont_2, int, 131, 0, 1500, 35, 0.002);
-TUNEABLE(qs_fp_1, int, 1681, 0, 3000, 70, 0.002);
-TUNEABLE(qs_see_1, int, 286, 0, 900, 25, 0.002);
-TUNEABLE(qs_p_1, int, 1029, 0, 5000, 70, 0.002);
-TUNEABLE(qs_p_2, int, 145, 0, 900, 20, 0.002);
-TUNEABLE(cthis_1, int, 8479, 0, 16000, 250, 0.002);
-TUNEABLE(cthis_2, int, 578, 0, 3000, 60, 0.002);
-TUNEABLE(qs_p_idx, int, 7, 0, 20, 1, 0.002);
-TUNEABLE(his_1, int, 28, 0, 300, 7, 0.002);
-TUNEABLE(his_2, int, 26, 0, 300, 5, 0.002);
-TUNEABLE(his_3, int, 1003, 0, 5000, 70, 0.002);
+UNACTIVE_TUNEABLE(r_1, int, 164, 0, 500, 20, 0.002);
+UNACTIVE_TUNEABLE(r_2, int, 279, -100, 1000, 25, 0.002);
+UNACTIVE_TUNEABLE(rfp_1, int, 159, 0, 500, 25, 0.002);
+UNACTIVE_TUNEABLE(rfp_2, int, 53, 0, 1000, 50, 0.002);
+UNACTIVE_TUNEABLE(rfp_3, int, 144, -100, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(nmp_1, int, 84, -50, 250, 10, 0.002);
+UNACTIVE_TUNEABLE(nmp_2, int, 24, -300, 300, 15, 0.002);
+UNACTIVE_TUNEABLE(lmp_1, int, 117, -100, 500, 20, 0.002);
+UNACTIVE_TUNEABLE(see_1, int, 89, -100, 1000, 25, 0.002);
+UNACTIVE_TUNEABLE(see_2, int, 10, 0, 100, 0.5, 0.002);
+UNACTIVE_TUNEABLE(se_1, int, 8, -100, 100, 1, 0.002);
+UNACTIVE_TUNEABLE(se_2, int, 1, -100, 100, 1, 0.002);
+UNACTIVE_TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
+UNACTIVE_TUNEABLE(cont_1, int, 945, 0, 3000, 70, 0.002);
+UNACTIVE_TUNEABLE(cont_2, int, 131, 0, 1500, 35, 0.002);
+UNACTIVE_TUNEABLE(qs_fp_1, int, 1681, 0, 3000, 70, 0.002);
+UNACTIVE_TUNEABLE(qs_see_1, int, 286, 0, 900, 25, 0.002);
+UNACTIVE_TUNEABLE(qs_p_1, int, 1029, 0, 5000, 70, 0.002);
+UNACTIVE_TUNEABLE(qs_p_2, int, 145, 0, 900, 20, 0.002);
+UNACTIVE_TUNEABLE(cthis_1, int, 8479, 0, 16000, 250, 0.002);
+UNACTIVE_TUNEABLE(cthis_2, int, 578, 0, 3000, 60, 0.002);
+UNACTIVE_TUNEABLE(qs_p_idx, int, 7, 0, 20, 1, 0.002);
+UNACTIVE_TUNEABLE(his_1, int, 28, 0, 300, 7, 0.002);
+UNACTIVE_TUNEABLE(his_2, int, 26, 0, 300, 5, 0.002);
+UNACTIVE_TUNEABLE(his_3, int, 1003, 0, 5000, 70, 0.002);
 
 int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
     float move_num = num_moves_out_of_book < 10 ? static_cast<float>(num_moves_out_of_book) : 10;
