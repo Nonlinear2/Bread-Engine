@@ -52,6 +52,6 @@ bool is_winning_side(Board& pos);
 bool should_use_nonsense_eval(Board& pos);
 
 int evaluate(NnueBoard& pos);
-bool is_bad_position(NnueBoard& pos);
+bool only_knight_bishop(NnueBoard& pos);
 
 } // namespace Nonsense

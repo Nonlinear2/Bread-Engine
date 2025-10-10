@@ -85,33 +85,36 @@ bool Nonsense::should_use_nonsense_eval(Board& pos){
 
 int Nonsense::evaluate(NnueBoard& pos){
     Color stm = pos.sideToMove();
-
     assert(pos.us(stm).count() == 1 || pos.them(stm).count() == 1); // make sure we are in a vs king endgame
+    
+    int eval = (is_winning_side(pos) ? -1 : 1) * 
+        (Square::distance(pos.kingSq(stm), pos.kingSq(!stm))
+        + pos.halfMoveClock());
 
-    int eval = (is_winning_side(pos) ? -1 : 1)
-        * Square::distance(pos.kingSq(stm), pos.kingSq(!stm))*(5 + 8*!pos.pieces(PieceType::PAWN));
+    eval += (is_winning_side(pos) ? 1 : -1) * only_knight_bishop(pos) * 1000;
 
-    Bitboard pawns = pos.pieces(PieceType::PAWN);
-    while (pawns){
-        Square sq = pawns.pop();
-        eval += (is_winning_side(pos) ? -1 : 1) * psm.get_psm(pos.at(sq), sq);
+    Bitboard us_pawns = pos.pieces(PieceType::PAWN, stm);
+    while (us_pawns){
+        Square sq = us_pawns.pop();
+        eval += psm.get_psm(pos.at(sq), sq);
+    }
+
+    Bitboard them_pawns = pos.pieces(PieceType::PAWN, !stm);
+    while (them_pawns){
+        Square sq = them_pawns.pop();
+        eval -= psm.get_psm(pos.at(sq), sq);
     }
 
     for (PieceType pt: {PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP})
         eval += (pos.pieces(pt, stm).count() - pos.pieces(pt, !stm).count())
             * nonsense_piece_value[static_cast<int>(pt)];
 
-    eval += (is_winning_side(pos) ? -1 : 1) * pos.halfMoveClock() * pos.halfMoveClock();
-
-    if (!is_bad_position(pos))
-        eval += (is_winning_side(pos) ? 1 : -1) * 8000;
-
     return std::clamp(eval, -BEST_VALUE, BEST_VALUE);
 }
 
-bool Nonsense::is_bad_position(NnueBoard& pos){
+bool Nonsense::only_knight_bishop(NnueBoard& pos){
     // if (pos.halfMoveClock() >= 70)
     //     return false; // avoid not checkmating with queen or rook when there is no other choice
 
-    return bool(pos.pieces(PieceType::PAWN) | pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK));
+    return !bool(pos.pieces(PieceType::PAWN) | pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK));    
 }

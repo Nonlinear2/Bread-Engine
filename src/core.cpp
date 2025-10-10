@@ -178,10 +178,10 @@ Move Engine::iterative_deepening(SearchLimit limit){
     if (is_nonsense) {
         bool activate = evaluate == nnue_evaluate &&
                         (root_tb_hit || Nonsense::should_use_nonsense_eval(pos)) &&
-                        Nonsense::is_bad_position(pos);
+                        !Nonsense::only_knight_bishop(pos);
 
         // deactivate nonsense when a knight / bishop knight position is reached.
-        bool deactivate = evaluate == Nonsense::evaluate && !Nonsense::is_bad_position(pos);
+        bool deactivate = evaluate == Nonsense::evaluate && Nonsense::only_knight_bishop(pos);
 
         assert(!activate || !deactivate);
 
@@ -496,7 +496,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             // if there are no legal moves and it's not check, it is stalemate so eval is 0
             max_value = pos.inCheck() ? -MATE_VALUE : 0;
 
-            if (evaluate == Nonsense::evaluate && Nonsense::is_bad_position(pos) && max_value == -MATE_VALUE){
+            if (evaluate == Nonsense::evaluate && !Nonsense::only_knight_bishop(pos) && max_value == -MATE_VALUE){
                 assert(!Nonsense::is_winning_side(pos));
                 max_value = TB_VALUE;
             }
@@ -561,11 +561,12 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     // tablebase probe
     if (TB::probe_wdl(pos, stand_pat)){
 
-        if (evaluate == Nonsense::evaluate
-            && Nonsense::is_bad_position(pos)
-            && Nonsense::is_winning_side(pos)
-            && stand_pat == TB_VALUE)
-            return -TB_VALUE;
+        if (evaluate == Nonsense::evaluate && stand_pat != 0){
+            if (Nonsense::only_knight_bishop(pos) == Nonsense::is_winning_side(pos))
+                return TB_VALUE;
+            else
+                return -TB_VALUE;
+        }
 
         return stand_pat;
     }
@@ -680,7 +681,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
 
-        if (evaluate == Nonsense::evaluate && Nonsense::is_bad_position(pos) && stand_pat == -MATE_VALUE){
+        if (evaluate == Nonsense::evaluate && !Nonsense::only_knight_bishop(pos) && max_value == -MATE_VALUE){
             assert(!Nonsense::is_winning_side(pos));
             stand_pat = TB_VALUE;
         }
