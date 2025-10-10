@@ -217,9 +217,8 @@ template<movegen::MoveGenType MoveGenType>
 inline int SortedMoveGen<MoveGenType>::index(){ return move_idx; }
 
 template<>
-void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, int depth){
+void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, int bonus){
     bool color = pos.sideToMove() == Color::WHITE;
-    int bonus = std::min(depth*depth*32 + 20, 1000);
 
     history.apply_bonus(color, best_move.from(), best_move.to(), bonus);
 

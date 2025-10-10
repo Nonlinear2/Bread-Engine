@@ -13,6 +13,7 @@
 #include "nnue_board.hpp"
 #include "sorted_move_gen.hpp"
 #include "tune.hpp"
+#include "tb.hpp"
 
 int nnue_evaluate(NnueBoard& pos);
 
