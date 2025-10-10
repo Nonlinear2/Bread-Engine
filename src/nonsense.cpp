@@ -84,28 +84,20 @@ int Nonsense::evaluate(NnueBoard& pos){
     assert(pos.us(stm).count() == 1 || pos.them(stm).count() == 1); // make sure we are in a vs king endgame
     bool winning_side = pos.us(stm).count() > 1;
 
-    int standard_eval = pos.evaluate();
-    if (pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK)){
-        if (winning_side)
-            standard_eval = std::min(0, standard_eval);
-        else
-            standard_eval = std::max(0, standard_eval);
-    }
-
-    int material_eval = (winning_side ? -1 : 1)
+    int eval = (winning_side ? -1 : 1)
         * Square::distance(pos.kingSq(stm), pos.kingSq(!stm))*(5 + 8*!pos.pieces(PieceType::PAWN));
 
     Bitboard pawns = pos.pieces(PieceType::PAWN);
     while (pawns){
         Square sq = pawns.pop();
-        material_eval += (winning_side ? -1 : 1) * psm.get_psm(pos.at(sq), sq);
+        eval += (winning_side ? -1 : 1) * psm.get_psm(pos.at(sq), sq);
     }
 
-    for (PieceType pt: {PieceType::KNIGHT, PieceType::BISHOP})
-        material_eval += (pos.pieces(pt, stm).count() - pos.pieces(pt, !stm).count())
+    for (PieceType pt: {PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP})
+        eval += (pos.pieces(pt, stm).count() - pos.pieces(pt, !stm).count())
             * nonsense_piece_value[static_cast<int>(pt)];
 
-    return std::clamp((standard_eval / 5 + material_eval), -BEST_VALUE, BEST_VALUE);
+    return std::clamp(eval, -BEST_VALUE, BEST_VALUE);
 }
 
 bool Nonsense::is_bad_position(NnueBoard& pos){

@@ -12,9 +12,9 @@
 namespace Nonsense {
 
 static const std::vector<int> nonsense_piece_value = {
-    0, // pawn
-    1200, // knight
-    400, // bishop
+    200, // pawn
+    1500, // knight
+    1000, // bishop
     0, // rook
     0, // queen
     0,  // king
