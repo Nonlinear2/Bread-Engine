@@ -3,7 +3,6 @@
 #include <array>
 
 #include "chess.hpp"
-#include "piece_square_tables.hpp"
 #include "nnue_board.hpp"
 #include "constants.hpp"
 #include "history.hpp"
@@ -24,7 +23,6 @@ constexpr GenerationStage& operator++(GenerationStage& g) {
 template<movegen::MoveGenType MoveGenType>
 class SortedMoveGen {
     public:
-    static constexpr PieceSquareMaps psm = PieceSquareMaps();
 
     static inline KillerMoves killer_moves = KillerMoves();
     static inline FromToHistory history = FromToHistory();

@@ -19,7 +19,7 @@ Move Nonsense::play_bongcloud(){
     if (is_bongcloud){
         std::cout << "info depth 91";
         std::cout << " score mate 78";
-        std::cout << " nodes 149597870700 nps 299792458";
+        std::cout << " nodes 0 nps 0";
         std::cout << " time 0";
         std::cout << " hashfull 0";
         std::cout << " pv e1e2" << std::endl;
@@ -34,7 +34,7 @@ Move Nonsense::play_bongcloud(){
     } else {
         std::cout << "info depth 1";
         std::cout << " score cp 0";
-        std::cout << " nodes 10 nps 3";
+        std::cout << " nodes 0 nps 0";
         std::cout << " time 0";
         std::cout << " hashfull 0";
         std::cout << " pv e2e4" << std::endl;
