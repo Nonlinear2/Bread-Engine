@@ -101,7 +101,10 @@ int Nonsense::evaluate(NnueBoard& pos){
         eval += (pos.pieces(pt, stm).count() - pos.pieces(pt, !stm).count())
             * nonsense_piece_value[static_cast<int>(pt)];
 
-    eval += (is_winning_side(pos) ? -1 : 1) * pos.halfMoveClock() * pos.halfMoveClock() / 5;
+    eval += (is_winning_side(pos) ? -1 : 1) * pos.halfMoveClock() * pos.halfMoveClock();
+
+    if (!is_bad_position(pos))
+        eval += (is_winning_side(pos) ? 1 : -1) * 8000;
 
     return std::clamp(eval, -BEST_VALUE, BEST_VALUE);
 }
@@ -110,6 +113,5 @@ bool Nonsense::is_bad_position(NnueBoard& pos){
     // if (pos.halfMoveClock() >= 70)
     //     return false; // avoid not checkmating with queen or rook when there is no other choice
 
-    return (bool)pos.pieces(PieceType::PAWN)
-        || (pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK));
+    return bool(pos.pieces(PieceType::PAWN) | pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK));
 }

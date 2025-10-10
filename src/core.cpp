@@ -219,6 +219,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
         std::cout << " time " << run_time;
         std::cout << " hashfull " << transposition_table.hashfull();
         std::cout << " pv" << pv << std::endl;
+        
+        std::cout << "info string using nonsense eval " << (evaluate == Nonsense::evaluate) << std::endl;
 
         // should the search really stop if there is a mate for the oponent?
         if (interrupt_flag
@@ -494,7 +496,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             // if there are no legal moves and it's not check, it is stalemate so eval is 0
             max_value = pos.inCheck() ? -MATE_VALUE : 0;
 
-            if (evaluate == Nonsense::evaluate && Nonsense::is_bad_position(pos) && max_value = -MATE_VALUE){
+            if (evaluate == Nonsense::evaluate && Nonsense::is_bad_position(pos) && max_value == -MATE_VALUE){
                 assert(!Nonsense::is_winning_side(pos));
                 max_value = TB_VALUE;
             }
@@ -559,7 +561,10 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     // tablebase probe
     if (TB::probe_wdl(pos, stand_pat)){
 
-        if (evaluate == Nonsense::evaluate && Nonsense::is_bad_position(pos) && is_winning_side(pos) && stand_pat == TB_VALUE)
+        if (evaluate == Nonsense::evaluate
+            && Nonsense::is_bad_position(pos)
+            && Nonsense::is_winning_side(pos)
+            && stand_pat == TB_VALUE)
             return -TB_VALUE;
 
         return stand_pat;
