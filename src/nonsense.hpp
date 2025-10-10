@@ -48,6 +48,7 @@ static inline std::vector<std::string> rick_astley_lyrics = {
 void display_info();
 Move play_bongcloud(const Board& pos);
 
+bool is_winning_side(Board& pos);
 bool should_use_nonsense_eval(Board& pos);
 
 int evaluate(NnueBoard& pos);

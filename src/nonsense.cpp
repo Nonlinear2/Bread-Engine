@@ -49,6 +49,10 @@ Move Nonsense::play_bongcloud(const Board& pos){
     return Move::NO_MOVE;
 }
 
+bool Nonsense::is_winning_side(Board& pos){
+    return pos.us(pos.sideToMove()).count() > 1;
+}
+
 bool Nonsense::should_use_nonsense_eval(Board& pos){
     Color stm = pos.sideToMove();
     if (pos.them(stm).count() > 1)
@@ -83,20 +87,21 @@ int Nonsense::evaluate(NnueBoard& pos){
     Color stm = pos.sideToMove();
 
     assert(pos.us(stm).count() == 1 || pos.them(stm).count() == 1); // make sure we are in a vs king endgame
-    bool winning_side = pos.us(stm).count() > 1;
 
-    int eval = (winning_side ? -1 : 1)
+    int eval = (is_winning_side(pos) ? -1 : 1)
         * Square::distance(pos.kingSq(stm), pos.kingSq(!stm))*(5 + 8*!pos.pieces(PieceType::PAWN));
 
     Bitboard pawns = pos.pieces(PieceType::PAWN);
     while (pawns){
         Square sq = pawns.pop();
-        eval += (winning_side ? -1 : 1) * psm.get_psm(pos.at(sq), sq);
+        eval += (is_winning_side(pos) ? -1 : 1) * psm.get_psm(pos.at(sq), sq);
     }
 
     for (PieceType pt: {PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP})
         eval += (pos.pieces(pt, stm).count() - pos.pieces(pt, !stm).count())
             * nonsense_piece_value[static_cast<int>(pt)];
+
+    eval += (is_winning_side(pos) ? -1 : 1) * pos.halfMoveClock() * pos.halfMoveClock() / 5;
 
     return std::clamp(eval, -BEST_VALUE, BEST_VALUE);
 }
