@@ -8,44 +8,42 @@ void Nonsense::display_info(){
     }
 }
 
-bool Nonsense::should_bongcloud(uint64_t hash, int move_number){
-    if (is_bongcloud)
-        is_bongcloud = (move_number == 2); // make sure it is still possible to bongcloud.
+Move Nonsense::play_bongcloud(const Board& pos){
+    Movelist legal_moves;
+    movegen::legalmoves(legal_moves, pos);
 
-    return (is_bongcloud || hash == starting_pos_hash);
-}
-
-Move Nonsense::play_bongcloud(){
-    if (is_bongcloud){
-        std::cout << "info depth 91";
-        std::cout << " score mate 78";
-        std::cout << " nodes 0 nps 0";
-        std::cout << " time 0";
-        std::cout << " hashfull 0";
-        std::cout << " pv e1e2" << std::endl;
-        std::cout << "bestmove e1e2" << std::endl;
-        
-        is_bongcloud = false;
-        Move move = Move::make(Square(Square::underlying::SQ_E1),
-                                             Square(Square::underlying::SQ_E2),
-                                             PieceType::KING);
-        move.setScore(10);
-        return move;
+    Move pawn_move;
+    Move king_move;
+    if (pos.sideToMove() == Color::WHITE){
+        pawn_move = Move::make(Square::SQ_E2, Square::SQ_E4, PieceType::PAWN);
+        king_move = Move::make(Square::SQ_E1, Square::SQ_E2, PieceType::KING);
     } else {
+        pawn_move = Move::make(Square::SQ_E7, Square::SQ_E5, PieceType::PAWN);
+        king_move = Move::make(Square::SQ_E8, Square::SQ_E7, PieceType::KING);
+    }
+
+    if (pos.fullMoveNumber() == 1 && legal_moves.find(pawn_move)){
         std::cout << "info depth 1";
         std::cout << " score cp 0";
         std::cout << " nodes 0 nps 0";
         std::cout << " time 0";
         std::cout << " hashfull 0";
-        std::cout << " pv e2e4" << std::endl;
-        std::cout << "bestmove e2e4" << std::endl;
+        std::cout << " pv " << uci::moveToUci(pawn_move) << std::endl;
+        std::cout << "bestmove " << uci::moveToUci(pawn_move) << std::endl;
 
-        is_bongcloud = true;
-        Move move = Move::make(Square(Square::underlying::SQ_E2),
-                                             Square(Square::underlying::SQ_E4),
-                                             PieceType::PAWN);
-        move.setScore(0);
-        return move;
+        pawn_move.setScore(0);
+        return pawn_move;
+    } else if (pos.fullMoveNumber() == 2 && legal_moves.find(king_move)){
+        std::cout << "info depth 91";
+        std::cout << " score mate 78";
+        std::cout << " nodes 0 nps 0";
+        std::cout << " time 0";
+        std::cout << " hashfull 0";
+        std::cout << " pv " << uci::moveToUci(king_move) << std::endl;
+        std::cout << "bestmove " << uci::moveToUci(king_move) << std::endl;
+        
+        king_move.setScore(0);
+        return king_move;
     }
 }
 

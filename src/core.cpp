@@ -135,8 +135,8 @@ Move Engine::search(SearchLimit limit){
 Move Engine::iterative_deepening(SearchLimit limit){
     if (is_nonsense){
         srand((unsigned int)time(NULL));
-        if (Nonsense::should_bongcloud(pos.hash(), pos.fullMoveNumber()))
-            return Nonsense::play_bongcloud();
+        if (pos.fullMoveNumber() < 3)
+            return Nonsense::play_bongcloud(pos);
     }
 
     this->limit = limit;

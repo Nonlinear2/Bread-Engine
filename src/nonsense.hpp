@@ -47,15 +47,11 @@ static inline std::vector<std::string> rick_astley_lyrics = {
 };
 
 void display_info();
-bool should_bongcloud(uint64_t hash, int move_number);
-Move play_bongcloud();
+Move play_bongcloud(const Board& pos);
 
 int endgame_nonsense_evaluate(NnueBoard& pos);
 bool is_theoretical_win(Board& pos);
 bool is_bad_checkmate(NnueBoard& pos);
-
-static constexpr uint64_t starting_pos_hash = 5060803636482931868;
-static bool is_bongcloud = false;
 
 } // namespace Nonsense
 
