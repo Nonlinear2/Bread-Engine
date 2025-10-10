@@ -312,7 +312,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     }
 
     bool is_hit;
-    TTData transposition = evaluate == Nonsense::evaluate ? TTData() : transposition_table.probe(is_hit, zobrist_hash);
+    TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
 
     static_eval = eval = transposition.static_eval;
     eval = transposition.value;
@@ -591,7 +591,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     );
     
     bool is_hit;
-    TTData transposition = evaluate == Nonsense::evaluate ? TTData() : transposition_table.probe(is_hit, zobrist_hash);
+    TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
 
     if (!pv && is_valid(transposition.value)){
         switch (transposition.flag){
