@@ -7,7 +7,7 @@ TUNEABLE(r_v, int, 750, 0, 5000, 50, 0.002);
 TUNEABLE(q_v, int, 1350, 0, 8000, 100, 0.002);
 TUNEABLE(k_v, int, 300, 0, 2000, 30, 0.002);
 
-static std::vector<int> piece_value = {
+std::vector<int> piece_value = {
     p_v, // pawn
     n_v, // knight
     b_v, // bishop
