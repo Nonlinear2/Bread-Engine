@@ -170,9 +170,6 @@ Move Engine::iterative_deepening(SearchLimit limit){
         clear_state();
         evaluate = Nonsense::endgame_nonsense_evaluate;
         nonsense_active = true;
-    } else {
-        evaluate = nnue_evaluate;
-        nonsense_active = false;
     }
 
     while (true){
@@ -479,7 +476,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             max_value = pos.inCheck() ? -MATE_VALUE : 0;
 
             if (nonsense_active && Nonsense::is_bad_checkmate(pos))
-                max_value = std::max(max_value, 0);
+                max_value = 0;
 
             // we know this eval is exact at any depth, but 
             // we also don't want this eval to pollute the transposition table.
@@ -540,7 +537,11 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     // tablebase probe
     if (pos.probe_wdl(stand_pat))
+    {
+        if (nonsense_active && (pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK)))
+            return 0;     
         return stand_pat;
+    }
 
     if (pos.isHalfMoveDraw()) 
         return 0;
@@ -652,7 +653,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
         if (nonsense_active && Nonsense::is_bad_checkmate(pos))
-            stand_pat = std::max(stand_pat, 0);
+            stand_pat = 0;
         transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH,
             Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
         return stand_pat;

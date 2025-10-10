@@ -138,7 +138,11 @@ bool NnueBoard::probe_root_dtz(Move& move, Movelist& moves, bool generate_moves)
         for (int i = 0; i < TB_MAX_MOVES; i++){
             if (tb_moves[i] == TB_RESULT_FAILED) break;
             current_move = tb_result_to_move(tb_moves[i]);
-            moves.add(current_move);
+            if (current_move.score() == TB_VALUE)
+            {
+                current_move.setScore(NO_VALUE);
+                moves.add(current_move);
+            }
         }
     }
     return true;
