@@ -49,8 +49,10 @@ static inline std::vector<std::string> rick_astley_lyrics = {
 void display_info();
 Move play_bongcloud(const Board& pos);
 
-int endgame_nonsense_evaluate(NnueBoard& pos);
-bool is_theoretical_win(Board& pos);
+bool should_use_nonsense_eval(Board& pos);
+bool only_bishop_knights_left(Board& pos);
+
+int evaluate(NnueBoard& pos);
 bool is_bad_checkmate(NnueBoard& pos);
 
 } // namespace Nonsense

@@ -47,7 +47,7 @@ Move Nonsense::play_bongcloud(const Board& pos){
     }
 }
 
-bool Nonsense::is_theoretical_win(Board& pos){
+bool Nonsense::should_use_nonsense_eval(Board& pos){
     Color stm = pos.sideToMove();
     if (pos.them(stm).count() > 1)
         return false;
@@ -77,7 +77,15 @@ bool Nonsense::is_theoretical_win(Board& pos){
     return false;
 }
 
-int Nonsense::endgame_nonsense_evaluate(NnueBoard& pos){
+bool only_bishop_knights_left(Board& pos){
+    return (
+        pos.pieces() == (pos.pieces(PieceType::KING) 
+                        & pos.pieces(PieceType::KNIGHT)
+                        & pos.pieces(PieceType::BISHOP))
+    );
+}
+
+int Nonsense::evaluate(NnueBoard& pos){
     Color stm = pos.sideToMove();
 
     assert(pos.us(stm).count() == 1 || pos.them(stm).count() == 1); // make sure we are in a vs king endgame
