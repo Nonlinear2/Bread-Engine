@@ -1,5 +1,22 @@
 #include "misc.hpp"
 
+TUNEABLE(p_v, int, 150, 0, 2000, 20, 0.002);
+TUNEABLE(n_v, int, 450, 0, 2000, 25, 0.002);
+TUNEABLE(b_v, int, 450, 0, 2000, 35, 0.002);
+TUNEABLE(r_v, int, 750, 0, 5000, 50, 0.002);
+TUNEABLE(q_v, int, 1350, 0, 8000, 100, 0.002);
+TUNEABLE(k_v, int, 300, 0, 2000, 30, 0.002);
+
+static std::vector<int> piece_value = {
+    p_v, // pawn
+    n_v, // knight
+    b_v, // bishop
+    r_v, // rook
+    q_v, // queen
+    k_v, // king
+    0, // none
+};
+
 // FIFO for killer moves
 void KillerMoves::add_move(int depth, Move move){
     uint16_t val = move.move();
