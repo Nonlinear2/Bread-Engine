@@ -88,8 +88,7 @@ int Nonsense::evaluate(NnueBoard& pos){
     assert(pos.us(stm).count() == 1 || pos.them(stm).count() == 1); // make sure we are in a vs king endgame
     
     int eval = (is_winning_side(pos) ? -1 : 1) * 
-        (Square::distance(pos.kingSq(stm), pos.kingSq(!stm))
-        + pos.halfMoveClock());
+        Square::distance(pos.kingSq(stm), pos.kingSq(!stm));
 
     eval += (is_winning_side(pos) ? 1 : -1) * only_knight_bishop(pos) * 1000;
 

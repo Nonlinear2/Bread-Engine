@@ -163,7 +163,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     }
 
     bool root_tb_hit = TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
-    if (root_tb_hit && (!is_nonsense || best_move.score() != TB_VALUE || Nonsense::only_knight_bishop(pos))){
+    if (root_tb_hit && !(is_nonsense && best_move.score() == TB_VALUE && !Nonsense::only_knight_bishop(pos))){
         update_run_time();
         std::cout << "info depth 0";
         std::cout << " score cp " << best_move.score();
@@ -224,8 +224,6 @@ Move Engine::iterative_deepening(SearchLimit limit){
         std::cout << " hashfull " << transposition_table.hashfull();
         std::cout << " pv" << pv << std::endl;
         
-        std::cout << "info string using nonsense eval " << (evaluate == Nonsense::evaluate) << std::endl;
-
         // should the search really stop if there is a mate for the oponent?
         if (interrupt_flag
             || is_mate(best_move.score())
@@ -277,6 +275,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         return qsearch<pv>(alpha, beta, 0, ss + 1);
 
     int static_eval, eval;
+
+    // tablebase probe
+    if (TB::probe_wdl(pos, eval)){
+        if (evaluate != Nonsense::evaluate || eval == 0)
+            return eval;
+    }
+
     int max_value = -INFINITE_VALUE;
     Move best_move = Move::NO_MOVE;
     Move move;
@@ -565,15 +570,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     // tablebase probe
     if (TB::probe_wdl(pos, stand_pat)){
-
-        if (evaluate == Nonsense::evaluate && stand_pat != 0){
-            if (Nonsense::only_knight_bishop(pos) == Nonsense::is_winning_side(pos))
-                return BEST_VALUE - (ss - stack); // best_value - ply
-            else
-                return -BEST_VALUE + (ss - stack);
-        }
-
-        return stand_pat;
+        if (evaluate != Nonsense::evaluate || stand_pat == 0)
+            return stand_pat;
     }
 
     if (pos.isHalfMoveDraw()) 
