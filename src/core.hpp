@@ -13,6 +13,7 @@
 #include "nnue_board.hpp"
 #include "sorted_move_gen.hpp"
 #include "tune.hpp"
+#include "tb.hpp"
 
 class Engine {
     public:
@@ -31,8 +32,6 @@ class Engine {
     NnueBoard pos = NnueBoard();
 
     Movelist root_moves;
-    
-    void set_uci_display(bool v);
     
     int get_think_time(float time_left, int num_moves_out_of_book,
         int num_moves_until_time_control, int increment);
@@ -53,8 +52,6 @@ class Engine {
 
     private:
     friend class UCIAgent;
-
-    bool display_uci = true;
 
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 

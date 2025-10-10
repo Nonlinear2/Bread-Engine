@@ -35,6 +35,7 @@ set(bread_SOURCE
     ${bread_SRC}/transposition_table.cpp
     ${bread_SRC}/core.cpp
     ${bread_SRC}/benchmark.cpp
+    ${bread_SRC}/tb.cpp
     ${bread_SRC}/extern/Fathom/src/tbprobe.cpp
 )
 

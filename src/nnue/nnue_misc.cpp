@@ -1,5 +1,6 @@
 #include "nnue_misc.hpp"
 
+[[maybe_unused]]
 void NNUE_UTILS::crelu32_to_8(int32_t *input, int8_t *output, int size){
 
     assert(size % INT8_PER_REG == 0);
@@ -23,6 +24,7 @@ void NNUE_UTILS::crelu32_to_8(int32_t *input, int8_t *output, int size){
     }
 }
 
+[[maybe_unused]]
 void NNUE_UTILS::crelu16_to_8(int16_t *input, int8_t *output, int size){
 
     assert(size % INT8_PER_REG == 0);
@@ -39,6 +41,7 @@ void NNUE_UTILS::crelu16_to_8(int16_t *input, int8_t *output, int size){
     }
 }
 
+[[maybe_unused]]
 void NNUE_UTILS::crelu16_to_16(int16_t *input, int16_t *output, int size){
 
     assert(size % INT16_PER_REG == 0);
@@ -62,6 +65,7 @@ int32_t NNUE_UTILS::reduce1_epi32(vec_int32& input){ // horizontal add 1 int32 a
     return out_ptr[0] + out_ptr[1] + out_ptr[4] + out_ptr[5];
 }
 
+[[maybe_unused]]
 vec_int32 NNUE_UTILS::reduce8_epi32(vec_int32* inputs){ // horizontal add 8 int32 avx registers.
     inputs[0] = hadd_epi32(inputs[0], inputs[1]);
     inputs[2] = hadd_epi32(inputs[2], inputs[3]);
