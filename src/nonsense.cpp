@@ -8,67 +8,110 @@ void Nonsense::display_info(){
     }
 }
 
-bool Nonsense::should_bongcloud(uint64_t hash, int move_number){
-    if (is_bongcloud)
-        is_bongcloud = (move_number == 2); // make sure it is still possible to bongcloud.
+Move Nonsense::play_bongcloud(const Board& pos){
+    Movelist legal_moves;
 
-    return (is_bongcloud || hash == starting_pos_hash);
-}
+    movegen::legalmoves(legal_moves, pos);
 
-Move Nonsense::play_bongcloud(){
-    if (is_bongcloud){
-        std::cout << "info depth 91";
-        std::cout << " score mate 78";
-        std::cout << " nodes 0 nps 0";
-        std::cout << " time 0";
-        std::cout << " hashfull 0";
-        std::cout << " pv e1e2" << std::endl;
-        std::cout << "bestmove e1e2" << std::endl;
-        
-        is_bongcloud = false;
-        Move move = Move::make(Square(Square::underlying::SQ_E1),
-                                             Square(Square::underlying::SQ_E2),
-                                             PieceType::KING);
-        move.setScore(10);
-        return move;
+    Move pawn_move;
+    Move king_move;
+    if (pos.sideToMove() == Color::WHITE){
+        pawn_move = Move::make(Square::SQ_E2, Square::SQ_E4, PieceType::PAWN);
+        king_move = Move::make(Square::SQ_E1, Square::SQ_E2, PieceType::KING);
     } else {
+        pawn_move = Move::make(Square::SQ_E7, Square::SQ_E5, PieceType::PAWN);
+        king_move = Move::make(Square::SQ_E8, Square::SQ_E7, PieceType::KING);
+    }
+
+    bool pawn_move_legal = std::find(legal_moves.begin(), legal_moves.end(), pawn_move) != legal_moves.end();
+    bool king_move_legal = std::find(legal_moves.begin(), legal_moves.end(), king_move) != legal_moves.end();
+    if (pos.fullMoveNumber() == 1 && pawn_move_legal){
         std::cout << "info depth 1";
         std::cout << " score cp 0";
         std::cout << " nodes 0 nps 0";
         std::cout << " time 0";
         std::cout << " hashfull 0";
-        std::cout << " pv e2e4" << std::endl;
-        std::cout << "bestmove e2e4" << std::endl;
-
-        is_bongcloud = true;
-        Move move = Move::make(Square(Square::underlying::SQ_E2),
-                                             Square(Square::underlying::SQ_E4),
-                                             PieceType::PAWN);
-        move.setScore(0);
-        return move;
+        std::cout << " pv " << uci::moveToUci(pawn_move) << std::endl;
+        std::cout << "bestmove " << uci::moveToUci(pawn_move) << std::endl;
+        pawn_move.setScore(0);
+        return pawn_move;
+    } else if (pos.fullMoveNumber() == 2 && king_move_legal){
+        std::cout << "info depth 91";
+        std::cout << " score mate 78";
+        std::cout << " nodes 0 nps 0";
+        std::cout << " time 0";
+        std::cout << " hashfull 0";
+        std::cout << " pv " << uci::moveToUci(king_move) << std::endl;
+        std::cout << "bestmove " << uci::moveToUci(king_move) << std::endl;
+        king_move.setScore(0);
+        return king_move;
     }
 }
 
-Move Nonsense::worst_winning_move(Move move, Movelist moves){
-    Move worst_winning_move = move;
-    for (auto move: moves){
-        if (move.score() != TB_VALUE)
-            continue;
+bool Nonsense::should_use_nonsense_eval(Board& pos){
+    Color stm = pos.sideToMove();
+    if (pos.them(stm).count() > 1)
+        return false;
 
-        if (move.typeOf() == Move::ENPASSANT){
-            worst_winning_move = move;
-            break;
-        } else if (move.typeOf() == Move::PROMOTION){
-            PieceType promotion = move.promotionType();
-            if (promotion == PieceType::ROOK)
-                worst_winning_move = move;
+    // queen or rook
+    if (pos.pieces(PieceType::QUEEN, stm) || pos.pieces(PieceType::ROOK, stm))
+        return true;
 
-            if (promotion == PieceType::KNIGHT || promotion == PieceType::BISHOP){
-                worst_winning_move = move;
-                break;
-            }
-        }
-    }
-    return worst_winning_move;
+    // enough pawns
+    if (pos.pieces(PieceType::PAWN).count() >= 2)
+        return true;
+
+    // bishops
+    if (pos.pieces(PieceType::BISHOP).count() >= 2
+        && (pos.pieces(PieceType::BISHOP) & 0x55aa55aa55aa55aa) // has a light square bishop 
+        && (pos.pieces(PieceType::BISHOP) & 0xaa55aa55aa55aa55)) // has a dark square bishop 
+        return true;
+
+    // knights
+    if (pos.pieces(PieceType::KNIGHT).count() > 2)
+        return true;
+
+    // bishops and knights
+    if (pos.pieces(PieceType::KNIGHT) && pos.pieces(PieceType::BISHOP))
+        return true;
+
+    return false;
 }
 
+int Nonsense::evaluate(NnueBoard& pos){
+    Color stm = pos.sideToMove();
+
+    assert(pos.us(stm).count() == 1 || pos.them(stm).count() == 1); // make sure we are in a vs king endgame
+    bool winning_side = pos.us(stm).count() > 1;
+
+    int standard_eval = pos.evaluate();
+    if (pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK)){
+        if (winning_side)
+            standard_eval = std::min(0, standard_eval);
+        else
+            standard_eval = std::max(0, standard_eval);
+    }
+
+    int material_eval = (winning_side ? -1 : 1)
+        * Square::distance(pos.kingSq(stm), pos.kingSq(!stm))*(5 + 8*!pos.pieces(PieceType::PAWN));
+
+    Bitboard pawns = pos.pieces(PieceType::PAWN);
+    while (pawns){
+        Square sq = pawns.pop();
+        material_eval += (winning_side ? -1 : 1) * psm.get_psm(pos.at(sq), sq);
+    }
+
+    for (PieceType pt: {PieceType::KNIGHT, PieceType::BISHOP})
+        material_eval += (pos.pieces(pt, stm).count() - pos.pieces(pt, !stm).count())
+            * nonsense_piece_value[static_cast<int>(pt)];
+
+    return std::clamp((standard_eval / 5 + material_eval), -BEST_VALUE, BEST_VALUE);
+}
+
+bool Nonsense::is_bad_position(NnueBoard& pos){
+    // if (pos.halfMoveClock() >= 70)
+    //     return false; // avoid not checkmating with queen or rook when there is no other choice
+
+    return (bool)pos.pieces(PieceType::PAWN)
+        || (pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK));
+}

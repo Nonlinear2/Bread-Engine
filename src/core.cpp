@@ -27,6 +27,11 @@ TUNEABLE(his_1, int, 28, 0, 300, 7, 0.002);
 TUNEABLE(his_2, int, 26, 0, 300, 5, 0.002);
 TUNEABLE(his_3, int, 1003, 0, 5000, 70, 0.002);
 
+
+int nnue_evaluate(NnueBoard& pos){
+    return pos.evaluate();
+}
+
 int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
     float move_num = num_moves_out_of_book < 10 ? static_cast<float>(num_moves_out_of_book) : 10;
     float factor = 2 -  move_num / 10;
@@ -130,8 +135,8 @@ Move Engine::search(SearchLimit limit){
 Move Engine::iterative_deepening(SearchLimit limit){
     if (is_nonsense){
         srand((unsigned int)time(NULL));
-        if (Nonsense::should_bongcloud(pos.hash(), pos.fullMoveNumber()))
-            return Nonsense::play_bongcloud();
+        if (pos.fullMoveNumber() < 3)
+            return Nonsense::play_bongcloud(pos);
     }
 
     this->limit = limit;
@@ -154,23 +159,34 @@ Move Engine::iterative_deepening(SearchLimit limit){
         stack[i] = Stack();
     }
 
-    if (TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense)){
+    bool root_tb_hit = TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
+    if (root_tb_hit && (!is_nonsense || best_move.score() != TB_VALUE)){
         update_run_time();
         std::cout << "info depth 0";
         std::cout << " score cp " << best_move.score();
         std::cout << " nodes 0 nps 0";
         std::cout << " time " << run_time;
         std::cout << " hashfull " << transposition_table.hashfull();
-
-        if (is_nonsense && best_move.score() == TB_VALUE){
-            best_move = Nonsense::worst_winning_move(best_move, root_moves);
-            best_move.setScore(TB_VALUE);
-        }
-
         std::cout << " pv " << uci::moveToUci(best_move) << std::endl;
         std::cout << "bestmove " << uci::moveToUci(best_move) << std::endl;
         return best_move;
     };
+
+    if (is_nonsense) {
+        bool activate = evaluate == nnue_evaluate &&
+                        (root_tb_hit || Nonsense::should_use_nonsense_eval(pos)) &&
+                        Nonsense::is_bad_position(pos);
+
+        // deactivate nonsense when a knight / bishop knight position is reached.
+        bool deactivate = evaluate == Nonsense::evaluate && !Nonsense::is_bad_position(pos);
+
+        assert(!activate || !deactivate);
+
+        if (activate || deactivate) {
+            clear_state();
+            evaluate = activate ? Nonsense::evaluate : nnue_evaluate;
+        }
+    }
 
     while (true){
         current_depth++;
@@ -244,7 +260,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         return 0;
 
     if (ss - stack >= MAX_PLY - 1)
-        return pos.evaluate();
+        return evaluate(pos);
 
     // transpositions will be checked inside of qsearch
     // if isRepetition(1), qsearch will not consider the danger of draw as it searches captures.
@@ -312,7 +328,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     bool in_check = pos.inCheck();
 
     if (static_eval == NO_VALUE)
-        static_eval = pos.evaluate();
+        static_eval = evaluate(pos);
     if (eval == NO_VALUE)
         eval = static_eval;
 
@@ -474,6 +490,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             // If board is in check, it is checkmate
             // if there are no legal moves and it's not check, it is stalemate so eval is 0
             max_value = pos.inCheck() ? -MATE_VALUE : 0;
+
+            if (evaluate == Nonsense::evaluate && Nonsense::is_bad_position(pos))
+                max_value = 0;
+
             // we know this eval is exact at any depth, but 
             // we also don't want this eval to pollute the transposition table.
             // the full move number will make sure it is replaced at some point.
@@ -532,8 +552,13 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     int stand_pat = NO_VALUE;
 
     // tablebase probe
-    if (TB::probe_wdl(pos, stand_pat))
+    if (TB::probe_wdl(pos, stand_pat)){
+
+        if (evaluate == Nonsense::evaluate && Nonsense::is_bad_position(pos))
+            return 0;
+
         return stand_pat;
+    }
 
     if (pos.isHalfMoveDraw()) 
         return 0;
@@ -575,7 +600,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     stand_pat = transposition.static_eval;
 
     if (!is_valid(stand_pat))
-        stand_pat = pos.evaluate();
+        stand_pat = evaluate(pos);
 
     assert(is_regular_eval(stand_pat, false));
 
@@ -644,6 +669,10 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     }
 
     if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
+
+        if (evaluate == Nonsense::evaluate && Nonsense::is_bad_position(pos))
+            stand_pat = 0;
+
         transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH,
             Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()));
         return stand_pat;

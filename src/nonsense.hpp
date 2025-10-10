@@ -6,9 +6,20 @@
 #include "chess.hpp"
 #include "tbprobe.hpp"
 #include "constants.hpp"
+#include "nnue_board.hpp"
 #include "misc.hpp"
 
 namespace Nonsense {
+
+static const std::vector<int> nonsense_piece_value = {
+    0, // pawn
+    1200, // knight
+    400, // bishop
+    0, // rook
+    0, // queen
+    0,  // king
+    0, // none
+};
 
 static constexpr int rick_astley_odds = 5;
 static constexpr int num_main_lyrics = 6;
@@ -35,10 +46,11 @@ static inline std::vector<std::string> rick_astley_lyrics = {
 };
 
 void display_info();
-bool should_bongcloud(uint64_t hash, int move_number);
-Move play_bongcloud();
-Move worst_winning_move(Move move, Movelist moves);
-static constexpr uint64_t starting_pos_hash = 5060803636482931868;
-static bool is_bongcloud = false;
+Move play_bongcloud(const Board& pos);
+
+bool should_use_nonsense_eval(Board& pos);
+
+int evaluate(NnueBoard& pos);
+bool is_bad_position(NnueBoard& pos);
 
 } // namespace Nonsense

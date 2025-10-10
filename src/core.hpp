@@ -15,6 +15,8 @@
 #include "tune.hpp"
 #include "tb.hpp"
 
+int nnue_evaluate(NnueBoard& pos);
+
 class Engine {
     public:
 
@@ -54,6 +56,8 @@ class Engine {
     friend class UCIAgent;
 
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
+
+    int (*evaluate)(NnueBoard& pos) = nnue_evaluate;
 
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove();
