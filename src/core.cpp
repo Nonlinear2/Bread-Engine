@@ -130,8 +130,8 @@ Move Engine::search(SearchLimit limit){
 Move Engine::iterative_deepening(SearchLimit limit){
     if (is_nonsense){
         srand((unsigned int)time(NULL));
-        if (nonsense.should_bongcloud(pos.hash(), pos.fullMoveNumber()))
-            return nonsense.play_bongcloud();
+        if (Nonsense::should_bongcloud(pos.hash(), pos.fullMoveNumber()))
+            return Nonsense::play_bongcloud();
     }
 
     this->limit = limit;
@@ -165,7 +165,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         std::cout << " hashfull " << transposition_table.hashfull();
 
         if (is_nonsense && tb_move.score() == TB_VALUE){
-            tb_move = nonsense.worst_winning_move(tb_move, tb_moves);
+            tb_move = Nonsense::worst_winning_move(tb_move, tb_moves);
             tb_move.setScore(TB_VALUE);
         }
 
@@ -212,7 +212,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     }
 
     if (is_nonsense)
-        nonsense.display_info();
+        Nonsense::display_info();
 
     std::cout << "bestmove " << uci::moveToUci(best_move);
     if (ponder_move.size() > 0)
