@@ -1,25 +1,31 @@
 #include "core.hpp"
 
 
-UNACTIVE_TUNEABLE(r_1, int, 176, 0, 500, 20, 0.002);
-UNACTIVE_TUNEABLE(r_2, int, 274, -100, 1000, 25, 0.002);
-UNACTIVE_TUNEABLE(rfp_1, int, 207, 0, 500, 25, 0.002);
-UNACTIVE_TUNEABLE(rfp_2, int, 200, 0, 1000, 50, 0.002);
-UNACTIVE_TUNEABLE(rfp_3, int, 139, -100, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(nmp_1, int, 82, -50, 250, 10, 0.002);
-UNACTIVE_TUNEABLE(nmp_2, int, 15, -300, 300, 15, 0.002);
-UNACTIVE_TUNEABLE(lmp_1, int, 106, -100, 500, 20, 0.002);
-UNACTIVE_TUNEABLE(see_1, int, 135, -100, 1000, 25, 0.002);
-UNACTIVE_TUNEABLE(see_2, int, 10, 0, 100, 0.5, 0.002);
-UNACTIVE_TUNEABLE(se_1, int, 9, -100, 100, 1, 0.002);
-UNACTIVE_TUNEABLE(se_2, int, 5, -100, 100, 1, 0.002);
-UNACTIVE_TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
-UNACTIVE_TUNEABLE(cont_1, int, 881, 0, 3000, 70, 0.002);
-UNACTIVE_TUNEABLE(cont_2, int, 199, 0, 1500, 35, 0.002);
-UNACTIVE_TUNEABLE(qs_fp_1, int, 1657, 0, 3000, 70, 0.002);
-UNACTIVE_TUNEABLE(qs_see_1, int, 298, 0, 900, 25, 0.002);
-UNACTIVE_TUNEABLE(qs_p_1, int, 1003, 0, 3000, 50, 0.002);
-UNACTIVE_TUNEABLE(qs_p_2, int, 166, 0, 900, 20, 0.002);
+TUNEABLE(r_1, int, 164, 0, 500, 20, 0.002);
+TUNEABLE(r_2, int, 279, -100, 1000, 25, 0.002);
+TUNEABLE(rfp_1, int, 159, 0, 500, 25, 0.002);
+TUNEABLE(rfp_2, int, 53, 0, 1000, 50, 0.002);
+TUNEABLE(rfp_3, int, 144, -100, 1000, 20, 0.002);
+TUNEABLE(nmp_1, int, 84, -50, 250, 10, 0.002);
+TUNEABLE(nmp_2, int, 24, -300, 300, 15, 0.002);
+TUNEABLE(lmp_1, int, 117, -100, 500, 20, 0.002);
+TUNEABLE(see_1, int, 89, -100, 1000, 25, 0.002);
+TUNEABLE(see_2, int, 10, 0, 100, 0.5, 0.002);
+TUNEABLE(se_1, int, 8, -100, 100, 1, 0.002);
+TUNEABLE(se_2, int, 1, -100, 100, 1, 0.002);
+TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
+TUNEABLE(cont_1, int, 945, 0, 3000, 70, 0.002);
+TUNEABLE(cont_2, int, 131, 0, 1500, 35, 0.002);
+TUNEABLE(qs_fp_1, int, 1681, 0, 3000, 70, 0.002);
+TUNEABLE(qs_see_1, int, 286, 0, 900, 25, 0.002);
+TUNEABLE(qs_p_1, int, 1029, 0, 5000, 70, 0.002);
+TUNEABLE(qs_p_2, int, 145, 0, 900, 20, 0.002);
+TUNEABLE(cthis_1, int, 8479, 0, 16000, 250, 0.002);
+TUNEABLE(cthis_2, int, 578, 0, 3000, 60, 0.002);
+TUNEABLE(qs_p_idx, int, 7, 0, 20, 1, 0.002);
+TUNEABLE(his_1, int, 28, 0, 300, 7, 0.002);
+TUNEABLE(his_2, int, 26, 0, 300, 5, 0.002);
+TUNEABLE(his_3, int, 1003, 0, 5000, 70, 0.002);
 
 int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
     float move_num = num_moves_out_of_book < 10 ? static_cast<float>(num_moves_out_of_book) : 10;
@@ -373,7 +379,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             if (!is_capture && !in_check
                 && prev_piece != int(Piece::NONE)
                 && prev_to != int(Square::underlying::NO_SQ)
-                && move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -8000 - 500 * depth)
+                && move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
                 continue;
         }
 
@@ -458,7 +464,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         alpha = std::max(alpha, value);
         if (beta <= alpha){
             if (!is_capture)
-                move_gen.update_history(move, depth);
+                move_gen.update_history(move, std::min(depth*depth*his_1 + his_2, his_3));
             SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.add_move(depth, move);
             break;
         }
@@ -618,7 +624,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             if (!SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
                 continue;
     
-            if (!pv && capture_gen.index() > 7
+            if (!pv && capture_gen.index() > qs_p_idx
                 && stand_pat + qs_p_1 < alpha && !SEE::evaluate(pos, move, -qs_p_2))
                 continue;
         }
