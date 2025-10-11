@@ -1,11 +1,11 @@
 #include "misc.hpp"
 
-TUNEABLE(p_v, int, 150, 0, 2000, 20, 0.002);
-TUNEABLE(n_v, int, 450, 0, 2000, 25, 0.002);
-TUNEABLE(b_v, int, 450, 0, 2000, 35, 0.002);
-TUNEABLE(r_v, int, 750, 0, 5000, 50, 0.002);
-TUNEABLE(q_v, int, 1350, 0, 8000, 100, 0.002);
-TUNEABLE(k_v, int, 300, 0, 2000, 30, 0.002);
+TUNEABLE(p_v, int, 143, 0, 2000, 20, 0.002);
+TUNEABLE(n_v, int, 461, 0, 2000, 25, 0.002);
+TUNEABLE(b_v, int, 434, 0, 2000, 35, 0.002);
+TUNEABLE(r_v, int, 770, 0, 5000, 50, 0.002);
+TUNEABLE(q_v, int, 1307, 0, 8000, 100, 0.002);
+TUNEABLE(k_v, int, 294, 0, 2000, 30, 0.002);
 
 std::vector<int> piece_value = {
     p_v, // pawn
