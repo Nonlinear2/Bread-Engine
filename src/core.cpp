@@ -274,6 +274,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
         std::cout << " ponder " << ponder_move;
     std::cout << std::endl;
 
+    std::cout << "info string stage " << nonsense_stage << std::endl;
+
     interrupt_flag = false;
     return best_move;
 }
@@ -727,15 +729,15 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         if (nonsense_stage == Nonsense::TAKE_PIECES
             && pos.them(engine_color).count() != 1
             && pos.sideToMove() != engine_color
-            && max_value == -MATE_VALUE)
-            max_value = TB_VALUE;
+            && stand_pat == -MATE_VALUE)
+            stand_pat = TB_VALUE;
             
         // if it should be checkmate, but there are not only bishops and knights, then say the position is winning
         if (nonsense_stage == Nonsense::PROMOTE
             && !Nonsense::only_knight_bishop(pos)
-            && max_value == -MATE_VALUE){
+            && stand_pat == -MATE_VALUE){
             assert(!Nonsense::is_winning_side(pos));
-            max_value = TB_VALUE;
+            stand_pat = TB_VALUE;
         }
 
         transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH,
