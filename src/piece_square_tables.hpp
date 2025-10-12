@@ -168,10 +168,16 @@ struct PieceSquareMaps {
 
     }
 
-    constexpr int get_psm(Piece piece, Square from_sq, Square to_sq) const {
+    constexpr int get_move_psm(Piece piece, Square from_sq, Square to_sq) const {
         int piece_idx = static_cast<int>(piece);
         piece_idx = (piece_idx - (piece_idx > 5)) * 64;
         return all_psm[piece_idx + to_sq.index()] - all_psm[piece_idx + from_sq.index()];
+    }
+
+    constexpr int get_psm(Piece piece, Square sq) const {
+        int piece_idx = static_cast<int>(piece);
+        piece_idx = (piece_idx - (piece_idx > 5)) * 64;
+        return all_psm[piece_idx + sq.index()];
     }
 
     constexpr int get_ksm(Piece king, bool is_endgame, Square from_sq, Square to_sq) const {

@@ -71,9 +71,14 @@ int main(){
 
     NnueBoard cb;
     // cb.setFen(constants::STARTPOS);
-    cb.setFen("7b/8/1P6/2K5/2N5/3P4/5pkp/8 w - - 0 1");
-    cb.synchronize();
-    std::cout << cb.evaluate() << std::endl;
+    cb.setFen("8/8/1K6/8/3k4/6n1/4p3/8 w - - 14 21");
+    // cb.synchronize();
+    // std::cout << cb.evaluate() << std::endl;
+    std::cout << Nonsense::evaluate(cb) << std::endl;
+
+    cb.setFen("8/8/1K6/8/3k4/6n1/8/4b3 w - - 14 21");
+
+    std::cout << Nonsense::evaluate(cb) << std::endl;
     // cb.update_state(uci::uciToMove(cb, "e2e4"));
     // cb.update_state(uci::uciToMove(cb, "e7e5"));
     // cb.update_state(uci::uciToMove(cb, "g1f3"));

@@ -63,7 +63,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
     int score = 0;
 
     if (piece != Piece::WHITEKING && piece != Piece::BLACKKING)
-        score += psm_1 * psm.get_psm(piece, from, to) / 100;
+        score += psm_1 * psm.get_move_psm(piece, from, to) / 100;
     else
         score += psm_2 * psm.get_ksm(piece, is_endgame, to, from) / 100;
     

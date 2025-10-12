@@ -6,9 +6,24 @@
 #include "chess.hpp"
 #include "tbprobe.hpp"
 #include "constants.hpp"
+#include "nnue_board.hpp"
 #include "misc.hpp"
 
 namespace Nonsense {
+
+enum Stage {
+    STANDARD, TAKE_PIECES, PROMOTE, CHECKMATE,
+};
+
+static const std::vector<int> nonsense_piece_value = {
+    200, // pawn
+    1500, // knight
+    1000, // bishop
+    0, // rook
+    0, // queen
+    0,  // king
+    0, // none
+};
 
 static constexpr int rick_astley_odds = 5;
 static constexpr int num_main_lyrics = 6;
@@ -35,10 +50,13 @@ static inline std::vector<std::string> rick_astley_lyrics = {
 };
 
 void display_info();
-bool should_bongcloud(uint64_t hash, int move_number);
-Move play_bongcloud();
-Move worst_winning_move(Move move, Movelist moves);
-static constexpr uint64_t starting_pos_hash = 5060803636482931868;
-static bool is_bongcloud = false;
+Move play_bongcloud(const Board& pos);
+
+bool is_winning_side(Board& pos);
+bool enough_material_for_nonsense(Board& pos);
+
+int material_evaluate(Board& pos);
+int evaluate(NnueBoard& pos);
+bool only_knight_bishop(NnueBoard& pos);
 
 } // namespace Nonsense
