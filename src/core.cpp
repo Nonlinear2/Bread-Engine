@@ -98,7 +98,7 @@ void Engine::load_state(std::string file){
 void Engine::update_run_time(){
     run_time = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::high_resolution_clock::now() - start_time
-    ).count();
+    ).count() + 1; // avoid divisions by 0 for nodes per second
 };
 
 std::pair<std::string, std::string> Engine::get_pv_pmove(){
@@ -189,8 +189,6 @@ Move Engine::iterative_deepening(SearchLimit limit){
         }
 
         update_run_time();
-        if (run_time == 0)
-            run_time = 1; // avoid division by 0;
 
         // do not count interrupted searches in depth
         std::cout << "info depth " << current_depth - interrupt_flag;
@@ -205,9 +203,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         std::cout << " hashfull " << transposition_table.hashfull();
         std::cout << " pv" << pv << std::endl;
         
-        // should the search really stop if there is a mate for the oponent?
         if (interrupt_flag
-            || is_mate(best_move.score())
             || (limit.type == LimitType::Depth && current_depth == limit.value)
             || current_depth >= ENGINE_MAX_DEPTH)
             break;
