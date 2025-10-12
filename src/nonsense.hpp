@@ -11,6 +11,10 @@
 
 namespace Nonsense {
 
+enum Stage {
+    STANDARD, TAKE_PIECES, PROMOTE, CHECKMATE,
+};
+
 static const std::vector<int> nonsense_piece_value = {
     200, // pawn
     1500, // knight
@@ -49,8 +53,9 @@ void display_info();
 Move play_bongcloud(const Board& pos);
 
 bool is_winning_side(Board& pos);
-bool should_use_nonsense_eval(Board& pos);
+bool enough_material_for_nonsense(Board& pos);
 
+int material_evaluate(Board& pos);
 int evaluate(NnueBoard& pos);
 bool only_knight_bishop(NnueBoard& pos);
 

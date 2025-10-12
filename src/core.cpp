@@ -149,6 +149,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     std::string ponder_move = "";
 
     Move best_move = Move::NO_MOVE;
+    engine_color = pos.sideToMove();
 
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
 
@@ -174,26 +175,6 @@ Move Engine::iterative_deepening(SearchLimit limit){
         std::cout << "bestmove " << uci::moveToUci(best_move) << std::endl;
         return best_move;
     };
-
-    if (is_nonsense) {
-        bool activate = evaluate == nnue_evaluate &&
-                        (root_tb_hit || Nonsense::should_use_nonsense_eval(pos)) &&
-                        !Nonsense::only_knight_bishop(pos);
-
-        // deactivate nonsense when a knight / bishop knight position is reached.
-        bool deactivate = evaluate == Nonsense::evaluate && Nonsense::only_knight_bishop(pos);
-
-        assert(!activate || !deactivate);
-
-        if (activate || deactivate) {
-            clear_state();
-            evaluate = activate ? Nonsense::evaluate : nnue_evaluate;
-        }
-
-        // move quickly
-        if (evaluate == Nonsense::evaluate && limit.type == LimitType::Time)
-            this->limit = SearchLimit(LimitType::Time, std::min(limit.value, 200));
-    }
 
     while (true){
         current_depth++;
@@ -232,8 +213,61 @@ Move Engine::iterative_deepening(SearchLimit limit){
             break;
     }
 
-    if (is_nonsense)
+    if (is_nonsense){
         Nonsense::display_info();
+
+        const int queen_value = piece_value[static_cast<int>(PieceType::QUEEN)];
+        switch (nonsense_stage){
+
+        case Nonsense::STANDARD:
+            if (Nonsense::enough_material_for_nonsense(pos)
+                && (pos.them(engine_color).count() == 1 
+                    || (Nonsense::material_evaluate(pos) > queen_value
+                        && best_move.score() > 3 * queen_value / 2)))
+            {
+                clear_state();
+                nonsense_stage = Nonsense::TAKE_PIECES;
+            }
+            break;
+
+        case Nonsense::TAKE_PIECES:
+            if (!Nonsense::enough_material_for_nonsense(pos)){
+                nonsense_stage = Nonsense::STANDARD;
+                break;
+            }
+
+            if (root_tb_hit || pos.them(engine_color).count() == 1)
+            {
+                clear_state();
+                evaluate = Nonsense::evaluate;
+
+                // move quickly
+                if (limit.type == LimitType::Time)
+                    this->limit = SearchLimit(LimitType::Time, std::min(limit.value, 200));
+
+                nonsense_stage = Nonsense::PROMOTE;
+            }
+            break;
+
+        case Nonsense::PROMOTE:
+            if (!Nonsense::enough_material_for_nonsense(pos)){
+                nonsense_stage = Nonsense::STANDARD;
+                break;
+            }
+
+            if (Nonsense::only_knight_bishop(pos))
+            {
+                clear_state();
+                evaluate = nnue_evaluate;
+
+                nonsense_stage = Nonsense::CHECKMATE;
+            }
+            break;
+
+        default:
+            break;
+        }
+    }
 
     std::cout << "bestmove " << uci::moveToUci(best_move);
     if (ponder_move.size() > 0)
@@ -278,7 +312,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
     // tablebase probe
     if (TB::probe_wdl(pos, eval)){
-        if (evaluate != Nonsense::evaluate || eval == 0)
+        if (nonsense_stage == Nonsense::STANDARD
+            || nonsense_stage == Nonsense::CHECKMATE
+            || eval == 0)
             return eval;
     }
 
@@ -505,8 +541,16 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             // if there are no legal moves and it's not check, it is stalemate so eval is 0
             max_value = pos.inCheck() ? -MATE_VALUE : 0;
 
+            if (nonsense_stage == Nonsense::TAKE_PIECES
+                && pos.them(engine_color).count() != 1
+                && pos.sideToMove() != engine_color
+                && max_value == -MATE_VALUE)
+                max_value = TB_VALUE;
+                
             // if it should be checkmate, but there are not only bishops and knights, then say the position is winning
-            if (evaluate == Nonsense::evaluate && !Nonsense::only_knight_bishop(pos) && max_value == -MATE_VALUE){
+            if (nonsense_stage == Nonsense::PROMOTE
+                && !Nonsense::only_knight_bishop(pos)
+                && max_value == -MATE_VALUE){
                 assert(!Nonsense::is_winning_side(pos));
                 max_value = TB_VALUE;
             }
@@ -684,9 +728,18 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
 
-        if (evaluate == Nonsense::evaluate && !Nonsense::only_knight_bishop(pos) && stand_pat == -MATE_VALUE){
+        if (nonsense_stage == Nonsense::TAKE_PIECES
+            && pos.them(engine_color).count() != 1
+            && pos.sideToMove() != engine_color
+            && max_value == -MATE_VALUE)
+            max_value = TB_VALUE;
+            
+        // if it should be checkmate, but there are not only bishops and knights, then say the position is winning
+        if (nonsense_stage == Nonsense::PROMOTE
+            && !Nonsense::only_knight_bishop(pos)
+            && max_value == -MATE_VALUE){
             assert(!Nonsense::is_winning_side(pos));
-            stand_pat = TB_VALUE;
+            max_value = TB_VALUE;
         }
 
         transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH,

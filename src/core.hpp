@@ -58,6 +58,8 @@ class Engine {
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 
     int (*evaluate)(NnueBoard& pos) = nnue_evaluate;
+    Nonsense::Stage nonsense_stage = Nonsense::STANDARD;
+    Color engine_color;
 
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove();

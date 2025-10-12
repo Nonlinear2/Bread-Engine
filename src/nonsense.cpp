@@ -53,34 +53,35 @@ bool Nonsense::is_winning_side(Board& pos){
     return pos.us(pos.sideToMove()).count() > 1;
 }
 
-bool Nonsense::should_use_nonsense_eval(Board& pos){
+bool Nonsense::enough_material_for_nonsense(Board& pos){
     Color stm = pos.sideToMove();
-    if (pos.them(stm).count() > 1)
-        return false;
-
-    // queen or rook
-    if (pos.pieces(PieceType::QUEEN, stm) || pos.pieces(PieceType::ROOK, stm))
-        return true;
 
     // enough pawns
-    if (pos.pieces(PieceType::PAWN).count() >= 2)
+    if (pos.pieces(PieceType::PAWN, stm).count() >= 2)
         return true;
 
     // bishops
-    if (pos.pieces(PieceType::BISHOP).count() >= 2
-        && (pos.pieces(PieceType::BISHOP) & 0x55aa55aa55aa55aa) // has a light square bishop 
-        && (pos.pieces(PieceType::BISHOP) & 0xaa55aa55aa55aa55)) // has a dark square bishop 
+    if (pos.pieces(PieceType::BISHOP, stm).count() >= 2
+        && (pos.pieces(PieceType::BISHOP, stm) & 0x55aa55aa55aa55aa) // has a light square bishop 
+        && (pos.pieces(PieceType::BISHOP, stm) & 0xaa55aa55aa55aa55)) // has a dark square bishop 
         return true;
 
     // knights
-    if (pos.pieces(PieceType::KNIGHT).count() > 2)
+    if (pos.pieces(PieceType::KNIGHT, stm).count() > 2)
         return true;
 
     // bishops and knights
-    if (pos.pieces(PieceType::KNIGHT) && pos.pieces(PieceType::BISHOP))
+    if (pos.pieces(PieceType::KNIGHT, stm) && pos.pieces(PieceType::BISHOP, stm))
         return true;
+}
 
-    return false;
+int Nonsense::material_evaluate(Board& pos){
+    Color stm = pos.sideToMove();
+    int eval = 0;
+    for (PieceType pt: {PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP, PieceType::ROOK, PieceType::QUEEN})
+        eval += (pos.pieces(pt, stm).count() - pos.pieces(pt, !stm).count())
+            * piece_value[static_cast<int>(pt)];
+    return eval;
 }
 
 int Nonsense::evaluate(NnueBoard& pos){
