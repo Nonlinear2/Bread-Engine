@@ -82,7 +82,6 @@ in this section we provide an overview of the search algorithm, and the main eng
   - [Quiescence search](#quiescence-search)
   - [pondering](#pondering)
   - [other optimizations](#other-optimizations)
-  - [threefold repetition](#threefold-repetition)
 - [Neural Network](#neural-network)
   - [Neural network types](#neural-network-types)
   - [Description of NNUE](#description-of-nnue)
@@ -140,18 +139,7 @@ Many other search improvements exist, but they would be too long to describe in 
 - reverse futility pruning
 - razoring
 - continuation history
-
-  ...
-
-
-### Threefold repetition
-The first idea that comes to mind to implement threefold repetition is to have something like 
-```c++
-if (pos.is_threefold_repetition()){
-    return 0;
-}
-```
-in the minimax function. However, care must be taken for the transposition table, as the evaluation of 0 is "history dependent". In another variation of the search, this position might be winning or losing, and reusing an evaluation of 0 would lead to engine blunders. Therefore, Bread Engine doesn't store positions that started repeating and were evaluated as 0. This way, the problematic positions aren't reused, but higher in the tree, the possibility of forcing a draw is taken into account.
+- ...
 
 ## Neural Network
 ### Neural network types
