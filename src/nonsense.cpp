@@ -73,6 +73,8 @@ bool Nonsense::enough_material_for_nonsense(Board& pos){
     // bishops and knights
     if (pos.pieces(PieceType::KNIGHT, stm) && pos.pieces(PieceType::BISHOP, stm))
         return true;
+    
+    return false;
 }
 
 int Nonsense::material_evaluate(Board& pos){
