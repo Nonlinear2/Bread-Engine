@@ -274,8 +274,6 @@ Move Engine::iterative_deepening(SearchLimit limit){
         std::cout << " ponder " << ponder_move;
     std::cout << std::endl;
 
-    std::cout << "info string stage " << nonsense_stage << std::endl;
-
     interrupt_flag = false;
     return best_move;
 }
