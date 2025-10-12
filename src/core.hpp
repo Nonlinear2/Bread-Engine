@@ -60,6 +60,7 @@ class Engine {
     int (*evaluate)(NnueBoard& pos) = nnue_evaluate;
     Nonsense::Stage nonsense_stage = Nonsense::STANDARD;
     Color engine_color;
+    bool tablebase_loaded = false;
 
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove();

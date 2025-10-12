@@ -163,7 +163,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         stack[i] = Stack();
     }
 
-    bool root_tb_hit = TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
+    bool root_tb_hit = tablebase_loaded && TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
     if (root_tb_hit && !(is_nonsense && best_move.score() == TB_VALUE && !Nonsense::only_knight_bishop(pos))){
         update_run_time();
         std::cout << "info depth 0";
@@ -314,7 +314,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     int static_eval, eval;
 
     // tablebase probe
-    if (TB::probe_wdl(pos, eval)){
+    if (tablebase_loaded && TB::probe_wdl(pos, eval)){
         if (nonsense_stage == Nonsense::STANDARD
             || nonsense_stage == Nonsense::CHECKMATE
             || eval == 0)
@@ -609,7 +609,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     int stand_pat = NO_VALUE;
 
     // tablebase probe
-    if (TB::probe_wdl(pos, stand_pat)){
+    if (tablebase_loaded && TB::probe_wdl(pos, stand_pat)){
         if (evaluate != Nonsense::evaluate || stand_pat == 0)
             return stand_pat;
     }
