@@ -235,13 +235,16 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     if (root_node)
         pos.synchronize();
 
+    // a stalemate will be processed after the move generation
+    else if (pos.isRepetition(1))
+        return 0;
+
+    if (pos.isRepetition(2) || pos.isHalfMoveDraw() || pos.isInsufficientMaterial())
+        return 0;
+
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
     if (interrupt_flag || (depth >= 5 && update_interrupt_flag()))
         return NO_VALUE; // the value doesn't matter, it won't be used.
-
-    // a stalemate will be processed after the move generation
-    if (pos.isRepetition(2) || pos.isHalfMoveDraw() || pos.isInsufficientMaterial())
-        return 0;
 
     if (ss - stack >= MAX_PLY - 1)
         return pos.evaluate();
@@ -289,7 +292,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     move_gen.set_tt_move(transposition.move);
     
     chess::Move excluded_move = ss->excluded_move;
-    if (!root_node && !pv && transposition.depth >= depth && excluded_move == Move::NO_MOVE && !pos.isRepetition(1)){
+    if (!root_node && !pv && transposition.depth >= depth && excluded_move == Move::NO_MOVE){
         switch (transposition.flag){
             case TFlag::EXACT:
                 return transposition.value;
@@ -490,14 +493,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         return alpha;
     }
 
-    // if max eval was obtained because of a threefold repetition,
-    // the eval should not be stored in the transposition table, as
-    // this is a history dependent evaluation.
-    // what if max eval was not obtained because of a threefold? in this case we loose
-    // one TT entry which is completely fine.
-    // what about evaluations higher in the tree where pos.isRepetition(1) is false?
-    // these evals are not history dependent as they mean that one side can force a draw.
-    if (!root_node && ((max_value == 0 && pos.isRepetition(1)) || pos.halfMoveClock() + depth >= 100))
+    if (!root_node && pos.halfMoveClock() + depth >= 100)
         return max_value;
     // we fall through without storing the eval in the TT.
 
