@@ -116,7 +116,7 @@ int Nonsense::evaluate(NnueBoard& pos){
 
 bool Nonsense::only_knight_bishop(NnueBoard& pos){
     // if (pos.halfMoveClock() >= 70)
-    //     return false; // avoid not checkmating with queen or rook when there is no other choice
+    //     return false;
 
     return !bool(pos.pieces(PieceType::PAWN) | pos.pieces(PieceType::QUEEN) | pos.pieces(PieceType::ROOK));    
 }
