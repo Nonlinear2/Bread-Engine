@@ -133,6 +133,8 @@ Move Engine::search(SearchLimit limit){
 };
 
 Move Engine::iterative_deepening(SearchLimit limit){
+    assert(is_nonsense || nonsense_stage == Nonsense::STANDARD);
+
     if (is_nonsense){
         srand((unsigned int)time(NULL));
         if (pos.fullMoveNumber() < 3){
@@ -180,6 +182,39 @@ Move Engine::iterative_deepening(SearchLimit limit){
         return best_move;
     };
 
+    switch (nonsense_stage){
+        case Nonsense::TAKE_PIECES:
+            if (!Nonsense::enough_material_for_nonsense(pos)){
+                nonsense_stage = Nonsense::STANDARD;
+                break;
+            }
+
+            if (root_tb_hit || pos.them(engine_color).count() == 1)
+            {
+                clear_state();
+                evaluate = Nonsense::evaluate;
+                nonsense_stage = Nonsense::PROMOTE;
+            }
+            break;
+
+        case Nonsense::PROMOTE:
+            if (!Nonsense::enough_material_for_nonsense(pos)){
+                nonsense_stage = Nonsense::STANDARD;
+                break;
+            }
+
+            if (Nonsense::only_knight_bishop(pos))
+            {
+                clear_state();
+                evaluate = nnue_evaluate;
+                nonsense_stage = Nonsense::CHECKMATE;
+            }
+            break;
+
+        default:
+            break;
+    }
+
     while (true){
         current_depth++;
 
@@ -219,11 +254,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
     if (is_nonsense){
         Nonsense::display_info();
-
-        const int queen_value = piece_value[static_cast<int>(PieceType::QUEEN)];
-        switch (nonsense_stage){
-
-        case Nonsense::STANDARD:
+        if (nonsense_stage == Nonsense::STANDARD){
+            const int queen_value = piece_value[static_cast<int>(PieceType::QUEEN)];
             if (Nonsense::enough_material_for_nonsense(pos)
                 && (pos.them(engine_color).count() == 1 
                     || (Nonsense::material_evaluate(pos) > queen_value
@@ -232,38 +264,6 @@ Move Engine::iterative_deepening(SearchLimit limit){
                 clear_state();
                 nonsense_stage = Nonsense::TAKE_PIECES;
             }
-            break;
-
-        case Nonsense::TAKE_PIECES:
-            if (!Nonsense::enough_material_for_nonsense(pos)){
-                nonsense_stage = Nonsense::STANDARD;
-                break;
-            }
-
-            if (root_tb_hit || pos.them(engine_color).count() == 1)
-            {
-                clear_state();
-                evaluate = Nonsense::evaluate;
-                nonsense_stage = Nonsense::PROMOTE;
-            }
-            break;
-
-        case Nonsense::PROMOTE:
-            if (!Nonsense::enough_material_for_nonsense(pos)){
-                nonsense_stage = Nonsense::STANDARD;
-                break;
-            }
-
-            if (Nonsense::only_knight_bishop(pos))
-            {
-                clear_state();
-                evaluate = nnue_evaluate;
-                nonsense_stage = Nonsense::CHECKMATE;
-            }
-            break;
-
-        default:
-            break;
         }
     }
 
