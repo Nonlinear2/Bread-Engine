@@ -142,7 +142,11 @@ Move Engine::iterative_deepening(SearchLimit limit){
         }
     }
 
-    this->limit = limit;
+    if (nonsense_stage >= Nonsense::PROMOTE && limit.type == LimitType::Time)
+        this->limit = SearchLimit(LimitType::Time, std::min(limit.value, 200)); // move quickly
+    else
+        this->limit = limit;
+
     start_time = std::chrono::high_resolution_clock::now();
 
     std::string pv;
@@ -240,11 +244,6 @@ Move Engine::iterative_deepening(SearchLimit limit){
             {
                 clear_state();
                 evaluate = Nonsense::evaluate;
-
-                // move quickly
-                if (limit.type == LimitType::Time)
-                    this->limit = SearchLimit(LimitType::Time, std::min(limit.value, 200));
-
                 nonsense_stage = Nonsense::PROMOTE;
             }
             break;
@@ -259,7 +258,6 @@ Move Engine::iterative_deepening(SearchLimit limit){
             {
                 clear_state();
                 evaluate = nnue_evaluate;
-
                 nonsense_stage = Nonsense::CHECKMATE;
             }
             break;
