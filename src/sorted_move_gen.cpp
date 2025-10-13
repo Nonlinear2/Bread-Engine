@@ -1,7 +1,6 @@
 #include "sorted_move_gen.hpp"
 
 TUNEABLE(endg, int, 11, 0, 32, 0.5, 0.002);
-TUNEABLE(psm_1, int, 14, 0, 1000, 20, 0.002);
 TUNEABLE(psm_2, int, 127, 0, 1000, 20, 0.002);
 TUNEABLE(att_1, int, 46, 0, 500, 10, 0.002);
 TUNEABLE(att_2, int, 54, 0, 500, 10, 0.002);
@@ -62,9 +61,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
 
     int score = 0;
 
-    if (piece != Piece::WHITEKING && piece != Piece::BLACKKING)
-        score += psm_1 * psm.get_move_psm(piece, from, to) / 100;
-    else
+    if (piece == Piece::WHITEKING || piece == Piece::BLACKKING)
         score += psm_2 * psm.get_ksm(piece, is_endgame, to, from) / 100;
     
     if (piece.type() != PieceType::PAWN && piece.type() != PieceType::KING){

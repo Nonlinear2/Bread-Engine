@@ -96,16 +96,13 @@ int Nonsense::evaluate(NnueBoard& pos){
     eval += (is_winning_side(pos) ? 1 : -1) * only_knight_bishop(pos) * 1000;
 
     Bitboard us_pawns = pos.pieces(PieceType::PAWN, stm);
-    while (us_pawns){
-        Square sq = us_pawns.pop();
-        eval += psm.get_psm(pos.at(sq), sq);
-    }
+    while (us_pawns)
+        eval += psm.get_pawn_psm(stm, us_pawns.pop());
 
     Bitboard them_pawns = pos.pieces(PieceType::PAWN, !stm);
-    while (them_pawns){
-        Square sq = them_pawns.pop();
-        eval -= psm.get_psm(pos.at(sq), sq);
-    }
+    while (them_pawns)
+        eval -= psm.get_pawn_psm(!stm, them_pawns.pop());
+
 
     for (PieceType pt: {PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP})
         eval += (pos.pieces(pt, stm).count() - pos.pieces(pt, !stm).count())
