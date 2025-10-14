@@ -158,54 +158,9 @@ The two perspectives are each run through the same set of weights and concatenat
 ### Quantization
 An important way to speed up the neural network is to use quantization with SIMD vectorization on the cpu (unfortunately, gpu's aren't usually suited for chess engines as minimax is difficult to paralellize because of alpha beta pruning (for a multithreading approach for chess engines, see [lazy SMP](https://www.chessprogramming.org/Lazy_SMP)). Also, the data transfer latency between cpu and gpu is too high).
 
-The first layer weights and biases are multiplied by a scale of 255 and stored in int16. Accumulation also happens in int16.  With a maximum of 30 active input features (all pieces on the board), there won't be any integer overflow unless (sum of 30 weights) + bias > 32767, which is most definitely not the case. We then apply clipped relu while converting to int8. Now `layer_1_quant_output = input @ (255*weights) + 255*bias = 255*(input @ weights + bias) = 255*true_output`.
-For the second layer, weights are multiplied by 64 and stored in int8, and the bias is multiplied by 127 * 64 and stored in int32.
-To be able to store weights in int8, we need to make sure that weights * 64 < 127, so a weight can't exceed 127/64 = 1.98. This is the price to pay for full integer quantization. After this layer, the output is
-`layer_2_quant_output = quant_input @ (64*weights) + 255*64*bias = 255*64*(input @ weights + bias) = 255*64*true_output`. We can finally divide this by a given scale to get the network output.
-
-Here is some code to run the hidden layers (this was used until Bread Engine 0.0.6):
-```c++
-inline __m256i _mm256_add8x256_epi32(__m256i* inputs){ // horizontal add 8 int32 avx registers.
-    inputs[0] = _mm256_hadd_epi32(inputs[0], inputs[1]);
-    inputs[2] = _mm256_hadd_epi32(inputs[2], inputs[3]);
-    inputs[4] = _mm256_hadd_epi32(inputs[4], inputs[5]);
-    inputs[6] = _mm256_hadd_epi32(inputs[6], inputs[7]);
-
-    inputs[0] = _mm256_hadd_epi32(inputs[0], inputs[2]);
-    inputs[4] = _mm256_hadd_epi32(inputs[4], inputs[6]);
-
-    return _mm256_add_epi32(
-        // swap lanes of the two regs
-        _mm256_permute2x128_si256(inputs[0], inputs[4], 0b00110001),
-        _mm256_permute2x128_si256(inputs[0], inputs[4], 0b00100000)
-    );
-};
-
-template<int in_size, int out_size>
-void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
-
-    __m256i output_chunks[int32_per_reg];
-    const __m256i one = _mm256_set1_epi16(1);
-
-    for (int j = 0; j < num_output_chunks; j++){
-        __m256i result = _mm256_set1_epi32(0);
-        for (int i = 0; i < num_input_chunks; i++){
-            __m256i input_chunk = _mm256_loadu_epi8(&input[i*int8_per_reg]);
-            for (int k = 0; k < int32_per_reg; k++){
-                output_chunks[k] = _mm256_maddubs_epi16(
-                    input_chunk,
-                    _mm256_loadu_epi8(&this->weights[(j*int32_per_reg+k) * this->input_size + i*int8_per_reg])
-                );
-                output_chunks[k] = _mm256_madd_epi16(output_chunks[k], one); // hadd pairs to int32
-            }
-            result = _mm256_add_epi32(result, _mm256_add8x256_epi32(output_chunks));
-        }
-        result = _mm256_add_epi32(result, _mm256_loadu_epi32(&this->bias[j*int32_per_reg]));
-        result = _mm256_srai_epi32(result, 6); // this integer divides the result by 64 to scale back the output.
-        _mm256_storeu_epi32(&output[j*int32_per_reg], result);
-    }
-};
-```
+The first layer weights and biases are multiplied by a scale of 255 and stored in int16. Accumulation also happens in int16.  With a maximum of 30 active input features (all pieces on the board), there won't be any integer overflow unless (sum of 30 weights) + bias > 32767, which is most definitely not the case. We then apply squared clipped relu. Now `L0_quant_output = input @ (255*weights) + 255*bias = 255*(input @ weights + bias) = 255*true_output`.
+For the second layer, weights are multiplied by 64 and stored in int16, and the bias is multiplied by 127 * 64 and stored in int32. After this layer, the output is
+`L1_quant_output = quant_input @ (64*weights) + 255*64*bias = 255*64*(input @ weights + bias) = 255*64*true_output`. We can finally multiply this output by a given scale, and dequantize by dividing by 255*64 to get the network output.
 
 ### Optimized matrix multiplication (not currently in use)
 *The following method is original, it may or may not be a good approach.*
