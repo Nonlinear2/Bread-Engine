@@ -85,6 +85,7 @@ void Engine::load_state(std::string file){
     std::ifstream ifs(file, std::ios::binary | std::ios::in);
     if (!ifs) {
         std::cout << "Could not open file for reading." << std::endl;
+        return;
     }
 
     transposition_table.load_from_stream(ifs);
@@ -572,19 +573,18 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         return alpha;
     }
 
+    // early return without storing the eval in the TT
     if (!root_node && pos.halfMoveClock() + depth >= 100)
         return max_value;
-    // we fall through without storing the eval in the TT.
 
     TFlag node_type;
-    if (beta <= alpha){ // this means there was a cutoff. So true eval is equal or higher
+    if (beta <= alpha){ // this means that there was a cutoff
         node_type = TFlag::LOWER_BOUND;
     } else if (max_value <= initial_alpha){
         // this means that the evals were all lower than best option for us
-        // So eval is equal or lower
         node_type = TFlag::UPPER_BOUND;
     } else {
-        // eval is between initial alpha and beta. so search was completed without cutoffs, and is exact
+        // value is between initial alpha and beta, so search was completed without cutoffs, and is exact
         node_type = TFlag::EXACT;
     }
 
@@ -607,10 +607,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     int stand_pat = NO_VALUE;
 
     // tablebase probe
-    if (tablebase_loaded && TB::probe_wdl(pos, stand_pat)){
+    if (tablebase_loaded && TB::probe_wdl(pos, stand_pat))
         if (evaluate != Nonsense::evaluate || stand_pat == 0)
             return stand_pat;
-    }
 
     if (pos.isHalfMoveDraw()) 
         return 0;

@@ -5,7 +5,8 @@ bool TB::probe_wdl(Board& pos, int& eval){
         return false;
 
     unsigned int ep_square = pos.enpassantSq().index();
-    if (ep_square == 64) ep_square = 0;
+    if (ep_square == 64)
+        ep_square = 0;
 
     unsigned int TB_hit = tb_probe_wdl(
             pos.us(Color::WHITE).getBits(), pos.us(Color::BLACK).getBits(), 
@@ -37,7 +38,8 @@ bool TB::probe_root_dtz(Board& pos, Move& move, Movelist& moves, bool generate_m
         return false;
 
     unsigned int ep_square = pos.enpassantSq().index();
-    if (ep_square == 64) ep_square = 0;
+    if (ep_square == 64)
+        ep_square = 0;
 
     unsigned int tb_moves[TB_MAX_MOVES];
 
@@ -60,7 +62,8 @@ bool TB::probe_root_dtz(Board& pos, Move& move, Movelist& moves, bool generate_m
     if (generate_moves){
         Move current_move;
         for (int i = 0; i < TB_MAX_MOVES; i++){
-            if (tb_moves[i] == TB_RESULT_FAILED) break;
+            if (tb_moves[i] == TB_RESULT_FAILED)
+                break;
             current_move = tb_result_to_move(tb_moves[i]);
             if (current_move.score() == TB_VALUE){
                 current_move.setScore(NO_VALUE);
