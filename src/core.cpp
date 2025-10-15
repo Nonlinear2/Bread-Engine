@@ -287,8 +287,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     const bool root_node = ss == root_ss;
     assert(!root_node || pos.isGameOver().second == GameResult::NONE);
 
-    if (root_node)
+    if (root_node){
         pos.synchronize();
+        if (pos.accumulators_stack.idx != 1){
+            std::cout << "bestmove e8e1";
+            return 0;
+        }
+    }
 
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
     if (interrupt_flag || (update_interrupt_flag()))
