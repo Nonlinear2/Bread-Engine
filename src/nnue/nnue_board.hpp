@@ -27,8 +27,8 @@ class NnueBoard: public Board {
 
     std::pair<std::vector<int>, std::vector<int>> get_features();
 
-    AccumulatorsStack accumulators_stack;
     private:
+    AccumulatorsStack accumulators_stack;
 
     modified_features get_modified_features(Move move, Color color);
 

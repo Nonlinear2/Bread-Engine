@@ -62,9 +62,9 @@ class AccumulatorsStack {
     Accumulators& top();
     void pop();
 
-    int idx;
     private:
     std::vector<Accumulators> stack = std::vector<Accumulators>(MAX_PLY + 1);
+    int idx;
 };
 
 bool is_number_string(const std::string& s);
