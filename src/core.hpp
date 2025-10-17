@@ -3,6 +3,7 @@
 #include <vector>
 #include <chrono>
 #include <atomic>
+#include <stdexcept>
 #include "chess.hpp"
 #include "transposition_table.hpp"
 #include "misc.hpp"
