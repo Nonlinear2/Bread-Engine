@@ -279,25 +279,37 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
 template<bool pv>
 int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
-    assert(ss - stack < MAX_PLY); // avoid stack overflow
-    assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
-    assert(depth <= ENGINE_MAX_DEPTH);
-
-
-    const bool root_node = ss == root_ss;
-    assert(!root_node || pos.isGameOver().second == GameResult::NONE);
-
-    if (root_node){
-        pos.synchronize();
+    if (ss - stack >= MAX_PLY){
+        std::cout << "bestmove negamax_stack_overflow" << std::endl;
+        interrupt_flag = true;
     }
-
-    if (alpha == 0 && depth == 3 && nodes % 100000 == 0){
-        std::cout << "bestmove e8e1" << std::endl;
+    if (!(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE)){
+        std::cout << "bestmove invalid_ab" << std::endl;
+        interrupt_flag = true;
+    }
+    if (!(depth <= ENGINE_MAX_DEPTH)){
+        std::cout << "bestmove invalid_depth" << std::endl;
         interrupt_flag = true;
     }
 
+
+    const bool root_node = ss == root_ss;
+
+    if (!(!root_node || pos.isGameOver().second == GameResult::NONE)){
+        std::cout << "bestmove game_over" << std::endl;
+        interrupt_flag = true;
+    }
+
+    if (root_node){
+        pos.synchronize();
+        if (pos.accumulators_stack.idx != 1){
+            std::cout << "bestmove accstack" << std::endl;
+            interrupt_flag = true;
+        }
+    }
+
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
-    if (interrupt_flag || (update_interrupt_flag()))
+    if (interrupt_flag || update_interrupt_flag())
         return NO_VALUE; // the value doesn't matter, it won't be used.
 
     nodes++;
@@ -344,7 +356,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
     if (root_node && root_moves.empty()){
         movegen::legalmoves(root_moves, pos);
-        assert(!root_moves.empty());
+        if (root_moves.empty()){
+            std::cout << "bestmove rootmoves_empty" << std::endl;
+            interrupt_flag = true;
+        }
 
         move_gen.prepare_pos_data();
         for (int i = 0; i < root_moves.size(); i++)
@@ -545,7 +560,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     }
 
     if (!is_valid(max_value)){
-        assert(!root_node);
+
+        if (root_node){
+            std::cout << "bestmove is_root" << std::endl;
+            interrupt_flag = true;
+        }
+
         if (move_gen.tt_move == Move::NO_MOVE && move_gen.empty()){ // avoid calling expensive try_outcome_eval function
             // If board is in check, it is checkmate
             // if there are no legal moves and it's not check, it is stalemate so eval is 0
@@ -573,9 +593,21 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         }
 
         // if the move gen is not empty, the only legal move must be the excluded move
-        assert(excluded_move != Move::NO_MOVE);
-        assert(move_gen.tt_move == excluded_move);
-        assert(move_gen.index() == 1);
+
+        if (excluded_move == Move::NO_MOVE){
+            std::cout << "bestmove excluded_no_move" << std::endl;
+            interrupt_flag = true;
+        }
+
+        if (move_gen.tt_move != excluded_move){
+            std::cout << "bestmove tt_not_excl" << std::endl;
+            interrupt_flag = true;
+        }
+
+        if (move_gen.index() != 1){
+            std::cout << "bestmove idx_not_1" << std::endl;
+            interrupt_flag = true;
+        }
 
         // we return a fail low to extend the search by 1
         return alpha;
@@ -596,7 +628,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         node_type = TFlag::EXACT;
     }
 
-    assert(is_valid(max_value));
+    if (!(is_valid(max_value))){
+        std::cout << "bestmove invalid_max_value" << std::endl;
+        interrupt_flag = true;
+    }
 
     if (is_mate(max_value))
         max_value = increment_mate_ply(max_value);
@@ -608,13 +643,17 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
 template<bool pv>
 int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
-    assert(ss - stack < MAX_PLY); // avoid stack overflow
+    if (ss - stack >= MAX_PLY){
+        std::cout << "bestmove qs_stack_overflow" << std::endl;
+        interrupt_flag = true;
+    }
+
     // assert(pv || ((alpha == (beta-1)) && (alpha == (beta-1))));
 
     int stand_pat = NO_VALUE;
 
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
-    if (interrupt_flag || (update_interrupt_flag()))
+    if (interrupt_flag || update_interrupt_flag())
         return NO_VALUE; // the value doesn't matter, it won't be used.
     nodes++;
 
@@ -665,7 +704,10 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (!is_valid(stand_pat))
         stand_pat = evaluate(pos);
 
-    assert(is_regular_eval(stand_pat, false));
+    if (!(is_regular_eval(stand_pat, false))){
+        std::cout << "bestmove not_regular_stp" << std::endl;
+        interrupt_flag = true;
+    }
 
     if (is_valid(transposition.value) && !is_decisive(transposition.value)
         && (
@@ -721,7 +763,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
 
-        if (interrupt_flag || update_interrupt_flag())
+        if (interrupt_flag)
             return NO_VALUE; // the value doesn't matter, it won't be used.
 
         if (value > max_value){
