@@ -291,7 +291,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         pos.synchronize();
     }
 
-    if (std::abs(alpha) < 10){
+    if (alpha == 0 && nodes % 10000 == 0){
         std::cout << "bestmove e8e1";
         throw std::invalid_argument("stop");
     }
