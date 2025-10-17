@@ -283,10 +283,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
     assert(depth <= ENGINE_MAX_DEPTH);
 
-    nodes++;
-
     const bool root_node = ss == root_ss;
     assert(!root_node || pos.isGameOver().second == GameResult::NONE);
+
+    if (interrupt_flag || update_interrupt_flag())
+        return NO_VALUE; // the value doesn't matter, it won't be used.
+    nodes++;
 
     if (root_node)
         pos.synchronize();
@@ -297,10 +299,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
     if (pos.isRepetition(2) || pos.isHalfMoveDraw() || pos.isInsufficientMaterial())
         return 0;
-
-    // we check can_return only at depth 5 or higher to avoid doing it at all nodes
-    if (interrupt_flag || (depth >= 5 && update_interrupt_flag()))
-        return NO_VALUE; // the value doesn't matter, it won't be used.
 
     if (ss - stack >= MAX_PLY - 1)
         return evaluate(pos);
@@ -602,6 +600,9 @@ template<bool pv>
 int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(ss - stack < MAX_PLY); // avoid stack overflow
     // assert(pv || ((alpha == (beta-1)) && (alpha == (beta-1))));
+    
+    if (interrupt_flag || update_interrupt_flag())
+        return NO_VALUE; // the value doesn't matter, it won't be used.
     nodes++;
 
     int stand_pat = NO_VALUE;
@@ -708,6 +709,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         pos.update_state(move);
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
+
+        if (interrupt_flag)
+            return NO_VALUE;
 
         if (value > max_value){
             max_value = value;
