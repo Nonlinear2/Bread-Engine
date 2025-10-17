@@ -291,9 +291,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         pos.synchronize();
     }
 
-    if (alpha == 0 && nodes % 10000 == 0){
+    if (alpha == 0 && nodes % 100000 == 0){
         std::cout << "bestmove e8e1";
-        throw std::invalid_argument("stop");
+        interrupt_flag = true;
     }
 
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
