@@ -1,5 +1,5 @@
 <h1 align="center">Bread Engine</h1>
-<h4 align="center">A superhuman chess engine written in C++.</h4>
+<h4 align="center">A chess engine written in C++.</h4>
 
 <p align="center">
   <picture><source srcset="https://img.shields.io/badge/Architectures-x86%2C%20x64-%23f78b04?style=for-the-badge&labelColor=%23013c5a&color=%23013c5a"><img alt="Architectures: x86, x64">
@@ -60,7 +60,7 @@ position startpos
 go movetime 3000
 ```
 
-and the engine will return the best move.
+and the engine should return a chess move.
 
 # Custom commands
 
