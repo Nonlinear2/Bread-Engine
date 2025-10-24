@@ -12,7 +12,7 @@
 # Overview
 Bread is rated around 3300 elo on the computer chess rating lists.
 
-It uses minimax search, along with an efficiently updatable neural network trained from zero knowledge. The neural network is trained using games of self play.
+It uses minimax search, along with an efficiently updatable neural network trained from zero knowledge using games of self play.
 
 Bread engine does not have a graphical interface built in. However it supports the UCI protocol, you can therefore run it on any chess graphical interface, such as <a href="https://encroissant.org/"><kbd>En Croissant</kbd></a> or <a href="https://github.com/cutechess/cutechess"><kbd>Cute Chess</kbd></a>.
 
