@@ -55,26 +55,23 @@ void TranspositionTable::info(){
 
 void TranspositionTable::allocateMB(int new_size){
     assert(new_size >= 2);
-    assert((new_size & (new_size - 1)) == 0); // make sure the size is a power of 2
 
     new_size = std::max(new_size, TT_MIN_SIZE);
     new_size = std::min(new_size, TT_MAX_SIZE);
 
     size_mb = new_size;
 
-    // closest power of 2 to 1'000'000 / 16 is 2^16 = 65536
-    assert(sizeof(TEntry) == 16);
-    constexpr int entries_in_one_mb = 65536;
+    constexpr int entries_in_one_mb = 1'000'000 / sizeof(TEntry);
     int num_entries = size_mb * entries_in_one_mb;
 
     entries.resize(num_entries, TEntry());
     entries.shrink_to_fit();
 }
 
-void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int depth,
+void TranspositionTable::store(uint32_t zobrist, int value, int static_eval, int depth,
                                Move move, TFlag flag, uint8_t move_number){
     // no need to store the side to move, as it is in the zobrist hash.
-    TEntry* entry = &entries[zobrist & (entries.size() - 1)];
+    TEntry* entry = &entries[zobrist % entries.size()];
 
     // we replace the old entry if:
     // - the old entry is empty
@@ -98,9 +95,8 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
     };
 }
 
-TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
-    assert((entries.size() & (entries.size() - 1)) == 0);
-    TEntry* entry = &entries[zobrist & (entries.size() - 1)];
+TTData TranspositionTable::probe(bool& is_hit, uint32_t zobrist){
+    TEntry* entry = &entries[zobrist % entries.size()];
     is_hit = (entry->zobrist_hash == zobrist);
 
     if (is_hit)
