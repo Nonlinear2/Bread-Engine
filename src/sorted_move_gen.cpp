@@ -144,7 +144,14 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
     switch (stage){
         case TT_MOVE:
             ++stage;
-            if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.inCheck() || pos.isCapture(tt_move))){
+
+            used_tt_move = tt_move != Move::NO_MOVE && (
+                MoveGenType == movegen::MoveGenType::ALL
+                || pos.inCheck() 
+                || pos.isCapture(tt_move)
+            );
+
+            if (used_tt_move){
                 move = tt_move;
                 return true;
             }
@@ -152,17 +159,15 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
         case GENERATE_MOVES:
             movegen::legalmoves<MoveGenType>(moves, pos);
             prepare_pos_data();
-            for (int i = 0; i < moves.size(); i++){
+            for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);
-            }
-            if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.isCapture(tt_move)))
-                pop_move(std::find(moves.begin(), moves.end(), tt_move) - moves.begin());
             ++stage;
 
         case GET_MOVES:
-            if (moves.num_left != 0){
+            while (moves.num_left != 0){
                 move = pop_best_score();
-                return true;
+                if (move != tt_move || !used_tt_move)
+                    return true;
             }
     }
     return false;
