@@ -743,7 +743,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (pos.halfMoveClock() + depth + QSEARCH_MAX_DEPTH >= 100)
         return max_value; // avoid storing history dependant evals.
 
-    if (depth == 0)
+    if (depth == 0 || depth == -1)
         transposition_table.store(zobrist_hash, max_value,
             stand_pat,
             DEPTH_QSEARCH, best_move,
