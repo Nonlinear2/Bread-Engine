@@ -144,7 +144,11 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
     switch (stage){
         case TT_MOVE:
             ++stage;
-            if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.inCheck() || pos.isCapture(tt_move))){
+            seen_tt_move = tt_move != Move::NO_MOVE
+                && (MoveGenType == movegen::MoveGenType::ALL || pos.inCheck() || pos.isCapture(tt_move))
+                && pos.legal(tt_move);
+
+            if (seen_tt_move){
                 move = tt_move;
                 return true;
             }
@@ -155,8 +159,11 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             for (int i = 0; i < moves.size(); i++){
                 set_score(moves[i]);
             }
-            if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.isCapture(tt_move)))
-                pop_move(std::find(moves.begin(), moves.end(), tt_move) - moves.begin());
+            if (seen_tt_move){
+                auto idx = std::find(moves.begin(), moves.end(), tt_move);
+                if (idx != moves.end())
+                    pop_move(idx - moves.begin());
+            }
             ++stage;
 
         case GET_MOVES:

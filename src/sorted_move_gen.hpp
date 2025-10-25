@@ -57,4 +57,6 @@ class SortedMoveGen {
     GenerationStage stage = TT_MOVE;
     Move pop_move(int move_idx);
     Move pop_best_score();
+
+    bool seen_tt_move;
 };

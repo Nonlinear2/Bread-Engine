@@ -17,6 +17,17 @@ void NnueBoard::synchronize(){
     nnue_.compute_accumulator(new_accs[(int)Color::BLACK], features.second);
 }
 
+bool NnueBoard::legal(Move move){
+    Piece piece = at(move.from());
+    if (piece.color() != sideToMove())
+        return false;
+
+    Movelist legal;
+    movegen::legalmoves(legal, *this, 1 << piece.type());
+
+    return std::find(legal.begin(), legal.end(), move) != legal.end();
+}
+
 void NnueBoard::update_state(Move move){
 
     Accumulators& prev_accs = accumulators_stack.top();
@@ -104,6 +115,8 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 // this function must be called before pushing the move
 // it assumes it it not castling, en passant or a promotion
 modified_features NnueBoard::get_modified_features(Move move, Color color){
+    assert(move != Move::NO_MOVE);
+
     int from;
     int to;
     int curr_piece_idx;
@@ -118,6 +131,7 @@ modified_features NnueBoard::get_modified_features(Move move, Color color){
 
     Piece curr_piece = at(static_cast<Square>(from));
     Piece capt_piece = at(static_cast<Square>(to));
+    assert(curr_piece != Piece::NONE);
 
     bool piece_color = curr_piece.color() == Color::BLACK; // white: 0, black: 1
     int piece_idx = int(curr_piece.type());

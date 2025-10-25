@@ -62,8 +62,8 @@ void TranspositionTable::allocateMB(int new_size){
 
     size_mb = new_size;
 
-    // closest power of 2 to 1'000'000 / 16 is 2^16 = 65536
-    assert(sizeof(TEntry) == 16);
+    // closest power of 2 to 1'000'000 / 12 is 2^16 = 65536
+    assert(sizeof(TEntry) == 12);
     constexpr int entries_in_one_mb = 65536;
     int num_entries = size_mb * entries_in_one_mb;
 
@@ -71,8 +71,9 @@ void TranspositionTable::allocateMB(int new_size){
     entries.shrink_to_fit();
 }
 
-void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int depth,
+void TranspositionTable::store(uint32_t zobrist, int value, int static_eval, int depth,
                                Move move, TFlag flag, uint8_t move_number){
+
     // no need to store the side to move, as it is in the zobrist hash.
     TEntry* entry = &entries[zobrist & (entries.size() - 1)];
 
@@ -99,7 +100,7 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
     };
 }
 
-TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
+TTData TranspositionTable::probe(bool& is_hit, uint32_t zobrist){
     assert((entries.size() & (entries.size() - 1)) == 0);
     TEntry* entry = &entries[zobrist & (entries.size() - 1)];
     is_hit = (entry->zobrist_hash == zobrist);
