@@ -54,7 +54,7 @@ class SortedMoveGen {
 
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
-    bool used_tt_move;
+    bool use_tt_move;
 
     GenerationStage stage = TT_MOVE;
     Move pop_move(int move_idx);

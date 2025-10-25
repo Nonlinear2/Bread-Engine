@@ -17,6 +17,17 @@ void NnueBoard::synchronize(){
     nnue_.compute_accumulator(new_accs[(int)Color::BLACK], features.second);
 }
 
+bool NnueBoard::legal(Move move){
+    Piece piece = at(move.from());
+    if (piece.color() != sideToMove())
+        return false;
+
+    Movelist legal;
+    movegen::legalmoves(legal, *this, 1 << piece.type());
+
+    return std::find(legal.begin(), legal.end(), move) != legal.end();
+}
+
 void NnueBoard::update_state(Move move){
 
     Accumulators& prev_accs = accumulators_stack.top();
