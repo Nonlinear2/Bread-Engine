@@ -443,6 +443,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             
             // continuation history pruning
             if (!is_capture && !in_check
+                && pos.givesCheck(move) == CheckType::NO_CHECK
                 && prev_piece != int(Piece::NONE)
                 && prev_to != int(Square::underlying::NO_SQ)
                 && move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
@@ -483,10 +484,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         ss->current_move = move;
         pos.update_state(move);
 
-        bool gives_check = pos.inCheck();
-
         // late move reductions
-        new_depth += gives_check && !root_node;
+        new_depth += pos.inCheck() && !root_node;
         new_depth -= move_gen.index() > 1 && !is_capture;
         new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
         new_depth -= tt_capture && !is_capture;
