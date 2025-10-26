@@ -432,8 +432,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
             // lmp
-            if (!pv && !in_check && !is_capture && move_gen.index() > 2 + depth + improving 
-                && !is_hit && eval - lmp_1 * !improving < alpha)
+            if (!pv && !in_check && !is_capture && move_gen.index() > 2 + depth + improving
+                && !is_hit && eval - lmp_1 * !improving < alpha
+                && pos.givesCheck(move) == CheckType::NO_CHECK)
                 continue;
 
             // SEE pruning
@@ -443,7 +444,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             
             // continuation history pruning
             if (!is_capture && !in_check
-                && pos.givesCheck(move) == CheckType::NO_CHECK
                 && prev_piece != int(Piece::NONE)
                 && prev_to != int(Square::underlying::NO_SQ)
                 && move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
