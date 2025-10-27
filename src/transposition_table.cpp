@@ -61,7 +61,9 @@ void TranspositionTable::allocateMB(int new_size){
 
     size_mb = new_size;
 
-    constexpr int entries_in_one_mb = 1'000'000 / sizeof(TEntry);
+    // closest power of 2 to 1'000'000 / 16 is 2^16 = 65536
+    // assert(sizeof(TEntry) == 16);
+    constexpr int entries_in_one_mb = 65536;
     int num_entries = size_mb * entries_in_one_mb;
 
     entries.resize(num_entries, TEntry());
@@ -97,7 +99,7 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
 
 TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
     TEntry* entry = &entries[zobrist % entries.size()];
-    is_hit = (entry->zobrist_hash == int32_t(zobrist));
+    is_hit = (entry->zobrist_hash == uint32_t(zobrist));
 
     if (is_hit)
         return TTData(entry);
