@@ -17,7 +17,7 @@ class NnueBoard: public Board {
     
     void synchronize();
 
-    bool last_move_null();
+    bool legal(Move move);
 
     void update_state(Move move);
 
@@ -27,20 +27,12 @@ class NnueBoard: public Board {
 
     bool try_outcome_eval(int& eval);
 
-
-    bool probe_wdl(int& eval);
-
-
-    bool probe_root_dtz(Move& move, Movelist& moves, bool generate_moves);
-
-    Move tb_result_to_move(unsigned int tb_result);
-    
     std::pair<std::vector<int>, std::vector<int>> get_features();
+
     private:
-    std::stack<Accumulator> accumulator_stack;
+    AccumulatorsStack accumulators_stack;
 
-
-    modified_features get_modified_features(Move move, bool color);
+    modified_features get_modified_features(Move move, Color color);
 
     bool is_updatable_move(Move move);
 };
