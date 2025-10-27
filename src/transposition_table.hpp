@@ -35,7 +35,7 @@ struct TEntry {
     TEntry(){};
 
     TEntry(uint64_t zobrist, int value, int static_eval, int depth, Move move, TFlag flag, uint8_t move_number):
-            zobrist_hash(zobrist),
+            zobrist_hash(uint32_t(zobrist)),
             value(value),
             static_eval(static_eval),
             move(move.move()),
@@ -44,7 +44,6 @@ struct TEntry {
 };
 
 struct TTData {
-    uint32_t zobrist_hash   = 0;
     int value               = NO_VALUE;
     int static_eval         = NO_VALUE;
     Move move               = Move::NO_MOVE;
@@ -55,7 +54,6 @@ struct TTData {
     TTData(){};
 
     TTData(uint64_t zobrist, int value, int static_eval, int depth, Move move, TFlag flag, uint8_t move_number):
-            zobrist_hash(zobrist),
             value(value),
             static_eval(static_eval),
             move(move),
@@ -64,7 +62,6 @@ struct TTData {
             move_number(move_number) {};
     
     TTData(TEntry* entry):
-            zobrist_hash(entry->zobrist_hash),
             value(entry->value),
             static_eval(entry->static_eval),
             move(entry->move),
