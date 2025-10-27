@@ -31,6 +31,8 @@ class UCIAgent {
 
     void process_bench(std::vector<std::string> command);
 
+    void process_evaluate(std::vector<std::string> command);
+
     int get_think_time_from_go_command(std::vector<std::string> command);
 
     void interrupt_if_searching();

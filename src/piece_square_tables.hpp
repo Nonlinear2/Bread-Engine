@@ -5,17 +5,7 @@
 
 using namespace chess;
 
-constexpr std::array<int, 64> pawn_map_b = {
-            252,  252,  252,  252,  252,  252,  252,  252, 
-            196,  196,  196,  196,  196,  196,  196,  196, 
-            56,   56,   84,   140,  140,  84,   56,   56, 
-            28,   28,   56,   112,  112,  56,   28,   28, 
-            0,    0,    0,    84,   84,   0,    0,    0, 
-            28,  -28,  -56,   0,    0,   -56,  -28,   28, 
-            0,    0,    0,    0,    0,    0,    0,    0, 
-            0,    0,    0,    0,    0,    0,    0,    0};
-
-constexpr std::array<int, 64> pawn_map_w = {
+constexpr std::array<int, 64> pawn_map = {
             0,    0,    0,    0,   0,     0,    0,    0, 
             0,    0,    0,    0,   0,     0,    0,    0, 
             28,  -28,  -56,   0,   0,    -56,  -28,   28, 
@@ -25,98 +15,7 @@ constexpr std::array<int, 64> pawn_map_w = {
            196,  196,  196,  196,  196,  196,  196,  196, 
            252,  252,  252,  252,  252,  252,  252,  252};
 
-constexpr std::array<int, 64> knight_map_b = {
-            -19,   0,   19,   19,   19,   19,   0,  -19, 
-            0,   38,   76,   76,   76,   76,   38,   0, 
-            19,   76,  114,  133,  133,  114,   76,   19, 
-            19,   95,  133,  152,  152,  133,   95,   19, 
-            19,   76,  133,  152,  152,  133,   76,   19, 
-            19,   95,  114,  133,  133,  114,   95,   19, 
-            0,   38,   76,   95,   95,   76,   38,   0, 
-            -19,   0,   19,   19,   19,   19,   0,  -19};
-
-constexpr std::array<int, 64> knight_map_w = {
-           -19,   0,   19,   19,   19,   19,   0,  -19, 
-            0,   38,   76,   95,   95,   76,   38,   0, 
-            19,   95,  114,  133,  133,  114,   95,   19, 
-            19,   76,  133,  152,  152,  133,   76,   19, 
-            19,   95,  133,  152,  152,  133,   95,   19, 
-            19,   76,  114,  133,  133,  114,   76,   19, 
-            0,   38,   76,   76,   76,   76,   38,   0, 
-           -19,   0,   19,   19,   19,   19,   0,  -19};
-
-constexpr std::array<int, 64> bishop_map_b = {
-            40,   50,   50,   50,   50,   50,   50,   40,
-            50,   60,   60,   60,   60,   60,   60,   50,
-            50,   60,   70,   80,   80,   70,   60,   50,
-            50,   70,   70,   80,   80,   70,   70,   50,
-            50,   60,   80,   80,   80,   80,   60,   50,
-            50,   80,   80,   80,   80,   80,   80,   50,
-            50,   70,   60,   60,   60,   60,   70,   50,
-            40,   50,   50,   50,   50,   50,   50,   40};
-
-constexpr std::array<int, 64> bishop_map_w = {
-            40,   50,   50,   50,   50,  50,   50,   40,
-            50,   70,   60,   60,   60,  60,   70,   50,
-            50,   80,   80,   80,   80,  80,   80,   50,
-            50,   60,   80,   80,   80,  80,   60,   50,
-            50,   70,   70,   80,   80,  70,   70,   50,
-            50,   60,   70,   80,   80,  70,   60,   50,
-            50,   60,   60,   60,   60,  60,   60,   50,
-            40,   50,   50,   50,   50,  50,   50,   40};
-
-constexpr std::array<int, 64> rook_map_b = {
-            24,   24,   24,   24,   24,   24,   24,   24, 
-            44,   48,   48,   48,   48,   48,   48,   44, 
-            16,   24,   24,   24,   24,   24,   24,   16, 
-            16,   24,   24,   24,   24,   24,   24,   16, 
-            16,   24,   24,   24,   24,   24,   24,   16, 
-            16,   24,   24,   24,   24,   24,   24,   16, 
-            16,   24,   24,   24,   24,   24,   24,   16, 
-            24,   24,   24,   32,   32,   24,   24,   24};
-
-constexpr std::array<int, 64> rook_map_w = {
-            24,   24,   24,   32,   32,   24,   24,   24, 
-            16,   24,   24,   24,   24,   24,   24,   16, 
-            16,   24,   24,   24,   24,   24,   24,   16, 
-            16,   24,   24,   24,   24,   24,   24,   16, 
-            16,   24,   24,   24,   24,   24,   24,   16, 
-            16,   24,   24,   24,   24,   24,   24,   16, 
-            44,   48,   48,   48,   48,   48,   48,   44, 
-            24,   24,   24,   24,   24,   24,   24,   24};
-
-constexpr std::array<int, 64> queen_map_b = {
-            16,   24,   24,   32,   32,   24,   24,   16, 
-            24,   40,   40,   40,   40,   40,   40,   24, 
-            24,   40,   56,   56,   56,   56,   40,   24, 
-            32,   40,   56,   56,   56,   56,   40,   32, 
-            40,   40,   56,   56,   56,   56,   40,   32, 
-            24,   56,   56,   56,   56,   56,   40,   24, 
-            24,   40,   56,   40,   40,   40,   40,   24, 
-            16,   24,   24,   32,   32,   24,   24,   16};
-
-constexpr std::array<int, 64> queen_map_w = {
-            16,   24,   24,   32,   32,   24,   24,   16, 
-            24,   40,   56,   40,   40,   40,   40,   24, 
-            24,   56,   56,   56,   56,   56,   40,   24, 
-            40,   40,   56,   56,   56,   56,   40,   32, 
-            32,   40,   56,   56,   56,   56,   40,   32, 
-            24,   40,   56,   56,   56,   56,   40,   24, 
-            24,   40,   40,   40,   40,   40,   40,   24, 
-            16,   24,   24,   32,   32,   24,   24,   16};
-
-
-constexpr std::array<int, 64> king_map_mg_b = { // middle game
-           -1,  -2,  -2,  -2,  -2,  -2,  -2,  -1, 
-           -1,  -2,  -2,  -2,  -2,  -2,  -2,  -1, 
-           -1,  -2,  -2,  -2,  -2,  -2,  -2,  -1, 
-           -1,  -2,  -2,  -2,  -2,  -2,  -2,  -1, 
-           -1,  -1,  -1,  -2,  -2,  -1,  -1,  -1, 
-           -0,  -1,  -1,  -1,  -1,  -1,  -1,  -0, 
-            2,   2,   0,   0,   0,   0,   2,   2, 
-            2,   3,   2,   0,   0,   2,   3,   2};
-
-constexpr std::array<int, 64> king_map_mg_w = { // middle game
+constexpr std::array<int, 64> king_map_mg = { // middle game
             2,   3,   2,   0,   0,   2,   3,   2, 
             2,   2,   0,   0,   0,   0,   2,   2, 
            -0,  -1,  -1,  -1,  -1,  -1,  -1,  -0, 
@@ -126,17 +25,7 @@ constexpr std::array<int, 64> king_map_mg_w = { // middle game
            -1,  -2,  -2,  -2,  -2,  -2,  -2,  -1, 
            -1,  -2,  -2,  -2,  -2,  -2,  -2,  -1};
 
-constexpr std::array<int, 64> king_map_eg_b = { // end game
-           -13,  -10,  -7,  -3,  -3,  -7,  -10,  -13, 
-           -7,  -3,   0,   3,   3,   0,  -3,  -7, 
-           -7,   0,   10,   13,   13,   10,   0,  -7, 
-           -7,   0,   13,   16,   16,   13,   0,  -7, 
-           -7,   0,   13,   16,   16,   13,   0,  -7, 
-           -7,   0,   10,   13,   13,   10,   0,  -7, 
-           -7,  -7,   3,   3,   3,   3,  -7,  -7, 
-           -13,  -7,  -7,  -7,  -7,  -7,  -7,  -13};
-
-constexpr std::array<int, 64> king_map_eg_w = { // end game
+constexpr std::array<int, 64> king_map_eg = { // end game
            -13,  -7,  -7,  -7,  -7,  -7,  -7,  -13, 
            -7,  -7,   3,   3,   3,   3,  -7,  -7, 
            -7,   0,   10,   13,   13,   10,   0,  -7, 
@@ -147,35 +36,17 @@ constexpr std::array<int, 64> king_map_eg_w = { // end game
            -13,  -10,  -7,  -3,  -3,  -7,  -10,  -13};
 
 struct PieceSquareMaps {
-    std::array<int, 640> all_psm;// 10 psm of 64 squares
-    std::array<std::array<int, 64>, 10> psms = {
-        pawn_map_w, knight_map_w, bishop_map_w, rook_map_w, queen_map_w,
-        pawn_map_b, knight_map_b, bishop_map_b, rook_map_b, queen_map_b,
-    };
+    std::array<std::array<int, 64>, 2> all_ksm = {king_map_mg, king_map_eg};
 
-    std::array<int, 4*64> all_ksm; // wking/bking, eg/not eg;
-
-
-    constexpr PieceSquareMaps(){
-        for (int i = 0; i < 10; i++){
-            std::copy(psms[i].begin(), psms[i].end(), &all_psm[i*64]);
-        }
-
-        std::copy(king_map_mg_w.begin(), king_map_mg_w.end(), &all_ksm[0]);
-        std::copy(king_map_eg_w.begin(), king_map_eg_w.end(), &all_ksm[64]);
-        std::copy(king_map_mg_b.begin(), king_map_mg_b.end(), &all_ksm[128]);
-        std::copy(king_map_eg_b.begin(), king_map_eg_b.end(), &all_ksm[192]);
-
-    }
-
-    constexpr int get_psm(Piece piece, Square from_sq, Square to_sq) const {
-        int piece_idx = static_cast<int>(piece);
-        piece_idx = (piece_idx-(piece_idx > 5))*64;
-        return all_psm[piece_idx + to_sq.index()] - all_psm[piece_idx + from_sq.index()];
+    constexpr int get_pawn_psm(Color color, Square sq) const {
+        return color == Color::WHITE ? pawn_map[sq.index()] : pawn_map[sq.flip().index()];
     }
 
     constexpr int get_ksm(Piece king, bool is_endgame, Square from_sq, Square to_sq) const {
-        int piece_idx = 128*(king == Piece::BLACKKING) + 64*is_endgame; 
-        return all_ksm[piece_idx + to_sq.index()] - all_ksm[piece_idx + from_sq.index()];
+        if (king.color() == Color::BLACK){
+            from_sq = from_sq.flip();
+            to_sq = to_sq.flip();
+        }
+        return all_ksm[is_endgame][to_sq.index()] - all_ksm[is_endgame][from_sq.index()];
     }
 };
