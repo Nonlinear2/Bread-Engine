@@ -423,6 +423,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     }
 
     while (move_gen.next(move)){
+        if (move == move_gen.tt_move && move_gen.index() > 0)
+            continue;
+
         bool is_capture = pos.isCapture(move);
 
         if (move == excluded_move)
@@ -681,6 +684,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     Square previous_to_square = ((ss - 1)->current_move).to();
 
     while (capture_gen.next(move)){
+        if (move == capture_gen.tt_move && capture_gen.index() > 0)
+            continue;
+
         Piece captured_piece = pos.at(move.to());
         Piece moved_piece = pos.at(move.from());
 
