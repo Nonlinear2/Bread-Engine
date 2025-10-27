@@ -432,12 +432,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
             // lmp
-            if (!pv && !in_check && !is_capture && move_gen.index() > 2 + depth + improving 
+            if (!in_check && !is_capture && move_gen.index() > 2 + depth + improving 
                 && !is_hit && eval - lmp_1 * !improving < alpha)
                 continue;
 
             // SEE pruning
-            if (!pv && !in_check && !is_capture && !is_killer && move_gen.index() > 5 + depth / 2
+            if (!in_check && !is_capture && !is_killer && move_gen.index() > 5 + depth / 2
                 && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
                 continue;
             
@@ -743,7 +743,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (pos.halfMoveClock() + depth + QSEARCH_MAX_DEPTH >= 100)
         return max_value; // avoid storing history dependant evals.
 
-    if (depth == 0)
+    if (depth == 0 || depth == -1)
         transposition_table.store(zobrist_hash, max_value,
             stand_pat,
             DEPTH_QSEARCH, best_move,
