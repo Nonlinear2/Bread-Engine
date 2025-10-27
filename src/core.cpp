@@ -328,7 +328,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     Square prev_to = (ss - 1)->current_move.to();
 
     const int initial_alpha = alpha;
-    uint32_t zobrist_hash = pos.hash() & 0xFFFFFFFF;
+    uint64_t zobrist_hash = pos.hash();
 
     SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(
         root_node ? &root_moves : NULL, prev_piece, prev_to, pos, depth
@@ -619,7 +619,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     Move best_move = Move::NO_MOVE;
 
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
-    uint32_t zobrist_hash = pos.hash() & 0xFFFFFFFF;
+    uint64_t zobrist_hash = pos.hash();
 
     // first we check for transposition. If it is outcome, it should have already been stored
     // with an exact flag, so the stand pat will be correct anyways.

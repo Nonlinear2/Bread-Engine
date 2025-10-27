@@ -68,7 +68,7 @@ void TranspositionTable::allocateMB(int new_size){
     entries.shrink_to_fit();
 }
 
-void TranspositionTable::store(uint32_t zobrist, int value, int static_eval, int depth,
+void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int depth,
                                Move move, TFlag flag, uint8_t move_number){
     // no need to store the side to move, as it is in the zobrist hash.
     TEntry* entry = &entries[zobrist % entries.size()];
@@ -95,9 +95,9 @@ void TranspositionTable::store(uint32_t zobrist, int value, int static_eval, int
     };
 }
 
-TTData TranspositionTable::probe(bool& is_hit, uint32_t zobrist){
+TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
     TEntry* entry = &entries[zobrist % entries.size()];
-    is_hit = (entry->zobrist_hash == zobrist);
+    is_hit = (entry->zobrist_hash == int32_t(zobrist));
 
     if (is_hit)
         return TTData(entry);
