@@ -115,6 +115,8 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 // this function must be called before pushing the move
 // it assumes it it not castling, en passant or a promotion
 modified_features NnueBoard::get_modified_features(Move move, Color color){
+    assert(move != Move::NO_MOVE);
+
     int from;
     int to;
     int curr_piece_idx;
@@ -129,6 +131,7 @@ modified_features NnueBoard::get_modified_features(Move move, Color color){
 
     Piece curr_piece = at(static_cast<Square>(from));
     Piece capt_piece = at(static_cast<Square>(to));
+    assert(curr_piece != Piece::NONE);
 
     bool piece_color = curr_piece.color() == Color::BLACK; // white: 0, black: 1
     int piece_idx = int(curr_piece.type());
