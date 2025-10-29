@@ -19,7 +19,6 @@ TUNEABLE(cont_2, int, 131, 0, 1500, 35, 0.002);
 TUNEABLE(qs_fp_1, int, 1681, 0, 3000, 70, 0.002);
 TUNEABLE(qs_see_1, int, 286, 0, 900, 25, 0.002);
 TUNEABLE(qs_p_1, int, 1029, 0, 5000, 70, 0.002);
-TUNEABLE(qs_p_2, int, 145, 0, 900, 20, 0.002);
 TUNEABLE(cthis_1, int, 8479, 0, 16000, 250, 0.002);
 TUNEABLE(cthis_2, int, 578, 0, 3000, 60, 0.002);
 TUNEABLE(qs_p_idx, int, 7, 0, 20, 1, 0.002);
@@ -437,7 +436,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
                 continue;
 
             // SEE pruning
-            if (!in_check && !is_capture && !is_killer && move_gen.index() > 5 + depth / 2
+            if (!in_check && !is_killer && move_gen.index() > 5 + depth / 2
                 && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
                 continue;
             
@@ -697,9 +696,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             // SEE pruning
             if (!SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
                 continue;
-    
-            if (!pv && capture_gen.index() > qs_p_idx
-                && stand_pat + qs_p_1 < alpha && !SEE::evaluate(pos, move, -qs_p_2))
+
+            if (capture_gen.index() > qs_p_idx && stand_pat + qs_p_1 < alpha)
                 continue;
         }
 
