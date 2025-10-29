@@ -9,14 +9,10 @@
 #include <stdio.h>
 #include <chess.hpp>
 #include <immintrin.h>
+#include "constants.hpp"
+#include "nnue_misc.hpp"
 
-constexpr int num_avx_registers = 16;
-constexpr int int32_per_reg = 8;
-constexpr int int16_per_reg = 16;
-constexpr int int8_per_reg = 32;
-
-constexpr int INPUT_SIZE = 768;
-constexpr int ACC_SIZE = 256;
+using namespace chess;
 
 struct modified_features {
     int added;
@@ -29,17 +25,9 @@ struct modified_features {
         captured(captured) {};
 };
 
-class Accumulator {
-    public:
-    int16_t* operator[](bool color);
-
-    int16_t accumulator[2*ACC_SIZE]; 
-};
-
 class NNUE {
     public:
-    Accumulator accumulator; // array stored on the stack, as it will change often
-    
+
     /*****************
     Feature transformer
     ******************/
@@ -50,12 +38,8 @@ class NNUE {
     // otherways it would be an array of pointers pointing to scattered memory locations, 
     // which would be slower and unpractical.
     // weights are stored in row major
-    int16_t* ft_weights = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*INPUT_SIZE*ACC_SIZE, std::align_val_t{32})
-    );
-    int16_t* ft_bias = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*ACC_SIZE, std::align_val_t{32})
-    );
+    int16_t* ft_weights;
+    int16_t* ft_bias;
 
     // all computations happen in int16. Scale is 127
     // to make sure that even after accumulation no overflows happen : there can be a maximum of 30 active input features,
@@ -65,27 +49,20 @@ class NNUE {
     // unclipped output is in accumulator
 
     // apply crelu16 and store
-    int8_t ft_clipped_output[ACC_SIZE*2];
+    int16_t ft_clipped_output[ACC_SIZE*2];
 
     /******
     Layer 1
     *******/
 
-    // 2*acc_size -> 32
+    // 2*acc_size -> 1
 
     // int8 weights with scale 64. Multiplication outputs in int16, so no overflows,
     // and sum is computed in int32. Maximum weights times maximum input with accumulation is 127*127*512 = 8258048
     // maximum bias is therefore (2,147,483,647-8,258,048)/32 = 66850799 which is totally fine.
-    
-    static constexpr int l1_input_size = 2*ACC_SIZE;
-    static constexpr int l1_output_size = 32;
 
-    int8_t* l1_weights = static_cast<int8_t*>(
-        operator new[](sizeof(int8_t)*l1_input_size*l1_output_size, std::align_val_t{32})
-    );
-    int32_t* l1_bias = static_cast<int32_t*>(
-        operator new[](sizeof(int32_t)*l1_output_size, std::align_val_t{32})
-    );
+    int16_t* l1_weights;
+    int32_t* l1_bias;
 
     // also, output is scaled back by 64, so total scale is still only 127. as we only do integer division,
     // error caused by the division is max 1/127.
@@ -94,18 +71,16 @@ class NNUE {
     // this is 16129+bias which is less than the max int16 if bias is less than (int16_max - 16129)/(127*64) = 2.04
 
     // output is not scaled back by 64, so scale is 64*127 times true output.
-    int32_t run_output_layer(int8_t* input, int8_t* weights, int32_t* bias);
-
-    void crelu16(int16_t *input, int8_t *output, int size);
+    int32_t run_L1(Accumulators& accumulators, Color stm, int bucket);
 
     NNUE();
     ~NNUE();
 
     void load_model();
 
-    void compute_accumulator(const std::vector<int> active_features, bool color);
+    void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features);
 
-    void update_accumulator(const modified_features m_features, bool color);
+    void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const modified_features m_features);
 
-    int run_cropped_nn(bool color);
+    int run(Accumulators& accumulators, Color stm, int piece_count);
 };

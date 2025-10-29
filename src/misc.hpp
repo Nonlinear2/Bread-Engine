@@ -2,10 +2,14 @@
 
 #include <array>
 #include <fstream>
+#include <vector>
+#include "piece_square_tables.hpp"
 #include "constants.hpp"
 #include "chess.hpp"
 
 using namespace chess;
+
+constexpr PieceSquareMaps psm = PieceSquareMaps();
 
 const std::vector<int> piece_value = {
     150, // pawn
@@ -49,6 +53,18 @@ class SearchLimit {
     
     LimitType type;
     int value;
+};
+
+class AccumulatorsStack {
+    public:
+    AccumulatorsStack();
+    Accumulators& push_empty();
+    Accumulators& top();
+    void pop();
+
+    private:
+    std::vector<Accumulators> stack = std::vector<Accumulators>(MAX_PLY + 1);
+    int idx;
 };
 
 bool is_number_string(const std::string& s);
