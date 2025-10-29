@@ -705,7 +705,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         ss->current_move = move;
         pos.update_state(move);
         value = -qsearch<pv>(-beta, -alpha,
-            depth - 1 + (depth == QSEARCH_MAX_DEPTH && pos.inCheck() && pv && capture_gen.index() == 0), ss + 1);
+            depth - 1 + (depth == 0 && pos.inCheck() && pv && capture_gen.index() == 0), ss + 1);
         pos.restore_state(move);
 
         if (value > max_value){
