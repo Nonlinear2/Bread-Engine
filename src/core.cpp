@@ -687,14 +687,14 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         // move.score() is calculated with set_capture_score which is material difference.
         // 1500 is a safety margin
         if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-            if (move != transposition.move && stand_pat 
+            if (stand_pat 
                 + piece_value[static_cast<int>(captured_piece.type())]
                 - piece_value[static_cast<int>(moved_piece.type())]
                 + qs_fp_1 < alpha)
                 continue;
 
             // SEE pruning
-            if (!SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
+            if (move != transposition.move && !SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
                 continue;
 
             if (capture_gen.index() > qs_p_idx && stand_pat + qs_p_1 < alpha)
