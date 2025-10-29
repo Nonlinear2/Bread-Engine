@@ -18,10 +18,10 @@ TUNEABLE(cont_1, int, 945, 0, 3000, 70, 0.002);
 TUNEABLE(cont_2, int, 131, 0, 1500, 35, 0.002);
 TUNEABLE(qs_fp_1, int, 1681, 0, 3000, 70, 0.002);
 TUNEABLE(qs_see_1, int, 286, 0, 900, 25, 0.002);
-TUNEABLE(qs_p_1, int, 1029, 0, 5000, 70, 0.002);
+TUNEABLE(qs_p_1, int, 100, 0, 5000, 70, 0.002);
 TUNEABLE(cthis_1, int, 8479, 0, 16000, 250, 0.002);
 TUNEABLE(cthis_2, int, 578, 0, 3000, 60, 0.002);
-TUNEABLE(qs_p_idx, int, 7, 0, 20, 1, 0.002);
+TUNEABLE(qs_p_idx, int, 3, 0, 20, 1, 0.002);
 TUNEABLE(his_1, int, 28, 0, 300, 7, 0.002);
 TUNEABLE(his_2, int, 26, 0, 300, 5, 0.002);
 TUNEABLE(his_3, int, 1003, 0, 5000, 70, 0.002);
@@ -687,7 +687,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         // move.score() is calculated with set_capture_score which is material difference.
         // 1500 is a safety margin
         if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-            if (move != transposition.move && stand_pat 
+            if (stand_pat 
                 + piece_value[static_cast<int>(captured_piece.type())]
                 - piece_value[static_cast<int>(moved_piece.type())]
                 + qs_fp_1 < alpha)
