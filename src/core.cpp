@@ -307,9 +307,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     // transpositions will be checked inside of qsearch
     // if isRepetition(1), qsearch will not consider the danger of draw as it searches captures.
     if (depth <= 0)
-        return qsearch<pv>(alpha, beta, 0, ss + 1);
-
-    int static_eval, eval;
+    return qsearch<pv>(alpha, beta, 0, ss + 1);
+    
+    int eval, value;
 
     // tablebase probe
     if (tablebase_loaded && TB::probe_wdl(pos, eval)){
@@ -322,7 +322,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     int max_value = -INFINITE_VALUE;
     Move best_move = Move::NO_MOVE;
     Move move;
-    int value;
     Piece prev_piece = (ss - 1)->moved_piece;
     Square prev_to = (ss - 1)->current_move.to();
 
@@ -351,8 +350,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
 
-    static_eval = eval = transposition.static_eval;
-    eval = transposition.value;
     move_gen.set_tt_move(transposition.move);
     
     chess::Move excluded_move = ss->excluded_move;
@@ -377,13 +374,23 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         return transposition.value;
 
     bool in_check = pos.inCheck();
+    
+    ss->static_eval = transposition.static_eval;
 
-    if (static_eval == NO_VALUE)
-        static_eval = evaluate(pos);
-    if (eval == NO_VALUE)
-        eval = static_eval;
+    if (!is_valid(ss->static_eval))
+        ss->static_eval = evaluate(pos);
 
-    ss->static_eval = static_eval;
+    assert(is_regular_eval(ss->static_eval, false));
+
+    eval = ss->static_eval;
+
+    if (is_valid(transposition.value) && !is_decisive(transposition.value)
+        && (
+            transposition.flag == TFlag::EXACT 
+            || (transposition.flag == TFlag::LOWER_BOUND && transposition.value >= eval)
+            || (transposition.flag == TFlag::UPPER_BOUND && transposition.value <= eval)
+            ))
+            eval = transposition.value;
 
     bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval)
         && ss->static_eval > (ss - 2)->static_eval;
@@ -437,7 +444,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
             // SEE pruning
             if (!in_check && !is_killer && move_gen.index() > 5 + depth / 2
-                && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
+                && depth < 5 && !SEE::evaluate(pos, move, alpha - ss->static_eval - see_1 - see_2*depth))
                 continue;
             
             // continuation history pruning
@@ -592,7 +599,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     if (is_mate(max_value))
         max_value = increment_mate_ply(max_value);
 
-    transposition_table.store(zobrist_hash, max_value, static_eval, depth, best_move, node_type, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+    transposition_table.store(zobrist_hash, max_value, ss->static_eval, depth, best_move, node_type, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
 
     return max_value;
 }
