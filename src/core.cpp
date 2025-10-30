@@ -436,7 +436,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
                 continue;
 
             // SEE pruning
-            if (!in_check && !is_killer && move_gen.index() > 4 + depth / 3
+            if (!in_check && !is_killer && move_gen.index() > 5 + depth / 2
                 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
                 continue;
 
