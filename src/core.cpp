@@ -18,7 +18,7 @@ TUNEABLE(cont_1, int, 945, 0, 3000, 70, 0.002);
 TUNEABLE(cont_2, int, 131, 0, 1500, 35, 0.002);
 TUNEABLE(qs_fp_1, int, 1681, 0, 3000, 70, 0.002);
 TUNEABLE(qs_see_1, int, 286, 0, 900, 25, 0.002);
-TUNEABLE(qs_p_1, int, 100, 0, 5000, 70, 0.002);
+TUNEABLE(qs_p_1, int, 70, 0, 5000, 70, 0.002);
 TUNEABLE(cthis_1, int, 8479, 0, 16000, 250, 0.002);
 TUNEABLE(cthis_2, int, 578, 0, 3000, 60, 0.002);
 TUNEABLE(qs_p_idx, int, 3, 0, 20, 1, 0.002);
