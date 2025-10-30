@@ -683,9 +683,6 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         Piece captured_piece = pos.at(move.to());
         Piece moved_piece = pos.at(move.from());
 
-        // delta pruning
-        // move.score() is calculated with set_capture_score which is material difference.
-        // 1500 is a safety margin
         if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
             if (stand_pat 
                 + piece_value[static_cast<int>(captured_piece.type())]
@@ -697,6 +694,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             if (move != transposition.move && !SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
                 continue;
 
+            // move count pruning
             if (capture_gen.index() > qs_p_idx && stand_pat + qs_p_1 < alpha)
                 continue;
         }
@@ -713,7 +711,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         }
 
         alpha = std::max(alpha, value);
-        if (alpha >= beta) // only check for cutoffs when alpha gets updated.
+        if (alpha >= beta)
             break;
     }
 
@@ -724,7 +722,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             && pos.sideToMove() != engine_color
             && stand_pat == -MATE_VALUE)
             stand_pat = TB_VALUE;
-            
+
         // if it should be checkmate, but there are not only bishops and knights, then say the position is winning
         if (nonsense_stage == Nonsense::PROMOTE
             && !Nonsense::only_knight_bishop(pos)
@@ -738,8 +736,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         return stand_pat;
     }
 
+    // avoid storing history dependant values
     if (pos.halfMoveClock() + depth + QSEARCH_MAX_DEPTH >= 100)
-        return max_value; // avoid storing history dependant evals.
+        return max_value;
 
     if (depth == 0 || depth == -1)
         transposition_table.store(zobrist_hash, max_value,
