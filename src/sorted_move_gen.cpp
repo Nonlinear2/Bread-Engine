@@ -188,7 +188,7 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(SeeScore see_value){
     for (; curr_idx < moves.size(); curr_idx++){
         if (moves[curr_idx] != tt_move){
             if (see[curr_idx] == SeeScore::UNSEEN)
-                see[curr_idx] = SEE::evaluate(pos, moves[curr_idx], 1) ? SeeScore::GOOD : SeeScore::BAD;
+                see[curr_idx] = SEE::evaluate(pos, moves[curr_idx], -1) ? SeeScore::GOOD : SeeScore::BAD;
     
             if (see[curr_idx] == see_value)
                 return moves[curr_idx++];
