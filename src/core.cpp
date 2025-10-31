@@ -488,29 +488,32 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         // late move reductions
         new_depth += gives_check && !root_node;
-        new_depth -= move_gen.index() > 1 && !is_capture;
-        new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
-        new_depth -= tt_capture && !is_capture;
-        new_depth -= move_gen.index() > lmr_1;
-
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
+        
+        int new_reduced_depth = new_depth;
+        new_reduced_depth -= move_gen.index() > 1 && !is_capture;
+        new_reduced_depth -= depth > 5 && !is_hit && !is_killer; // IIR
+        new_reduced_depth -= tt_capture && !is_capture;
+        new_reduced_depth -= move_gen.index() > lmr_1;
+
+        new_reduced_depth = std::min(new_reduced_depth, ENGINE_MAX_DEPTH);
 
         if (move_gen.index() > 0 && depth >= 2){
-            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
+            value = -negamax<false>(new_reduced_depth, -alpha - 1, -alpha, ss + 1);
 
-            if (value > alpha && new_depth < depth-1){
-                value = -negamax<false>(depth-1, -alpha - 1, -alpha, ss + 1);
+            if (value > alpha && new_reduced_depth < new_depth){
+                value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
                 if (!is_capture)
                     move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
             } else if (value <= alpha && !is_capture)
                 move_gen.update_cont_history(ss->moved_piece, move.to().index(), -cont_2);
 
         } else if (!pv || move_gen.index() > 0){
-            value = -negamax<false>(depth - 1, -alpha - 1, -alpha, ss + 1);
+            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
         }
 
         if (pv && (move_gen.index() == 0 || value > alpha)){
-            value = -negamax<true>(depth - 1, -beta, -alpha, ss + 1);
+            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
         }
 
         pos.restore_state(move);
