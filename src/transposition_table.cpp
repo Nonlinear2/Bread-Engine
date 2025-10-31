@@ -76,7 +76,7 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
     // no need to store the side to move, as it is in the zobrist hash.
     TEntry* entry = &entries[zobrist & (entries.size() - 1)];
 
-    if (entry->zobrist_hash == zobrist && move != Move::NO_MOVE)
+    if (entry->zobrist_hash == zobrist && entry->move == Move::NO_MOVE && move != Move::NO_MOVE)
         entry->move = move.move();
 
     // we replace the old entry if:
