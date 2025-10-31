@@ -488,11 +488,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         // late move reductions
         new_depth += gives_check && !root_node;
+        new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
-        
+
         int new_reduced_depth = new_depth;
         new_reduced_depth -= move_gen.index() > 1 && !is_capture;
-        new_reduced_depth -= depth > 5 && !is_hit && !is_killer; // IIR
         new_reduced_depth -= tt_capture && !is_capture;
         new_reduced_depth -= move_gen.index() > lmr_1;
 
