@@ -90,7 +90,7 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
         (depth != DEPTH_QSEARCH && flag == TFlag::EXACT))
     {
         // update move if the old entry didn't hold the same position
-        if (entry->zobrist_hash != zobrist)
+        if (entry->zobrist_hash != zobrist || move != Move::NO_MOVE)
             entry->move = move.move();
 
         entry->zobrist_hash = zobrist;
