@@ -496,7 +496,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
-        if (move_gen.index() > 0 && depth > 2){
+        if (move_gen.index() > 0 && depth >= 2){
             value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
 
             if (value > alpha && new_depth < depth-1){
