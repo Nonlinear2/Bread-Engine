@@ -393,7 +393,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     bool tt_capture = transposition.move != Move::NO_MOVE && pos.isCapture(transposition.move);
 
     // pruning
-    if (!root_node && !pv && !in_check){
+    if (!root_node && !pv && !in_check && excluded_move == Move::NO_MOVE){
 
         // razoring
         if (eval + r_1*depth*depth + r_2 < alpha){ 
@@ -409,7 +409,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         // null move pruning
         // maybe check for zugzwang?
         int null_move_eval;
-        if ((ss - 1)->current_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
+        if ((ss - 1)->current_move != Move::NULL_MOVE
             && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta)){
 
             int R = 2 + (eval >= beta) + depth / 4 + tt_capture;
