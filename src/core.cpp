@@ -354,6 +354,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
+    if (is_mate(transposition.value))
+        transposition.value = pos_to_root_mate_value(max_value, ply);
 
     static_eval = eval = transposition.static_eval;
     eval = transposition.value;
@@ -552,18 +554,18 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         if (move_gen.tt_move == Move::NO_MOVE && move_gen.empty()){ // avoid calling expensive try_outcome_eval function
             // If board is in check, it is checkmate
             // if there are no legal moves and it's not check, it is stalemate so eval is 0
-            max_value = pos.inCheck() ? -MATE_VALUE : 0;
+            max_value = pos.inCheck() ? pos_to_root_mate_value(-MATE_VALUE, ply) : 0;
 
             if (nonsense_stage == Nonsense::TAKE_PIECES
                 && pos.them(engine_color).count() != 1
                 && pos.sideToMove() != engine_color
-                && max_value == -MATE_VALUE)
+                && is_loss(max_value))
                 max_value = TB_VALUE;
-                
+
             // if it should be checkmate, but there are not only bishops and knights, then say the position is winning
             if (nonsense_stage == Nonsense::PROMOTE
                 && !Nonsense::only_knight_bishop(pos)
-                && max_value == -MATE_VALUE){
+                && is_loss(max_value)){
                 assert(!Nonsense::is_winning_side(pos));
                 max_value = TB_VALUE;
             }
@@ -571,7 +573,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             // we know this eval is exact at any depth, but 
             // we also don't want this eval to pollute the transposition table.
             // the full move number will make sure it is replaced at some point.
-            transposition_table.store(zobrist_hash, max_value, NO_VALUE, 255, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+            transposition_table.store(zobrist_hash, root_to_pos_mate_value(max_value, ply),
+                NO_VALUE, 255, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
             return max_value;
         }
 
@@ -601,10 +604,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
     assert(is_valid(max_value));
 
-    if (is_mate(max_value))
-        max_value = increment_mate_ply(max_value);
-
-    transposition_table.store(zobrist_hash, max_value, static_eval, depth, best_move, node_type, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+    transposition_table.store(zobrist_hash, root_to_pos_mate_value(max_value, ply),
+        static_eval, depth, best_move, node_type, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
 
     return max_value;
 }
@@ -731,23 +732,23 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             break;
     }
 
-    if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
+    if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat, ply)){
 
         if (nonsense_stage == Nonsense::TAKE_PIECES
             && pos.them(engine_color).count() != 1
             && pos.sideToMove() != engine_color
-            && stand_pat == -MATE_VALUE)
+            && is_loss(stand_pat))
             stand_pat = TB_VALUE;
 
         // if it should be checkmate, but there are not only bishops and knights, then say the position is winning
         if (nonsense_stage == Nonsense::PROMOTE
             && !Nonsense::only_knight_bishop(pos)
-            && stand_pat == -MATE_VALUE){
+            && is_loss(stand_pat)){
             assert(!Nonsense::is_winning_side(pos));
             stand_pat = TB_VALUE;
         }
 
-        transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH,
+        transposition_table.store(zobrist_hash, root_to_pos_mate_value(stand_pat, ply), NO_VALUE, DEPTH_QSEARCH,
             Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
         return stand_pat;
     }
@@ -757,14 +758,10 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         return max_value;
 
     if (depth == 0 || depth == -1)
-        transposition_table.store(zobrist_hash, max_value,
-            stand_pat,
-            DEPTH_QSEARCH, best_move,
+        transposition_table.store(zobrist_hash, root_to_pos_mate_value(max_value, ply),
+            stand_pat, DEPTH_QSEARCH, best_move,
             max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
             static_cast<uint8_t>(pos.fullMoveNumber()), pv);
-
-    if (is_mate(max_value))
-        max_value = increment_mate_ply(max_value);
 
     return max_value;
 }

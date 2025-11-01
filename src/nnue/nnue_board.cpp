@@ -62,7 +62,7 @@ int NnueBoard::evaluate(){
     return std::clamp(nnue_.run(accumulators_stack.top(), sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
 }
 
-bool NnueBoard::try_outcome_eval(int& eval){
+bool NnueBoard::try_outcome_eval(int& eval, int ply){
     // we dont want history dependent data to be stored in the TT.
     // the evaluation stored in the TT should only depend on the
     // position on the board and not how we got there, otherwise these evals would be reused
@@ -79,7 +79,7 @@ bool NnueBoard::try_outcome_eval(int& eval){
 
     if (movelist.empty()){
         // checkmate/stalemate.
-        eval = inCheck() ? -MATE_VALUE : 0;
+        eval = inCheck() ? pos_to_root_mate_value(-MATE_VALUE, ply) : 0;
         return true;
     }
     return false;
