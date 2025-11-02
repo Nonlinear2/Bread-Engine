@@ -458,7 +458,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         // we need to be careful regarding stack variables as they can get modified by the singular search
         // as it uses the same stack element
         int extension = 0;
-        if (!root_node && is_hit && is_regular_eval(transposition.value)
+        if (!root_node && is_regular_eval(transposition.value)
             && move == transposition.move && excluded_move == Move::NO_MOVE
             && depth >= 6 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
             && transposition.depth >= depth - 1)
