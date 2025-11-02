@@ -218,7 +218,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     while (true){
         current_depth++;
 
-        negamax<true>(current_depth, -INFINITE_VALUE, INFINITE_VALUE, root_ss);
+        negamax<true>(current_depth, -INFINITE_VALUE, INFINITE_VALUE, root_ss, false);
         best_move = root_moves[0];
 
         std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
@@ -277,7 +277,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
 }
 
 template<bool pv>
-int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
+int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
     assert(depth <= ENGINE_MAX_DEPTH);
     assert(alpha < beta);
@@ -418,7 +418,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
             ss->moved_piece = Piece::NONE;
             ss->current_move = Move::NULL_MOVE;
             pos.makeNullMove();
-            null_move_eval = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1);
+            null_move_eval = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1, false);
             pos.unmakeNullMove();
             if (null_move_eval >= beta && !is_win(null_move_eval))
                 return null_move_eval;
@@ -501,21 +501,21 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         reduced_depth = std::min(reduced_depth, ENGINE_MAX_DEPTH);
 
         if (move_gen.index() > 0 && depth >= 2){
-            value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1);
+            value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1, true);
 
             if (value > alpha && reduced_depth < new_depth){
-                value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
+                value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
                 if (!is_capture)
                     move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
             } else if (value <= alpha && !is_capture)
                 move_gen.update_cont_history(ss->moved_piece, move.to().index(), -cont_2);
 
         } else if (!pv || move_gen.index() > 0){
-            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
+            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
         }
 
         if (pv && (move_gen.index() == 0 || value > alpha)){
-            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
+            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1, false);
         }
 
         pos.restore_state(move);
