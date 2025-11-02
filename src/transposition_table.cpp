@@ -72,7 +72,11 @@ void TranspositionTable::allocateMB(int new_size){
 }
 
 void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int depth,
-                               Move move, TFlag flag, uint8_t move_number, bool pv){
+                               Move move, TFlag flag, uint8_t move_number, int ply, bool pv){
+   
+    if (is_mate(value))
+        value = root_to_pos_mate_value(value, ply);
+
     // no need to store the side to move, as it is in the zobrist hash.
     TEntry* entry = &entries[zobrist & (entries.size() - 1)];
 
