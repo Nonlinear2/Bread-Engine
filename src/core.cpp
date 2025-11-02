@@ -289,7 +289,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     assert(!root_node || pos.isGameOver().second == GameResult::NONE);
 
     const int ply = ss - root_ss;
-    assert(ss - stack < MAX_PLY); // avoid stack overflow
+    assert(ply < MAX_PLY); // avoid stack overflow
 
     if (root_node)
         pos.synchronize();
