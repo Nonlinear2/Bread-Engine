@@ -497,7 +497,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         reduced_depth -= move_gen.index() > 1 && !is_capture;
         reduced_depth -= tt_capture && !is_capture;
         reduced_depth -= move_gen.index() > lmr_1;
-        reduced_depth -= cutnode;
+        reduced_depth -= cutnode && transposition.move == Move::NO_MOVE;
 
         reduced_depth = std::min(reduced_depth, ENGINE_MAX_DEPTH);
 
