@@ -1,10 +1,36 @@
 #pragma once
 
+#include <assert.h>
+#include <cmath>
 #include <array>
-#include <fstream>
-#include "chess.hpp"
 
-using namespace chess;
+/*************
+NNUE constants
+*************/
+
+constexpr int INPUT_SIZE = 768;
+constexpr int ACC_SIZE = 1024;
+
+constexpr int OUTPUT_BUCKET_COUNT = 8;
+
+constexpr int L1_INPUT_SIZE = 2 * ACC_SIZE;
+constexpr int L1_OUTPUT_SIZE = 1;
+
+constexpr int L0_WEIGHTS_SIZE = INPUT_SIZE * ACC_SIZE;
+constexpr int L0_BIAS_SIZE = ACC_SIZE;
+
+constexpr int L1_WEIGHTS_SIZE = L1_INPUT_SIZE * L1_OUTPUT_SIZE;
+constexpr int L1_BIAS_SIZE = L1_OUTPUT_SIZE;
+
+constexpr int BUCKETED_L1_WEIGHTS_SIZE = OUTPUT_BUCKET_COUNT * L1_WEIGHTS_SIZE;
+constexpr int BUCKETED_L1_BIAS_SIZE = OUTPUT_BUCKET_COUNT * L1_BIAS_SIZE;
+
+using Accumulator = std::array<int16_t, ACC_SIZE>;
+using Accumulators = std::array<Accumulator, 2>;
+
+/****************
+general constants
+****************/
 
 constexpr int TT_MIN_SIZE = 2;
 constexpr int TT_MAX_SIZE = 4096;
@@ -12,9 +38,10 @@ constexpr int TT_MAX_SIZE = 4096;
 constexpr int ENGINE_MAX_DEPTH = 63;
 constexpr int QSEARCH_MAX_DEPTH = 6;
 
-constexpr int SEARCH_STACK_SIZE = 256;
+constexpr int MAX_PLY = 256;
+constexpr int STACK_PADDING_SIZE = 2;
 
-constexpr int BENCHMARK_DEPTH = 9;
+constexpr int BENCHMARK_DEPTH = 10;
 
 constexpr int DEPTH_UNSEARCHED = -1;
 constexpr int DEPTH_QSEARCH = 0;
@@ -98,74 +125,3 @@ constexpr int get_mate_in_moves(int value){
     int ply = MATE_VALUE - std::abs(value);
     return (is_win(value) ? 1: -1)*(ply/2 + (ply%2 != 0));
 }
-
-const std::vector<int> piece_value = {
-    150, // pawn
-    450, // knight
-    450, // bishop
-    750, // rook
-    1350, // queen
-    300, // king
-    0, // none
-};
-
-struct Stack {
-    Move excluded_move = Move::NO_MOVE;
-    Move current_move = Move::NO_MOVE;
-    Piece moved_piece = Piece::NONE;
-    int static_eval = NO_VALUE;
-};
-
-class KillerMoves {
-    public:
-    uint16_t moves[ENGINE_MAX_DEPTH][3];
-
-    void add_move(int depth, Move move);
-    bool in_buffer(int depth, Move move);
-    void clear();
-
-    void save_to_stream(std::ofstream& ofs);
-    void load_from_stream(std::ifstream& ifs);
-};
-
-enum LimitType {
-    Time,
-    Depth,
-    Nodes,
-};
-
-class SearchLimit {
-    public:
-    SearchLimit() {};
-    SearchLimit(LimitType type, int value): type(type), value(value) {};
-    
-    LimitType type;
-    int value;
-};
-
-class ContinuationHistory {
-    public:
-    void clear();
-    int& get(int prev_piece, int prev_to, int piece, int to);
-    void apply_bonus(int prev_piece, int prev_to, int piece, int to, int bonus);
-    void save_to_stream(std::ofstream& ofs);
-    void load_from_stream(std::ifstream& ifs);
-
-    std::array<int, 64*12*64*12> history = {};
-};
-
-class FromToHistory {
-    public:
-    void clear();
-    int& get(bool color, int from, int to);
-    void apply_bonus(bool color, int from, int to, int bonus);
-    void save_to_stream(std::ofstream& ofs);
-    void load_from_stream(std::ifstream& ifs);
-
-    std::array<std::array<int, 64*64>, 2> history = {};
-};
-
-namespace SEE {
-bool evaluate(const Board& board, Move move, int threshold);
-PieceType pop_lva(const Board& board, Bitboard& occupied, const Bitboard& attackers, Color color);
-} // namespace SEE

@@ -6,19 +6,26 @@
 #include "chess.hpp"
 #include "transposition_table.hpp"
 #include "misc.hpp"
+#include "constants.hpp"
+#include "history.hpp"
+#include "see.hpp"
 #include "nonsense.hpp"
 #include "nnue_board.hpp"
 #include "sorted_move_gen.hpp"
+#include "tune.hpp"
+#include "tb.hpp"
+
+int nnue_evaluate(NnueBoard& pos);
 
 class Engine {
     public:
 
-    int nodes = 0;
+    int64_t nodes = 0;
     int current_depth = 0;
     std::atomic<SearchLimit> limit;
     std::atomic<bool> interrupt_flag = false;
     
-    Stack stack[SEARCH_STACK_SIZE + 2] = {};
+    Stack stack[MAX_PLY + STACK_PADDING_SIZE] = {};
     Stack* root_ss = stack + 2;
 
     std::atomic<int> run_time;
@@ -27,8 +34,6 @@ class Engine {
     NnueBoard pos = NnueBoard();
 
     Movelist root_moves;
-    
-    void set_uci_display(bool v);
     
     int get_think_time(float time_left, int num_moves_out_of_book,
         int num_moves_until_time_control, int increment);
@@ -50,15 +55,15 @@ class Engine {
     private:
     friend class UCIAgent;
 
-    bool display_uci = true;
-
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 
-    Nonsense nonsense = Nonsense();
+    int (*evaluate)(NnueBoard& pos) = nnue_evaluate;
+    Nonsense::Stage nonsense_stage = Nonsense::STANDARD;
+    Color engine_color;
+    bool tablebase_loaded = false;
 
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove();
-    Move minimax_root(int depth, Stack* ss);
 
     template<bool pv>
     int negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode);
