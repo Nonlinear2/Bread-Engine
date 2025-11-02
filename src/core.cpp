@@ -569,10 +569,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
                 max_value = TB_VALUE;
             }
 
-            // we know this eval is exact at any depth, but 
-            // we also don't want this eval to pollute the transposition table.
-            // the full move number will make sure it is replaced at some point.
-            transposition_table.store(zobrist_hash, max_value, NO_VALUE, 255, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
             return max_value;
         }
 
