@@ -278,7 +278,6 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
 template<bool pv>
 int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
-    assert(ss - stack < MAX_PLY); // avoid stack overflow
     assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
     assert(depth <= ENGINE_MAX_DEPTH);
     assert(alpha < beta);
@@ -288,6 +287,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
     const bool root_node = ss == root_ss;
     assert(!root_node || pos.isGameOver().second == GameResult::NONE);
+
+    const int ply = ss - root_ss;
+    assert(ply < MAX_PLY); // avoid stack overflow
 
     if (root_node)
         pos.synchronize();
@@ -303,7 +305,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
     if (interrupt_flag || (depth >= 5 && update_interrupt_flag()))
         return NO_VALUE; // the value doesn't matter, it won't be used.
 
-    if (ss - stack >= MAX_PLY - 1)
+    if (ply >= MAX_PLY - 1)
         return evaluate(pos);
 
     // transpositions will be checked inside of qsearch
@@ -566,10 +568,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
                 max_value = TB_VALUE;
             }
 
-            // we know this eval is exact at any depth, but 
-            // we also don't want this eval to pollute the transposition table.
-            // the full move number will make sure it is replaced at some point.
-            transposition_table.store(zobrist_hash, max_value, NO_VALUE, 255, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
             return max_value;
         }
 
@@ -609,7 +607,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
 
 template<bool pv>
 int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
-    assert(ss - stack < MAX_PLY); // avoid stack overflow
     assert(pv || (alpha == beta - 1));
 
     nodes++;
@@ -623,6 +620,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     if (pos.isHalfMoveDraw()) 
         return 0;
+
+    const int ply = ss - root_ss;
+    assert(ply < MAX_PLY); // avoid stack overflow
 
     int value;
     Move move;
@@ -682,7 +682,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     capture_gen.set_tt_move(transposition.move);
     
-    if (depth == -QSEARCH_MAX_DEPTH || ss - stack >= MAX_PLY - 1)
+    if (depth == -QSEARCH_MAX_DEPTH || ply >= MAX_PLY - 1)
         return stand_pat;
 
     alpha = std::max(alpha, stand_pat);
