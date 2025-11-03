@@ -66,7 +66,7 @@ class Engine {
     std::pair<std::string, std::string> get_pv_pmove();
 
     template<bool pv>
-    int negamax(int depth, int alpha, int beta, Stack* ss);
+    int negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode);
 
     template<bool pv>
     int qsearch(int alpha, int beta, int depth, Stack* ss);
