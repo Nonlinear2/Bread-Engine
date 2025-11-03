@@ -405,7 +405,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
 
         // reverse futility pruning
-        if (depth < 6 && eval - depth * rfp_1 - rfp_2 + rfp_3*improving >= beta)
+        if (depth < 6 && eval - depth * (rfp_1 - 50*cutnode) - rfp_2 + rfp_3*improving >= beta)
             return eval;
 
         // null move pruning
@@ -458,7 +458,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         // we need to be careful regarding stack variables as they can get modified by the singular search
         // as it uses the same stack element
         int extension = 0;
-        if (!root_node && is_hit && is_regular_eval(transposition.value)
+        if (!root_node && is_regular_eval(transposition.value)
             && move == transposition.move && excluded_move == Move::NO_MOVE
             && depth >= 6 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
             && transposition.depth >= depth - 1)
