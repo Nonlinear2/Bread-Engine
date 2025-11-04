@@ -505,6 +505,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1, true);
 
             if (value > alpha && reduced_depth < new_depth){
+                new_depth -= value < alpha + 10;
                 value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
                 if (!is_capture)
                     move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
