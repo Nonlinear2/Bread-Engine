@@ -4,8 +4,9 @@
 TUNEABLE(r_1, int, 164, 0, 500, 20, 0.002);
 TUNEABLE(r_2, int, 279, -100, 1000, 25, 0.002);
 TUNEABLE(rfp_1, int, 159, 0, 500, 25, 0.002);
-TUNEABLE(rfp_2, int, 53, 0, 1000, 50, 0.002);
-TUNEABLE(rfp_3, int, 144, -100, 1000, 20, 0.002);
+TUNEABLE(rfp_2, int, 50, 0, 1000, 50, 0.002);
+TUNEABLE(rfp_3, int, 53, 0, 1000, 50, 0.002);
+TUNEABLE(rfp_4, int, 144, -100, 1000, 20, 0.002);
 TUNEABLE(nmp_1, int, 84, -50, 250, 10, 0.002);
 TUNEABLE(nmp_2, int, 24, -300, 300, 15, 0.002);
 TUNEABLE(lmp_1, int, 117, -100, 500, 20, 0.002);
@@ -405,7 +406,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
 
         // reverse futility pruning
-        if (depth < 6 && eval - depth * (rfp_1 - 50*cutnode) - rfp_2 + rfp_3*improving >= beta)
+        if (depth < 6 && eval - depth * (rfp_1 - rfp_2*cutnode) - rfp_3 + rfp_4*improving >= beta)
             return eval;
 
         // null move pruning
