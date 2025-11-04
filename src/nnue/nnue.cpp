@@ -187,14 +187,16 @@ void NNUE::update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const
     }
 };
 
-void NNUE::run_hidden_layer(int8_t* input, int32_t* output, int input_size, int output_size, int8_t* weights, int32_t* bias){
-    const int num_input_chunks = input_size/int8_per_reg;
-    const int num_output_chunks = output_size/int32_per_reg;
+int32_t NNUE::run_L1(Accumulators& accumulators, Color stm, int bucket){
+    int16_t* stm_data = accumulators[stm].data();
+    int16_t* nstm_data = accumulators[!stm].data();
 
-    __m256i output_chunks[int32_per_reg];
-    const __m256i one = _mm256_set1_epi16(1);
+    const vec_int16 one = set1_epi16(1);
+    const vec_int16 zero = setzero_epi16();
+    const vec_int16 qscale = set1_epi16(255);
+    vec_int32 result = set1_epi32(0);
 
-    for (int j = 0; j < num_output_chunks; j++){
+    for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
         __m256i result = _mm256_loadu_si256((const __m256i*)&bias[j*int32_per_reg]);
         for (int i = 0; i < num_input_chunks; i++){
             __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]); // load int8
@@ -209,8 +211,10 @@ void NNUE::run_hidden_layer(int8_t* input, int32_t* output, int input_size, int 
         }
         result = _mm256_srai_epi32(result, 6); // this integer divides the result by 64 which is the scale.
         _mm256_storeu_si256((__m256i*)&output[j*int32_per_reg], result); // store int32
+    }
+};
 
-int32_t NNUE::run_L1(Accumulators& accumulators, Color stm, int bucket){
+int32_t NNUE::run_L2(Accumulators& accumulators, Color stm, int bucket){
     int16_t* stm_data = accumulators[stm].data();
     int16_t* nstm_data = accumulators[!stm].data();
 
@@ -230,33 +234,6 @@ int32_t NNUE::run_L1(Accumulators& accumulators, Color stm, int bucket){
         result = add_epi32(result, prod);
     }
 };
-
-// int32_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int32_t* bias){
-//     constexpr int input_size = 2*ACC_SIZE;
-//     constexpr int num_input_chunks = input_size/int8_per_reg;
-
-//     const __m256i one = _mm256_set1_epi16(1);
-
-//     __m256i result = _mm256_set1_epi32(0);
-//     for (int i = 0; i < num_input_chunks; i++){
-//         __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]); // load int8
-//         __m256i prod = _mm256_maddubs_epi16(
-//             input_chunk,
-//             _mm256_loadu_si256((const __m256i*)&weights[i*int8_per_reg]) //load int8
-//         ); // outputs int16
-//         prod = _mm256_madd_epi16(prod, one); // hadd pairs to int32 to avoid overflows in int16
-//         result = _mm256_add_epi32(result, prod);
-//     }
-
-//     // accumulate together
-//     result = _mm256_hadd_epi32(result, result);
-
-//     int32_t out_ptr[8];
-//     _mm256_storeu_si256((__m256i*)out_ptr, result);
-
-//     return out_ptr[0] + out_ptr[1] + out_ptr[4] + out_ptr[5] + bias[0];
-// };
-
 
 int32_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int32_t* bias){
 
