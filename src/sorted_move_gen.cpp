@@ -91,7 +91,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
     if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
         score += chis * cont_history.get(prev_piece, prev_to, piece, to.index()) / 10'000;
 
-    score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
+    score = std::clamp(score, WORST_MOVE_SCORE, BEST_MOVE_SCORE);
 
     move.setScore(score);
 }
@@ -121,7 +121,7 @@ void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
     int score = piece_value[to_piece_type] - piece_value[piece_type]
         + chk_2 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
 
-    score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
+    score = std::clamp(score, WORST_MOVE_SCORE, BEST_MOVE_SCORE);
 
     move.setScore(score);
 }
@@ -162,16 +162,14 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             for (int i = 0; i < moves.size(); i++){
                 set_score(moves[i]);
                 see[i] = SeeScore::UNSEEN;
+                processed[i] = false;
             }
-            std::stable_sort(moves.begin(), moves.end(), [](const Move a, const Move b){ return a.score() > b.score(); });
-            curr_idx = 0; // prepare idx for next stage
             ++stage;
 
         case GOOD_SEE:
             move = pop_best_score(SeeScore::GOOD);
             if (move != Move::NO_MOVE)
                 return true;
-            curr_idx = 0; // prepare idx for next stage
             ++stage;
 
         case BAD_SEE:
@@ -185,13 +183,27 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 
 template<movegen::MoveGenType MoveGenType>
 Move SortedMoveGen<MoveGenType>::pop_best_score(SeeScore see_value){
-    for (; curr_idx < moves.size(); curr_idx++){
-        if (moves[curr_idx] != tt_move){
-            if (see[curr_idx] == SeeScore::UNSEEN)
-                see[curr_idx] = SEE::evaluate(pos, moves[curr_idx], -1) ? SeeScore::GOOD : SeeScore::BAD;
-    
-            if (see[curr_idx] == see_value)
-                return moves[curr_idx++];
+    int best_idx;
+    int best_score;
+    while (true){
+        best_score = WORST_MOVE_SCORE - 1;
+        for (int i = 0; i < moves.size(); i++){
+            if (moves[i] != tt_move && !processed[i] && (see[i] == SeeScore::UNSEEN || see[i] == see_value)){
+                if (moves[i].score() >= best_score){
+                    best_score = moves[i].score();
+                    best_idx = i;
+                }
+            }
+        }
+        if (best_score == WORST_MOVE_SCORE - 1)
+            return Move::NO_MOVE;
+
+        if (see[best_idx] == SeeScore::UNSEEN)
+            see[best_idx] = SEE::evaluate(pos, moves[best_idx], -1) ? SeeScore::GOOD : SeeScore::BAD;
+
+        if (see[best_idx] == see_value){
+            processed[best_idx] = true;
+            return moves[best_idx];
         }
     }
     return Move::NO_MOVE;

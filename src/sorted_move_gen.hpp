@@ -53,8 +53,8 @@ class SortedMoveGen {
     Move tt_move = Move::NO_MOVE;
     private:
     Movelist moves;
-    int curr_idx;
 
+    bool processed[chess::constants::MAX_MOVES];
     SeeScore see[chess::constants::MAX_MOVES];
 
     Bitboard attacked_by_pawn;
