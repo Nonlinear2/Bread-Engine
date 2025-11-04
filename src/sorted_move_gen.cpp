@@ -199,7 +199,7 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(SeeScore see_value){
             return Move::NO_MOVE;
 
         if (see[best_idx] == SeeScore::UNSEEN)
-            see[best_idx] = SEE::evaluate(pos, moves[best_idx], -1) ? SeeScore::GOOD : SeeScore::BAD;
+            see[best_idx] = SEE::evaluate(pos, moves[best_idx], -bst) ? SeeScore::GOOD : SeeScore::BAD;
 
         if (see[best_idx] == see_value){
             processed[best_idx] = true;
