@@ -13,7 +13,7 @@ set(bread_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(bread_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 set(bread_NEURAL_NETWORKS ${CMAKE_CURRENT_SOURCE_DIR}/neural_networks)
 
-set(bread_NNUE_MODEL_PATH "${bread_NEURAL_NETWORKS}/model_NNUE_768_2x256_1")
+set(bread_NNUE_MODEL_PATH "${bread_NEURAL_NETWORKS}/model_NNUE_768_2x1024_1")
 set(bread_DEBUG_UCI_COMMANDS_PATH "${bread_UTILS}/commands.txt")
 
 set(bread_INCLUDE_DIRS
@@ -31,9 +31,11 @@ set(bread_SOURCE
     ${bread_SRC}/sorted_move_gen.cpp
     ${bread_SRC}/nnue/nnue.cpp
     ${bread_SRC}/nnue/nnue_board.cpp
+    ${bread_SRC}/nnue/nnue_misc.cpp
     ${bread_SRC}/transposition_table.cpp
     ${bread_SRC}/core.cpp
     ${bread_SRC}/benchmark.cpp
+    ${bread_SRC}/tb.cpp
     ${bread_SRC}/extern/Fathom/src/tbprobe.cpp
 )
 

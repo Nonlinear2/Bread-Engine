@@ -1,22 +1,18 @@
 <h1 align="center">Bread Engine</h1>
-<h4 align="center">A superhuman chess engine written in C++.</h4>
+<h4 align="center">A chess engine written in C++.</h4>
 
 <p align="center">
-  <a>
-    <img src="https://img.shields.io/badge/Architectures-x86%2C%20x64-%23f78b04?style=for-the-badge&labelColor=%23013c5a&color=%23013c5a">
-  </a>
-  <a href="https://github.com/Nonlinear2/Bread-Engine/releases">
-    <img src="https://img.shields.io/github/v/release/Nonlinear2/Bread-Engine?include_prereleases&style=for-the-badge&label=Lastest%20Release&labelColor=%23950502&color=%23013c5a">
-  </a>
-  <a>
-    <img src="https://img.shields.io/github/license/Nonlinear2/Bread-Engine?style=for-the-badge&labelColor=%23950502&color=%23950502">
-  </a>
+  <picture><source srcset="https://img.shields.io/badge/Architectures-x86%2C%20x64-%23f78b04?style=for-the-badge&labelColor=%23013c5a&color=%23013c5a"><img alt="Architectures: x86, x64">
+  </picture><a href="https://github.com/Nonlinear2/Bread-Engine/releases"><img src="https://img.shields.io/github/v/release/Nonlinear2/Bread-Engine?include_prereleases&style=for-the-badge&label=Lastest%20Release&labelColor=%23950502&color=%23013c5a" alt="Latest Release"></a>
+  <picture><source srcset="https://img.shields.io/github/license/Nonlinear2/Bread-Engine?style=for-the-badge&labelColor=%23950502&color=%23950502"><img alt="License"></picture>
 </p>
 
-# Overview
-Bread is rated around 3000 elo on the computer chess rating lists.
 
-It uses minimax search, along with an efficiently updatable neural network trained from zero knowledge. The neural network is homemade and trained using games of self play.
+
+# Overview
+Bread is rated around 3300 elo on the computer chess rating lists.
+
+It uses minimax search, along with an efficiently updatable neural network trained from zero knowledge using games of self play.
 
 Bread engine does not have a graphical interface built in. However it supports the UCI protocol, you can therefore run it on any chess graphical interface, such as <a href="https://encroissant.org/"><kbd>En Croissant</kbd></a> or <a href="https://github.com/cutechess/cutechess"><kbd>Cute Chess</kbd></a>.
 
@@ -64,7 +60,7 @@ position startpos
 go movetime 3000
 ```
 
-and the engine will return the best move.
+and the engine should return a chess move.
 
 # Custom commands
 
@@ -86,7 +82,6 @@ in this section we provide an overview of the search algorithm, and the main eng
   - [Quiescence search](#quiescence-search)
   - [pondering](#pondering)
   - [other optimizations](#other-optimizations)
-  - [threefold repetition](#threefold-repetition)
 - [Neural Network](#neural-network)
   - [Neural network types](#neural-network-types)
   - [Description of NNUE](#description-of-nnue)
@@ -144,18 +139,7 @@ Many other search improvements exist, but they would be too long to describe in 
 - reverse futility pruning
 - razoring
 - continuation history
-
-  ...
-
-
-### Threefold repetition
-The first idea that comes to mind to implement threefold repetition is to have something like 
-```c++
-if (pos.is_threefold_repetition()){
-    return 0;
-}
-```
-in the minimax function. However, care must be taken for the transposition table, as the evaluation of 0 is "history dependent". In another variation of the search, this position might be winning or losing, and reusing an evaluation of 0 would lead to engine blunders. Therefore, Bread Engine doesn't store positions that started repeating and were evaluated as 0. This way, the problematic positions aren't reused, but higher in the tree, the possibility of forcing a draw is taken into account.
+- ...
 
 ## Neural Network
 ### Neural network types
@@ -174,54 +158,9 @@ The two perspectives are each run through the same set of weights and concatenat
 ### Quantization
 An important way to speed up the neural network is to use quantization with SIMD vectorization on the cpu (unfortunately, gpu's aren't usually suited for chess engines as minimax is difficult to paralellize because of alpha beta pruning (for a multithreading approach for chess engines, see [lazy SMP](https://www.chessprogramming.org/Lazy_SMP)). Also, the data transfer latency between cpu and gpu is too high).
 
-The first layer weights and biases are multiplied by a scale of 255 and stored in int16. Accumulation also happens in int16.  With a maximum of 30 active input features (all pieces on the board), there won't be any integer overflow unless (sum of 30 weights) + bias > 32767, which is most definitely not the case. We then apply clipped relu while converting to int8. Now `layer_1_quant_output = input @ (255*weights) + 255*bias = 255*(input @ weights + bias) = 255*true_output`.
-For the second layer, weights are multiplied by 64 and stored in int8, and the bias is multiplied by 127 * 64 and stored in int32.
-To be able to store weights in int8, we need to make sure that weights * 64 < 127, so a weight can't exceed 127/64 = 1.98. This is the price to pay for full integer quantization. After this layer, the output is
-`layer_2_quant_output = quant_input @ (64*weights) + 255*64*bias = 255*64*(input @ weights + bias) = 255*64*true_output`. We can finally divide this by a given scale to get the network output.
-
-Here is some code to run the hidden layers (this was used until Bread Engine 0.0.6):
-```c++
-inline __m256i _mm256_add8x256_epi32(__m256i* inputs){ // horizontal add 8 int32 avx registers.
-    inputs[0] = _mm256_hadd_epi32(inputs[0], inputs[1]);
-    inputs[2] = _mm256_hadd_epi32(inputs[2], inputs[3]);
-    inputs[4] = _mm256_hadd_epi32(inputs[4], inputs[5]);
-    inputs[6] = _mm256_hadd_epi32(inputs[6], inputs[7]);
-
-    inputs[0] = _mm256_hadd_epi32(inputs[0], inputs[2]);
-    inputs[4] = _mm256_hadd_epi32(inputs[4], inputs[6]);
-
-    return _mm256_add_epi32(
-        // swap lanes of the two regs
-        _mm256_permute2x128_si256(inputs[0], inputs[4], 0b00110001),
-        _mm256_permute2x128_si256(inputs[0], inputs[4], 0b00100000)
-    );
-};
-
-template<int in_size, int out_size>
-void HiddenLayer<in_size, out_size>::run(int8_t* input, int32_t* output){
-
-    __m256i output_chunks[int32_per_reg];
-    const __m256i one = _mm256_set1_epi16(1);
-
-    for (int j = 0; j < num_output_chunks; j++){
-        __m256i result = _mm256_set1_epi32(0);
-        for (int i = 0; i < num_input_chunks; i++){
-            __m256i input_chunk = _mm256_loadu_epi8(&input[i*int8_per_reg]);
-            for (int k = 0; k < int32_per_reg; k++){
-                output_chunks[k] = _mm256_maddubs_epi16(
-                    input_chunk,
-                    _mm256_loadu_epi8(&this->weights[(j*int32_per_reg+k) * this->input_size + i*int8_per_reg])
-                );
-                output_chunks[k] = _mm256_madd_epi16(output_chunks[k], one); // hadd pairs to int32
-            }
-            result = _mm256_add_epi32(result, _mm256_add8x256_epi32(output_chunks));
-        }
-        result = _mm256_add_epi32(result, _mm256_loadu_epi32(&this->bias[j*int32_per_reg]));
-        result = _mm256_srai_epi32(result, 6); // this integer divides the result by 64 to scale back the output.
-        _mm256_storeu_epi32(&output[j*int32_per_reg], result);
-    }
-};
-```
+The first layer weights and biases are multiplied by a scale of 255 and stored in int16. Accumulation also happens in int16.  With a maximum of 30 active input features (all pieces on the board), there won't be any integer overflow unless (sum of 30 weights) + bias > 32767, which is most definitely not the case. We then apply squared clipped relu. Now `L0_quant_output = input @ (255*weights) + 255*bias = 255*(input @ weights + bias) = 255*true_output`.
+For the second layer, weights are multiplied by 64 and stored in int16, and the bias is multiplied by 127 * 64 and stored in int32. After this layer, the output is
+`L1_quant_output = quant_input @ (64*weights) + 255*64*bias = 255*64*(input @ weights + bias) = 255*64*true_output`. We can finally multiply this output by a given scale, and dequantize by dividing by 255*64 to get the network output.
 
 ### Optimized matrix multiplication (not currently in use)
 *The following method is original, it may or may not be a good approach.*

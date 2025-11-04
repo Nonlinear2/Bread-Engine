@@ -66,20 +66,21 @@ void benchmark_engine(int depth){
 
         engine.search(fen, SearchLimit(LimitType::Depth, depth));
 
-        times.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_time).count());
+        times.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::high_resolution_clock::now() - start_time
+        ).count());
         nodes.push_back(engine.nodes);
 
         cb.setFen(fen);
 
-        // print info to terminal
         std::cout << engine.current_depth << std::endl;
     }
     engine.transposition_table.info();
     std::cout << "============================== \n";
     std::cout << "total nodes: " << sum(nodes) << "\n";
-    std::cout << "average nodes: " << sum(nodes)/fens.size() << "\n";
+    std::cout << "average nodes: " << sum(nodes) / fens.size() << "\n";
     std::cout << "total time: " << sum(times) << " ms\n";
-    std::cout << "average nodes per second: " << 1000*sum(nodes)/sum(times) << "\n";
+    std::cout << "average nodes per second: " << 1000 * sum(nodes) / sum(times) << "\n";
     std::cout << "============================== \n";
 }
 

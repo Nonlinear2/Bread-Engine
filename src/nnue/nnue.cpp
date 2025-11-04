@@ -1,20 +1,16 @@
 #include "nnue.hpp"
 
+using namespace NNUE_UTILS;
+
 #define STR2(x) #x
 #define STR(x) STR2(x)
 
-#ifdef __APPLE__
-#define USTR(x) "_" STR(x)
-#else
-#define USTR(x) STR(x)
-#endif
-
 #ifdef _WIN32
-#define INCBIN_SECTION ".rdata, \"dr\""
+    #define INCBIN_SECTION ".rdata, \"dr\""
 #elif defined __APPLE__
-#define INCBIN_SECTION "__TEXT,__const"
+    #define INCBIN_SECTION "__TEXT,__const"
 #else
-#define INCBIN_SECTION ".rodata"
+    #define INCBIN_SECTION ".rodata"
 #endif
 
 // credit: https://gist.github.com/mmozeiko/ed9655cf50341553d282
@@ -41,33 +37,27 @@ extern "C" {
     extern const int16_t ft_weights_start[];
     extern const int16_t ft_bias_start[];
 
-    extern const int8_t l1_weights_start[];
+    extern const int16_t l1_weights_start[];
     extern const int32_t l1_bias_start[];
 };
 
-/****************
-Accumulator class
-****************/
-int16_t* Accumulator::operator[](bool color){
-    return color ? &accumulator[0] : &accumulator[ACC_SIZE];
-};
 /*********
 NNUE class
 *********/
 
 NNUE::NNUE(){
     ft_weights = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*INPUT_SIZE*ACC_SIZE, std::align_val_t{32})
+        operator new[](sizeof(int16_t)*L0_WEIGHTS_SIZE, std::align_val_t{32})
     );
     ft_bias = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*ACC_SIZE, std::align_val_t{32})
+        operator new[](sizeof(int16_t)*L0_BIAS_SIZE, std::align_val_t{32})
     );
 
-    l1_weights = static_cast<int8_t*>(
-        operator new[](sizeof(int8_t)*l1_input_size*l1_output_size, std::align_val_t{32})
+    l1_weights = static_cast<int16_t*>(
+        operator new[](sizeof(int16_t)*BUCKETED_L1_WEIGHTS_SIZE, std::align_val_t{32})
     );
     l1_bias = static_cast<int32_t*>(
-        operator new[](sizeof(int32_t)*l1_output_size, std::align_val_t{32})
+        operator new[](sizeof(int32_t)*BUCKETED_L1_BIAS_SIZE, std::align_val_t{32})
     );
 
     l2_weights = static_cast<int8_t*>(
@@ -94,20 +84,18 @@ NNUE::~NNUE(){
 
 void NNUE::load_model(){
     // feature transformer
-    for (int i = 0; i < INPUT_SIZE*ACC_SIZE; i++){
+    for (int i = 0; i < L0_WEIGHTS_SIZE; i++)
         ft_weights[i] = ft_weights_start[i];
-    }
-    for (int i = 0; i < ACC_SIZE; i++){
+
+    for (int i = 0; i < L0_BIAS_SIZE; i++)
         ft_bias[i] = ft_bias_start[i];
-    }
 
     // layer 1
-    for (int i = 0; i < l1_input_size*l1_output_size; i++){
+    for (int i = 0; i < BUCKETED_L1_WEIGHTS_SIZE; i++)
         l1_weights[i] = l1_weights_start[i];
-    }
-    for (int i = 0; i < l1_output_size; i++){
+
+    for (int i = 0; i < BUCKETED_L1_BIAS_SIZE; i++)
         l1_bias[i] = l1_bias_start[i];
-    }
 };
 
 inline __m256i _mm256_add8x256_epi32(__m256i* inputs){ // horizontal add 8 int32 avx registers.
@@ -126,70 +114,76 @@ inline __m256i _mm256_add8x256_epi32(__m256i* inputs){ // horizontal add 8 int32
     );
 };
 
-void NNUE::compute_accumulator(const std::vector<int> active_features, bool color){
+void NNUE::compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features){
     // we have 256 int16 to process, and there are 16 avx registers which can hold 16 int16.
     // therefore we need only one pass to the registers.
 
-    __m256i avx_regs[num_avx_registers];
+    constexpr int num_chunks = ACC_SIZE / INT16_PER_REG;
+
+    vec_int16 registers[num_chunks];
 
     // load the bias from memory
-    for (int i = 0; i < num_avx_registers; i++){
-        avx_regs[i] = _mm256_loadu_si256((const __m256i*)&ft_bias[i*int16_per_reg]); // load int16
+    for (int i = 0; i < num_chunks; i++){
+        registers[i] = load_epi16(&ft_bias[i*INT16_PER_REG]);
     }
 
     for (const int &a: active_features){
-        for (int i = 0; i < num_avx_registers; i++){
+        for (int i = 0; i < num_chunks; i++){
             // a*acc size is the index of the a-th row. We then accumulate the weights.
-            avx_regs[i] = _mm256_add_epi16(
-                avx_regs[i],
-                _mm256_loadu_si256((const __m256i*)&ft_weights[a*ACC_SIZE + i*int16_per_reg]) // load int16
+            registers[i] = add_epi16(
+                registers[i],
+                load_epi16(&ft_weights[a*ACC_SIZE + i*INT16_PER_REG])
                 );
         }
     }
+
     // store the result in the accumulator
-    for (int i = 0; i < num_avx_registers; i++){
-        _mm256_storeu_si256((__m256i*)&accumulator[color][i*int16_per_reg], avx_regs[i]); // store int16
+    for (int i = 0; i < num_chunks; i++){
+        store_epi16(&new_acc[i*INT16_PER_REG], registers[i]);
     }
 };
 
-void NNUE::update_accumulator(const modified_features m_features, bool color){
+void NNUE::update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const modified_features m_features){
 
-    __m256i avx_regs[num_avx_registers];
+    constexpr int num_chunks = ACC_SIZE / INT16_PER_REG;
+
+    vec_int16 registers[num_chunks];
 
     // load the accumulator
-    for (int i = 0; i < num_avx_registers; i++){
-        avx_regs[i] = _mm256_loadu_si256((const __m256i*)&accumulator[color][i*int16_per_reg]); // load int16
+    for (int i = 0; i < num_chunks; i++){
+        registers[i] = load_epi16(&prev_acc[i*INT16_PER_REG]); 
     }
 
     // added feature
-    for (int i = 0; i < num_avx_registers; i++){
+    for (int i = 0; i < num_chunks; i++){
         // m_features.added*acc_size is the index of the added featured row. We then accumulate the weights.
-        avx_regs[i] = _mm256_add_epi16(
-            avx_regs[i],
-            _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.added*ACC_SIZE + i*int16_per_reg]) // load int16
+        registers[i] = add_epi16(
+            registers[i],
+            load_epi16(&ft_weights[m_features.added*ACC_SIZE + i*INT16_PER_REG])
             );
     }
+
     // removed feature
-    for (int i = 0; i < num_avx_registers; i++){
+    for (int i = 0; i < num_chunks; i++){
         // m_features.removed*acc_size is to get the right column.
-        avx_regs[i] = _mm256_sub_epi16(
-            avx_regs[i],
-            _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.removed*ACC_SIZE + i*int16_per_reg]) // load int16
+        registers[i] = sub_epi16(
+            registers[i],
+            load_epi16(&ft_weights[m_features.removed*ACC_SIZE + i*INT16_PER_REG])
             );
     }
 
     if (m_features.captured != -1){
-        for (int i = 0; i < num_avx_registers; i++){
-            avx_regs[i] = _mm256_sub_epi16(
-                avx_regs[i],
-                _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.captured*ACC_SIZE + i*int16_per_reg]) // load int16
+        for (int i = 0; i < num_chunks; i++){
+            registers[i] = sub_epi16(
+                registers[i],
+                load_epi16(&ft_weights[m_features.captured*ACC_SIZE + i*INT16_PER_REG])
                 );
         }
     }
 
     //store the result in the accumulator
-    for (int i = 0; i < num_avx_registers; i++){
-        _mm256_storeu_si256((__m256i*)&accumulator[color][i*int16_per_reg], avx_regs[i]); // store int16
+    for (int i = 0; i < num_chunks; i++){
+        store_epi16(&new_acc[i*INT16_PER_REG], registers[i]);
     }
 };
 
@@ -215,6 +209,25 @@ void NNUE::run_hidden_layer(int8_t* input, int32_t* output, int input_size, int 
         }
         result = _mm256_srai_epi32(result, 6); // this integer divides the result by 64 which is the scale.
         _mm256_storeu_si256((__m256i*)&output[j*int32_per_reg], result); // store int32
+
+int32_t NNUE::run_L1(Accumulators& accumulators, Color stm, int bucket){
+    int16_t* stm_data = accumulators[stm].data();
+    int16_t* nstm_data = accumulators[!stm].data();
+
+    const vec_int16 one = set1_epi16(1);
+    const vec_int16 zero = setzero_epi16();
+    const vec_int16 qscale = set1_epi16(255);
+    vec_int32 result = set1_epi32(0);
+
+    for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
+        vec_int16 in = load_epi16(&stm_data[i]);
+        in = min_epi16(qscale, max_epi16(in, zero));
+
+        vec_int16 weight_chunk = load_epi16(&l1_weights[bucket * L1_WEIGHTS_SIZE + i]);
+        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
+
+        // madd pairs to int32 to avoid overflows in int16
+        result = add_epi32(result, prod);
     }
 };
 
@@ -258,27 +271,18 @@ int32_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int32_t* bias){
 
     int32_t out_ptr[8];
     _mm256_storeu_si256((__m256i*)out_ptr, result); // store int32
+    for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
+        vec_int16 in = load_epi16(&nstm_data[i]);
+        in = min_epi16(qscale, max_epi16(in, zero));
 
-    return out_ptr[0] + out_ptr[1] + out_ptr[4] + out_ptr[5] + bias[0];
-};
+        vec_int16 weight_chunk = load_epi16(&l1_weights[bucket * L1_WEIGHTS_SIZE + ACC_SIZE + i]);
+        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
 
-// input size must be a multiple of 32
-// there is no max size.
-void NNUE::crelu16(int16_t *input, int8_t *output, int size){
-
-    assert(size % int8_per_reg == 0);
-
-    const int num_regs = size / int8_per_reg;
-    const __m256i zero = _mm256_setzero_si256();
-
-    for (int i = 0; i < num_regs; i++){
-        __m256i in_1 = _mm256_loadu_si256((const __m256i*)&input[(2*i)*int16_per_reg]); // load int16
-        __m256i in_2 = _mm256_loadu_si256((const __m256i*)&input[(2*i+1)*int16_per_reg]); // load int16
-        // packs sets negative values to 0 and saturates at 255, which effectively applies relu
-        __m256i out = _mm256_packus_epi16(in_1, in_2);
-        out = _mm256_permute4x64_epi64(out, 0b11011000); // undo the packus shuffle
-        _mm256_storeu_si256((__m256i*)&output[i*int8_per_reg], out); // store int8
+        // madd pairs to int32 to avoid overflows in int16
+        result = add_epi32(result, prod);
     }
+
+    return reduce1_epi32(result) / 255 + l1_bias[bucket];
 };
 
 // input size must be a multiple of 32
@@ -315,4 +319,10 @@ int NNUE::run(bool color){
 
     int output = run_output_layer(l1_clipped_output, l2_weights, l2_bias);
     return output / 32; // 64 * 255 * true_output / 32 = 510 * true_output so roughly scale which is 600
+int NNUE::run(Accumulators& accumulators, Color stm, int piece_count){
+    constexpr int pieces_per_bucket = 32 / OUTPUT_BUCKET_COUNT;
+    int bucket = (piece_count - 2) / pieces_per_bucket;
+
+    int output = run_L1(accumulators, stm, bucket);
+    return (output * 600) / (64 * 255); // scale is 600
 };

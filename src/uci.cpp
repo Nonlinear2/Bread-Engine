@@ -34,6 +34,9 @@ bool UCIAgent::process_uci_command(std::string command){
     } else if (first == "bench"){
         process_bench(parsed_command);
 
+    } else if (first == "evaluate"){
+        process_evaluate(parsed_command);
+
     } else if (first == "go"){
         interrupt_if_searching();
         process_go(parsed_command);
@@ -74,15 +77,18 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
     if (option_name == "SyzygyPath"){
         std::string path = option_value;
         // handle path containing spaces
-        for (int i = 5; i < command.size(); i++){
+        for (int i = 5; i < command.size(); i++)
             path += " " + command[i];
-        }
+
         bool tb_success = tb_init(path.c_str());
         if (!tb_success){
+            engine.tablebase_loaded = false;
             std::cout << "info string tablebase initialisation failed" << std::endl;
         } else if (TB_LARGEST == 0){
+            engine.tablebase_loaded = false;
             std::cout << "info string no tablebase loaded" << std::endl;
         } else {
+            engine.tablebase_loaded = true;
             std::cout << "info string tablebase loaded" << std::endl;
         }
     } else if (option_name == "Hash"){
@@ -112,31 +118,36 @@ void UCIAgent::process_position(std::vector<std::string> command){
     if (command[1] == "startpos"){
         fen = constants::STARTPOS;
     } else if (command[1] == "fen") {
-        for (int i=0; i < 5; i++){
+        for (int i = 0; i < 5; i++)
             fen += command[2+i] + " ";
-        }
         fen += command[7];
     }
     engine.pos.setFen(fen);
 
     bool is_movelist = false; 
-    for (int i=2; i < command.size(); i++){
+    for (int i = 2; i < command.size(); i++){
         std::string token = command[i];
-        if (is_movelist){
+        if (is_movelist)
             engine.pos.makeMove(uci::uciToMove(engine.pos, token));
-        }
-        if (token == "moves"){
+
+        if (token == "moves")
             is_movelist = true;
-        }
     }
 }
 
 void UCIAgent::process_bench(std::vector<std::string> command){
-    if (command.size() == 1){
+    if (command.size() == 1)
         Benchmark::benchmark_engine(BENCHMARK_DEPTH);
-    } else if (command[1] == "nn"){
+    else if (command[1] == "nn")
         Benchmark::benchmark_nn();
-    }
+}
+
+void UCIAgent::process_evaluate(std::vector<std::string> command){
+    engine.pos.synchronize();
+    int score = engine.pos.sideToMove() == Color::BLACK ? -1 : 1;
+    score *= engine.pos.evaluate();
+    std::string sign = score >= 0 ? "+" : "";
+    std::cout << "NNUE Evaluation: " << sign << score << std::endl;
 }
 
 void UCIAgent::process_go(std::vector<std::string> command){
@@ -150,25 +161,31 @@ void UCIAgent::process_go(std::vector<std::string> command){
     if (go_type == "ponder"){
         cached_think_time = get_think_time_from_go_command(command);
         if (cached_think_time == -1) return; // error occured
-        main_search_thread = std::thread(&Engine::iterative_deepening, &engine, SearchLimit(LimitType::Depth, ENGINE_MAX_DEPTH));
+        main_search_thread = std::thread(&Engine::iterative_deepening,
+            &engine, SearchLimit(LimitType::Depth, ENGINE_MAX_DEPTH));
         return;
     } else if (go_type == "movetime"){
-        main_search_thread = std::thread(&Engine::iterative_deepening, &engine, SearchLimit(LimitType::Time, std::stoi(command[2])));
+        main_search_thread = std::thread(&Engine::iterative_deepening,
+            &engine, SearchLimit(LimitType::Time, std::stoi(command[2])));
         return;
     } else if (go_type == "depth"){
-        main_search_thread = std::thread(&Engine::iterative_deepening, &engine, SearchLimit(LimitType::Depth, std::stoi(command[2])));
+        main_search_thread = std::thread(&Engine::iterative_deepening,
+            &engine, SearchLimit(LimitType::Depth, std::stoi(command[2])));
         return;
     } else if (go_type == "nodes"){
-        main_search_thread = std::thread(&Engine::iterative_deepening, &engine, SearchLimit(LimitType::Nodes, std::stoi(command[2])));
+        main_search_thread = std::thread(&Engine::iterative_deepening,
+            &engine, SearchLimit(LimitType::Nodes, std::stoi(command[2])));
         return;
     } else if (go_type == "infinite"){
-        main_search_thread = std::thread(&Engine::iterative_deepening, &engine, SearchLimit(LimitType::Depth, ENGINE_MAX_DEPTH));
+        main_search_thread = std::thread(&Engine::iterative_deepening,
+            &engine, SearchLimit(LimitType::Depth, ENGINE_MAX_DEPTH));
         return;
     } else {
         int think_time = get_think_time_from_go_command(command);
         if (think_time == -1)
             return; // error occured
-        main_search_thread = std::thread(&Engine::iterative_deepening, &engine, SearchLimit(LimitType::Time, think_time));
+        main_search_thread = std::thread(&Engine::iterative_deepening,
+            &engine, SearchLimit(LimitType::Time, think_time));
     }
 }
 
@@ -182,17 +199,16 @@ int UCIAgent::get_think_time_from_go_command(std::vector<std::string> command){
     int movestogo = 0;
     for (int i=1; i < command.size(); i++){
         std::string token = command[i];
-        if (token == "wtime"){
+        if (token == "wtime")
             wtime = std::stoi(command[i+1]);
-        } else if (token == "btime"){
+        else if (token == "btime")
             btime = std::stoi(command[i+1]);
-        } else if (token == "winc"){
+        else if (token == "winc")
             winc = std::stoi(command[i+1]);
-        } else if (token == "binc"){
+        else if (token == "binc")
             binc = std::stoi(command[i+1]);
-        } else if (token == "movestogo"){
+        else if (token == "movestogo")
             movestogo = std::stoi(command[i+1]);
-        }
     };
 
     if ((wtime == -1) || (btime == -1)){

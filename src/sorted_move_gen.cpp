@@ -1,17 +1,17 @@
 #include "sorted_move_gen.hpp"
 
 TUNEABLE(endg, int, 11, 0, 32, 0.5, 0.002);
-TUNEABLE(psm_1, int, 69, 0, 1000, 20, 0.002);
-TUNEABLE(psm_2, int, 114, 0, 1000, 20, 0.002);
-TUNEABLE(att_1, int, 55, 0, 500, 10, 0.002);
-TUNEABLE(att_2, int, 48, 0, 500, 10, 0.002);
-TUNEABLE(chk_1, int, 168, 0, 1000, 20, 0.002);
-TUNEABLE(cpt, int, 152, 0, 1000, 20, 0.002);
-TUNEABLE(prm, int, 115, 0, 1000, 20, 0.002);
-TUNEABLE(kil, int, 129, 0, 1000, 25, 0.002);
-TUNEABLE(his, int, 139, 0, 1000, 20, 0.002);
-TUNEABLE(chis, int, 117, 0, 1000, 20, 0.002);
-TUNEABLE(chk_2, int, 361, 0, 2000, 20, 0.002);
+TUNEABLE(psm_2, int, 127, 0, 1000, 20, 0.002);
+TUNEABLE(att_1, int, 46, 0, 500, 10, 0.002);
+TUNEABLE(att_2, int, 54, 0, 500, 10, 0.002);
+TUNEABLE(chk_1, int, 160, 0, 1000, 20, 0.002);
+TUNEABLE(cpt, int, 153, 0, 1000, 20, 0.002);
+TUNEABLE(prm, int, 102, 0, 1000, 20, 0.002);
+TUNEABLE(kil, int, 134, 0, 1000, 25, 0.002);
+TUNEABLE(his, int, 153, 0, 1000, 20, 0.002);
+TUNEABLE(chis, int, 129, 0, 1000, 20, 0.002);
+TUNEABLE(chk_2, int, 348, 0, 2000, 20, 0.002);
+TUNEABLE(bst, int, 218, 0, 1500, 20, 0.002);
 
 template<>
 SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
@@ -61,9 +61,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
 
     int score = 0;
 
-    if (piece != Piece::WHITEKING && piece != Piece::BLACKKING)
-        score += psm_1 * psm.get_psm(piece, from, to) / 100;
-    else
+    if (piece == Piece::WHITEKING || piece == Piece::BLACKKING)
         score += psm_2 * psm.get_ksm(piece, is_endgame, to, from) / 100;
     
     if (piece.type() != PieceType::PAWN && piece.type() != PieceType::KING){
@@ -146,7 +144,14 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
     switch (stage){
         case TT_MOVE:
             ++stage;
-            if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.inCheck() || pos.isCapture(tt_move))){
+
+            use_tt_move = tt_move != Move::NO_MOVE && (
+                MoveGenType == movegen::MoveGenType::ALL
+                || pos.inCheck() 
+                || pos.isCapture(tt_move)
+            ) && pos.legal(tt_move);
+
+            if (use_tt_move){
                 move = tt_move;
                 return true;
             }
@@ -154,17 +159,15 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
         case GENERATE_MOVES:
             movegen::legalmoves<MoveGenType>(moves, pos);
             prepare_pos_data();
-            for (int i = 0; i < moves.size(); i++){
+            for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);
-            }
-            if (tt_move != Move::NO_MOVE && (MoveGenType == movegen::MoveGenType::ALL || pos.isCapture(tt_move)))
-                pop_move(std::find(moves.begin(), moves.end(), tt_move) - moves.begin());
             ++stage;
 
         case GET_MOVES:
-            if (moves.num_left != 0){
+            while (moves.num_left != 0){
                 move = pop_best_score();
-                return true;
+                if (move != tt_move || !use_tt_move)
+                    return true;
             }
     }
     return false;
@@ -200,7 +203,7 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
                 best_move_idx = i;
             }
         }
-        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], -200))
+        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], -bst))
             break;
         
         moves[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
@@ -216,9 +219,8 @@ template<movegen::MoveGenType MoveGenType>
 inline int SortedMoveGen<MoveGenType>::index(){ return move_idx; }
 
 template<>
-void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, int depth){
+void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, int bonus){
     bool color = pos.sideToMove() == Color::WHITE;
-    int bonus = std::min(depth*depth*32 + 20, 1000);
 
     history.apply_bonus(color, best_move.from(), best_move.to(), bonus);
 
