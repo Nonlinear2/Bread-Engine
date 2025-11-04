@@ -93,6 +93,9 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 
     Piece curr_piece;
 
+    bool mirror_w = kingSq(Color::WHITE).file() >= File::FILE_E;
+    bool mirror_b = kingSq(Color::BLACK).file() >= File::FILE_E;
+
     int idx = 0;
     while (occupied){
         int sq = occupied.pop();
@@ -102,9 +105,9 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
         int piece_idx = int(curr_piece.type());
         
         // white perspective
-        active_features_white[idx] = 384 * color + piece_idx*64 + sq;
+        active_features_white[idx] = 384 * color + piece_idx*64 + (mirror_w ? (sq ^ 7) : sq);
         // black perspective
-        active_features_black[idx] = 384 * !color + piece_idx*64 + (sq ^ 56);
+        active_features_black[idx] = 384 * !color + piece_idx*64 + (mirror_b ? ((sq ^ 56) ^ 7) : (sq ^ 56));
         idx++;
     }
 
@@ -132,9 +135,14 @@ modified_features NnueBoard::get_modified_features(Move move, Color color){
     Piece curr_piece = at(static_cast<Square>(from));
     Piece capt_piece = at(static_cast<Square>(to));
     assert(curr_piece != Piece::NONE);
-
     bool piece_color = curr_piece.color() == Color::BLACK; // white: 0, black: 1
     int piece_idx = int(curr_piece.type());
+
+    if (kingSq(color).file() >= File::FILE_E){
+        // mirror horizontally by flipping last 3 bits.
+        from ^= 7;
+        to ^= 7;
+    }
 
     if (color == Color::WHITE) {
         added = 384 * piece_color + piece_idx*64 + to;
@@ -158,5 +166,8 @@ modified_features NnueBoard::get_modified_features(Move move, Color color){
 }
 
 bool NnueBoard::is_updatable_move(Move move){
-    return move.typeOf() == Move::NORMAL;
+    return move.typeOf() == Move::NORMAL && (
+        at(move.from()).type() != PieceType::KING
+        || !((move.from().file() == File::FILE_D && move.to().file() == File::FILE_E)
+            || (move.from().file() == File::FILE_E && move.to().file() == File::FILE_D)));
 }
