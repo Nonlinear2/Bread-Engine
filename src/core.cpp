@@ -437,12 +437,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
             // lmp
             if (!in_check && !is_capture && move_gen.index() > 2 + depth + improving 
-                && !is_hit && static_eval - lmp_1 * !improving < alpha)
+                && !is_hit && eval - lmp_1 * !improving < alpha)
                 continue;
 
             // SEE pruning
             if (!in_check && !is_killer && move_gen.index() > 5 + depth / 2
-                && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
+                && depth < 5 && !SEE::evaluate(pos, move, alpha - eval - see_1 - see_2*depth))
                 continue;
             
             // continuation history pruning
