@@ -4,8 +4,9 @@
 TUNEABLE(r_1, int, 164, 0, 500, 20, 0.002);
 TUNEABLE(r_2, int, 279, -100, 1000, 25, 0.002);
 TUNEABLE(rfp_1, int, 159, 0, 500, 25, 0.002);
-TUNEABLE(rfp_2, int, 53, 0, 1000, 50, 0.002);
-TUNEABLE(rfp_3, int, 144, -100, 1000, 20, 0.002);
+TUNEABLE(rfp_2, int, 50, 0, 1000, 50, 0.002);
+TUNEABLE(rfp_3, int, 53, 0, 1000, 50, 0.002);
+TUNEABLE(rfp_4, int, 144, -100, 1000, 20, 0.002);
 TUNEABLE(nmp_1, int, 84, -50, 250, 10, 0.002);
 TUNEABLE(nmp_2, int, 24, -300, 300, 15, 0.002);
 TUNEABLE(lmp_1, int, 117, -100, 500, 20, 0.002);
@@ -218,7 +219,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     while (true){
         current_depth++;
 
-        negamax<true>(current_depth, -INFINITE_VALUE, INFINITE_VALUE, root_ss);
+        negamax<true>(current_depth, -INFINITE_VALUE, INFINITE_VALUE, root_ss, false);
         best_move = root_moves[0];
 
         std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
@@ -277,7 +278,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
 }
 
 template<bool pv>
-int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
+int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
     assert(depth <= ENGINE_MAX_DEPTH);
     assert(alpha < beta);
@@ -407,20 +408,20 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         }
 
         // reverse futility pruning
-        if (depth < 6 && eval - depth*rfp_1 - rfp_2 + rfp_3*improving >= beta)
+        if (depth < 6 && eval - depth * (rfp_1 - rfp_2*cutnode) - rfp_3 + rfp_4*improving >= beta)
             return eval;
 
         // null move pruning
         // maybe check for zugzwang?
         int null_move_eval;
-        if ((ss - 1)->current_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
+        if (cutnode && (ss - 1)->current_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
             && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta)){
 
             int R = 2 + (eval >= beta) + depth / 4 + tt_capture;
             ss->moved_piece = Piece::NONE;
             ss->current_move = Move::NULL_MOVE;
             pos.makeNullMove();
-            null_move_eval = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1);
+            null_move_eval = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1, false);
             pos.unmakeNullMove();
             if (null_move_eval >= beta && !is_win(null_move_eval))
                 return null_move_eval;
@@ -460,16 +461,16 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         // we need to be careful regarding stack variables as they can get modified by the singular search
         // as it uses the same stack element
         int extension = 0;
-        if (!root_node && is_hit && is_regular_eval(transposition.value)
+        if (!root_node && is_regular_eval(transposition.value)
             && move == transposition.move && excluded_move == Move::NO_MOVE
-            && depth >= 6 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
+            && depth >= 5 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
             && transposition.depth >= depth - 1)
         {
             int singular_beta = transposition.value - se_1 - se_2*depth;
 
             if (is_regular_eval(singular_beta)){
                 ss->excluded_move = move;
-                value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss);
+                value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss, cutnode);
                 ss->excluded_move = Move::NO_MOVE;
     
                 if (interrupt_flag)
@@ -503,21 +504,21 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss){
         reduced_depth = std::min(reduced_depth, ENGINE_MAX_DEPTH);
 
         if (move_gen.index() > 0 && depth >= 2){
-            value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1);
+            value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1, true);
 
             if (value > alpha && reduced_depth < new_depth){
-                value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
+                value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
                 if (!is_capture)
                     move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
             } else if (value <= alpha && !is_capture)
                 move_gen.update_cont_history(ss->moved_piece, move.to().index(), -cont_2);
 
         } else if (!pv || move_gen.index() > 0){
-            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1);
+            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
         }
 
         if (pv && (move_gen.index() == 0 || value > alpha)){
-            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1);
+            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1, false);
         }
 
         pos.restore_state(move);
