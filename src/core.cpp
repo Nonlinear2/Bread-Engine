@@ -444,10 +444,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 continue;
 
             // SEE pruning
-            if (!in_check && !is_killer && move_gen.index() > 5 + depth / 2
+            if (!in_check && move_gen.index() > 5 + depth / 2
                 && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
                 continue;
-            
+
             // continuation history pruning
             if (!is_capture && !in_check
                 && prev_piece != int(Piece::NONE)
@@ -561,13 +561,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             if (nonsense_stage == Nonsense::TAKE_PIECES
                 && pos.them(engine_color).count() != 1
                 && pos.sideToMove() != engine_color
-                && max_value == -MATE_VALUE)
+                && is_loss(max_value))
                 max_value = TB_VALUE;
                 
             // if it should be checkmate, but there are not only bishops and knights, then say the position is winning
             if (nonsense_stage == Nonsense::PROMOTE
                 && !Nonsense::only_knight_bishop(pos)
-                && max_value == -MATE_VALUE){
+                && is_loss(max_value)){
                 assert(!Nonsense::is_winning_side(pos));
                 max_value = TB_VALUE;
             }
@@ -640,14 +640,13 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(
         (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos
     );
-    
+
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
 
     if (!pv && is_valid(transposition.value)){
         switch (transposition.flag){
             case TFlag::EXACT:
-            if (!pv)
                 return transposition.value;
             case TFlag::LOWER_BOUND:
                 alpha = std::max(alpha, transposition.value);
@@ -739,13 +738,13 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         if (nonsense_stage == Nonsense::TAKE_PIECES
             && pos.them(engine_color).count() != 1
             && pos.sideToMove() != engine_color
-            && stand_pat == -MATE_VALUE)
+            && is_loss(stand_pat))
             stand_pat = TB_VALUE;
 
         // if it should be checkmate, but there are not only bishops and knights, then say the position is winning
         if (nonsense_stage == Nonsense::PROMOTE
             && !Nonsense::only_knight_bishop(pos)
-            && stand_pat == -MATE_VALUE){
+            && is_loss(stand_pat)){
             assert(!Nonsense::is_winning_side(pos));
             stand_pat = TB_VALUE;
         }
