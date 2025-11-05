@@ -632,8 +632,6 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = pos.hash();
 
-    bool in_check = pos.inCheck();
-
     // first we check for transposition. If it is outcome, it should have already been stored
     // with an exact flag, so the stand pat will be correct anyways.
     SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(
@@ -688,6 +686,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         return stand_pat;
 
     alpha = std::max(alpha, stand_pat);
+
+    bool in_check = pos.inCheck();
 
     int max_value = in_check ? -INFINITE_VALUE : stand_pat;
 
