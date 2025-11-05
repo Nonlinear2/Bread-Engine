@@ -730,7 +730,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
         if (value > max_value){
             max_value = value;
-            if (value > alpha)
+            if (in_check || value > stand_pat)
                 best_move = move;
         }
 
