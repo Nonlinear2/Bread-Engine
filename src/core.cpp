@@ -685,9 +685,14 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
         alpha = std::max(alpha, stand_pat);
 
-        if (depth == -QSEARCH_MAX_DEPTH || ply >= MAX_PLY - 1)
-            return stand_pat;
     }
+
+    assert(is_valid(stand_pat) || in_check);
+
+    if (depth == -QSEARCH_MAX_DEPTH || ply >= MAX_PLY - 1)
+        return is_valid(stand_pat) ? stand_pat
+            : is_valid(transposition.static_eval) ? transposition.static_eval
+            : evaluate(pos);
 
     capture_gen.set_tt_move(transposition.move);
 
