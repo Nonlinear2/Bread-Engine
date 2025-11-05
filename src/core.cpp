@@ -732,6 +732,13 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             break;
     }
 
+    if (capture_gen.tt_move == Move::NO_MOVE && in_check && capture_gen.empty()){
+        stand_pat = -MATE_VALUE;
+        transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH,
+            Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+        return stand_pat;
+    }
+
     if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
 
         if (nonsense_stage == Nonsense::TAKE_PIECES

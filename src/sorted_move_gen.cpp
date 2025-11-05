@@ -157,7 +157,11 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             }
 
         case GENERATE_MOVES:
-            movegen::legalmoves<MoveGenType>(moves, pos);
+            if (pos.inCheck())
+                movegen::legalmoves<movegen::MoveGenType::ALL>(moves, pos);
+            else
+                movegen::legalmoves<MoveGenType>(moves, pos);
+
             prepare_pos_data();
             for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);
