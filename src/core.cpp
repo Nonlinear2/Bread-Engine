@@ -659,35 +659,37 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             return transposition.value;
     }
 
-    stand_pat = transposition.static_eval;
+    bool in_check = pos.inCheck();
 
-    if (!is_valid(stand_pat))
-        stand_pat = evaluate(pos);
+    if (!in_check){
+        stand_pat = transposition.static_eval;
+    
+        if (!is_valid(stand_pat))
+            stand_pat = evaluate(pos);
+    
+        assert(is_regular_eval(stand_pat, false));
+    
+        if (is_valid(transposition.value) && !is_decisive(transposition.value)
+            && (
+                transposition.flag == TFlag::EXACT 
+                || (transposition.flag == TFlag::LOWER_BOUND && transposition.value >= stand_pat)
+                || (transposition.flag == TFlag::UPPER_BOUND && transposition.value <= stand_pat)
+                ))
+                stand_pat = transposition.value;
+    
+        if (stand_pat >= beta){
+            if (!is_hit)
+                transposition_table.store(zobrist_hash, stand_pat, stand_pat, DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+            return stand_pat;
+        }
 
-    assert(is_regular_eval(stand_pat, false));
+        alpha = std::max(alpha, stand_pat);
 
-    if (is_valid(transposition.value) && !is_decisive(transposition.value)
-        && (
-            transposition.flag == TFlag::EXACT 
-            || (transposition.flag == TFlag::LOWER_BOUND && transposition.value >= stand_pat)
-            || (transposition.flag == TFlag::UPPER_BOUND && transposition.value <= stand_pat)
-            ))
-            stand_pat = transposition.value;
-
-    if (stand_pat >= beta){
-        if (!is_hit)
-            transposition_table.store(zobrist_hash, stand_pat, stand_pat, DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
-        return stand_pat;
+        if (depth == -QSEARCH_MAX_DEPTH || ply >= MAX_PLY - 1)
+            return stand_pat;
     }
 
     capture_gen.set_tt_move(transposition.move);
-    
-    if (depth == -QSEARCH_MAX_DEPTH || ply >= MAX_PLY - 1)
-        return stand_pat;
-
-    alpha = std::max(alpha, stand_pat);
-
-    bool in_check = pos.inCheck();
 
     int max_value = in_check ? -INFINITE_VALUE : stand_pat;
 
@@ -697,7 +699,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         Piece captured_piece = pos.at(move.to());
         Piece moved_piece = pos.at(move.from());
 
-        if (max_value > -INFINITE_VALUE && !is_loss(max_value)){
+        if (!in_check){
             if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
                 if (stand_pat 
                     + piece_value[static_cast<int>(captured_piece.type())]
@@ -739,7 +741,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         return stand_pat;
     }
 
-    if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
+    if (!in_check && capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
 
         if (nonsense_stage == Nonsense::TAKE_PIECES
             && pos.them(engine_color).count() != 1
@@ -760,8 +762,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         return stand_pat;
     }
 
-    if (max_value == -INFINITE_VALUE)
-        max_value = stand_pat;
+    assert(is_valid(max_value));
 
     // avoid storing history dependant values
     if (pos.halfMoveClock() + depth + QSEARCH_MAX_DEPTH >= 100)
