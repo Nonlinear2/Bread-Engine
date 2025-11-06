@@ -743,8 +743,6 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             stand_pat = TB_VALUE;
         }
 
-        transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH,
-            Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
         return stand_pat;
     }
 
