@@ -168,17 +168,22 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             ++stage;
 
         case GOOD_SEE:
-            move = pop_best_score(SeeScore::GOOD);
+            do {
+                move = pop_best_score(SeeScore::GOOD);
+            } while (move == tt_move && use_tt_move);
+
             if (move != Move::NO_MOVE)
                 return true;
             curr_idx = 0; // prepare idx for next stage
             ++stage;
 
         case BAD_SEE:
-            move = pop_best_score(SeeScore::BAD);
+            do {
+                move = pop_best_score(SeeScore::BAD);
+            } while (move == tt_move && use_tt_move);
+
             if (move != Move::NO_MOVE)
                 return true;
-            ++stage;
     }
     return false;
 }
