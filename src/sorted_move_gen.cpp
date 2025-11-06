@@ -61,9 +61,6 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
 
     int score = 0;
 
-    if (piece == Piece::WHITEKING || piece == Piece::BLACKKING)
-        score += psm_2 * psm.get_ksm(piece, is_endgame, to, from) / 100;
-    
     if (piece.type() != PieceType::PAWN && piece.type() != PieceType::KING){
         score += att_1 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value / 150;
         score -= att_2 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value / 150;
