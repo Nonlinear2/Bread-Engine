@@ -112,7 +112,7 @@ void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
     const int piece_type = static_cast<int>(pos.at(move.from()).type());
     const int to_piece_type = static_cast<int>(pos.at(move.to()).type());
 
-    int score = piece_value[to_piece_type] - piece_value[piece_type]
+    int score = (to_piece_type == 6 ? -25000 : piece_value[to_piece_type]) - piece_value[piece_type]
         + chk_2 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
@@ -151,7 +151,11 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             }
 
         case GENERATE_MOVES:
-            movegen::legalmoves<MoveGenType>(moves, pos);
+            if (pos.inCheck())
+                movegen::legalmoves<movegen::MoveGenType::ALL>(moves, pos);
+            else
+                movegen::legalmoves<MoveGenType>(moves, pos);
+
             prepare_pos_data();
             for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);
