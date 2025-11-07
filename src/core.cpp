@@ -737,9 +737,11 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     }
 
     if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty()){
-        if (in_check || pos.try_outcome_eval(stand_pat)){
+        if (in_check || pos.is_stalemate()){
             if (in_check)
                 stand_pat = -MATE_VALUE;
+            else
+                stand_pat = 0;
 
             if (nonsense_stage == Nonsense::TAKE_PIECES
                 && pos.them(engine_color).count() != 1
