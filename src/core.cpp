@@ -609,8 +609,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 template<bool pv>
 int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(pv || (alpha == beta - 1));
+    assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
+    assert(alpha < beta);
 
     nodes++;
+
+    const int ply = ss - root_ss;
+    assert(ply < MAX_PLY); // avoid stack overflow
 
     int stand_pat = NO_VALUE;
 
@@ -619,11 +624,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         if (evaluate != Nonsense::evaluate || stand_pat == 0)
             return stand_pat;
 
-    if (pos.isHalfMoveDraw() || pos.isInsufficientMaterial()) 
+    if (pos.isHalfMoveDraw() || pos.isInsufficientMaterial() || pos.isRepetition(1) || pos.isRepetition(2)) 
         return 0;
-
-    const int ply = ss - root_ss;
-    assert(ply < MAX_PLY); // avoid stack overflow
 
     int value;
     Move move;
@@ -759,6 +761,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         }
     }
 
+    // assert(pos.isGameOver().second == GameResult::NONE);
     assert(is_valid(max_value));
 
     // avoid storing history dependant values
