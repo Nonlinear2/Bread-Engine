@@ -619,7 +619,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         if (evaluate != Nonsense::evaluate || stand_pat == 0)
             return stand_pat;
 
-    if (pos.isHalfMoveDraw()) 
+    if (pos.isHalfMoveDraw() || pos.isInsufficientMaterial()) 
         return 0;
 
     const int ply = ss - root_ss;
