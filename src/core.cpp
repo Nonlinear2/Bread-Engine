@@ -717,6 +717,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
                 if (capture_gen.index() > qs_p_idx && stand_pat + qs_p_1 < alpha)
                     continue;
             }
+        } else if (is_valid(max_value) && !is_loss(max_value)){
+            if (captured_piece == Piece::NONE && !SEE::evaluate(pos, move, -600))
+                continue;
         }
 
         ss->moved_piece = moved_piece;
