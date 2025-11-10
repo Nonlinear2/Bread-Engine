@@ -718,7 +718,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
                     continue;
             }
         } else if (is_valid(max_value) && !is_loss(max_value)){
-            if (captured_piece == Piece::NONE && !SEE::evaluate(pos, move, -800))
+            if (captured_piece == Piece::NONE && !SEE::evaluate(pos, move, -500))
                 continue;
         }
 
