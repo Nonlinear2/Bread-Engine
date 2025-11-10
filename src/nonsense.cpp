@@ -97,11 +97,11 @@ int Nonsense::evaluate(NnueBoard& pos){
 
     Bitboard us_pawns = pos.pieces(PieceType::PAWN, stm);
     while (us_pawns)
-        eval += psm.get_pawn_psm(stm, us_pawns.pop());
+        eval += PSM::get_pawn_psm(stm, us_pawns.pop());
 
     Bitboard them_pawns = pos.pieces(PieceType::PAWN, !stm);
     while (them_pawns)
-        eval -= psm.get_pawn_psm(!stm, them_pawns.pop());
+        eval -= PSM::get_pawn_psm(!stm, them_pawns.pop());
 
 
     for (PieceType pt: {PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP})
