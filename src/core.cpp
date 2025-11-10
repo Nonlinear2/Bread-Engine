@@ -447,6 +447,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
                 continue;
 
+            // SEE pruning
+            if (in_check && move_gen.index() > 0 && depth < 3 
+                && !SEE::evaluate(pos, move, 450 - 100*depth))
+                continue;
+
             // continuation history pruning
             if (!is_capture && !in_check
                 && prev_piece != int(Piece::NONE)
