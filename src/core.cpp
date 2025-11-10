@@ -627,6 +627,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (pos.isHalfMoveDraw() || pos.isInsufficientMaterial() || pos.isRepetition(1) || pos.isRepetition(2)) 
         return 0;
 
+    if (ply >= MAX_PLY - 1)
+        return evaluate(pos);
+
     int value;
     Move move;
     Move best_move = Move::NO_MOVE;
@@ -687,7 +690,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
         alpha = std::max(alpha, stand_pat);
 
-        if (depth == -QSEARCH_MAX_DEPTH || ply >= MAX_PLY - 1)
+        if (depth == -QSEARCH_MAX_DEPTH)
             return stand_pat;
     }
 
