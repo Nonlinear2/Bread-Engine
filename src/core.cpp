@@ -704,22 +704,20 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         Piece captured_piece = pos.at(move.to());
         Piece moved_piece = pos.at(move.from());
 
-        if (!in_check){
-            if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-                if (stand_pat 
-                    + piece_value[static_cast<int>(captured_piece.type())]
-                    - piece_value[static_cast<int>(moved_piece.type())]
-                    + qs_fp_1 < alpha)
-                    continue;
+        if (!in_check && move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
+            if (stand_pat 
+                + piece_value[static_cast<int>(captured_piece.type())]
+                - piece_value[static_cast<int>(moved_piece.type())]
+                + qs_fp_1 < alpha)
+                continue;
 
-                // SEE pruning
-                if (move != transposition.move && !SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
-                    continue;
+            // SEE pruning
+            if (move != transposition.move && !SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
+                continue;
 
-                // move count pruning
-                if (capture_gen.index() > qs_p_idx && stand_pat + qs_p_1 < alpha)
-                    continue;
-            }
+            // move count pruning
+            if (capture_gen.index() > qs_p_idx && stand_pat + qs_p_1 < alpha)
+                continue;
         }
 
         ss->moved_piece = moved_piece;
@@ -739,29 +737,32 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             break;
     }
 
-    if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty()){
-        if (in_check || pos.try_outcome_eval(stand_pat)){
-            if (in_check)
-                stand_pat = -MATE_VALUE;
+    assert(!pos.isInsufficientMaterial());
+    if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() 
+        && (in_check || pos.is_stalemate())){
 
-            if (nonsense_stage == Nonsense::TAKE_PIECES
-                && pos.them(engine_color).count() != 1
-                && pos.sideToMove() != engine_color
-                && is_loss(stand_pat))
-                stand_pat = TB_VALUE;
+        if (in_check)
+            stand_pat = -MATE_VALUE;
+        else
+            stand_pat = 0;
 
-            // if it should be checkmate, but there are not only bishops and knights, then say the position is winning
-            if (nonsense_stage == Nonsense::PROMOTE
-                && !Nonsense::only_knight_bishop(pos)
-                && is_loss(stand_pat)){
-                assert(!Nonsense::is_winning_side(pos));
-                stand_pat = TB_VALUE;
-            }
+        if (nonsense_stage == Nonsense::TAKE_PIECES
+            && pos.them(engine_color).count() != 1
+            && pos.sideToMove() != engine_color
+            && is_loss(stand_pat))
+            stand_pat = TB_VALUE;
 
-            transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH,
-                Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
-            return stand_pat;
+        // if it should be checkmate, but there are not only bishops and knights, then say the position is winning
+        if (nonsense_stage == Nonsense::PROMOTE
+            && !Nonsense::only_knight_bishop(pos)
+            && is_loss(stand_pat)){
+            assert(!Nonsense::is_winning_side(pos));
+            stand_pat = TB_VALUE;
         }
+
+        transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH,
+            Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+        return stand_pat;
     }
 
     // assert(pos.isGameOver().second == GameResult::NONE);
