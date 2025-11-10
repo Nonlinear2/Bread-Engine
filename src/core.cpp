@@ -717,7 +717,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             if (move != transposition.move && !SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
                 continue;
     
-            if (!SEE::evaluate(pos, move, -850))
+            if (!SEE::evaluate(pos, move, -500))
                 continue;
         }
 
