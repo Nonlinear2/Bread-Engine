@@ -550,7 +550,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     if (!is_valid(max_value)){
         assert(!root_node);
-        if (move_gen.tt_move == Move::NO_MOVE && move_gen.empty()){ // avoid calling expensive try_outcome_eval function
+        if (move_gen.tt_move == Move::NO_MOVE && move_gen.empty()){
             // If board is in check, it is checkmate
             // if there are no legal moves and it's not check, it is stalemate so eval is 0
             max_value = pos.inCheck() ? -MATE_VALUE : 0;
@@ -637,8 +637,6 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = pos.hash();
 
-    // first we check for transposition. If it is outcome, it should have already been stored
-    // with an exact flag, so the stand pat will be correct anyways.
     SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(
         (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos
     );
