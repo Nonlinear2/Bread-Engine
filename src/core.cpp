@@ -706,7 +706,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         Piece moved_piece = pos.at(move.from());
 
         if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-            if (in_check){
+            if (!in_check){
                 if (stand_pat 
                     + piece_value[static_cast<int>(captured_piece.type())]
                     - piece_value[static_cast<int>(moved_piece.type())]
