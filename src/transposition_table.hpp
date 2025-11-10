@@ -77,7 +77,7 @@ class TranspositionTable {
 
     void allocateMB(int new_size);
 
-    void store(uint64_t zobrist, int value, int eval, int depth, Move move, TFlag flag, uint8_t move_number, int ply, bool pv);
+    void store(uint64_t zobrist, int value, int eval, int depth, Move move, TFlag flag, uint8_t move_number, bool pv);
 
     TTData probe(bool& is_hit, uint64_t zobrist);
 

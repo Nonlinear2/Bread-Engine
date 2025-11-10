@@ -600,8 +600,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     assert(is_valid(max_value));
 
-    transposition_table.store(zobrist_hash, max_value, static_eval, depth, best_move,
-        node_type, static_cast<uint8_t>(pos.fullMoveNumber()), ply, pv);
+    transposition_table.store(zobrist_hash, to_tt(max_value, ply), static_eval, depth, best_move,
+        node_type, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
 
     return max_value;
 }
@@ -684,7 +684,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     
         if (stand_pat >= beta){
             if (!is_hit)
-                transposition_table.store(zobrist_hash, stand_pat, stand_pat,
+                transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), stand_pat,
                     DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
             return stand_pat;
         }
@@ -761,8 +761,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             stand_pat = TB_VALUE;
         }
 
-        transposition_table.store(zobrist_hash, stand_pat, NO_VALUE, DEPTH_QSEARCH,
-            Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), ply, pv);
+        transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), NO_VALUE, DEPTH_QSEARCH,
+            Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
         return stand_pat;
     }
 
@@ -774,10 +774,10 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         return max_value;
 
     if (depth == 0 || depth == -1)
-        transposition_table.store(zobrist_hash, max_value,
+        transposition_table.store(zobrist_hash, to_tt(max_value, ply),
             stand_pat, DEPTH_QSEARCH, best_move,
             max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
-            static_cast<uint8_t>(pos.fullMoveNumber()), ply, pv);
+            static_cast<uint8_t>(pos.fullMoveNumber()), pv);
 
     return max_value;
 }
