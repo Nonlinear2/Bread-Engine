@@ -448,7 +448,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 continue;
 
             // SEE pruning
-            if (in_check && move_gen.index() > 0 && depth < 3 
+            if (in_check && move_gen.index() > 0 && depth < 4
                 && !SEE::evaluate(pos, move, 450 - 100*depth))
                 continue;
 
