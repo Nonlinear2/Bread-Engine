@@ -1,7 +1,6 @@
 #include "sorted_move_gen.hpp"
 
 TUNEABLE(endg, int, 11, 0, 32, 0.5, 0.002);
-TUNEABLE(psm_2, int, 127, 0, 1000, 20, 0.002);
 TUNEABLE(att_1, int, 46, 0, 500, 10, 0.002);
 TUNEABLE(att_2, int, 54, 0, 500, 10, 0.002);
 TUNEABLE(chk_1, int, 160, 0, 1000, 20, 0.002);
@@ -43,8 +42,6 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::prepare_pos_data(){
         attacks::queen(opp_king_sq, occ), // queen
         0, // king
     };
-
-    is_endgame = occ.count() <= endg;
 }
 
 // set move score to be sorted later
@@ -61,9 +58,6 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
 
     int score = 0;
 
-    if (piece == Piece::WHITEKING || piece == Piece::BLACKKING)
-        score += psm_2 * psm.get_ksm(piece, is_endgame, to, from) / 100;
-    
     if (piece.type() != PieceType::PAWN && piece.type() != PieceType::KING){
         score += att_1 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value / 150;
         score -= att_2 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value / 150;
@@ -118,7 +112,7 @@ void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
     const int piece_type = static_cast<int>(pos.at(move.from()).type());
     const int to_piece_type = static_cast<int>(pos.at(move.to()).type());
 
-    int score = piece_value[to_piece_type] - piece_value[piece_type]
+    int score = (to_piece_type == 6 ? -25000 : piece_value[to_piece_type]) - piece_value[piece_type]
         + chk_2 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
@@ -157,7 +151,11 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             }
 
         case GENERATE_MOVES:
-            movegen::legalmoves<MoveGenType>(moves, pos);
+            if (pos.inCheck())
+                movegen::legalmoves<movegen::MoveGenType::ALL>(moves, pos);
+            else
+                movegen::legalmoves<MoveGenType>(moves, pos);
+
             prepare_pos_data();
             for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);

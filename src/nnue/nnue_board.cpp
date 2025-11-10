@@ -62,27 +62,10 @@ int NnueBoard::evaluate(){
     return std::clamp(nnue_.run(accumulators_stack.top(), sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
 }
 
-bool NnueBoard::try_outcome_eval(int& eval, int ply){
-    // we dont want history dependent data to be stored in the TT.
-    // the evaluation stored in the TT should only depend on the
-    // position on the board and not how we got there, otherwise these evals would be reused
-    // incorrectly.
-    // here, threefold repetition and the fifty move rule are already handled and resulting evals
-    // are not stored in the TT.
-    if (isInsufficientMaterial()){
-        eval = 0;
-        return true;
-    }
-
+bool NnueBoard::is_stalemate(){
     Movelist movelist;
     movegen::legalmoves(movelist, *this);
-
-    if (movelist.empty()){
-        // checkmate/stalemate.
-        eval = inCheck() ? pos_to_root_mate_value(-MATE_VALUE, ply) : 0;
-        return true;
-    }
-    return false;
+    return movelist.empty();
 }
 
 std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){

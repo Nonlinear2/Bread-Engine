@@ -25,7 +25,7 @@ class NnueBoard: public Board {
 
     int evaluate();
 
-    bool try_outcome_eval(int& eval, int ply);
+    bool is_stalemate();
 
     std::pair<std::vector<int>, std::vector<int>> get_features();
 

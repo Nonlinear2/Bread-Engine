@@ -3,13 +3,10 @@
 #include <array>
 #include <fstream>
 #include <vector>
-#include "piece_square_tables.hpp"
 #include "constants.hpp"
 #include "chess.hpp"
 
 using namespace chess;
-
-constexpr PieceSquareMaps psm = PieceSquareMaps();
 
 const std::vector<int> piece_value = {
     150, // pawn
