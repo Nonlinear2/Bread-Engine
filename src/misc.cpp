@@ -49,6 +49,30 @@ void AccumulatorsStack::pop(){
     idx--;
 }
 
+int root_to_pos_mate_value(int value, int ply){
+    assert(is_mate(value));
+    assert(is_mate(std::abs(value) + ply)); // make sure new value is still mate
+    return is_win(value) ? value + ply : value - ply;
+}
+
+int pos_to_root_mate_value(int value, int ply){
+    assert(is_mate(value));
+    assert(is_mate(std::abs(value) - ply)); // make sure new value is still mate
+    return is_win(value) ? value - ply : value + ply;
+}
+
+int to_tt(int value, int ply){
+    return is_mate(value) ? root_to_pos_mate_value(value, ply) : value;
+}
+
+// to make the engine prefer faster checkmates instead of stalling,
+// we decrease the value if the checkmate is deeper in the search tree.
+int get_mate_in_moves(int value){
+    assert(is_mate(value));
+    int ply = MATE_VALUE - std::abs(value);
+    return (is_win(value) ? 1: -1)*(ply/2 + (ply%2 != 0));
+}
+
 bool is_number_string(const std::string& s){
     std::string::const_iterator it = s.begin();
     while (it != s.end() && (std::isdigit(*it) || *it == '-'))

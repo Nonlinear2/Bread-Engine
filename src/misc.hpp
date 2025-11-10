@@ -64,4 +64,12 @@ class AccumulatorsStack {
     int idx;
 };
 
+int root_to_pos_mate_value(int value, int ply);
+
+int pos_to_root_mate_value(int value, int ply);
+
+int to_tt(int value, int ply);
+
+int get_mate_in_moves(int value);
+
 bool is_number_string(const std::string& s);

@@ -111,17 +111,3 @@ constexpr bool is_regular_eval(int value, bool zws_safe = true){
     assert(std::abs(value) <= NO_VALUE);
     return std::abs(value) <= BEST_VALUE - (zws_safe ? 1 : 0);
 }
-
-constexpr int increment_mate_ply(int value){
-    assert(is_mate(value));
-    assert(is_mate(std::abs(value) - 1)); // make sure new value is still mate
-    return (is_win(value) ? 1 : -1)*(std::abs(value) - 1);
-}
-
-// to make the engine prefer faster checkmates instead of stalling,
-// we decrease the value if the checkmate is deeper in the search tree.
-constexpr int get_mate_in_moves(int value){
-    assert(is_mate(value));
-    int ply = MATE_VALUE - std::abs(value);
-    return (is_win(value) ? 1: -1)*(ply/2 + (ply%2 != 0));
-}
