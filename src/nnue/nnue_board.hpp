@@ -10,11 +10,12 @@
 
 class NnueBoard: public Board {
     public:
-    NNUE nnue_ = NNUE();
 
     NnueBoard();
     NnueBoard(std::string_view fen);
     
+    ~NnueBoard();
+
     void synchronize();
 
     bool legal(Move move);

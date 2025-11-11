@@ -41,11 +41,35 @@ extern "C" {
     extern const int32_t l1_bias_start[];
 };
 
-/*********
-NNUE class
-*********/
+/******************
+NNUE implementation
+******************/
 
-NNUE::NNUE(){
+namespace NNUE {
+
+int16_t* ft_weights = nullptr;
+int16_t* ft_bias    = nullptr;
+
+int16_t* l1_weights = nullptr;
+int32_t* l1_bias    = nullptr;
+
+void load_model(){
+    // feature transformer
+    for (int i = 0; i < L0_WEIGHTS_SIZE; i++)
+        ft_weights[i] = ft_weights_start[i];
+
+    for (int i = 0; i < L0_BIAS_SIZE; i++)
+        ft_bias[i] = ft_bias_start[i];
+
+    // layer 1
+    for (int i = 0; i < BUCKETED_L1_WEIGHTS_SIZE; i++)
+        l1_weights[i] = l1_weights_start[i];
+
+    for (int i = 0; i < BUCKETED_L1_BIAS_SIZE; i++)
+        l1_bias[i] = l1_bias_start[i];
+};
+
+void init(){
     ft_weights = static_cast<int16_t*>(
         operator new[](sizeof(int16_t)*L0_WEIGHTS_SIZE, std::align_val_t{32})
     );
@@ -63,7 +87,7 @@ NNUE::NNUE(){
     load_model();
 };
 
-NNUE::~NNUE(){
+void cleanup(){
     operator delete[](ft_weights, std::align_val_t(32));
     operator delete[](ft_bias, std::align_val_t(32));
 
@@ -71,23 +95,7 @@ NNUE::~NNUE(){
     operator delete[](l1_bias, std::align_val_t(32));
 };
 
-void NNUE::load_model(){
-    // feature transformer
-    for (int i = 0; i < L0_WEIGHTS_SIZE; i++)
-        ft_weights[i] = ft_weights_start[i];
-
-    for (int i = 0; i < L0_BIAS_SIZE; i++)
-        ft_bias[i] = ft_bias_start[i];
-
-    // layer 1
-    for (int i = 0; i < BUCKETED_L1_WEIGHTS_SIZE; i++)
-        l1_weights[i] = l1_weights_start[i];
-
-    for (int i = 0; i < BUCKETED_L1_BIAS_SIZE; i++)
-        l1_bias[i] = l1_bias_start[i];
-};
-
-void NNUE::compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features){
+void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features){
     // we have 256 int16 to process, and there are 16 avx registers which can hold 16 int16.
     // therefore we need only one pass to the registers.
 
@@ -116,7 +124,7 @@ void NNUE::compute_accumulator(Accumulator& new_acc, const std::vector<int> acti
     }
 };
 
-void NNUE::update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const modified_features m_features){
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const modified_features m_features){
 
     constexpr int num_chunks = ACC_SIZE / INT16_PER_REG;
 
@@ -161,7 +169,7 @@ void NNUE::update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const
 };
 
 
-int32_t NNUE::run_L1(Accumulators& accumulators, Color stm, int bucket){
+int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
     int16_t* stm_data = accumulators[stm].data();
     int16_t* nstm_data = accumulators[!stm].data();
 
@@ -195,10 +203,12 @@ int32_t NNUE::run_L1(Accumulators& accumulators, Color stm, int bucket){
     return reduce1_epi32(result) / 255 + l1_bias[bucket];
 };
 
-int NNUE::run(Accumulators& accumulators, Color stm, int piece_count){
+int run(Accumulators& accumulators, Color stm, int piece_count){
     constexpr int pieces_per_bucket = 32 / OUTPUT_BUCKET_COUNT;
     int bucket = (piece_count - 2) / pieces_per_bucket;
 
     int output = run_L1(accumulators, stm, bucket);
     return (output * 600) / (64 * 255); // scale is 600
 };
+
+}; // namespace NNUE
