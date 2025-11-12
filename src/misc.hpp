@@ -10,7 +10,7 @@ using namespace chess;
 
 const std::vector<int> piece_value = {
     150, // pawn
-    440, // knight
+    420, // knight
     450, // bishop
     750, // rook
     1350, // queen
