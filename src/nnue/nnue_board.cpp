@@ -50,6 +50,7 @@ void NnueBoard::update_state(Move move){
         auto features = get_features();
         NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
         NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+        accumulators_stack.clear_top_update();
     }
 }
 
@@ -61,7 +62,7 @@ void NnueBoard::restore_state(Move move){
 }
 
 int NnueBoard::evaluate(){
-    accumulators_stack.apply_lazy_updates(sideToMove());
+    accumulators_stack.apply_lazy_updates();
     return std::clamp(NNUE::run(accumulators_stack.top(), sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
 }
 
@@ -187,14 +188,18 @@ void NnueBoard::AccumulatorsStack::pop(){
     idx--;
 }
 
-void NnueBoard::AccumulatorsStack::apply_lazy_updates(Color color){
+void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
     int i = idx;
-    while (queued_updates[i][color].added != 0)
+    while (queued_updates[i][(int)Color::WHITE].added != 0)
         i--;
 
     for (; i < idx; i++){
-        Accumulator& prev_acc = stack[i][(int)color];
-        Accumulator& new_acc = stack[i + 1][(int)color];
-        NNUE::update_accumulator(prev_acc, new_acc, queued_updates[i + 1][color]);
+        Accumulators& prev_accs = stack[i];
+        Accumulators& new_accs = stack[i + 1];
+    
+        // white
+        NNUE::update_accumulator(prev_accs[0], new_accs[0], queued_updates[i + 1][0]);
+        // black
+        NNUE::update_accumulator(prev_accs[1], new_accs[1], queued_updates[i + 1][1]);
     }
 }

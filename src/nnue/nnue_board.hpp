@@ -41,7 +41,7 @@ class NnueBoard: public Board {
         void clear_top_update();
         void set_top_update(ModifiedFeatures modified_white, ModifiedFeatures modified_black);
         void pop();
-        void apply_lazy_updates(Color color);
+        void apply_lazy_updates();
 
         private:
         std::vector<Accumulators> stack = std::vector<Accumulators>(MAX_PLY + 1);
