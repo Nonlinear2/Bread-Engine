@@ -363,7 +363,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     move_gen.set_tt_move(transposition.move);
     
     chess::Move excluded_move = ss->excluded_move;
-    if (!root_node && !pv && transposition.depth >= depth && excluded_move == Move::NO_MOVE){
+    if (!root_node && !pv && transposition.depth >= depth + (transposition.value >= beta) && excluded_move == Move::NO_MOVE){
         switch (transposition.flag){
             case TFlag::EXACT:
                 return transposition.value;
