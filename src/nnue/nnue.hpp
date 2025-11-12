@@ -25,39 +25,39 @@ struct modified_features {
         captured(captured) {};
 };
 
-class NNUE {
-    public:
+namespace NNUE {
 
-    /*****************
-    Feature transformer
-    ******************/
+/*****************
+Feature transformer
+******************/
 
-    // 2*input_size -> 2*acc_size 
+// 2*input_size -> 2*acc_size 
 
-    // weights are flattened 2d array, to be contiguous in memory.
-    // weights are stored in row major
-    int16_t* ft_weights;
-    int16_t* ft_bias;
+// weights are flattened 2d array, to be contiguous in memory.
+// weights are stored in row major
+extern int16_t* ft_weights;
+extern int16_t* ft_bias;
 
-    /******
-    Layer 1
-    *******/
+/******
+Layer 1
+*******/
 
-    // 2*acc_size -> 1
+// 2*acc_size -> 1
 
-    int16_t* l1_weights;
-    int32_t* l1_bias;
+extern int16_t* l1_weights;
+extern int32_t* l1_bias;
 
-    int32_t run_L1(Accumulators& accumulators, Color stm, int bucket);
+int32_t run_L1(Accumulators& accumulators, Color stm, int bucket);
 
-    NNUE();
-    ~NNUE();
+void init();
+void cleanup();
 
-    void load_model();
+void load_model();
 
-    void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features);
+void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features);
 
-    void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const modified_features m_features);
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const modified_features m_features);
 
-    int run(Accumulators& accumulators, Color stm, int piece_count);
-};
+int run(Accumulators& accumulators, Color stm, int piece_count);
+
+}; // namespace NNUE
