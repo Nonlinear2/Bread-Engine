@@ -165,7 +165,7 @@ NnueBoard::AccumulatorsStack::AccumulatorsStack(){
 
 Accumulators& NnueBoard::AccumulatorsStack::push_empty(){
     assert(idx < MAX_PLY + 1);
-    return stack[idx];
+    return stack[++idx];
 }
 
 Accumulators& NnueBoard::AccumulatorsStack::top(){
