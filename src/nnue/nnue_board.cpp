@@ -1,20 +1,26 @@
 #include "nnue_board.hpp"
 
-NnueBoard::NnueBoard() {
+NnueBoard::NnueBoard(){
+    NNUE::init();
     accumulators_stack.push_empty();
     synchronize();
 };
 
-NnueBoard::NnueBoard(std::string_view fen) {
+NnueBoard::NnueBoard(std::string_view fen){
+    NNUE::init();
     accumulators_stack.push_empty();
     synchronize();
+};
+
+NnueBoard::~NnueBoard(){
+    NNUE::cleanup();
 };
 
 void NnueBoard::synchronize(){
     Accumulators& new_accs = accumulators_stack.top();
     auto features = get_features();
-    nnue_.compute_accumulator(new_accs[(int)Color::WHITE], features.first);
-    nnue_.compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+    NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
+    NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
 }
 
 bool NnueBoard::legal(Move move){
@@ -36,18 +42,18 @@ void NnueBoard::update_state(Move move){
     if (is_updatable_move(move)){
         // white
         modified_features mod_features = get_modified_features(move, Color::WHITE);
-        nnue_.update_accumulator(prev_accs[(int)Color::WHITE], new_accs[(int)Color::WHITE], mod_features);
+        NNUE::update_accumulator(prev_accs[(int)Color::WHITE], new_accs[(int)Color::WHITE], mod_features);
 
         // black
         mod_features = get_modified_features(move, Color::BLACK);
-        nnue_.update_accumulator(prev_accs[(int)Color::BLACK], new_accs[(int)Color::BLACK], mod_features);
+        NNUE::update_accumulator(prev_accs[(int)Color::BLACK], new_accs[(int)Color::BLACK], mod_features);
 
         makeMove(move);
     } else {
         makeMove(move);
         auto features = get_features();
-        nnue_.compute_accumulator(new_accs[(int)Color::WHITE], features.first);
-        nnue_.compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+        NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
+        NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
     }
 }
 
@@ -59,7 +65,7 @@ void NnueBoard::restore_state(Move move){
 }
 
 int NnueBoard::evaluate(){
-    return std::clamp(nnue_.run(accumulators_stack.top(), sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
+    return std::clamp(NNUE::run(accumulators_stack.top(), sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
 }
 
 bool NnueBoard::is_stalemate(){
