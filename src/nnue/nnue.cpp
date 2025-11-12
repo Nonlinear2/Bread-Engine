@@ -124,7 +124,7 @@ void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_fea
     }
 };
 
-void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const modified_features m_features){
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures m_features){
 
     constexpr int num_chunks = ACC_SIZE / INT16_PER_REG;
 

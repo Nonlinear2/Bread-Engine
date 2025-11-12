@@ -21,6 +21,7 @@ void NnueBoard::synchronize(){
     auto features = get_features();
     NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
     NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+    accumulators_stack.clear_top_update();
 }
 
 bool NnueBoard::legal(Move move){
@@ -36,18 +37,13 @@ bool NnueBoard::legal(Move move){
 
 void NnueBoard::update_state(Move move){
 
-    Accumulators& prev_accs = accumulators_stack.top();
     Accumulators& new_accs = accumulators_stack.push_empty();
 
     if (is_updatable_move(move)){
-        // white
-        modified_features mod_features = get_modified_features(move, Color::WHITE);
-        NNUE::update_accumulator(prev_accs[(int)Color::WHITE], new_accs[(int)Color::WHITE], mod_features);
-
-        // black
-        mod_features = get_modified_features(move, Color::BLACK);
-        NNUE::update_accumulator(prev_accs[(int)Color::BLACK], new_accs[(int)Color::BLACK], mod_features);
-
+        accumulators_stack.set_top_update(
+            get_modified_features(move, Color::WHITE), 
+            get_modified_features(move, Color::BLACK)
+        );
         makeMove(move);
     } else {
         makeMove(move);
@@ -65,6 +61,7 @@ void NnueBoard::restore_state(Move move){
 }
 
 int NnueBoard::evaluate(){
+    accumulators_stack.apply_lazy_updates(sideToMove());
     return std::clamp(NNUE::run(accumulators_stack.top(), sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
 }
 
@@ -106,7 +103,7 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 
 // this function must be called before pushing the move
 // it assumes it it not castling, en passant or a promotion
-modified_features NnueBoard::get_modified_features(Move move, Color color){
+ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     assert(move != Move::NO_MOVE);
 
     int from;
@@ -151,7 +148,7 @@ modified_features NnueBoard::get_modified_features(Move move, Color color){
             captured = 384 * !capt_piece_color + capt_piece_idx*64 + (to ^ 56);
     }
 
-    return modified_features(added, removed, captured);
+    return ModifiedFeatures(added, removed, captured);
 }
 
 bool NnueBoard::is_updatable_move(Move move){
@@ -174,8 +171,19 @@ Accumulators& NnueBoard::AccumulatorsStack::top(){
     return stack[idx];
 }
 
+void NnueBoard::AccumulatorsStack::clear_top_update(){
+    queued_updates[idx][0] = ModifiedFeatures();
+    queued_updates[idx][1] = ModifiedFeatures();
+}
+
+void NnueBoard::AccumulatorsStack::set_top_update(ModifiedFeatures modified_white, ModifiedFeatures modified_black){
+    queued_updates[idx][0] = modified_white;
+    queued_updates[idx][1] = modified_black;
+}
+
 void NnueBoard::AccumulatorsStack::pop(){
     assert(idx > 0);
+    clear_top_update();
     idx--;
 }
 
@@ -183,11 +191,10 @@ void NnueBoard::AccumulatorsStack::apply_lazy_updates(Color color){
     int i = idx;
     while (queued_updates[i][color].added != 0)
         i--;
-    i++;
-    for (; i <= idx; i++){
 
-        Accumulators& prev_acc = accumulators_stack.top()[(int)color];
-        Accumulators& new_acc = accumulators_stack.push_empty()[(int)color];
-        nnue_.update_accumulator(prev_acc, new_acc, queued_updates[i][color]);
+    for (; i < idx; i++){
+        Accumulator& prev_acc = stack[i][(int)color];
+        Accumulator& new_acc = stack[i + 1][(int)color];
+        NNUE::update_accumulator(prev_acc, new_acc, queued_updates[i + 1][color]);
     }
 }
