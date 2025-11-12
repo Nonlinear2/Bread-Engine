@@ -35,7 +35,7 @@ bool NnueBoard::legal(Move move){
     return std::find(legal.begin(), legal.end(), move) != legal.end();
 }
 
-void NnueBoard::update_state(Move move){
+void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     Accumulators& new_accs = accumulators_stack.push_empty();
 
@@ -52,6 +52,7 @@ void NnueBoard::update_state(Move move){
         NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
         accumulators_stack.clear_top_update();
     }
+    __builtin_prefetch(&tt.entries[hash() & (tt.entries.size() - 1)]);
 }
 
 void NnueBoard::restore_state(Move move){

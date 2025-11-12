@@ -5,6 +5,7 @@
 #include "chess.hpp"
 #include "tbprobe.hpp"
 #include "piece_square_tables.hpp"
+#include "transposition_table.hpp"
 #include "nnue.hpp"
 #include "misc.hpp"
 
@@ -22,7 +23,7 @@ class NnueBoard: public Board {
 
     bool legal(Move move);
 
-    void update_state(Move move);
+    void update_state(Move move, TranspositionTable& tt);
 
     void restore_state(Move move);
 
