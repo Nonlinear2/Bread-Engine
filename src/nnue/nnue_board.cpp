@@ -1,20 +1,26 @@
 #include "nnue_board.hpp"
 
-NnueBoard::NnueBoard() {
+NnueBoard::NnueBoard(){
+    NNUE::init();
     accumulators_stack.push_empty();
     synchronize();
 };
 
-NnueBoard::NnueBoard(std::string_view fen) {
+NnueBoard::NnueBoard(std::string_view fen){
+    NNUE::init();
     accumulators_stack.push_empty();
     synchronize();
+};
+
+NnueBoard::~NnueBoard(){
+    NNUE::cleanup();
 };
 
 void NnueBoard::synchronize(){
     Accumulators& new_accs = accumulators_stack.top();
     auto features = get_features();
-    nnue_.compute_accumulator(new_accs[(int)Color::WHITE], features.first);
-    nnue_.compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+    NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
+    NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
 }
 
 bool NnueBoard::legal(Move move){
@@ -36,18 +42,18 @@ void NnueBoard::update_state(Move move){
     if (is_updatable_move(move)){
         // white
         modified_features mod_features = get_modified_features(move, Color::WHITE);
-        nnue_.update_accumulator(prev_accs[(int)Color::WHITE], new_accs[(int)Color::WHITE], mod_features);
+        NNUE::update_accumulator(prev_accs[(int)Color::WHITE], new_accs[(int)Color::WHITE], mod_features);
 
         // black
         mod_features = get_modified_features(move, Color::BLACK);
-        nnue_.update_accumulator(prev_accs[(int)Color::BLACK], new_accs[(int)Color::BLACK], mod_features);
+        NNUE::update_accumulator(prev_accs[(int)Color::BLACK], new_accs[(int)Color::BLACK], mod_features);
 
         makeMove(move);
     } else {
         makeMove(move);
         auto features = get_features();
-        nnue_.compute_accumulator(new_accs[(int)Color::WHITE], features.first);
-        nnue_.compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+        NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
+        NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
     }
 }
 
@@ -59,7 +65,7 @@ void NnueBoard::restore_state(Move move){
 }
 
 int NnueBoard::evaluate(){
-    return std::clamp(nnue_.run(accumulators_stack.top(), sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
+    return std::clamp(NNUE::run(accumulators_stack.top(), sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
 }
 
 bool NnueBoard::is_stalemate(){
@@ -76,6 +82,9 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 
     Piece curr_piece;
 
+    bool mirror_w = kingSq(Color::WHITE).file() >= File::FILE_E;
+    bool mirror_b = kingSq(Color::BLACK).file() >= File::FILE_E;
+
     int idx = 0;
     while (occupied){
         int sq = occupied.pop();
@@ -85,9 +94,9 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
         int piece_idx = int(curr_piece.type());
         
         // white perspective
-        active_features_white[idx] = 384 * color + piece_idx*64 + sq;
+        active_features_white[idx] = 384 * color + piece_idx*64 + (mirror_w ? (sq ^ 7) : sq);
         // black perspective
-        active_features_black[idx] = 384 * !color + piece_idx*64 + (sq ^ 56);
+        active_features_black[idx] = 384 * !color + piece_idx*64 + (mirror_b ? ((sq ^ 56) ^ 7) : (sq ^ 56));
         idx++;
     }
 
@@ -115,9 +124,14 @@ modified_features NnueBoard::get_modified_features(Move move, Color color){
     Piece curr_piece = at(static_cast<Square>(from));
     Piece capt_piece = at(static_cast<Square>(to));
     assert(curr_piece != Piece::NONE);
-
     bool piece_color = curr_piece.color() == Color::BLACK; // white: 0, black: 1
     int piece_idx = int(curr_piece.type());
+
+    if (kingSq(color).file() >= File::FILE_E){
+        // mirror horizontally by flipping last 3 bits.
+        from ^= 7;
+        to ^= 7;
+    }
 
     if (color == Color::WHITE) {
         added = 384 * piece_color + piece_idx*64 + to;
@@ -141,5 +155,8 @@ modified_features NnueBoard::get_modified_features(Move move, Color color){
 }
 
 bool NnueBoard::is_updatable_move(Move move){
-    return move.typeOf() == Move::NORMAL;
+    return move.typeOf() == Move::NORMAL && (
+        at(move.from()).type() != PieceType::KING
+        || !((move.from().file() == File::FILE_D && move.to().file() == File::FILE_E)
+            || (move.from().file() == File::FILE_E && move.to().file() == File::FILE_D)));
 }
