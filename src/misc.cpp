@@ -31,24 +31,6 @@ void KillerMoves::load_from_stream(std::ifstream& ifs){
             ifs.read(reinterpret_cast<char*>(&v), sizeof(uint16_t));
 }
 
-AccumulatorsStack::AccumulatorsStack(){
-    idx = 0;
-}
-
-Accumulators& AccumulatorsStack::push_empty(){
-    assert(idx < MAX_PLY + 1);
-    return stack[++idx];
-}
-
-Accumulators& AccumulatorsStack::top(){
-    return stack[idx];
-}
-
-void AccumulatorsStack::pop(){
-    assert(idx > 0);
-    idx--;
-}
-
 int root_to_pos_mate_value(int value, int ply){
     assert(is_mate(value));
     assert(is_mate(std::abs(value) + ply)); // make sure new value is still mate

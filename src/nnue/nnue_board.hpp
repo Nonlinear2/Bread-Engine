@@ -8,6 +8,8 @@
 #include "nnue.hpp"
 #include "misc.hpp"
 
+using BothModifiedFeatures = std::array<ModifiedFeatures, 2>;
+
 class NnueBoard: public Board {
     public:
 
@@ -31,9 +33,25 @@ class NnueBoard: public Board {
     std::pair<std::vector<int>, std::vector<int>> get_features();
 
     private:
+    class AccumulatorsStack {
+        public:
+        AccumulatorsStack();
+        Accumulators& push_empty();
+        Accumulators& top();
+        void clear_top_update();
+        void set_top_update(ModifiedFeatures modified_white, ModifiedFeatures modified_black);
+        void pop();
+        void apply_lazy_updates();
+
+        private:
+        std::vector<Accumulators> stack = std::vector<Accumulators>(MAX_PLY + 1);
+        std::vector<BothModifiedFeatures> queued_updates = std::vector<BothModifiedFeatures>(MAX_PLY + 1);
+        int idx;
+    };
+
     AccumulatorsStack accumulators_stack;
 
-    modified_features get_modified_features(Move move, Color color);
+    ModifiedFeatures get_modified_features(Move move, Color color);
 
     bool is_updatable_move(Move move);
 };

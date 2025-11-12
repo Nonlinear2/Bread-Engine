@@ -52,18 +52,6 @@ class SearchLimit {
     int value;
 };
 
-class AccumulatorsStack {
-    public:
-    AccumulatorsStack();
-    Accumulators& push_empty();
-    Accumulators& top();
-    void pop();
-
-    private:
-    std::vector<Accumulators> stack = std::vector<Accumulators>(MAX_PLY + 1);
-    int idx;
-};
-
 int root_to_pos_mate_value(int value, int ply);
 
 int pos_to_root_mate_value(int value, int ply);

@@ -14,12 +14,17 @@
 
 using namespace chess;
 
-struct modified_features {
+struct ModifiedFeatures {
     int added;
     int removed;
     int captured;
 
-    modified_features(int added, int removed, int captured):
+    ModifiedFeatures():
+        added(0),
+        removed(0),
+        captured(0) {};
+
+    ModifiedFeatures(int added, int removed, int captured):
         added(added),
         removed(removed),
         captured(captured) {};
@@ -56,7 +61,7 @@ void load_model();
 
 void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features);
 
-void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const modified_features m_features);
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures m_features);
 
 int run(Accumulators& accumulators, Color stm, int piece_count);
 
