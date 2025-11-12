@@ -160,3 +160,34 @@ bool NnueBoard::is_updatable_move(Move move){
         || !((move.from().file() == File::FILE_D && move.to().file() == File::FILE_E)
             || (move.from().file() == File::FILE_E && move.to().file() == File::FILE_D)));
 }
+
+NnueBoard::AccumulatorsStack::AccumulatorsStack(){
+    idx = 0;
+}
+
+Accumulators& NnueBoard::AccumulatorsStack::push_empty(){
+    assert(idx < MAX_PLY + 1);
+    return stack[idx];
+}
+
+Accumulators& NnueBoard::AccumulatorsStack::top(){
+    return stack[idx];
+}
+
+void NnueBoard::AccumulatorsStack::pop(){
+    assert(idx > 0);
+    idx--;
+}
+
+void NnueBoard::AccumulatorsStack::apply_lazy_updates(Color color){
+    int i = idx;
+    while (queued_updates[i][color].added != 0)
+        i--;
+    i++;
+    for (; i <= idx; i++){
+
+        Accumulators& prev_acc = accumulators_stack.top()[(int)color];
+        Accumulators& new_acc = accumulators_stack.push_empty()[(int)color];
+        nnue_.update_accumulator(prev_acc, new_acc, queued_updates[i][color]);
+    }
+}

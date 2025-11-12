@@ -19,6 +19,11 @@ struct modified_features {
     int removed;
     int captured;
 
+    modified_features():
+        added(0),
+        removed(0),
+        captured(0) {};
+
     modified_features(int added, int removed, int captured):
         added(added),
         removed(removed),
