@@ -139,13 +139,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
         case TT_MOVE:
             ++stage;
 
-            use_tt_move = tt_move != Move::NO_MOVE && (
-                MoveGenType == movegen::MoveGenType::ALL
-                || pos.inCheck() 
-                || pos.isCapture(tt_move)
-            ) && pos.legal(tt_move);
-
-            if (use_tt_move){
+            if (tt_move != Move::NO_MOVE && pos.legal(tt_move)){
                 move = tt_move;
                 return true;
             }
@@ -164,7 +158,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
         case GET_MOVES:
             while (moves.num_left != 0){
                 move = pop_best_score();
-                if (move != tt_move || !use_tt_move)
+                if (move != tt_move)
                     return true;
             }
     }
