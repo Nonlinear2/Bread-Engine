@@ -51,7 +51,8 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
         score -= att_2 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value / 150;
     }
 
-    score += chk_1 * (pos.givesCheck(move) != CheckType::NO_CHECK);
+    score += chk_1 * (pos.givesCheck(move) == CheckType::DIRECT_CHECK);
+    score += (chk_1 + 50) * (pos.givesCheck(move) == CheckType::DISCOVERY_CHECK);
 
     // captures should be searched early, so
     // to_value = piece_value(to) - piece_value(from) doesn't seem to work.
@@ -87,7 +88,8 @@ void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
     const int to_piece_type = static_cast<int>(pos.at(move.to()).type());
 
     int score = (to_piece_type == 6 ? -25000 : piece_value[to_piece_type]) - piece_value[piece_type]
-        + chk_2 * (pos.givesCheck(move) != CheckType::NO_CHECK);
+        + chk_2 * (pos.givesCheck(move) == CheckType::DIRECT_CHECK)
+        + (chk_2 + 50) * (pos.givesCheck(move) == CheckType::DISCOVERY_CHECK);
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
