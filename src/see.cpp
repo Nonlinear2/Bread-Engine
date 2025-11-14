@@ -2,6 +2,10 @@
 
 bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true if greater than threshold
     assert(SEE_KING_VALUE > piece_value[static_cast<int>(PieceType::QUEEN)] * 10);
+
+    if (move.typeOf() != Move::NORMAL)
+        return true;
+
     const Square from_sq = move.from();
     const Square to_sq = move.to();
     PieceType next_piece = board.at(from_sq).type();
@@ -23,20 +27,6 @@ bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true
     
     Bitboard occupied = board.occ().clear(from_sq.index());
 
-    switch (move.typeOf()){
-        case Move::ENPASSANT:
-            value_on_square = piece_value[static_cast<int>(PieceType::PAWN)];
-            occupied.clear(to_sq.ep_square().index());
-            // update attacks
-            attackers[attacker_turn] |= attacks::rook(to_sq, occupied) & rooks_and_queens;
-            break;
-        case Move::PROMOTION:
-            next_piece = move.promotionType();
-            balance += piece_value[static_cast<int>(next_piece)] - piece_value[static_cast<int>(PieceType::PAWN)];
-            break;
-        default:
-            break;
-    }
     if (board.at(to_sq) != Piece::NONE)
         value_on_square = piece_value[static_cast<int>(board.at(to_sq).type())];
 
