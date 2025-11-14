@@ -52,7 +52,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
     }
 
     score += chk_1 * (pos.givesCheck(move) == CheckType::DIRECT_CHECK);
-    score += (chk_1 + 50) * (pos.givesCheck(move) == CheckType::DISCOVERY_CHECK);
+    score += (chk_1 + 150) * (pos.givesCheck(move) == CheckType::DISCOVERY_CHECK);
 
     // captures should be searched early, so
     // to_value = piece_value(to) - piece_value(from) doesn't seem to work.
@@ -89,7 +89,7 @@ void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
 
     int score = (to_piece_type == 6 ? -25000 : piece_value[to_piece_type]) - piece_value[piece_type]
         + chk_2 * (pos.givesCheck(move) == CheckType::DIRECT_CHECK)
-        + (chk_2 + 50) * (pos.givesCheck(move) == CheckType::DISCOVERY_CHECK);
+        + (chk_2 + 150) * (pos.givesCheck(move) == CheckType::DISCOVERY_CHECK);
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
