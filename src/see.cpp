@@ -2,9 +2,18 @@
 
 bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true if greater than threshold
     assert(SEE_KING_VALUE > piece_value[static_cast<int>(PieceType::QUEEN)] * 10);
-    const Square from_sq = move.from();
+
     const Square to_sq = move.to();
+    // int balance = piece_value[static_cast<int>(board.at(to_sq).type())] - threshold;
+    // if (balance < 0)
+    //     return false;
+    
+    const Square from_sq = move.from();
     PieceType next_piece = board.at(from_sq).type();
+    // balance = piece_value[static_cast<int>(next_piece)] - balance;
+    // if (balance <= 0)
+    //     return true;
+
     Color attacker_color = board.at(from_sq).color();
     bool attacker_turn = true;
 
@@ -35,6 +44,11 @@ bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true
             balance += piece_value[static_cast<int>(next_piece)] - piece_value[static_cast<int>(PieceType::PAWN)];
             break;
         default:
+            if (piece_value[static_cast<int>(board.at(to_sq).type())] < threshold)
+                return false;
+
+            if (piece_value[static_cast<int>(board.at(to_sq).type())] - piece_value[static_cast<int>(next_piece)] >= threshold)
+                return true;
             break;
     }
     if (board.at(to_sq) != Piece::NONE)
