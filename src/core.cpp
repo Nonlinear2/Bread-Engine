@@ -487,7 +487,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         ss->moved_piece = pos.at(move.from());
         ss->current_move = move;
-        pos.update_state(move);
+        pos.update_state(move, transposition_table);
 
         bool gives_check = pos.inCheck();
 
@@ -724,7 +724,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
         ss->moved_piece = moved_piece;
         ss->current_move = move;
-        pos.update_state(move);
+        pos.update_state(move, transposition_table);
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
 

@@ -88,7 +88,7 @@ class TranspositionTable {
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
-    private:
     std::vector<TEntry> entries;
+    private:
     int size_mb;
 };
