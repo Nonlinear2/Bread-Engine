@@ -30,18 +30,6 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::prepare_pos_data(){
     Bitboard pawn_attackers = pos.pieces(PieceType::PAWN, ~stm);
     while (pawn_attackers)
         attacked_by_pawn |= attacks::pawn(~stm, pawn_attackers.pop());
-
-    const Square opp_king_sq = pos.kingSq(~stm);
-    const Bitboard occ = pos.occ();
-
-    check_squares = {
-        attacks::pawn(~stm, opp_king_sq), // pawn
-        attacks::knight(opp_king_sq), // knight
-        attacks::bishop(opp_king_sq, occ), // bishop
-        attacks::rook(opp_king_sq, occ), // rook
-        attacks::queen(opp_king_sq, occ), // queen
-        0, // king
-    };
 }
 
 // set move score to be sorted later
@@ -63,8 +51,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
         score -= att_2 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value / 150;
     }
 
-    if (check_squares[static_cast<int>(piece.type())] & Bitboard::fromSquare(to))
-        score += chk_1;
+    score += chk_1 * (pos.givesCheck(move) != CheckType::NO_CHECK);
 
     // captures should be searched early, so
     // to_value = piece_value(to) - piece_value(from) doesn't seem to work.
@@ -92,20 +79,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
 
 
 template<>
-void SortedMoveGen<movegen::MoveGenType::CAPTURE>::prepare_pos_data(){
-    const Color stm = pos.sideToMove();
-    const Square opp_king_sq = pos.kingSq(~stm);
-    const Bitboard occ = pos.occ();
-
-    check_squares = {
-        attacks::pawn(~stm, opp_king_sq), // pawn
-        attacks::knight(opp_king_sq), // knight
-        attacks::bishop(opp_king_sq, occ), // bishop
-        attacks::rook(opp_king_sq, occ), // rook
-        attacks::queen(opp_king_sq, occ), // queen
-        0, // king
-    };
-}
+void SortedMoveGen<movegen::MoveGenType::CAPTURE>::prepare_pos_data(){}
 
 template<>
 void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
@@ -113,7 +87,7 @@ void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
     const int to_piece_type = static_cast<int>(pos.at(move.to()).type());
 
     int score = (to_piece_type == 6 ? -25000 : piece_value[to_piece_type]) - piece_value[piece_type]
-        + chk_2 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
+        + chk_2 * (pos.givesCheck(move) != CheckType::NO_CHECK);
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
