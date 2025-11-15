@@ -233,12 +233,17 @@ Move Engine::iterative_deepening(SearchLimit limit){
             negamax<true>(current_depth, asp_alpha, asp_beta, root_ss, false);
             best_move = root_moves[0];
             
-            if (best_move.score() <= asp_alpha)
-                asp_alpha -= (asp_beta - asp_alpha)*2;
-            else if (best_move.score() >= asp_beta)
-                asp_beta += (asp_beta - asp_alpha)*2;
-            else
+            if (best_move.score() <= asp_alpha){
+                asp_beta = asp_alpha;
+                asp_alpha = best_move.score() - 200;
+            } else if (best_move.score() >= asp_beta) {
+                asp_alpha = asp_beta;
+                asp_beta = best_move.score() + 200;
+            } else
                 break;
+
+            std::clamp(asp_alpha, -INFINITE_VALUE, INFINITE_VALUE);
+            std::clamp(asp_beta, -INFINITE_VALUE, INFINITE_VALUE);
         }
 
         std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
