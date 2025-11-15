@@ -221,12 +221,12 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
         int asp_alpha;
         int asp_beta;
-        if (current_depth <= 4){
+        if (current_depth <= 6){
             asp_alpha = -INFINITE_VALUE;
             asp_beta = INFINITE_VALUE;
         } else {
-            asp_alpha = best_move.score() - 300;
-            asp_beta = best_move.score() + 300;
+            asp_alpha = best_move.score() - 200;
+            asp_beta = best_move.score() + 200;
         }
 
         while (true){
