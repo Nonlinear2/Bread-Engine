@@ -221,7 +221,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
         int asp_alpha;
         int asp_beta;
-        if (current_depth <= 6){
+        if (current_depth <= 4){
             asp_alpha = -INFINITE_VALUE;
             asp_beta = INFINITE_VALUE;
         } else {
