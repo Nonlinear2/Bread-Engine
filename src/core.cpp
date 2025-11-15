@@ -225,8 +225,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
             asp_alpha = -INFINITE_VALUE;
             asp_beta = INFINITE_VALUE;
         } else {
-            asp_alpha = best_move.score() - 400;
-            asp_beta = best_move.score() + 400;
+            asp_alpha = best_move.score() - 300;
+            asp_beta = best_move.score() + 300;
         }
 
         while (true){
@@ -234,9 +234,9 @@ Move Engine::iterative_deepening(SearchLimit limit){
             best_move = root_moves[0];
             
             if (best_move.score() <= asp_alpha)
-                asp_alpha -= asp_beta - asp_alpha;
+                asp_alpha -= (asp_beta - asp_alpha)/2;
             else if (best_move.score() >= asp_beta)
-                asp_beta += asp_beta - asp_alpha;
+                asp_beta += (asp_beta - asp_alpha)/2;
             else
                 break;
         }
