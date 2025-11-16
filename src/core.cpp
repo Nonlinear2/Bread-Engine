@@ -99,7 +99,7 @@ void Engine::load_state(std::string file){
 void Engine::update_run_time(){
     run_time = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::high_resolution_clock::now() - start_time
-    ).count();
+    ).count() + 1; // add 1 to avoid divisions by 0
 };
 
 std::pair<std::string, std::string> Engine::get_pv_pmove(){
@@ -190,8 +190,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
                 break;
             }
 
-            if (root_tb_hit || pos.them(engine_color).count() == 1)
-            {
+            if (root_tb_hit || pos.them(engine_color).count() == 1){
                 clear_state();
                 evaluate = Nonsense::evaluate;
                 nonsense_stage = Nonsense::PROMOTE;
@@ -204,8 +203,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
                 break;
             }
 
-            if (Nonsense::only_knight_bishop(pos))
-            {
+            if (Nonsense::only_knight_bishop(pos)){
                 clear_state();
                 evaluate = nnue_evaluate;
                 nonsense_stage = Nonsense::CHECKMATE;
@@ -246,21 +244,18 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
         std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
         pv = pv_pmove.first;
-        if (pv_pmove.second.size() > 0){
+        if (pv_pmove.second.size() > 0)
             ponder_move = pv_pmove.second;
-        }
 
         update_run_time();
-        if (run_time == 0)
-            run_time = 1; // avoid division by 0;
 
         // do not count interrupted searches in depth
         std::cout << "info depth " << current_depth - interrupt_flag;
-        if (is_mate(best_move.score())){
+        if (is_mate(best_move.score()))
             std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
-        } else {
+        else
             std::cout << " score cp " << best_move.score();
-        }
+
         std::cout << " nodes " << nodes;
         std::cout << " nps " << nodes * 1000 / run_time;
         std::cout << " time " << run_time;
