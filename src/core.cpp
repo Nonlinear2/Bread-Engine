@@ -235,11 +235,11 @@ Move Engine::iterative_deepening(SearchLimit limit){
             if (best_move.score() <= asp_alpha){
                 int difference = asp_beta - asp_alpha;
                 asp_beta -= difference / 3;
-                asp_alpha -= 4*difference / 3;
+                asp_alpha -= 5*difference / 3;
             } else if (best_move.score() >= asp_beta){
                 int difference = asp_beta - asp_alpha;
                 asp_alpha += difference / 3;
-                asp_beta += 4*difference / 3;
+                asp_beta += 5*difference / 3;
             } else
                 break;
 
