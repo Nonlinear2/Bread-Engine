@@ -34,12 +34,13 @@ int nnue_evaluate(NnueBoard& pos){
 
 int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
     float move_num = num_moves_out_of_book < 10 ? static_cast<float>(num_moves_out_of_book) : 10;
-    float factor = 2 -  move_num / 10;
+    float factor = 2 - move_num / 10;
     float target = num_moves_until_time_control == 0
         ? time_left / 30
         : time_left / (num_moves_until_time_control+5);
-    
-    return static_cast<int>(factor*target + 0.9F*increment);
+
+    int think_time = static_cast<int>(factor*target + 0.95F*increment);
+    return think_time > 100 ? think_time - MOVE_OVERHEAD : think_time;
 }
 
 bool Engine::update_interrupt_flag(){
