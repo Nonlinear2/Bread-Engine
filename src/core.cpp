@@ -36,10 +36,10 @@ int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_m
     float move_num = num_moves_out_of_book < 10 ? static_cast<float>(num_moves_out_of_book) : 10;
     float factor = 2 -  move_num / 10;
     float target = num_moves_until_time_control == 0
-        ? time_left / 35
+        ? time_left / 20
         : time_left / (num_moves_until_time_control+5);
-    
-    return static_cast<int>(factor*target + 0.9F*increment);
+
+    return std::max(static_cast<int>(factor*target) + increment - MOVE_OVERHEAD, 1);
 }
 
 bool Engine::update_interrupt_flag(){
