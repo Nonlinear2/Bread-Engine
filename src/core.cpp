@@ -151,6 +151,10 @@ Move Engine::iterative_deepening(SearchLimit limit){
     else
         this->limit = limit;
 
+    int soft_time_limit = -1;
+    if (limit.type == LimitType::Time)
+        soft_time_limit = 4 * limit.value / 5;
+
     start_time = std::chrono::high_resolution_clock::now();
 
     std::string pv;
@@ -268,6 +272,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         if (interrupt_flag
             || is_mate(best_move.score())
             || (limit.type == LimitType::Depth && current_depth == limit.value)
+            || (limit.type == LimitType::Time && (run_time >= soft_time_limit))
             || current_depth >= ENGINE_MAX_DEPTH)
             break;
     }
