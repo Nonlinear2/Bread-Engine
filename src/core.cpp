@@ -153,7 +153,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
     int soft_time_limit = -1;
     if (limit.type == LimitType::Time)
-        soft_time_limit = 4 * limit.value / 5;
+        soft_time_limit = 3 * limit.value / 4;
 
     start_time = std::chrono::high_resolution_clock::now();
 
