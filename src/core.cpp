@@ -36,11 +36,10 @@ int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_m
     float move_num = num_moves_out_of_book < 10 ? static_cast<float>(num_moves_out_of_book) : 10;
     float factor = 2 - move_num / 10;
     float target = num_moves_until_time_control == 0
-        ? time_left / 30
+        ? time_left / 10
         : time_left / (num_moves_until_time_control+5);
 
-    int think_time = static_cast<int>(factor*target + 0.95F*increment);
-    return think_time > 100 ? think_time - MOVE_OVERHEAD : think_time;
+    return std::max(static_cast<int>(factor*target) + increment - MOVE_OVERHEAD, 10);
 }
 
 bool Engine::update_interrupt_flag(){
@@ -153,7 +152,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
     int soft_time_limit = -1;
     if (limit.type == LimitType::Time)
-        soft_time_limit = 5 * limit.value / 6;
+        soft_time_limit = 3 * limit.value / 4;
 
     start_time = std::chrono::high_resolution_clock::now();
 
