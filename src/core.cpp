@@ -272,7 +272,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         if (interrupt_flag
             || is_mate(best_move.score())
             || (limit.type == LimitType::Depth && current_depth == limit.value)
-            || (limit.type == LimitType::Time && (run_time >= soft_time_limit))
+            || (soft_time_limit != -1 && (run_time >= soft_time_limit))
             || current_depth >= ENGINE_MAX_DEPTH)
             break;
     }
