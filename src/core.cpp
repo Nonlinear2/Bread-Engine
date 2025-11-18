@@ -34,7 +34,7 @@ int nnue_evaluate(NnueBoard& pos){
 
 int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
     float target = num_moves_until_time_control == 0
-        ? time_left / 25
+        ? time_left / 20
         : time_left / (num_moves_until_time_control+5);
 
     return static_cast<int>(target + 0.9F*increment);
