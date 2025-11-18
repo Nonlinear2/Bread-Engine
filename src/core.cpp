@@ -32,12 +32,10 @@ int nnue_evaluate(NnueBoard& pos){
     return pos.evaluate();
 }
 
-int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
-    float target = num_moves_until_time_control == 0
-        ? time_left / 25
-        : time_left / (num_moves_until_time_control+5);
-
-    return static_cast<int>(target + 0.9F*increment);
+int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=256, int increment=0){
+    float target = time_left / std::min(25, num_moves_until_time_control);
+    int think_time = static_cast<int>(target + 0.9F*increment);
+    return think_time < 100 ? think_time : think_time - MOVE_OVERHEAD;
 }
 
 bool Engine::update_interrupt_flag(){
