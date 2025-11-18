@@ -37,7 +37,7 @@ int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_m
         ? time_left / 25
         : time_left / (num_moves_until_time_control+5);
 
-    return static_cast<int>(target + 0.9F*increment);
+    return static_cast<int>(target + 0.5F*increment);
 }
 
 bool Engine::update_interrupt_flag(){
