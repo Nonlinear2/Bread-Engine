@@ -709,7 +709,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
         alpha = std::max(alpha, stand_pat);
 
-        if (depth == -QSEARCH_MAX_DEPTH)
+        if (depth <= -QSEARCH_MAX_DEPTH)
             return stand_pat;
     }
 
