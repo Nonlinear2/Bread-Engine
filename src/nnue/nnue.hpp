@@ -30,6 +30,8 @@ struct ModifiedFeatures {
         captured(captured) {};
 };
 
+using BothModifiedFeatures = std::array<ModifiedFeatures, 2>;
+
 namespace NNUE {
 
 /*****************
@@ -61,7 +63,7 @@ void load_model();
 
 void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features);
 
-void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures m_features);
+void update_accumulators(Accumulators& prev_acc, Accumulators& new_acc, const BothModifiedFeatures& features);
 
 int run(Accumulators& accumulators, Color stm, int piece_count);
 

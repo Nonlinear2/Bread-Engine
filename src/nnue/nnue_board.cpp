@@ -199,11 +199,8 @@ void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
         Accumulators& new_accs = stack[i + 1];
     
         // white
-        NNUE::update_accumulator(prev_accs[0], new_accs[0], queued_updates[i + 1][0]);
+        NNUE::update_accumulators(prev_accs, new_accs, queued_updates[i + 1]);
         queued_updates[i + 1][0] = ModifiedFeatures();
-
-        // black
-        NNUE::update_accumulator(prev_accs[1], new_accs[1], queued_updates[i + 1][1]);
         queued_updates[i + 1][1] = ModifiedFeatures();
     }
 }

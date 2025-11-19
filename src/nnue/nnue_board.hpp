@@ -9,8 +9,6 @@
 #include "nnue.hpp"
 #include "misc.hpp"
 
-using BothModifiedFeatures = std::array<ModifiedFeatures, 2>;
-
 class NnueBoard: public Board {
     public:
 
