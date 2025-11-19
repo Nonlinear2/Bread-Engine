@@ -126,7 +126,7 @@ void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_fea
     }
 };
 
-void update_accumulators(Accumulators& prev_accs, Accumulators& new_accs, BothModifiedFeatures* both_features, int num_updates){
+void update_accumulators(Accumulators& prev_accs, Accumulators* new_accs, BothModifiedFeatures* both_features, int num_updates){
 
     vec_int16 registers[NUM_AVX_REGISTERS];
 
@@ -134,7 +134,6 @@ void update_accumulators(Accumulators& prev_accs, Accumulators& new_accs, BothMo
 
     for (int color: {0, 1}){
         Accumulator& prev_acc = prev_accs[color];
-        Accumulator& new_acc  = new_accs[color];
         
         for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
             // load the accumulator
@@ -144,6 +143,7 @@ void update_accumulators(Accumulators& prev_accs, Accumulators& new_accs, BothMo
 
             for (int f_idx = 0; f_idx < num_updates; f_idx++){
                 ModifiedFeatures features = both_features[f_idx][color];
+                Accumulator& new_acc  = new_accs[f_idx][color];
 
                 // added feature
                 for (int i = 0; i < NUM_AVX_REGISTERS; i++){
@@ -171,11 +171,11 @@ void update_accumulators(Accumulators& prev_accs, Accumulators& new_accs, BothMo
                             );
                     }
                 }
-            }
 
-            //store the result in the accumulator
-            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                store_epi16(&new_acc[j + i*INT16_PER_REG], registers[i]);
+                //store the result in the accumulator
+                for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                    store_epi16(&new_acc[j + i*INT16_PER_REG], registers[i]);
+                }
             }
         }
     }

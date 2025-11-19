@@ -197,7 +197,7 @@ void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
     Accumulators& prev_accs = stack[i];
     Accumulators& new_accs = stack[i + 1];
 
-    NNUE::update_accumulators(prev_accs, new_accs, &queued_updates[i + 1], idx - i);
+    NNUE::update_accumulators(prev_accs, &new_accs, &queued_updates[i + 1], idx - i);
 
     for (; i < idx; i++){
         queued_updates[i + 1][0] = ModifiedFeatures();
