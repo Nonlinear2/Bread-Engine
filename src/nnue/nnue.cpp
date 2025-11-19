@@ -133,9 +133,9 @@ void update_accumulators(Accumulators& prev_accs, Accumulators& new_accs, const 
     constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS*INT16_PER_REG;
 
     for (int color: {0, 1}){
-        Accumulator prev_acc = prev_accs[color];
-        Accumulator new_acc = new_accs[color];
-        ModifiedFeatures features = both_features[color];
+        Accumulator& prev_acc = prev_accs[color];
+        Accumulator& new_acc  = new_accs[color];
+        const ModifiedFeatures& features = both_features[color];
 
         for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
             // load the accumulator
