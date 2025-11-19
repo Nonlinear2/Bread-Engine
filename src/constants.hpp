@@ -32,7 +32,7 @@ using Accumulators = std::array<Accumulator, 2>;
 general constants
 ****************/
 
-constexpr int MOVE_OVERHEAD = 5;
+constexpr int MOVE_OVERHEAD = 15;
 
 constexpr int TT_MIN_SIZE = 2;
 constexpr int TT_MAX_SIZE = 4096;
