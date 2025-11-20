@@ -712,7 +712,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         if (depth == -QSEARCH_MAX_DEPTH)
             return stand_pat;
 
-        if (depth <= -2*QSEARCH_MAX_DEPTH)
+        if (depth <= -3*QSEARCH_MAX_DEPTH/2)
             return stand_pat;
     }
 
