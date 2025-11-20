@@ -602,7 +602,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     }
 
     // early return without storing the eval in the TT
-    if (!root_node && pos.halfMoveClock() + depth >= 100)
+    if (!root_node && pos.halfMoveClock() >= 90)
         return max_value;
 
     TFlag node_type;
@@ -788,7 +788,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(is_valid(max_value));
 
     // avoid storing history dependant values
-    if (pos.halfMoveClock() + depth + QSEARCH_MAX_DEPTH >= 100)
+    if (pos.halfMoveClock() >= 90)
         return max_value;
 
     if (depth == 0 || depth == -1)
