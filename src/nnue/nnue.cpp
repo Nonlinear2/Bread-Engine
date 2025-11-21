@@ -132,6 +132,10 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
 
     constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS*INT16_PER_REG;
 
+    int16_t* added_weights = &ft_weights[m_features.added * ACC_SIZE];
+    int16_t* removed_weights = &ft_weights[m_features.removed * ACC_SIZE];
+    int16_t* captured_weights = &ft_weights[m_features.captured * ACC_SIZE]; 
+
     for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
         // load the accumulator
         for (int i = 0; i < NUM_AVX_REGISTERS; i++){
@@ -143,7 +147,7 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
             // m_features.added*acc_size is the index of the added featured row. We then accumulate the weights.
             registers[i] = add_epi16(
                 registers[i],
-                load_epi16(&ft_weights[m_features.added*ACC_SIZE + j + i*INT16_PER_REG])
+                load_epi16(&added_weights[j + i*INT16_PER_REG])
                 );
         }
 
@@ -152,7 +156,7 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
             // m_features.removed*acc_size is to get the right column.
             registers[i] = sub_epi16(
                 registers[i],
-                load_epi16(&ft_weights[m_features.removed*ACC_SIZE + j + i*INT16_PER_REG])
+                load_epi16(&removed_weights[j + i*INT16_PER_REG])
                 );
         }
 
@@ -160,7 +164,7 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
             for (int i = 0; i < NUM_AVX_REGISTERS; i++){
                 registers[i] = sub_epi16(
                     registers[i],
-                    load_epi16(&ft_weights[m_features.captured*ACC_SIZE + j + i*INT16_PER_REG])
+                    load_epi16(&captured_weights[j + i*INT16_PER_REG])
                     );
             }
         }
