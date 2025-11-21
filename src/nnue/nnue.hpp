@@ -63,7 +63,7 @@ void load_model();
 
 void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features);
 
-void update_accumulators(Accumulators& prev_acc, Accumulators& new_acc, BothModifiedFeatures& features);
+void update_accumulators(Accumulators& prev_acc, Accumulators& new_acc, const BothModifiedFeatures& features);
 
 int run(Accumulators& accumulators, Color stm, int piece_count);
 
