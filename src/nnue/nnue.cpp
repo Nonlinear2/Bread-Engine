@@ -129,48 +129,58 @@ void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_fea
 void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures m_features){
 
     vec_int16 registers[NUM_AVX_REGISTERS];
+    constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;
 
-    constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS*INT16_PER_REG;
-
-    for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
-        // load the accumulator
-        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-            registers[i] = load_epi16(&prev_acc[j + i*INT16_PER_REG]); 
-        }
-
-        // added feature
-        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-            // m_features.added*acc_size is the index of the added featured row. We then accumulate the weights.
-            registers[i] = add_epi16(
-                registers[i],
-                load_epi16(&ft_weights[m_features.added*ACC_SIZE + j + i*INT16_PER_REG])
+    if (m_features.captured != -1){
+        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                registers[i] = load_epi16(&prev_acc[j + i*INT16_PER_REG]); 
+            }
+            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                registers[i] = add_epi16(
+                    registers[i],
+                    load_epi16(&ft_weights[m_features.added*ACC_SIZE + j + i*INT16_PER_REG])
                 );
-        }
-
-        // removed feature
-        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-            // m_features.removed*acc_size is to get the right column.
-            registers[i] = sub_epi16(
-                registers[i],
-                load_epi16(&ft_weights[m_features.removed*ACC_SIZE + j + i*INT16_PER_REG])
+            }
+            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                registers[i] = sub_epi16(
+                    registers[i],
+                    load_epi16(&ft_weights[m_features.removed*ACC_SIZE + j + i*INT16_PER_REG])
                 );
-        }
-
-        if (m_features.captured != -1){
+            }
             for (int i = 0; i < NUM_AVX_REGISTERS; i++){
                 registers[i] = sub_epi16(
                     registers[i],
                     load_epi16(&ft_weights[m_features.captured*ACC_SIZE + j + i*INT16_PER_REG])
-                    );
+                );
+            }
+            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                store_epi16(&new_acc[j + i*INT16_PER_REG], registers[i]);
             }
         }
-
-        //store the result in the accumulator
-        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-            store_epi16(&new_acc[j + i*INT16_PER_REG], registers[i]);
+    } else {
+        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                registers[i] = load_epi16(&prev_acc[j + i*INT16_PER_REG]); 
+            }
+            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                registers[i] = add_epi16(
+                    registers[i],
+                    load_epi16(&ft_weights[m_features.added*ACC_SIZE + j + i*INT16_PER_REG])
+                );
+            }
+            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                registers[i] = sub_epi16(
+                    registers[i],
+                    load_epi16(&ft_weights[m_features.removed*ACC_SIZE + j + i*INT16_PER_REG])
+                );
+            }
+            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                store_epi16(&new_acc[j + i*INT16_PER_REG], registers[i]);
+            }
         }
     }
-};
+}
 
 
 int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
