@@ -197,7 +197,11 @@ void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
     for (; i < idx; i++){
         Accumulators& prev_accs = stack[i];
         Accumulators& new_accs = stack[i + 1];
-    
+
+        // prefetch weight rows for black while processing white
+        __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].added * ACC_SIZE]);
+        __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed * ACC_SIZE]);
+
         // white
         NNUE::update_accumulator(prev_accs[0], new_accs[0], queued_updates[i + 1][0]);
         queued_updates[i + 1][0] = ModifiedFeatures();
