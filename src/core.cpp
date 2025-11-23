@@ -1,33 +1,39 @@
 #include "core.hpp"
 
 
-TUNEABLE(r_1, int, 164, 0, 500, 20, 0.002);
-TUNEABLE(r_2, int, 279, -100, 1000, 25, 0.002);
-TUNEABLE(rfp_1, int, 159, 0, 500, 25, 0.002);
-TUNEABLE(rfp_2, int, 50, 0, 1000, 50, 0.002);
-TUNEABLE(rfp_3, int, 53, 0, 1000, 50, 0.002);
-TUNEABLE(rfp_4, int, 144, -100, 1000, 20, 0.002);
-TUNEABLE(nmp_1, int, 84, -50, 250, 10, 0.002);
-TUNEABLE(nmp_2, int, 24, -300, 300, 15, 0.002);
-TUNEABLE(lmp_1, int, 117, -100, 500, 20, 0.002);
-TUNEABLE(see_1, int, 89, -100, 1000, 25, 0.002);
-TUNEABLE(see_2, int, 10, 0, 100, 0.5, 0.002);
-TUNEABLE(se_1, int, 8, -100, 100, 1, 0.002);
-TUNEABLE(se_2, int, 1, -100, 100, 1, 0.002);
-TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
-TUNEABLE(cont_1, int, 945, 0, 3000, 70, 0.002);
-TUNEABLE(cont_2, int, 131, 0, 1500, 35, 0.002);
-TUNEABLE(qs_fp_1, int, 1681, 0, 3000, 70, 0.002);
-TUNEABLE(qs_see_1, int, 286, 0, 900, 50, 0.002);
-TUNEABLE(qs_p_1, int, 1029, 0, 5000, 70, 0.002);
-TUNEABLE(cthis_1, int, 8479, 0, 16000, 250, 0.002);
-TUNEABLE(cthis_2, int, 578, 0, 3000, 60, 0.002);
-TUNEABLE(qs_p_idx, int, 7, 0, 20, 1, 0.002);
-TUNEABLE(his_1, int, 28, 0, 300, 7, 0.002);
-TUNEABLE(his_2, int, 26, 0, 300, 5, 0.002);
-TUNEABLE(his_3, int, 1003, 0, 5000, 70, 0.002);
-TUNEABLE(asp_1, int, 100, 0, 5000, 20, 0.002);
-TUNEABLE(asp_2, int, 341, 0, 5000, 60, 0.002);
+UNACTIVE_TUNEABLE(r_1, int, 164, 0, 500, 20, 0.002);
+UNACTIVE_TUNEABLE(r_2, int, 279, -100, 1000, 25, 0.002);
+UNACTIVE_TUNEABLE(rfp_1, int, 159, 0, 500, 25, 0.002);
+UNACTIVE_TUNEABLE(rfp_2, int, 50, 0, 1000, 50, 0.002);
+UNACTIVE_TUNEABLE(rfp_3, int, 53, 0, 1000, 50, 0.002);
+UNACTIVE_TUNEABLE(rfp_4, int, 144, -100, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(nmp_1, int, 84, -50, 250, 10, 0.002);
+UNACTIVE_TUNEABLE(nmp_2, int, 24, -300, 300, 15, 0.002);
+UNACTIVE_TUNEABLE(lmp_1, int, 117, -100, 500, 20, 0.002);
+UNACTIVE_TUNEABLE(see_1, int, 89, -100, 1000, 25, 0.002);
+UNACTIVE_TUNEABLE(see_2, int, 10, 0, 100, 0.5, 0.002);
+UNACTIVE_TUNEABLE(se_1, int, 8, -100, 100, 1, 0.002);
+UNACTIVE_TUNEABLE(se_2, int, 1, -100, 100, 1, 0.002);
+UNACTIVE_TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
+UNACTIVE_TUNEABLE(cont_1, int, 945, 0, 3000, 70, 0.002);
+UNACTIVE_TUNEABLE(cont_2, int, 131, 0, 1500, 35, 0.002);
+UNACTIVE_TUNEABLE(qs_fp_1, int, 1681, 0, 3000, 70, 0.002);
+UNACTIVE_TUNEABLE(qs_see_1, int, 286, 0, 900, 50, 0.002);
+UNACTIVE_TUNEABLE(qs_p_1, int, 1029, 0, 5000, 70, 0.002);
+UNACTIVE_TUNEABLE(cthis_1, int, 8479, 0, 16000, 250, 0.002);
+UNACTIVE_TUNEABLE(cthis_2, int, 578, 0, 3000, 60, 0.002);
+UNACTIVE_TUNEABLE(qs_p_idx, int, 7, 0, 20, 1, 0.002);
+UNACTIVE_TUNEABLE(his_1, int, 28, 0, 300, 7, 0.002);
+UNACTIVE_TUNEABLE(his_2, int, 26, 0, 300, 5, 0.002);
+UNACTIVE_TUNEABLE(his_3, int, 1003, 0, 5000, 200, 0.002);
+UNACTIVE_TUNEABLE(asp_1, int, 100, 0, 5000, 20, 0.002);
+UNACTIVE_TUNEABLE(asp_2, int, 341, 0, 5000, 60, 0.002);
+
+TUNEABLE(red_1, int, 1024, 0, 10000, 200, 0.002);
+TUNEABLE(red_2, int, 1024, 0, 10000, 200, 0.002);
+TUNEABLE(red_3, int, 1024, 0, 10000, 200, 0.002);
+TUNEABLE(red_4, int, 1024, 0, 10000, 200, 0.002);
+TUNEABLE(red_5, int, 1024, 0, 10000, 200, 0.002);
 
 
 int nnue_evaluate(NnueBoard& pos){
@@ -509,19 +515,18 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         bool gives_check = pos.inCheck();
 
-        // late move reductions
         new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
-        int reduced_depth = new_depth;
+        int reduction = 0;
 
-        reduced_depth += gives_check && !root_node;
-        reduced_depth -= move_gen.index() > 1 && !is_capture;
-        reduced_depth -= tt_capture && !is_capture;
-        reduced_depth -= move_gen.index() > lmr_1;
-        reduced_depth -= cutnode && depth > 7;
+        reduction -= red_1 * (gives_check && !root_node);
+        reduction += red_2 * (move_gen.index() > 1 && !is_capture);
+        reduction += red_3 * (tt_capture && !is_capture);
+        reduction += red_4 * (move_gen.index() > lmr_1);
+        reduction += red_5 * (cutnode && depth > 7);
 
-        reduced_depth = std::min(reduced_depth, ENGINE_MAX_DEPTH);
+        int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
         if (move_gen.index() > 0 && depth >= 2){
             value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1, true);
