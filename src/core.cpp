@@ -18,7 +18,7 @@ TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
 TUNEABLE(cont_1, int, 945, 0, 3000, 70, 0.002);
 TUNEABLE(cont_2, int, 131, 0, 1500, 35, 0.002);
 TUNEABLE(qs_fp_1, int, 1681, 0, 3000, 70, 0.002);
-TUNEABLE(qs_see_1, int, 286, 0, 900, 25, 0.002);
+TUNEABLE(qs_see_1, int, 286, 0, 900, 50, 0.002);
 TUNEABLE(qs_p_1, int, 1029, 0, 5000, 70, 0.002);
 TUNEABLE(cthis_1, int, 8479, 0, 16000, 250, 0.002);
 TUNEABLE(cthis_2, int, 578, 0, 3000, 60, 0.002);
@@ -26,6 +26,8 @@ TUNEABLE(qs_p_idx, int, 7, 0, 20, 1, 0.002);
 TUNEABLE(his_1, int, 28, 0, 300, 7, 0.002);
 TUNEABLE(his_2, int, 26, 0, 300, 5, 0.002);
 TUNEABLE(his_3, int, 1003, 0, 5000, 70, 0.002);
+TUNEABLE(asp_1, int, 100, 0, 5000, 20, 0.002);
+TUNEABLE(asp_2, int, 341, 0, 5000, 60, 0.002);
 
 
 int nnue_evaluate(NnueBoard& pos){
@@ -221,7 +223,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
             asp_alpha = -INFINITE_VALUE;
             asp_beta = INFINITE_VALUE;
         } else {
-            int margin = 100 + std::abs(best_move.score())/3;
+            int margin = asp_1 + asp_2*std::abs(best_move.score())/1024;
             asp_alpha = std::clamp(best_move.score() - margin, -INFINITE_VALUE, INFINITE_VALUE);
             asp_beta = std::clamp(best_move.score() + margin, -INFINITE_VALUE, INFINITE_VALUE);
         }
