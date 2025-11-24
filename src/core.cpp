@@ -29,12 +29,11 @@ UNACTIVE_TUNEABLE(his_3, int, 1003, 0, 5000, 200, 0.002);
 UNACTIVE_TUNEABLE(asp_1, int, 100, 0, 5000, 20, 0.002);
 UNACTIVE_TUNEABLE(asp_2, int, 341, 0, 5000, 60, 0.002);
 
-TUNEABLE(red_1, int, 1024, 0, 10000, 200, 0.002);
-TUNEABLE(red_2, int, 1024, 0, 10000, 200, 0.002);
-TUNEABLE(red_3, int, 1024, 0, 10000, 200, 0.002);
-TUNEABLE(red_4, int, 1024, 0, 10000, 200, 0.002);
-TUNEABLE(red_5, int, 1024, 0, 10000, 200, 0.002);
-
+TUNEABLE(red_1, int, 1231, 0, 10000, 200, 0.002);
+TUNEABLE(red_2, int, 1834, 0, 10000, 200, 0.002);
+TUNEABLE(red_3, int, 723, 0, 10000, 200, 0.002);
+TUNEABLE(red_4, int, 1620, 0, 10000, 200, 0.002);
+TUNEABLE(red_5, int, 1112, 0, 10000, 200, 0.002);
 
 int nnue_evaluate(NnueBoard& pos){
     return pos.evaluate();
