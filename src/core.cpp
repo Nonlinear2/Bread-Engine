@@ -381,10 +381,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (is_mate(transposition.value))
         transposition.value = pos_to_root_mate_value(transposition.value, ply);
 
-    static_eval = eval = transposition.static_eval;
-    eval = transposition.value;
     move_gen.set_tt_move(transposition.move);
-    
+
     chess::Move excluded_move = ss->excluded_move;
     if (!root_node && !pv && transposition.depth >= depth && excluded_move == Move::NO_MOVE){
         switch (transposition.flag){
@@ -406,12 +404,22 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (beta <= alpha)
         return transposition.value;
 
-    bool in_check = pos.inCheck();
-
-    if (static_eval == NO_VALUE)
+    static_eval = transposition.static_eval;
+    
+    if (!is_valid(static_eval))
         static_eval = evaluate(pos);
-    if (eval == NO_VALUE)
-        eval = static_eval;
+    
+    assert(is_regular_eval(static_eval, false));
+    
+    eval = static_eval;
+
+    if (is_valid(transposition.value) && !is_decisive(transposition.value)
+        && (
+            transposition.flag == TFlag::EXACT 
+            || (transposition.flag == TFlag::LOWER_BOUND && transposition.value >= eval)
+            || (transposition.flag == TFlag::UPPER_BOUND && transposition.value <= eval)
+            ))
+            eval = transposition.value;
 
     ss->static_eval = static_eval;
 
@@ -419,6 +427,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         && ss->static_eval > (ss - 2)->static_eval;
 
     bool tt_capture = transposition.move != Move::NO_MOVE && pos.isCapture(transposition.move);
+
+    bool in_check = pos.inCheck();
 
     // pruning
     if (!root_node && !pv && !in_check){
