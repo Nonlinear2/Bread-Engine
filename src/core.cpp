@@ -531,7 +531,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1, true);
 
             if (value > alpha && reduced_depth < new_depth){
-                value = -negamax<false>(new_depth - (value < alpha + 7) + (value > alpha + 145), -alpha - 1, -alpha, ss + 1, !cutnode);
+                value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
                 if (!is_capture)
                     move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
             } else if (value <= alpha && !is_capture)
@@ -542,7 +542,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
 
         if (pv && (move_gen.index() == 0 || value > alpha)){
-            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1, false);
+            value = -negamax<true>(new_depth - (reduction > 3600), -beta, -alpha, ss + 1, false);
         }
 
         pos.restore_state(move);
