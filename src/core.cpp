@@ -542,7 +542,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
 
         if (pv && (move_gen.index() == 0 || value > alpha)){
-            value = -negamax<true>(new_depth - (reduction > 3600), -beta, -alpha, ss + 1, false);
+            value = -negamax<true>(new_depth - (reduction > 2600), -beta, -alpha, ss + 1, false);
         }
 
         pos.restore_state(move);
