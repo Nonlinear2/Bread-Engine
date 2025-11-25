@@ -347,6 +347,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             return eval;
     }
 
+    // mate distance pruning
+    if (!root_node){
+        alpha = std::max(pos_to_root_mate_value(-MATE_VALUE, ply), alpha);
+        beta  = std::min(pos_to_root_mate_value(MATE_VALUE, ply), beta);
+        if (alpha >= beta)
+            return alpha;
+    }
+
     int max_value = -INFINITE_VALUE;
     Move best_move = Move::NO_MOVE;
     Move move;
