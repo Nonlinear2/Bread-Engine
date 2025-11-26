@@ -717,9 +717,12 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
                 stand_pat = transposition.value;
     
         if (stand_pat >= beta){
-            if (!is_hit)
+            if (!is_hit){
                 transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), stand_pat,
                     DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+                
+                stand_pat = (stand_pat + beta)/2;
+            }
             return stand_pat;
         }
 
