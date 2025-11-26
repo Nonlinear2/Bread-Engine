@@ -10,7 +10,7 @@
 
 
 # Overview
-Bread is rated around 3300 elo on the computer chess rating lists.
+Bread is a chess engine rated around 3300 elo on the computer chess rating lists.
 
 It uses minimax search, along with an efficiently updatable neural network trained from zero knowledge using games of self play.
 
@@ -26,9 +26,7 @@ Bread engine does not have a graphical interface built in. However it supports t
 </td></tr>
 </table>
 
-You can download precompiled binaries for Windows in the <a href="https://github.com/Nonlinear2/Bread-Engine/releases"><kbd>Release Section</kbd></a>.
-
-To use the engine on Linux, you need to build the project yourself.
+You can download precompiled binaries for Windows and Linux in the <a href="https://github.com/Nonlinear2/Bread-Engine/releases"><kbd>Release Section</kbd></a>.
 
 ## How to build the project yourself
 
