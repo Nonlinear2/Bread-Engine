@@ -441,7 +441,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         // reverse futility pruning
         if (depth < 6 + 3*(!is_hit)
             && eval - depth * (rfp_1 - rfp_2*cutnode) - rfp_3 + rfp_4*improving >= beta)
-            return is_regular_eval(eval) && is_regular_eval(beta) ? (2*eval + beta)/3 : eval;
+            return is_regular_eval(eval) && is_regular_eval(beta) ? (3*eval + beta)/4 : eval;
 
         // null move pruning
         // maybe check for zugzwang?
