@@ -28,12 +28,14 @@ UNACTIVE_TUNEABLE(his_2, int, 26, 0, 300, 5, 0.002);
 UNACTIVE_TUNEABLE(his_3, int, 1003, 0, 5000, 200, 0.002);
 UNACTIVE_TUNEABLE(asp_1, int, 100, 0, 5000, 20, 0.002);
 UNACTIVE_TUNEABLE(asp_2, int, 341, 0, 5000, 60, 0.002);
-
 TUNEABLE(red_1, int, 1231, 0, 10000, 200, 0.002);
 TUNEABLE(red_2, int, 1834, 0, 10000, 200, 0.002);
 TUNEABLE(red_3, int, 723, 0, 10000, 200, 0.002);
 TUNEABLE(red_4, int, 1620, 0, 10000, 200, 0.002);
 TUNEABLE(red_5, int, 1112, 0, 10000, 200, 0.002);
+TUNEABLE(red_6, int, 800, 0, 10000, 180, 0.002);
+TUNEABLE(red_th_1, int, 2600, 0, 10000, 450, 0.002);
+
 
 int nnue_evaluate(NnueBoard& pos){
     return pos.evaluate();
@@ -533,7 +535,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         reduction += red_3 * (tt_capture && !is_capture);
         reduction += red_4 * (move_gen.index() > lmr_1);
         reduction += red_5 * (cutnode && depth > 7);
-        reduction += 800 * (depth > 3 && !improving);
+        reduction += red_6 * (depth > 3 && !improving);
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
@@ -552,7 +554,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
 
         if (pv && (move_gen.index() == 0 || value > alpha)){
-            value = -negamax<true>(new_depth - (reduction > 2600), -beta, -alpha, ss + 1, false);
+            value = -negamax<true>(new_depth - (reduction > red_th_1), -beta, -alpha, ss + 1, false);
         }
 
         pos.restore_state(move);
