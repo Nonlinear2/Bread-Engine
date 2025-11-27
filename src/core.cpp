@@ -803,7 +803,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     }
 
     if (is_regular_eval(max_value) && is_regular_eval(beta) && max_value > beta)
-        max_value = (2*max_value + beta) / 3;
+        max_value = (3*max_value + beta) / 4;
 
     // assert(pos.isGameOver().second == GameResult::NONE);
     assert(is_valid(max_value));
