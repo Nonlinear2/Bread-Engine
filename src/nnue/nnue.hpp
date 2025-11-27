@@ -14,73 +14,55 @@
 
 using namespace chess;
 
-struct modified_features {
+struct ModifiedFeatures {
     int added;
     int removed;
     int captured;
 
-    modified_features(int added, int removed, int captured):
+    ModifiedFeatures():
+        added(0),
+        removed(0),
+        captured(0) {};
+
+    ModifiedFeatures(int added, int removed, int captured):
         added(added),
         removed(removed),
         captured(captured) {};
 };
 
-class NNUE {
-    public:
+namespace NNUE {
 
-    /*****************
-    Feature transformer
-    ******************/
+/*****************
+Feature transformer
+******************/
 
-    // 2*input_size -> 2*acc_size 
+// 2*input_size -> 2*acc_size 
 
-    // weights are flattened 2d array, to be contiguous in memory.
-    // otherways it would be an array of pointers pointing to scattered memory locations, 
-    // which would be slower and unpractical.
-    // weights are stored in row major
-    int16_t* ft_weights;
-    int16_t* ft_bias;
+// weights are flattened 2d array, to be contiguous in memory.
+// weights are stored in row major
+extern int16_t* ft_weights;
+extern int16_t* ft_bias;
 
-    // all computations happen in int16. Scale is 127
-    // to make sure that even after accumulation no overflows happen : there can be a maximum of 30 active input features,
-    // so we need (sum of 30 weights) + bias < 32767
-    // we need to make sure this limit is not reached before converting the model.
+/******
+Layer 1
+*******/
 
-    // unclipped output is in accumulator
+// 2*acc_size -> 1
 
-    // apply crelu16 and store
-    int16_t ft_clipped_output[ACC_SIZE*2];
+extern int16_t* l1_weights;
+extern int32_t* l1_bias;
 
-    /******
-    Layer 1
-    *******/
+int32_t run_L1(Accumulators& accumulators, Color stm, int bucket);
 
-    // 2*acc_size -> 1
+void init();
+void cleanup();
 
-    // int8 weights with scale 64. Multiplication outputs in int16, so no overflows,
-    // and sum is computed in int32. Maximum weights times maximum input with accumulation is 127*127*512 = 8258048
-    // maximum bias is therefore (2,147,483,647-8,258,048)/32 = 66850799 which is totally fine.
+void load_model();
 
-    int16_t* l1_weights;
-    int32_t* l1_bias;
+void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features);
 
-    // also, output is scaled back by 64, so total scale is still only 127. as we only do integer division,
-    // error caused by the division is max 1/127.
-    
-    // max output value is 1*(127*127) + bias, the max possible output with the max possible weight.
-    // this is 16129+bias which is less than the max int16 if bias is less than (int16_max - 16129)/(127*64) = 2.04
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures m_features);
 
-    // output is not scaled back by 64, so scale is 64*127 times true output.
-    int32_t run_L1(Accumulators& accumulators, Color stm, int bucket);
+int run(Accumulators& accumulators, Color stm, int piece_count);
 
-    NNUE();
-    ~NNUE();
-
-    void load_model();
-
-    void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features);
-
-    void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const modified_features m_features);
-
-    int run(Accumulators& accumulators, Color stm, int piece_count);
-};
+}; // namespace NNUE

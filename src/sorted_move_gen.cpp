@@ -1,17 +1,16 @@
 #include "sorted_move_gen.hpp"
 
-TUNEABLE(endg, int, 11, 0, 32, 0.5, 0.002);
-TUNEABLE(psm_2, int, 127, 0, 1000, 20, 0.002);
-TUNEABLE(att_1, int, 46, 0, 500, 10, 0.002);
-TUNEABLE(att_2, int, 54, 0, 500, 10, 0.002);
-TUNEABLE(chk_1, int, 160, 0, 1000, 20, 0.002);
-TUNEABLE(cpt, int, 153, 0, 1000, 20, 0.002);
-TUNEABLE(prm, int, 102, 0, 1000, 20, 0.002);
-TUNEABLE(kil, int, 134, 0, 1000, 25, 0.002);
-TUNEABLE(his, int, 153, 0, 1000, 20, 0.002);
-TUNEABLE(chis, int, 129, 0, 1000, 20, 0.002);
-TUNEABLE(chk_2, int, 348, 0, 2000, 20, 0.002);
-TUNEABLE(bst, int, 218, 0, 1500, 20, 0.002);
+UNACTIVE_TUNEABLE(endg, int, 11, 0, 32, 0.5, 0.002);
+UNACTIVE_TUNEABLE(att_1, int, 46, 0, 500, 10, 0.002);
+UNACTIVE_TUNEABLE(att_2, int, 54, 0, 500, 10, 0.002);
+UNACTIVE_TUNEABLE(chk_1, int, 160, 0, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(cpt, int, 153, 0, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(prm, int, 102, 0, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(kil, int, 134, 0, 1000, 25, 0.002);
+UNACTIVE_TUNEABLE(his, int, 153, 0, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(chis, int, 129, 0, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(chk_2, int, 348, 0, 2000, 20, 0.002);
+UNACTIVE_TUNEABLE(bst, int, 218, 0, 1500, 20, 0.002);
 
 template<>
 SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
@@ -43,8 +42,6 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::prepare_pos_data(){
         attacks::queen(opp_king_sq, occ), // queen
         0, // king
     };
-
-    is_endgame = occ.count() <= endg;
 }
 
 // set move score to be sorted later
@@ -61,9 +58,6 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
 
     int score = 0;
 
-    if (piece == Piece::WHITEKING || piece == Piece::BLACKKING)
-        score += psm_2 * psm.get_ksm(piece, is_endgame, to, from) / 100;
-    
     if (piece.type() != PieceType::PAWN && piece.type() != PieceType::KING){
         score += att_1 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value / 150;
         score -= att_2 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value / 150;
@@ -118,7 +112,7 @@ void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
     const int piece_type = static_cast<int>(pos.at(move.from()).type());
     const int to_piece_type = static_cast<int>(pos.at(move.to()).type());
 
-    int score = piece_value[to_piece_type] - piece_value[piece_type]
+    int score = (to_piece_type == 6 ? -25000 : piece_value[to_piece_type]) - piece_value[piece_type]
         + chk_2 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
@@ -145,19 +139,17 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
         case TT_MOVE:
             ++stage;
 
-            use_tt_move = tt_move != Move::NO_MOVE && (
-                MoveGenType == movegen::MoveGenType::ALL
-                || pos.inCheck() 
-                || pos.isCapture(tt_move)
-            ) && pos.legal(tt_move);
-
-            if (use_tt_move){
+            if (tt_move != Move::NO_MOVE && pos.legal(tt_move)){
                 move = tt_move;
                 return true;
             }
 
         case GENERATE_MOVES:
-            movegen::legalmoves<MoveGenType>(moves, pos);
+            if (pos.inCheck())
+                movegen::legalmoves<movegen::MoveGenType::ALL>(moves, pos);
+            else
+                movegen::legalmoves<MoveGenType>(moves, pos);
+
             prepare_pos_data();
             for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);
@@ -166,7 +158,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
         case GET_MOVES:
             while (moves.num_left != 0){
                 move = pop_best_score();
-                if (move != tt_move || !use_tt_move)
+                if (move != tt_move)
                     return true;
             }
     }

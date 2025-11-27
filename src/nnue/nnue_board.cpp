@@ -1,20 +1,27 @@
 #include "nnue_board.hpp"
 
-NnueBoard::NnueBoard() {
+NnueBoard::NnueBoard(){
+    NNUE::init();
     accumulators_stack.push_empty();
     synchronize();
 };
 
-NnueBoard::NnueBoard(std::string_view fen) {
+NnueBoard::NnueBoard(std::string_view fen){
+    NNUE::init();
     accumulators_stack.push_empty();
     synchronize();
+};
+
+NnueBoard::~NnueBoard(){
+    NNUE::cleanup();
 };
 
 void NnueBoard::synchronize(){
     Accumulators& new_accs = accumulators_stack.top();
     auto features = get_features();
-    nnue_.compute_accumulator(new_accs[(int)Color::WHITE], features.first);
-    nnue_.compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+    NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
+    NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+    accumulators_stack.clear_top_update();
 }
 
 bool NnueBoard::legal(Move move){
@@ -28,27 +35,24 @@ bool NnueBoard::legal(Move move){
     return std::find(legal.begin(), legal.end(), move) != legal.end();
 }
 
-void NnueBoard::update_state(Move move){
+void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
-    Accumulators& prev_accs = accumulators_stack.top();
     Accumulators& new_accs = accumulators_stack.push_empty();
 
     if (is_updatable_move(move)){
-        // white
-        modified_features mod_features = get_modified_features(move, Color::WHITE);
-        nnue_.update_accumulator(prev_accs[(int)Color::WHITE], new_accs[(int)Color::WHITE], mod_features);
-
-        // black
-        mod_features = get_modified_features(move, Color::BLACK);
-        nnue_.update_accumulator(prev_accs[(int)Color::BLACK], new_accs[(int)Color::BLACK], mod_features);
-
+        accumulators_stack.set_top_update(
+            get_modified_features(move, Color::WHITE), 
+            get_modified_features(move, Color::BLACK)
+        );
         makeMove(move);
     } else {
         makeMove(move);
         auto features = get_features();
-        nnue_.compute_accumulator(new_accs[(int)Color::WHITE], features.first);
-        nnue_.compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+        NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
+        NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+        accumulators_stack.clear_top_update();
     }
+    __builtin_prefetch(&tt.entries[hash() & (tt.entries.size() - 1)]);
 }
 
 void NnueBoard::restore_state(Move move){
@@ -59,30 +63,14 @@ void NnueBoard::restore_state(Move move){
 }
 
 int NnueBoard::evaluate(){
-    return std::clamp(nnue_.run(accumulators_stack.top(), sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
+    accumulators_stack.apply_lazy_updates();
+    return std::clamp(NNUE::run(accumulators_stack.top(), sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
 }
 
-bool NnueBoard::try_outcome_eval(int& eval){
-    // we dont want history dependent data to be stored in the TT.
-    // the evaluation stored in the TT should only depend on the
-    // position on the board and not how we got there, otherwise these evals would be reused
-    // incorrectly.
-    // here, threefold repetition and the fifty move rule are already handled and resulting evals
-    // are not stored in the TT.
-    if (isInsufficientMaterial()){
-        eval = 0;
-        return true;
-    }
-
+bool NnueBoard::is_stalemate(){
     Movelist movelist;
     movegen::legalmoves(movelist, *this);
-
-    if (movelist.empty()){
-        // checkmate/stalemate.
-        eval = inCheck() ? -MATE_VALUE : 0;
-        return true;
-    }
-    return false;
+    return movelist.empty();
 }
 
 std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
@@ -93,6 +81,9 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 
     Piece curr_piece;
 
+    bool mirror_w = kingSq(Color::WHITE).file() >= File::FILE_E;
+    bool mirror_b = kingSq(Color::BLACK).file() >= File::FILE_E;
+
     int idx = 0;
     while (occupied){
         int sq = occupied.pop();
@@ -102,9 +93,9 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
         int piece_idx = int(curr_piece.type());
         
         // white perspective
-        active_features_white[idx] = 384 * color + piece_idx*64 + sq;
+        active_features_white[idx] = 384 * color + piece_idx*64 + (mirror_w ? (sq ^ 7) : sq);
         // black perspective
-        active_features_black[idx] = 384 * !color + piece_idx*64 + (sq ^ 56);
+        active_features_black[idx] = 384 * !color + piece_idx*64 + (mirror_b ? ((sq ^ 56) ^ 7) : (sq ^ 56));
         idx++;
     }
 
@@ -114,7 +105,7 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 
 // this function must be called before pushing the move
 // it assumes it it not castling, en passant or a promotion
-modified_features NnueBoard::get_modified_features(Move move, Color color){
+ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     assert(move != Move::NO_MOVE);
 
     int from;
@@ -132,9 +123,14 @@ modified_features NnueBoard::get_modified_features(Move move, Color color){
     Piece curr_piece = at(static_cast<Square>(from));
     Piece capt_piece = at(static_cast<Square>(to));
     assert(curr_piece != Piece::NONE);
-
     bool piece_color = curr_piece.color() == Color::BLACK; // white: 0, black: 1
     int piece_idx = int(curr_piece.type());
+
+    if (kingSq(color).file() >= File::FILE_E){
+        // mirror horizontally by flipping last 3 bits.
+        from ^= 7;
+        to ^= 7;
+    }
 
     if (color == Color::WHITE) {
         added = 384 * piece_color + piece_idx*64 + to;
@@ -154,9 +150,64 @@ modified_features NnueBoard::get_modified_features(Move move, Color color){
             captured = 384 * !capt_piece_color + capt_piece_idx*64 + (to ^ 56);
     }
 
-    return modified_features(added, removed, captured);
+    return ModifiedFeatures(added, removed, captured);
 }
 
 bool NnueBoard::is_updatable_move(Move move){
-    return move.typeOf() == Move::NORMAL;
+    return move.typeOf() == Move::NORMAL && (
+        at(move.from()).type() != PieceType::KING
+        || !((move.from().file() == File::FILE_D && move.to().file() == File::FILE_E)
+            || (move.from().file() == File::FILE_E && move.to().file() == File::FILE_D)));
+}
+
+NnueBoard::AccumulatorsStack::AccumulatorsStack(){
+    idx = 0;
+}
+
+Accumulators& NnueBoard::AccumulatorsStack::push_empty(){
+    assert(idx < MAX_PLY + 1);
+    return stack[++idx];
+}
+
+Accumulators& NnueBoard::AccumulatorsStack::top(){
+    return stack[idx];
+}
+
+void NnueBoard::AccumulatorsStack::clear_top_update(){
+    queued_updates[idx][0] = ModifiedFeatures();
+    queued_updates[idx][1] = ModifiedFeatures();
+}
+
+void NnueBoard::AccumulatorsStack::set_top_update(ModifiedFeatures modified_white, ModifiedFeatures modified_black){
+    queued_updates[idx][0] = modified_white;
+    queued_updates[idx][1] = modified_black;
+}
+
+void NnueBoard::AccumulatorsStack::pop(){
+    assert(idx > 0);
+    clear_top_update();
+    idx--;
+}
+
+void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
+    int i = idx;
+    while (queued_updates[i][(int)Color::WHITE].added != 0)
+        i--;
+
+    for (; i < idx; i++){
+        Accumulators& prev_accs = stack[i];
+        Accumulators& new_accs = stack[i + 1];
+
+        // prefetch weight rows for black while processing white
+        __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].added * ACC_SIZE]);
+        __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed * ACC_SIZE]);
+
+        // white
+        NNUE::update_accumulator(prev_accs[0], new_accs[0], queued_updates[i + 1][0]);
+        queued_updates[i + 1][0] = ModifiedFeatures();
+
+        // black
+        NNUE::update_accumulator(prev_accs[1], new_accs[1], queued_updates[i + 1][1]);
+        queued_updates[i + 1][1] = ModifiedFeatures();
+    }
 }

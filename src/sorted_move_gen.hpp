@@ -49,12 +49,10 @@ class SortedMoveGen {
     
     Bitboard attacked_by_pawn;
     std::vector<Bitboard> check_squares;
-    bool is_endgame;
     Movelist* to_search = NULL;
 
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
-    bool use_tt_move;
 
     GenerationStage stage = TT_MOVE;
     Move pop_move(int move_idx);
