@@ -226,11 +226,12 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
         int asp_alpha;
         int asp_beta;
+        int margin = 0;
         if (current_depth <= 6){
             asp_alpha = -INFINITE_VALUE;
             asp_beta = INFINITE_VALUE;
         } else {
-            int margin = asp_1 + asp_2*std::abs(best_move.score())/1024;
+            margin = asp_1 + asp_2*std::abs(best_move.score())/1024;
             asp_alpha = std::clamp(best_move.score() - margin, -INFINITE_VALUE, INFINITE_VALUE);
             asp_beta = std::clamp(best_move.score() + margin, -INFINITE_VALUE, INFINITE_VALUE);
         }
@@ -240,9 +241,9 @@ Move Engine::iterative_deepening(SearchLimit limit){
             best_move = root_moves[0];
             
             if (best_move.score() <= asp_alpha)
-                asp_alpha -= asp_beta - asp_alpha;
+                asp_alpha -= asp_beta - asp_alpha + margin;
             else if (best_move.score() >= asp_beta)
-                asp_beta += asp_beta - asp_alpha;
+                asp_beta += asp_beta - asp_alpha + margin;
             else
                 break;
 
