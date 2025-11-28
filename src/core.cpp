@@ -239,11 +239,13 @@ Move Engine::iterative_deepening(SearchLimit limit){
             negamax<true>(current_depth, asp_alpha, asp_beta, root_ss, false);
             best_move = root_moves[0];
             
-            if (best_move.score() <= asp_alpha)
+            if (best_move.score() <= asp_alpha){
                 asp_alpha -= asp_beta - asp_alpha;
-            else if (best_move.score() >= asp_beta)
+                asp_beta -= (asp_beta - asp_alpha) / 4;
+            } else if (best_move.score() >= asp_beta) {
                 asp_beta += asp_beta - asp_alpha;
-            else
+                asp_alpha += (asp_beta - asp_alpha) / 4;
+            } else
                 break;
 
             asp_alpha = std::clamp(asp_alpha, -INFINITE_VALUE, INFINITE_VALUE);
