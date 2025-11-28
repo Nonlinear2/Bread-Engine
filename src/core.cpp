@@ -241,10 +241,10 @@ Move Engine::iterative_deepening(SearchLimit limit){
             
             if (best_move.score() <= asp_alpha){
                 asp_alpha -= asp_beta - asp_alpha;
-                asp_beta -= (asp_beta - asp_alpha) / 4;
+                asp_beta -= (asp_beta - asp_alpha) / 3;
             } else if (best_move.score() >= asp_beta) {
                 asp_beta += asp_beta - asp_alpha;
-                asp_alpha += (asp_beta - asp_alpha) / 4;
+                asp_alpha += (asp_beta - asp_alpha) / 3;
             } else
                 break;
 
