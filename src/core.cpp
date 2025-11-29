@@ -472,7 +472,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
 
-            if (!is_capture && move_gen.index() >= 3 + depth * depth)
+            if (!is_capture && move_gen.index() >= 6 + depth * depth)
                 continue;
 
             // lmp
