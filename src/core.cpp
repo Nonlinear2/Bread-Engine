@@ -525,7 +525,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         bool gives_check = pos.inCheck();
 
-        new_depth -= depth > 6 && !is_hit; // IIR
+        new_depth -= depth > 4 && !is_hit; // IIR
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
         int reduction = 0;
