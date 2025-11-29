@@ -12,7 +12,7 @@ const std::vector<int> piece_value = {
     150, // pawn
     440, // knight
     450, // bishop
-    850, // rook
+    650, // rook
     1350, // queen
     300, // king
     0, // none
