@@ -471,6 +471,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.in_buffer(depth, move);
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
+
+            if (!is_capture && move_gen.index() >= 6 + 2*depth*depth + 3*improving)
+                continue;
+
             // lmp
             if (!in_check && !is_capture && move_gen.index() > 2 + depth + improving 
                 && !is_hit && eval - lmp_1 * !improving < alpha)
