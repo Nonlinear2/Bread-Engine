@@ -1,41 +1,39 @@
 #include "core.hpp"
 
-
-UNACTIVE_TUNEABLE(r_1, int, 164, 0, 500, 20, 0.002);
-UNACTIVE_TUNEABLE(r_2, int, 279, -100, 1000, 25, 0.002);
-UNACTIVE_TUNEABLE(rfp_1, int, 159, 0, 500, 25, 0.002);
-UNACTIVE_TUNEABLE(rfp_2, int, 50, 0, 1000, 50, 0.002);
-UNACTIVE_TUNEABLE(rfp_3, int, 53, 0, 1000, 50, 0.002);
-UNACTIVE_TUNEABLE(rfp_4, int, 144, -100, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(nmp_1, int, 84, -50, 250, 10, 0.002);
-UNACTIVE_TUNEABLE(nmp_2, int, 24, -300, 300, 15, 0.002);
-UNACTIVE_TUNEABLE(lmp_1, int, 117, -100, 500, 20, 0.002);
-UNACTIVE_TUNEABLE(see_1, int, 89, -100, 1000, 25, 0.002);
-UNACTIVE_TUNEABLE(see_2, int, 10, 0, 100, 0.5, 0.002);
-UNACTIVE_TUNEABLE(se_1, int, 8, -100, 100, 1, 0.002);
-UNACTIVE_TUNEABLE(se_2, int, 1, -100, 100, 1, 0.002);
-UNACTIVE_TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
-UNACTIVE_TUNEABLE(cont_1, int, 945, 0, 3000, 70, 0.002);
-UNACTIVE_TUNEABLE(cont_2, int, 131, 0, 1500, 35, 0.002);
-UNACTIVE_TUNEABLE(qs_fp_1, int, 1681, 0, 3000, 70, 0.002);
-UNACTIVE_TUNEABLE(qs_see_1, int, 286, 0, 900, 50, 0.002);
-UNACTIVE_TUNEABLE(qs_p_1, int, 1029, 0, 5000, 70, 0.002);
-UNACTIVE_TUNEABLE(cthis_1, int, 8479, 0, 16000, 250, 0.002);
-UNACTIVE_TUNEABLE(cthis_2, int, 578, 0, 3000, 60, 0.002);
-UNACTIVE_TUNEABLE(qs_p_idx, int, 7, 0, 20, 1, 0.002);
-UNACTIVE_TUNEABLE(his_1, int, 28, 0, 300, 7, 0.002);
-UNACTIVE_TUNEABLE(his_2, int, 26, 0, 300, 5, 0.002);
-UNACTIVE_TUNEABLE(his_3, int, 1003, 0, 5000, 200, 0.002);
-UNACTIVE_TUNEABLE(asp_1, int, 100, 0, 5000, 20, 0.002);
-UNACTIVE_TUNEABLE(asp_2, int, 341, 0, 5000, 60, 0.002);
-TUNEABLE(red_1, int, 1231, 0, 10000, 200, 0.002);
-TUNEABLE(red_2, int, 1834, 0, 10000, 200, 0.002);
-TUNEABLE(red_3, int, 723, 0, 10000, 200, 0.002);
-TUNEABLE(red_4, int, 1620, 0, 10000, 200, 0.002);
-TUNEABLE(red_5, int, 1112, 0, 10000, 200, 0.002);
-TUNEABLE(red_6, int, 800, 0, 10000, 180, 0.002);
-TUNEABLE(red_th_1, int, 2600, 0, 10000, 450, 0.002);
-
+TUNEABLE(r_1, int, 199, 0, 500, 30, 0.002);
+TUNEABLE(r_2, int, 258, -100, 1000, 50, 0.002);
+TUNEABLE(rfp_1, int, 128, 0, 500, 30, 0.002);
+TUNEABLE(rfp_2, int, 36, 0, 1000, 10, 0.002);
+TUNEABLE(rfp_3, int, 66, 0, 1000, 10, 0.002);
+TUNEABLE(rfp_4, int, 105, -100, 1000, 25, 0.002);
+TUNEABLE(nmp_1, int, 107, -50, 250, 15, 0.002);
+TUNEABLE(nmp_2, int, 28, -300, 300, 5, 0.002);
+TUNEABLE(lmp_1, int, 98, -100, 500, 22, 0.002);
+TUNEABLE(see_1, int, 90, -100, 1000, 15, 0.002);
+TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
+TUNEABLE(se_1, int, 8, -100, 100, 0.5, 0.002);
+TUNEABLE(se_2, int, 0, -100, 100, 0.5, 0.002);
+TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
+TUNEABLE(cont_1, int, 1141, 0, 3000, 150, 0.002);
+TUNEABLE(cont_2, int, 102, 0, 1500, 25, 0.002);
+TUNEABLE(qs_fp_1, int, 1921, 0, 3000, 300, 0.002);
+TUNEABLE(qs_see_1, int, 268, 0, 900, 50, 0.002);
+TUNEABLE(qs_p_1, int, 1149, 0, 5000, 200, 0.002);
+TUNEABLE(cthis_1, int, 8238, 0, 16000, 1000, 0.002);
+TUNEABLE(cthis_2, int, 648, 0, 3000, 100, 0.002);
+TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
+TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
+TUNEABLE(his_2, int, 33, 0, 300, 5, 0.002);
+TUNEABLE(his_3, int, 1125, 0, 5000, 200, 0.002);
+TUNEABLE(asp_1, int, 98, 0, 5000, 20, 0.002);
+TUNEABLE(asp_2, int, 399, 0, 5000, 60, 0.002);
+TUNEABLE(red_1, int, 1326, 0, 10000, 200, 0.002);
+TUNEABLE(red_2, int, 1788, 0, 10000, 250, 0.002);
+TUNEABLE(red_3, int, 593, 0, 10000, 150, 0.002);
+TUNEABLE(red_4, int, 1689, 0, 10000, 200, 0.002);
+TUNEABLE(red_5, int, 1085, 0, 10000, 200, 0.002);
+TUNEABLE(red_6, int, 856, 0, 10000, 180, 0.002);
+TUNEABLE(red_th_1, int, 2262, 0, 10000, 450, 0.002);
 
 int nnue_evaluate(NnueBoard& pos){
     return pos.evaluate();
