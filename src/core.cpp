@@ -745,19 +745,22 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         Piece captured_piece = pos.at(move.to());
         Piece moved_piece = pos.at(move.from());
 
-        if (!in_check && move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-            if (stand_pat 
-                + piece_value[static_cast<int>(captured_piece.type())]
-                - piece_value[static_cast<int>(moved_piece.type())]
-                + qs_fp_1 < alpha)
-                continue;
+        if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
+            if (!in_check){
+                if (stand_pat 
+                    + piece_value[static_cast<int>(captured_piece.type())]
+                    - piece_value[static_cast<int>(moved_piece.type())]
+                    + qs_fp_1 < alpha)
+                    continue;
 
-            // SEE pruning
-            if (move != transposition.move && !SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
-                continue;
+                // SEE pruning
+                if (move != transposition.move && !SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
+                    continue;
 
-            // move count pruning
-            if (capture_gen.index() > qs_p_idx && stand_pat + qs_p_1 < alpha)
+                // move count pruning
+                if (capture_gen.index() > qs_p_idx && stand_pat + qs_p_1 < alpha)
+                    continue;
+            } else if (capture_gen.index() > 3 && !SEE::evaluate(pos, move, alpha - stand_pat - 850))
                 continue;
         }
 
