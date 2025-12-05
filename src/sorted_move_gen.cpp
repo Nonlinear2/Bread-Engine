@@ -1,15 +1,16 @@
 #include "sorted_move_gen.hpp"
 
-TUNEABLE(att_1, int, 46, 0, 500, 10, 0.002);
-TUNEABLE(att_2, int, 54, 0, 500, 10, 0.002);
-TUNEABLE(chk_1, int, 160, 0, 1000, 25, 0.002);
-TUNEABLE(cpt, int, 153, 0, 1000, 20, 0.002);
-TUNEABLE(prm, int, 102, 0, 1000, 20, 0.002);
-TUNEABLE(kil, int, 134, 0, 1000, 25, 0.002);
-TUNEABLE(his, int, 153, 0, 1000, 20, 0.002);
-TUNEABLE(chis, int, 129, 0, 1000, 20, 0.002);
-TUNEABLE(chk_2, int, 348, 0, 2000, 60, 0.002);
-TUNEABLE(bst, int, 218, 0, 1500, 40, 0.002);
+UNACTIVE_TUNEABLE(att_1, int, 45, 0, 500, 10, 0.002);
+UNACTIVE_TUNEABLE(att_2, int, 52, 0, 500, 10, 0.002);
+UNACTIVE_TUNEABLE(chk_1, int, 148, 0, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(cpt, int, 164, 0, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(prm, int, 96, 0, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(kil, int, 124, 0, 1000, 25, 0.002);
+UNACTIVE_TUNEABLE(his, int, 160, 0, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(chis, int, 134, 0, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(chk_2, int, 328, 0, 2000, 20, 0.002);
+UNACTIVE_TUNEABLE(bst, int, 231, 0, 1500, 20, 0.002);
+
 
 template<>
 SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
