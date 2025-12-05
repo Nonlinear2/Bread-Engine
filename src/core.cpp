@@ -469,25 +469,27 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.in_buffer(depth, move);
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
-
-            if (!is_capture && move_gen.index() >= 6 + 2*depth*depth + 3*improving)
-                continue;
-
-            // lmp
-            if (!in_check && !is_capture && move_gen.index() > 2 + depth + improving 
-                && !is_hit && eval - lmp_1 * !improving < alpha)
-                continue;
-
-            // SEE pruning
-            if (!in_check && move_gen.index() > 5 + depth / 2
-                && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
-                continue;
-
-            // continuation history pruning
-            if (!is_capture && !in_check
-                && prev_piece != int(Piece::NONE)
-                && prev_to != int(Square::underlying::NO_SQ)
-                && move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
+            if (!in_check){
+                if (!is_capture && move_gen.index() >= 6 + 2*depth*depth + 3*improving)
+                    continue;
+    
+                // lmp
+                if (!is_capture && move_gen.index() > 2 + depth + improving 
+                    && !is_hit && eval - lmp_1 * !improving < alpha)
+                    continue;
+    
+                // SEE pruning
+                if (move_gen.index() > 5 + depth / 2
+                    && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
+                    continue;
+    
+                // continuation history pruning
+                if (!is_capture
+                    && prev_piece != int(Piece::NONE)
+                    && prev_to != int(Square::underlying::NO_SQ)
+                    && move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
+                    continue;
+            } else if (!is_capture && move_gen.index() >= 6 + 2*depth*depth)
                 continue;
         }
 
