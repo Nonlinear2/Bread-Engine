@@ -416,8 +416,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     bool in_check = pos.inCheck();
 
-    if (static_eval == NO_VALUE)
-        static_eval = evaluate(pos);
+    if (static_eval == NO_VALUE){
+        if (in_check)
+            static_eval = (ss - 2)->static_eval;
+        else
+            static_eval = evaluate(pos);
+    }
     if (eval == NO_VALUE)
         eval = static_eval;
 
