@@ -489,7 +489,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     && prev_to != int(Square::underlying::NO_SQ)
                     && move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
                     continue;
-            } else if (!is_capture && move_gen.index() >= 6 + 2*depth*depth)
+            } else if (!is_capture && move_gen.index() >= 2 + 2*depth*depth)
                 continue;
         }
 
