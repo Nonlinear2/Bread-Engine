@@ -427,8 +427,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     ss->static_eval = static_eval;
 
-    bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval)
-        && ss->static_eval >= (ss - 2)->static_eval;
+    bool improving = !in_check && is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval)
+        && ss->static_eval > (ss - 2)->static_eval;
 
     bool tt_capture = transposition.move != Move::NO_MOVE && pos.isCapture(transposition.move);
 
