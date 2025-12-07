@@ -516,6 +516,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     extension = 1 + (value < singular_beta - 100 - 100*pv);
                 else if (value >= beta && !is_decisive(value))
                     return value;
+                else if (transposition.value >= beta)
+                    extension = -1;
                 else if (cutnode)
                     extension = -1;
             }
