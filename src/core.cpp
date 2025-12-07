@@ -811,11 +811,10 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (pos.halfMoveClock() + depth + QSEARCH_MAX_DEPTH >= 100)
         return max_value;
 
-    if (depth == 0 || depth == -1 || depth == -2)
-        transposition_table.store(zobrist_hash, to_tt(max_value, ply),
-            stand_pat, DEPTH_QSEARCH, best_move,
-            max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
-            static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+    transposition_table.store(zobrist_hash, to_tt(max_value, ply),
+        stand_pat, DEPTH_QSEARCH, best_move,
+        max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
+        static_cast<uint8_t>(pos.fullMoveNumber()), pv);
 
     return max_value;
 }
