@@ -218,7 +218,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         default:
             break;
     }
-
+    int best_move_changes = 0;
     while (true){
         current_depth++;
 
@@ -235,6 +235,10 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
         while (true){
             negamax<true>(current_depth, asp_alpha, asp_beta, root_ss, false);
+
+            if (best_move != Move::NO_MOVE && best_move != root_moves[0])
+                best_move_changes++;
+
             best_move = root_moves[0];
             
             if (best_move.score() <= asp_alpha)
@@ -272,7 +276,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
         if (interrupt_flag
             || is_mate(best_move.score())
             || (limit.type == LimitType::Depth && current_depth == limit.value)
-            || current_depth >= ENGINE_MAX_DEPTH)
+            || current_depth >= ENGINE_MAX_DEPTH
+            || (limit.type == LimitType::Time && best_move_changes < 3 && run_time > 4*limit.value / 5))
             break;
     }
 
