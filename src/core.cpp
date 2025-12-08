@@ -433,7 +433,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         // razoring
         if (eval + r_1*depth*depth + r_2 < alpha){
-            return qsearch<false>(alpha, beta, 0, ss + 1);
+            if (eval != transposition.value || transposition.flag != TFlag::EXACT)
+                eval = qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval.
+            if (eval <= alpha)
+                return eval;
         }
 
         // reverse futility pruning
