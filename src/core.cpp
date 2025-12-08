@@ -456,7 +456,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             null_move_eval = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1, false);
             pos.unmakeNullMove();
             if (null_move_eval >= beta && !is_win(null_move_eval))
-                return null_move_eval;
+                return (3*null_move_eval + beta) / 4;
         }
     }
 
