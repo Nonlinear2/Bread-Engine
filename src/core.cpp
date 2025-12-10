@@ -533,11 +533,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         int reduction = 0;
 
         reduction -= red_1 * (gives_check && !root_node);
+        reduction -= 1000 * (move == transposition.move && transposition.depth >= depth);
         reduction += red_2 * (move_gen.index() > 1 && !is_capture);
         reduction += red_3 * (tt_capture && !is_capture);
         reduction += red_4 * (move_gen.index() > lmr_1);
         reduction += red_5 * (cutnode && depth > 7);
-        reduction += 900 * (cutnode && transposition.move == Move::NO_MOVE);
         reduction += red_6 * (depth > 3 && !improving);
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
