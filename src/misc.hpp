@@ -21,6 +21,7 @@ const std::vector<int> piece_value = {
 struct Stack {
     Move excluded_move = Move::NO_MOVE;
     Move current_move = Move::NO_MOVE;
+    bool current_move_capture = false;
     Piece moved_piece = Piece::NONE;
     int static_eval = NO_VALUE;
 };

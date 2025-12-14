@@ -223,7 +223,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, in
 }
 
 template<>
-void SortedMoveGen<movegen::MoveGenType::ALL>::update_cont_history(Piece piece, Square to, int bonus){
+void SortedMoveGen<movegen::MoveGenType::ALL>::update_cont_history(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus){
     if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
         cont_history.apply_bonus(prev_piece, prev_to, piece, to, bonus);
 }
