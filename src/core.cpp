@@ -585,9 +585,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         alpha = std::max(alpha, value);
         if (beta <= alpha){
-            if (!is_capture)
+            if (!is_capture){
                 move_gen.update_history(move, std::min(depth*depth*his_1 + his_2, his_3));
-            SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.add_move(depth, move);
+                SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.add_move(depth, move);
+            }
             break;
         }
     }
