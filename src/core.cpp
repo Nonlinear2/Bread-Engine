@@ -450,7 +450,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         // null move pruning
         // maybe check for zugzwang?
-        int null_move_eval;
         if (cutnode && (ss - 1)->current_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
             && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta)){
 
@@ -458,10 +457,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             ss->moved_piece = Piece::NONE;
             ss->current_move = Move::NULL_MOVE;
             pos.makeNullMove();
-            null_move_eval = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1, false);
+            int null_move_value = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1, false);
             pos.unmakeNullMove();
-            if (null_move_eval >= beta && !is_win(null_move_eval))
-                return null_move_eval;
+            if (null_move_value >= beta && !is_win(null_move_value))
+                return null_move_value;
         }
     }
 
