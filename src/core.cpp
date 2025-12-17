@@ -590,11 +590,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             if (!is_capture)
                 move_gen.update_history(move, std::min(depth*depth*his_1 + his_2, his_3));
             SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.add_move(depth, move);
-
-            if ((ss - 1)->current_move != Move::NO_MOVE && !(ss - 1)->current_move_capture)
-                move_gen.update_cont_history(
-                    (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, -70);
-
             break;
         }
     }
@@ -630,6 +625,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         // we return a fail low to extend the search by 1
         return alpha;
+    }
+
+    if (best_move != Move::NO_MOVE 
+        && (ss - 1)->current_move != Move::NO_MOVE && !(ss - 1)->current_move_capture
+        && (ss - 2)->current_move != Move::NO_MOVE && (ss - 2)->moved_piece != Piece::NONE){
+        move_gen.update_cont_history(
+            (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, -70);
     }
 
     // early return without storing the eval in the TT
