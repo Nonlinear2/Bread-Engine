@@ -631,7 +631,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         && (ss - 1)->current_move != Move::NO_MOVE && !(ss - 1)->current_move_capture
         && (ss - 2)->current_move != Move::NO_MOVE && (ss - 2)->moved_piece != Piece::NONE){
         move_gen.update_cont_history(
-            (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, -70);
+            (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, -100);
     }
 
     // early return without storing the eval in the TT
