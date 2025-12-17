@@ -28,3 +28,14 @@ class FromToHistory {
 
     std::array<std::array<int, 64*64>, 2> history = {};
 };
+
+class FromToPieceHistory {
+    public:
+    void clear();
+    int& get(bool color, Square from, Square to);
+    void apply_bonus(bool color, Square from, Square to, int bonus);
+    void save_to_stream(std::ofstream& ofs);
+    void load_from_stream(std::ifstream& ifs);
+
+    std::array<std::array<int, 64*64>, 2> history = {};
+};

@@ -26,6 +26,7 @@ class SortedMoveGen {
 
     static inline KillerMoves killer_moves = KillerMoves();
     static inline FromToHistory history = FromToHistory();
+    static inline FromToPieceHistory capture_history = FromToPieceHistory();
     static inline ContinuationHistory cont_history = ContinuationHistory();
 
     Piece prev_piece;
