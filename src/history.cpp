@@ -45,3 +45,26 @@ void FromToHistory::load_from_stream(std::ifstream& ifs){
     for (auto& v : history)
             ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
 }
+
+
+void FromToPieceHistory::clear(){
+    std::fill(std::begin(history), std::end(history), 0);
+}
+
+int& FromToPieceHistory::get(bool color, Square from, Square to, Piece captured){
+    return history[color*64*64*6 + from.index()*64*6 + to.index()*6 + static_cast<int>(captured.type())];
+}
+
+void FromToPieceHistory::apply_bonus(bool color, Square from, Square to, Piece captured, int bonus){
+    get(color, from, to, captured) += bonus - get(color, from, to, captured) * std::abs(bonus) / MAX_HISTORY_BONUS;
+}
+
+void FromToPieceHistory::save_to_stream(std::ofstream& ofs){
+    for (const auto& v : history)
+            ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
+}
+
+void FromToPieceHistory::load_from_stream(std::ifstream& ifs){
+    for (auto& v : history)
+            ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
+}

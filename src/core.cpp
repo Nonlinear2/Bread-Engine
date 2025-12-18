@@ -67,6 +67,7 @@ bool Engine::update_interrupt_flag(){
 void Engine::clear_state(){
     transposition_table.clear();
     SortedMoveGen<movegen::MoveGenType::ALL>::history.clear();
+    capture_history.clear();
     SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.clear();
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
 }
@@ -80,6 +81,7 @@ void Engine::save_state(std::string file){
 
     transposition_table.save_to_stream(ofs);
     SortedMoveGen<movegen::MoveGenType::ALL>::history.save_to_stream(ofs);
+    capture_history.save_to_stream(ofs);
     SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.save_to_stream(ofs);
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.save_to_stream(ofs);
 
@@ -95,6 +97,7 @@ void Engine::load_state(std::string file){
 
     transposition_table.load_from_stream(ifs);
     SortedMoveGen<movegen::MoveGenType::ALL>::history.load_from_stream(ifs);
+    capture_history.load_from_stream(ifs);
     SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.load_from_stream(ifs);
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.load_from_stream(ifs);
 
@@ -585,8 +588,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         alpha = std::max(alpha, value);
         if (beta <= alpha){
-            if (!is_capture)
+            if (is_capture)
+                move_gen.update_capture_history(move, std::min(depth*depth*his_1 + his_2, his_3));
+            else
                 move_gen.update_history(move, std::min(depth*depth*his_1 + his_2, his_3));
+
             SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.add_move(depth, move);
             break;
         }

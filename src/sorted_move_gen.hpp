@@ -20,6 +20,8 @@ constexpr GenerationStage& operator++(GenerationStage& g) {
     return g = static_cast<GenerationStage>(static_cast<int>(g) + 1);
 }
 
+inline FromToPieceHistory capture_history = FromToPieceHistory();
+
 template<movegen::MoveGenType MoveGenType>
 class SortedMoveGen {
     public:
@@ -39,6 +41,7 @@ class SortedMoveGen {
     bool empty();
     int index();
     void update_history(Move best_move, int bonus);
+    void update_capture_history(Move best_move, int bonus);
     void update_cont_history(Piece piece, Square to, int bonus);
     void set_score(Move& move);
     void prepare_pos_data();

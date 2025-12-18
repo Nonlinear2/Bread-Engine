@@ -109,11 +109,12 @@ void SortedMoveGen<movegen::MoveGenType::CAPTURE>::prepare_pos_data(){
 
 template<>
 void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
-    const int piece_type = static_cast<int>(pos.at(move.from()).type());
-    const int to_piece_type = static_cast<int>(pos.at(move.to()).type());
+    const Piece from_piece = pos.at(move.from());
+    const Piece to_piece = pos.at(move.to());
 
-    int score = (to_piece_type == 6 ? -25000 : piece_value[to_piece_type]) - piece_value[piece_type]
-        + chk_2 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
+    int score = (to_piece == Piece::NONE ? -25000 : piece_value[to_piece.type()]) - piece_value[from_piece.type()]
+        + chk_2 * bool(check_squares[from_piece.type()] & Bitboard::fromSquare(move.to()))
+        + 100 * capture_history.get(pos.sideToMove(), move.from().index(), move.to().index(), to_piece) / 10'000;
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -219,6 +220,18 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, in
     for (int i = 0; i < moves.size(); i++){
         if (moves[i] != best_move && !pos.isCapture(moves[i]))
             history.apply_bonus(color, moves[i].from(), moves[i].to(), -bonus);
+    }
+}
+
+template<>
+void SortedMoveGen<movegen::MoveGenType::ALL>::update_capture_history(Move best_move, int bonus){
+    bool color = pos.sideToMove() == Color::WHITE;
+
+    capture_history.apply_bonus(color, best_move.from(), best_move.to(), pos.at(best_move.to()), bonus);
+
+    for (int i = 0; i < moves.size(); i++){
+        if (moves[i] != best_move && pos.isCapture(moves[i]))
+            capture_history.apply_bonus(color, moves[i].from(), moves[i].to(), pos.at(best_move.to()), -bonus);
     }
 }
 
