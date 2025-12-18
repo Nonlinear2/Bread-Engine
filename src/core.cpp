@@ -22,9 +22,6 @@ TUNEABLE(qs_p_1, int, 1149, 0, 5000, 200, 0.002);
 TUNEABLE(cthis_1, int, 8238, 0, 16000, 1000, 0.002);
 TUNEABLE(cthis_2, int, 648, 0, 3000, 100, 0.002);
 TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
-TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
-TUNEABLE(his_2, int, 33, 0, 300, 5, 0.002);
-TUNEABLE(his_3, int, 1125, 0, 5000, 200, 0.002);
 TUNEABLE(asp_1, int, 98, 0, 5000, 20, 0.002);
 TUNEABLE(asp_2, int, 399, 0, 5000, 60, 0.002);
 TUNEABLE(red_1, int, 1326, 0, 10000, 200, 0.002);
@@ -595,7 +592,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         alpha = std::max(alpha, value);
         if (beta <= alpha){
             if (!is_capture)
-                move_gen.update_history(move, std::min(depth*depth*his_1 + his_2, his_3));
+                move_gen.update_history(move, depth);
             SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.add_move(depth, move);
             break;
         }
