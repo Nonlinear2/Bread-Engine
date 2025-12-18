@@ -402,7 +402,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (!root_node && !pv && transposition.depth >= depth && excluded_move == Move::NO_MOVE){
         switch (transposition.flag){
             case TFlag::EXACT:
-                return transposition.value;
+                beta = alpha = transposition.value;
             case TFlag::LOWER_BOUND:
                 alpha = std::max(alpha, transposition.value);
                 break;
@@ -416,8 +416,15 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     // we need to do a cutoff check because we updated alpha/beta.
     // no need to store in transposition table as is already there.
-    if (beta <= alpha)
+    if (beta <= alpha){
+        if (transposition.move != Move::NO_MOVE 
+            && (ss - 1)->current_move != Move::NO_MOVE && !(ss - 1)->current_move_capture
+            && (ss - 2)->current_move != Move::NO_MOVE){
+            move_gen.update_cont_history(
+                (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, -150);
+        }
         return transposition.value;
+    }
 
     bool in_check = pos.inCheck();
 
@@ -625,13 +632,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         // we return a fail low to extend the search by 1
         return alpha;
-    }
-
-    if (best_move != Move::NO_MOVE 
-        && (ss - 1)->current_move != Move::NO_MOVE && !(ss - 1)->current_move_capture
-        && (ss - 2)->current_move != Move::NO_MOVE && (ss - 2)->moved_piece != Piece::NONE){
-        move_gen.update_cont_history(
-            (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, -150);
     }
 
     // early return without storing the eval in the TT
