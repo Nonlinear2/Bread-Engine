@@ -26,5 +26,5 @@ class FromToHistory {
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
-    std::array<std::array<int, 64*64>, 2> history = {};
+    std::array<int, 2*64*64> history = {};
 };
