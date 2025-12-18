@@ -214,11 +214,11 @@ template<>
 void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, int bonus){
     bool color = pos.sideToMove() == Color::WHITE;
 
-    history.apply_bonus(color, best_move.from(), best_move.to(), bonus);
+    history.apply_bonus(color, best_move.from(), best_move.to(), 3*bonus/2);
 
     for (int i = 0; i < moves.size(); i++){
         if (moves[i] != best_move && !pos.isCapture(moves[i]))
-            history.apply_bonus(color, moves[i].from(), moves[i].to(), -bonus / 2);
+            history.apply_bonus(color, moves[i].from(), moves[i].to(), -bonus);
     }
 }
 
