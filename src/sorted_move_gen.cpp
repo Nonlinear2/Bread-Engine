@@ -14,9 +14,9 @@ UNACTIVE_TUNEABLE(bst, int, 218, 0, 1500, 20, 0.002);
 UNACTIVE_TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
 UNACTIVE_TUNEABLE(his_2, int, 33, 0, 300, 5, 0.002);
 UNACTIVE_TUNEABLE(his_3, int, 1125, 0, 5000, 200, 0.002);
-UNACTIVE_TUNEABLE(his_4, int, 34, 0, 300, 5, 0.002);
-UNACTIVE_TUNEABLE(his_5, int, 33, 0, 300, 5, 0.002);
-UNACTIVE_TUNEABLE(his_6, int, 1125, 0, 5000, 200, 0.002);
+UNACTIVE_TUNEABLE(his_4, int, 13, 0, 300, 5, 0.002);
+UNACTIVE_TUNEABLE(his_5, int, 17, 0, 300, 5, 0.002);
+UNACTIVE_TUNEABLE(his_6, int, 390, 0, 5000, 200, 0.002);
 
 template<>
 SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
@@ -224,7 +224,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, in
 
     for (int i = 0; i < moves.size(); i++){
         if (moves[i] != best_move && !pos.isCapture(moves[i]))
-            history.apply_bonus(color, moves[i].from(), moves[i].to(), -std::min(depth*depth*his_4 + his_5, his_6)/2);
+            history.apply_bonus(color, moves[i].from(), moves[i].to(), -std::min(depth*depth*his_4 + his_5, his_6));
     }
 }
 
