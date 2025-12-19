@@ -453,6 +453,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             int R = 3 + (eval >= beta) + depth / 4 + tt_capture;
             ss->moved_piece = Piece::NONE;
             ss->current_move = Move::NULL_MOVE;
+            ss->current_move_capture = false;
             pos.makeNullMove();
             int null_move_value = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1, false);
             pos.unmakeNullMove();
@@ -524,6 +525,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         ss->moved_piece = pos.at(move.from());
         ss->current_move = move;
+        ss->current_move_capture = is_capture;
         pos.update_state(move, transposition_table);
 
         bool gives_check = pos.inCheck();
@@ -548,9 +550,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             if (value > alpha && reduced_depth < new_depth){
                 value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
                 if (!is_capture)
-                    move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
+                    move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), cont_1);
             } else if (value <= alpha && !is_capture)
-                move_gen.update_cont_history(ss->moved_piece, move.to().index(), -cont_2);
+                move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
 
         } else if (!pv || move_gen.index() > 0){
             value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
@@ -620,6 +622,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         // we return a fail low to extend the search by 1
         return alpha;
+    }
+
+    if (max_value <= initial_alpha
+        && (ss - 1)->current_move != Move::NO_MOVE && !(ss - 1)->current_move_capture
+        && (ss - 2)->current_move != Move::NO_MOVE){
+        move_gen.update_cont_history(
+            (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, std::min(depth*30 + 30, 500));
     }
 
     // early return without storing the eval in the TT
@@ -762,6 +771,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
         ss->moved_piece = moved_piece;
         ss->current_move = move;
+        ss->current_move_capture = (captured_piece != Piece::NONE);
         pos.update_state(move, transposition_table);
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
