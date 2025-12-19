@@ -231,7 +231,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::update_capture_history(Move best_
 
     for (int i = 0; i < moves.size(); i++){
         if (moves[i] != best_move && pos.isCapture(moves[i]))
-            capture_history.apply_bonus(color, moves[i].from(), moves[i].to(), pos.at(best_move.to()), -bonus);
+            capture_history.apply_bonus(color, moves[i].from(), moves[i].to(), pos.at(best_move.to()), -bonus/2);
     }
 }
 
