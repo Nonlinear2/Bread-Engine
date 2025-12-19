@@ -11,6 +11,12 @@ UNACTIVE_TUNEABLE(his, int, 153, 0, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(chis, int, 129, 0, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(chk_2, int, 348, 0, 2000, 20, 0.002);
 UNACTIVE_TUNEABLE(bst, int, 218, 0, 1500, 20, 0.002);
+UNACTIVE_TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
+UNACTIVE_TUNEABLE(his_2, int, 33, 0, 300, 5, 0.002);
+UNACTIVE_TUNEABLE(his_3, int, 1125, 0, 5000, 200, 0.002);
+UNACTIVE_TUNEABLE(his_4, int, 34, 0, 300, 5, 0.002);
+UNACTIVE_TUNEABLE(his_5, int, 33, 0, 300, 5, 0.002);
+UNACTIVE_TUNEABLE(his_6, int, 1125, 0, 5000, 200, 0.002);
 
 template<>
 SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
@@ -211,19 +217,19 @@ template<movegen::MoveGenType MoveGenType>
 inline int SortedMoveGen<MoveGenType>::index(){ return move_idx; }
 
 template<>
-void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, int bonus){
+void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, int depth){
     bool color = pos.sideToMove() == Color::WHITE;
 
-    history.apply_bonus(color, best_move.from(), best_move.to(), bonus);
+    history.apply_bonus(color, best_move.from(), best_move.to(), std::min(depth*depth*his_1 + his_2, his_3));
 
     for (int i = 0; i < moves.size(); i++){
         if (moves[i] != best_move && !pos.isCapture(moves[i]))
-            history.apply_bonus(color, moves[i].from(), moves[i].to(), -bonus);
+            history.apply_bonus(color, moves[i].from(), moves[i].to(), -std::min(depth*depth*his_4 + his_5, his_6)/2);
     }
 }
 
 template<>
-void SortedMoveGen<movegen::MoveGenType::ALL>::update_cont_history(Piece piece, Square to, int bonus){
+void SortedMoveGen<movegen::MoveGenType::ALL>::update_cont_history(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus){
     if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
         cont_history.apply_bonus(prev_piece, prev_to, piece, to, bonus);
 }
