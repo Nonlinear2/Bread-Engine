@@ -74,7 +74,6 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
 
     // captures should be searched early, so
     // to_value = piece_value(to) - piece_value(from) doesn't seem to work.
-    // however, find a way to make these captures even better ?
     if (to_piece != Piece::NONE)
         score += cpt * piece_value[static_cast<int>(to_piece.type())] / 150;
 
@@ -119,8 +118,7 @@ void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
     const Piece to_piece = pos.at(move.to());
 
     int score = (to_piece == Piece::NONE ? -25000 : piece_value[to_piece.type()]) - piece_value[from_piece.type()]
-        + chk_2 * bool(check_squares[from_piece.type()] & Bitboard::fromSquare(move.to()))
-        + 50 * capture_history.get(pos.sideToMove(), move.from().index(), move.to().index(), to_piece) / 10'000;
+        + chk_2 * bool(check_squares[from_piece.type()] & Bitboard::fromSquare(move.to()));
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
