@@ -233,11 +233,11 @@ template<>
 void SortedMoveGen<movegen::MoveGenType::ALL>::update_capture_history(Move best_move, int depth){
     bool color = pos.sideToMove() == Color::WHITE;
 
-    capture_history.apply_bonus(color, best_move.from(), best_move.to(), pos.at(best_move.to()), std::min(depth*depth*his_1 + his_2, his_3));
+    capture_history.apply_bonus(color, best_move.from(), best_move.to(), pos.at(best_move.to()), std::min(depth*120 + his_2, his_3));
 
     for (int i = 0; i < moves.size(); i++){
         if (moves[i] != best_move && pos.isCapture(moves[i]))
-            capture_history.apply_bonus(color, moves[i].from(), moves[i].to(), pos.at(best_move.to()), -std::min(depth*depth*his_1 + his_2, his_3)/2);
+            capture_history.apply_bonus(color, moves[i].from(), moves[i].to(), pos.at(best_move.to()), -std::min(depth*70 + his_2, 500));
     }
 }
 
