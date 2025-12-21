@@ -46,7 +46,7 @@ This will generate a build folder with the executable.
 
 ## Linux
 
-Run the script `compile_script_for_linux.sh`. The executable will be generated in the `build` folder.
+You can build the project by cloning the repository and running `make` in the root folder. You can specify the compiler with `make CXX=<compiler>`.
 
 ---
 
