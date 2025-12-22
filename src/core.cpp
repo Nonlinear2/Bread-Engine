@@ -509,7 +509,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
             if (is_regular_eval(singular_beta)){
                 ss->excluded_move = move;
-                value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss, cutnode);
+                value = negamax<false>(new_depth / 2 - cutnode, singular_beta - 1, singular_beta, ss, cutnode);
                 ss->excluded_move = Move::NO_MOVE;
     
                 if (interrupt_flag)
