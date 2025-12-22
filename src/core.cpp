@@ -365,7 +365,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     Move move;
     int value;
     Piece prev_piece = (ss - 1)->moved_piece;
-    Square prev_to = (ss - 1)->current_move.to();
+    Square prev_to = ((ss - 1)->current_move == Move::NULL_MOVE 
+                      || (ss - 1)->current_move == Move::NO_MOVE) ? Square::NO_SQ : (ss - 1)->current_move.to();
 
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
@@ -630,9 +631,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         return alpha;
     }
 
-    if (max_value <= initial_alpha
-        && (ss - 1)->current_move != Move::NO_MOVE && !(ss - 1)->current_move_capture
-        && (ss - 2)->current_move != Move::NO_MOVE){
+    if (max_value <= initial_alpha && !(ss - 1)->current_move_capture){
         move_gen.update_cont_history(
             (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, std::min(depth*30 + 30, 500));
     }
