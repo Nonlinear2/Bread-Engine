@@ -537,7 +537,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         int reduction = 0;
 
         reduction -= red_1 * (gives_check && !root_node);
-        reduction -= 250 * (move_gen.history.get(pos.sideToMove() == Color::WHITE, 
+        reduction -= 350 * (move_gen.history.get(pos.sideToMove() == Color::WHITE, 
             move.from().index(), move.to().index()) / 10'000);
         reduction += red_2 * (move_gen.index() > 1 && !is_capture);
         reduction += red_3 * (tt_capture && !is_capture);
