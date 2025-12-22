@@ -22,6 +22,8 @@ void NnueBoard::synchronize(){
     NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
     NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
     accumulators_stack.clear_top_update();
+
+    recompute_pawn_key();
 }
 
 bool NnueBoard::legal(Move move){
@@ -53,6 +55,10 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         accumulators_stack.clear_top_update();
     }
     __builtin_prefetch(&tt.entries[hash() & (tt.entries.size() - 1)]);
+
+    uint16_t  pawn_k = get_pawn_key();
+    recompute_pawn_key();
+    assert(get_pawn_key() == pawn_k);
 }
 
 void NnueBoard::restore_state(Move move){

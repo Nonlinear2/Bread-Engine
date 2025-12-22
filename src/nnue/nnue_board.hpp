@@ -51,6 +51,7 @@ class NnueBoard: public Board {
     };
 
     AccumulatorsStack accumulators_stack;
+    uint16_t pawn_key;
 
     ModifiedFeatures get_modified_features(Move move, Color color);
 
