@@ -16,6 +16,13 @@ int main(){
         return 1;
     }
 
+    // uci_engine.process_uci_command("setoption name Hash value 8");
+    // uci_engine.process_uci_command("setoption name Nonsense value true");
+    // uci_engine.process_uci_command("setoption name SyzygyPath value C:/Users/nourb/OneDrive/Desktop/Chess_Engine/engine_executables/3-4-5_pieces_Syzygy/3-4-5");
+    // std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+    // uci_engine.engine.load_state("saved_state.bin");
+
     while (std::getline(file, input)) {
         std::cout << "-> " << input << std::endl;
         running = uci_engine.process_uci_command(input);
