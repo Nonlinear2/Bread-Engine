@@ -55,6 +55,10 @@ int get_mate_in_moves(int value){
     return (is_win(value) ? 1: -1)*(ply/2 + (ply%2 != 0));
 }
 
+bool valid_move(Move move){
+    return move != Move::NO_MOVE && move != Move::NULL_MOVE;
+}
+
 bool is_number_string(const std::string& s){
     std::string::const_iterator it = s.begin();
     while (it != s.end() && (std::isdigit(*it) || *it == '-'))

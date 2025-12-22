@@ -616,7 +616,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
 
         // if the move gen is not empty, the only legal move must be the excluded move
-        assert(excluded_move != Move::NO_MOVE);
+        assert(valid_move(excluded_move));
         assert(move_gen.tt_move == excluded_move);
         assert(move_gen.index() == 1);
 
@@ -624,9 +624,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         return alpha;
     }
 
-    if (max_value <= initial_alpha
-        && (ss - 1)->current_move != Move::NO_MOVE && !(ss - 1)->current_move_capture
-        && (ss - 2)->current_move != Move::NO_MOVE){
+    if (max_value <= initial_alpha && !(ss - 1)->current_move_capture
+        && valid_move((ss - 1)->current_move) && valid_move((ss - 2)->current_move)){
         move_gen.update_cont_history(
             (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, std::min(depth*30 + 30, 500));
     }

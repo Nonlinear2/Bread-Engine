@@ -61,4 +61,6 @@ int to_tt(int value, int ply);
 
 int get_mate_in_moves(int value);
 
+bool valid_move(Move move);
+
 bool is_number_string(const std::string& s);
