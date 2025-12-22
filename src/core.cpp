@@ -342,7 +342,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     int static_eval, eval;
 
     // tablebase probe
-    if (tablebase_loaded && TB::probe_wdl(pos, eval)){
+    if (!root_node && tablebase_loaded && TB::probe_wdl(pos, eval)){
         if (nonsense_stage == Nonsense::STANDARD
             || nonsense_stage == Nonsense::CHECKMATE
             || eval == 0)
