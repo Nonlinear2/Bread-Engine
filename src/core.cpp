@@ -339,7 +339,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (depth <= 0)
         return qsearch<pv>(alpha, beta, 0, ss + 1);
 
-    int static_eval, eval;
+    int static_eval, eval = NO_VALUE;
 
     // tablebase probe
     if (!root_node && tablebase_loaded && TB::probe_wdl(pos, eval)){
@@ -357,10 +357,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             return alpha;
     }
 
+    int value;
     int max_value = -INFINITE_VALUE;
     Move best_move = Move::NO_MOVE;
     Move move;
-    int value;
     Piece prev_piece = (ss - 1)->moved_piece;
     Square prev_to = ((ss - 1)->current_move == Move::NULL_MOVE 
                       || (ss - 1)->current_move == Move::NO_MOVE) ? Square::NO_SQ : (ss - 1)->current_move.to();
@@ -417,8 +417,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (beta <= alpha)
         return transposition.value;
 
-    bool in_check = pos.inCheck();
-
     if (static_eval == NO_VALUE)
         static_eval = evaluate(pos);
     if (eval == NO_VALUE)
@@ -431,6 +429,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     bool tt_capture = transposition.move != Move::NO_MOVE && pos.isCapture(transposition.move);
 
+
+    bool in_check = pos.inCheck();
     // pruning
     if (!root_node && !pv && !in_check){
 
@@ -664,7 +664,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     const int ply = ss - root_ss;
     assert(ply < MAX_PLY); // avoid stack overflow
 
-    int stand_pat = NO_VALUE;
+    int static_eval, stand_pat = NO_VALUE;
 
     // tablebase probe
     if (tablebase_loaded && TB::probe_wdl(pos, stand_pat))
@@ -681,7 +681,6 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     Move move;
     Move best_move = Move::NO_MOVE;
 
-    // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = pos.hash();
 
     SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(
@@ -714,13 +713,15 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     bool in_check = pos.inCheck();
 
     if (!in_check){
-        stand_pat = transposition.static_eval;
+        static_eval = transposition.static_eval;
     
-        if (!is_valid(stand_pat))
-            stand_pat = evaluate(pos);
+        if (!is_valid(static_eval))
+            static_eval = evaluate(pos);
     
-        assert(is_regular_eval(stand_pat, false));
+        assert(is_regular_eval(static_eval, false));
     
+        stand_pat = static_eval;
+
         if (is_valid(transposition.value) && !is_decisive(transposition.value)
             && (
                 transposition.flag == TFlag::EXACT 
@@ -731,7 +732,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     
         if (stand_pat >= beta){
             if (!is_hit)
-                transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), stand_pat,
+                transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), static_eval,
                     DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
             return stand_pat;
         }
@@ -823,7 +824,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     if (depth == 0 || depth == -1)
         transposition_table.store(zobrist_hash, to_tt(max_value, ply),
-            stand_pat, DEPTH_QSEARCH, best_move,
+            static_eval, DEPTH_QSEARCH, best_move,
             max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
             static_cast<uint8_t>(pos.fullMoveNumber()), pv);
 
