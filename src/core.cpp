@@ -346,7 +346,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (depth <= 0)
         return qsearch<pv>(alpha, beta, 0, ss + 1);
 
-    int static_eval, corrected_static_eval, eval;
+    int static_eval, uncorrected_static_eval, eval;
 
     // tablebase probe
     if (!root_node && tablebase_loaded && TB::probe_wdl(pos, eval)){
@@ -399,7 +399,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (is_mate(transposition.value))
         transposition.value = pos_to_root_mate_value(transposition.value, ply);
 
-    static_eval = eval = transposition.static_eval;
+    uncorrected_static_eval = eval = transposition.static_eval;
     eval = transposition.value;
     move_gen.set_tt_move(transposition.move);
     
@@ -426,12 +426,16 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     bool in_check = pos.inCheck();
 
-    if (static_eval == NO_VALUE)
-        static_eval = evaluate(pos);
-    if (eval == NO_VALUE)
-        eval = static_eval;
+    if (uncorrected_static_eval == NO_VALUE)
+        uncorrected_static_eval = evaluate(pos);
+
+    static_eval = std::clamp(uncorrected_static_eval + pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 10'000,
+        -BEST_VALUE, BEST_VALUE);
 
     ss->static_eval = static_eval;
+    
+    if (eval == NO_VALUE)
+        eval = static_eval;
 
     bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval)
         && ss->static_eval > (ss - 2)->static_eval;
@@ -638,8 +642,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     }
 
 
-    if (!in_check && !(best_move && pos.isCapture(best_move)))
-        pawn_corrhist.apply_bonus(pos.sideToMove(), pos.get_pawn_key(), (max_value - static_eval) * depth/3)
+    if (!in_check && !(best_move != Move::NO_MOVE && pos.isCapture(best_move)))
+        pawn_corrhist.apply_bonus(pos.sideToMove(), pos.get_pawn_key(), (max_value - static_eval) * depth/3);
 
     // early return without storing the eval in the TT
     if (!root_node && pos.halfMoveClock() + depth >= 100)
@@ -658,7 +662,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     assert(is_valid(max_value));
 
-    transposition_table.store(zobrist_hash, to_tt(max_value, ply), static_eval, depth, best_move,
+    transposition_table.store(zobrist_hash, to_tt(max_value, ply), uncorrected_static_eval, depth, best_move,
         node_type, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
 
     return max_value;
