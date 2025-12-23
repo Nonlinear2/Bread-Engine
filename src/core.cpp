@@ -339,7 +339,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (depth <= 0)
         return qsearch<pv>(alpha, beta, 0, ss + 1);
 
-    int static_eval, eval = NO_VALUE;
+    int static_eval = NO_VALUE;
+    int eval        = NO_VALUE;
 
     // tablebase probe
     if (!root_node && tablebase_loaded && TB::probe_wdl(pos, eval)){
@@ -664,7 +665,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     const int ply = ss - root_ss;
     assert(ply < MAX_PLY); // avoid stack overflow
 
-    int static_eval, stand_pat = NO_VALUE;
+    int static_eval = NO_VALUE;
+    int stand_pat   = NO_VALUE;
 
     // tablebase probe
     if (tablebase_loaded && TB::probe_wdl(pos, stand_pat))
