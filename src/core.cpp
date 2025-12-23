@@ -32,6 +32,10 @@ TUNEABLE(red_5, int, 1085, 0, 10000, 200, 0.002);
 TUNEABLE(red_6, int, 856, 0, 10000, 180, 0.002);
 TUNEABLE(red_th_1, int, 2262, 0, 10000, 450, 0.002);
 
+
+inline PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 
+
+
 int nnue_evaluate(NnueBoard& pos){
     return pos.evaluate();
 }
@@ -64,6 +68,7 @@ bool Engine::update_interrupt_flag(){
 void Engine::clear_state(){
     transposition_table.clear();
     SortedMoveGen<movegen::MoveGenType::ALL>::history.clear();
+    pawn_corrhist.clear();
     SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.clear();
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
 }
@@ -77,6 +82,7 @@ void Engine::save_state(std::string file){
 
     transposition_table.save_to_stream(ofs);
     SortedMoveGen<movegen::MoveGenType::ALL>::history.save_to_stream(ofs);
+    pawn_corrhist.save_to_stream(ofs);
     SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.save_to_stream(ofs);
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.save_to_stream(ofs);
 
@@ -92,6 +98,7 @@ void Engine::load_state(std::string file){
 
     transposition_table.load_from_stream(ifs);
     SortedMoveGen<movegen::MoveGenType::ALL>::history.load_from_stream(ifs);
+    pawn_corrhist.load_from_stream(ifs);
     SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.load_from_stream(ifs);
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.load_from_stream(ifs);
 
@@ -339,7 +346,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (depth <= 0)
         return qsearch<pv>(alpha, beta, 0, ss + 1);
 
-    int static_eval, eval;
+    int static_eval, corrected_static_eval, eval;
 
     // tablebase probe
     if (!root_node && tablebase_loaded && TB::probe_wdl(pos, eval)){
@@ -629,6 +636,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         move_gen.update_cont_history(
             (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, std::min(depth*30 + 30, 500));
     }
+
+
+    if (!in_check && !(best_move && pos.isCapture(best_move)))
+        pawn_corrhist.apply_bonus(pos.sideToMove(), pos.get_pawn_key(), (max_value - static_eval) * depth/3)
 
     // early return without storing the eval in the TT
     if (!root_node && pos.halfMoveClock() + depth >= 100)

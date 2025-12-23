@@ -45,3 +45,26 @@ void FromToHistory::load_from_stream(std::ifstream& ifs){
     for (auto& v : history)
             ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
 }
+
+
+void PawnCorrectionHistory::clear(){
+    std::fill(std::begin(history), std::end(history), 0);
+}
+
+int& PawnCorrectionHistory::get(bool color, uint16_t pawn_key){
+    return history[2*pawn_key + color];
+}
+
+void PawnCorrectionHistory::apply_bonus(bool color, uint16_t pawn_key, int bonus){
+    get(color, pawn_key) += bonus - get(color, pawn_key) * std::abs(bonus) / MAX_HISTORY_BONUS;
+}
+
+void PawnCorrectionHistory::save_to_stream(std::ofstream& ofs){
+    for (const auto& v : history)
+            ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
+}
+
+void PawnCorrectionHistory::load_from_stream(std::ifstream& ifs){
+    for (auto& v : history)
+            ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
+}

@@ -28,3 +28,15 @@ class FromToHistory {
 
     std::array<int, 2*64*64> history = {};
 };
+
+
+class PawnCorrectionHistory {
+    public:
+    void clear();
+    int& get(bool color, uint16_t pawn_key);
+    void apply_bonus(bool color, uint16_t pawn_key, int bonus);
+    void save_to_stream(std::ofstream& ofs);
+    void load_from_stream(std::ifstream& ifs);
+
+    std::array<int, 2*65536> history = {};
+};
