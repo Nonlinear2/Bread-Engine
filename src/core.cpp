@@ -642,8 +642,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     }
 
 
-    if (!in_check && !(best_move != Move::NO_MOVE && pos.isCapture(best_move)))
-        pawn_corrhist.apply_bonus(pos.sideToMove(), pos.get_pawn_key(), (max_value - static_eval) * depth/3);
+    if (!in_check && !(best_move != Move::NO_MOVE && pos.isCapture(best_move))){
+        int bonus = std::clamp((max_value - static_eval) * depth/10, -1000, 1000);
+        pawn_corrhist.apply_bonus(pos.sideToMove(), pos.get_pawn_key(), bonus);
+    }
 
     // early return without storing the eval in the TT
     if (!root_node && pos.halfMoveClock() + depth >= 100)
