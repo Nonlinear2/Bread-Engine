@@ -429,7 +429,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (uncorrected_static_eval == NO_VALUE)
         uncorrected_static_eval = evaluate(pos);
 
-    static_eval = std::clamp(uncorrected_static_eval + pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 15'000,
+    static_eval = std::clamp(uncorrected_static_eval + pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 120,
         -BEST_VALUE, BEST_VALUE);
 
     ss->static_eval = static_eval;
