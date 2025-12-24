@@ -1,5 +1,8 @@
 #include "history.hpp"
 
+UNACTIVE_TUNEABLE(MAX_CONTHIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
+UNACTIVE_TUNEABLE(MAX_HIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
+
 void ContinuationHistory::clear(){
     std::fill(std::begin(history), std::end(history), 0);
 }
@@ -10,7 +13,7 @@ int& ContinuationHistory::get(Piece prev_piece, Square prev_to, Piece piece, Squ
 
 void ContinuationHistory::apply_bonus(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus){
     get(prev_piece, prev_to, piece, to) += bonus - get(prev_piece, prev_to, piece, to)
-        * std::abs(bonus) / MAX_HISTORY_BONUS;
+        * std::abs(bonus) / MAX_CONTHIST_BONUS;
 }
 
 void ContinuationHistory::save_to_stream(std::ofstream& ofs){
@@ -33,7 +36,7 @@ int& FromToHistory::get(bool color, Square from, Square to){
 }
 
 void FromToHistory::apply_bonus(bool color, Square from, Square to, int bonus){
-    get(color, from, to) += bonus - get(color, from, to) * std::abs(bonus) / MAX_HISTORY_BONUS;
+    get(color, from, to) += bonus - get(color, from, to) * std::abs(bonus) / MAX_HIST_BONUS;
 }
 
 void FromToHistory::save_to_stream(std::ofstream& ofs){
