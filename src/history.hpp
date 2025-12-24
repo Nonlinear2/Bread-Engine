@@ -3,6 +3,7 @@
 #include <fstream>
 #include <array>
 #include "constants.hpp"
+#include "tune.hpp"
 #include "chess.hpp"
 
 using namespace chess;
