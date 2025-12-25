@@ -1,10 +1,13 @@
 #include "history.hpp"
 
+UNACTIVE_TUNEABLE(CONTHIST_FILL_VALUE, int, 0, -5'000, 5'000, 50, 0.002);
+UNACTIVE_TUNEABLE(HIST_FILL_VALUE, int, 0, -5'000, 5'000, 50, 0.002);
+
 UNACTIVE_TUNEABLE(MAX_CONTHIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
 UNACTIVE_TUNEABLE(MAX_HIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
 
 void ContinuationHistory::clear(){
-    std::fill(std::begin(history), std::end(history), 0);
+    std::fill(std::begin(history), std::end(history), CONTHIST_FILL_VALUE);
 }
 
 int& ContinuationHistory::get(Piece prev_piece, Square prev_to, Piece piece, Square to){
@@ -28,7 +31,7 @@ void ContinuationHistory::load_from_stream(std::ifstream& ifs){
 
 
 void FromToHistory::clear(){
-    std::fill(std::begin(history), std::end(history), 0);
+    std::fill(std::begin(history), std::end(history), HIST_FILL_VALUE);
 }
 
 int& FromToHistory::get(bool color, Square from, Square to){
