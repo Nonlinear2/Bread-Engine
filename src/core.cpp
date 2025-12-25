@@ -427,7 +427,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (uncorrected_static_eval == NO_VALUE)
         uncorrected_static_eval = evaluate(pos);
 
-    static_eval = std::clamp(uncorrected_static_eval + pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 120,
+    static_eval = std::clamp(uncorrected_static_eval + pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 100,
         -BEST_VALUE, BEST_VALUE);
 
     ss->static_eval = static_eval;
@@ -645,7 +645,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
 
     if (!in_check && !(best_move != Move::NO_MOVE && pos.isCapture(best_move))){
-        int bonus = std::clamp((max_value - static_eval) * depth/10, -1000, 1000);
+        int bonus = std::clamp((max_value - static_eval) * depth/5, -1000, 1000);
         pawn_corrhist.apply_bonus(pos.sideToMove(), pos.get_pawn_key(), bonus);
     }
 
