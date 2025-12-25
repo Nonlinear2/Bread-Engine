@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assert.h>
+#include <cstdint>
 #include <cmath>
 #include <array>
 
@@ -58,7 +59,6 @@ constexpr int MATE_VALUE = 32'700;
 constexpr int INFINITE_VALUE = 32'701;
 constexpr int NO_VALUE = 32'702;
 
-constexpr int MAX_HISTORY_BONUS = 10'000;
 constexpr int SEE_KING_VALUE = 150'000;
 
 // |    value            |          name                    | is_valid  | is_mate   | is_decisive |
