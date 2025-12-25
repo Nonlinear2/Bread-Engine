@@ -2,10 +2,11 @@
 
 UNACTIVE_TUNEABLE(CONTHIST_FILL_VALUE, int, 0, -5'000, 5'000, 50, 0.002);
 UNACTIVE_TUNEABLE(HIST_FILL_VALUE, int, 0, -5'000, 5'000, 50, 0.002);
+UNACTIVE_TUNEABLE(PAWN_CORRHIST_FILL_VALUE, int, 0, -5'000, 5'000, 50, 0.002);
 
 UNACTIVE_TUNEABLE(MAX_CONTHIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
 UNACTIVE_TUNEABLE(MAX_HIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
-UNACTIVE_TUNEABLE(PAWN_CORRHIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
+UNACTIVE_TUNEABLE(MAX_PAWN_CORRHIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
 
 void ContinuationHistory::clear(){
     std::fill(std::begin(history), std::end(history), CONTHIST_FILL_VALUE);
@@ -55,7 +56,7 @@ void FromToHistory::load_from_stream(std::ifstream& ifs){
 
 
 void PawnCorrectionHistory::clear(){
-    std::fill(std::begin(history), std::end(history), 0);
+    std::fill(std::begin(history), std::end(history), PAWN_CORRHIST_FILL_VALUE);
 }
 
 int& PawnCorrectionHistory::get(bool color, uint16_t pawn_key){
@@ -63,7 +64,7 @@ int& PawnCorrectionHistory::get(bool color, uint16_t pawn_key){
 }
 
 void PawnCorrectionHistory::apply_bonus(bool color, uint16_t pawn_key, int bonus){
-    get(color, pawn_key) += bonus - get(color, pawn_key) * std::abs(bonus) / PAWN_CORRHIST_BONUS;
+    get(color, pawn_key) += bonus - get(color, pawn_key) * std::abs(bonus) / MAX_PAWN_CORRHIST_BONUS;
 }
 
 void PawnCorrectionHistory::save_to_stream(std::ofstream& ofs){
