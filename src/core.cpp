@@ -683,8 +683,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     const int ply = ss - root_ss;
     assert(ply < MAX_PLY); // avoid stack overflow
 
-    int static_eval = NO_VALUE;
-    int stand_pat   = NO_VALUE;
+    int stand_pat = NO_VALUE;
 
     // tablebase probe
     if (tablebase_loaded && TB::probe_wdl(pos, stand_pat))
@@ -734,15 +733,13 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     bool in_check = pos.inCheck();
 
     if (!in_check){
-        static_eval = transposition.static_eval;
+        stand_pat = transposition.static_eval;
     
-        if (!is_valid(static_eval))
-            static_eval = evaluate(pos);
+        if (!is_valid(stand_pat))
+            stand_pat = evaluate(pos);
     
-        assert(is_regular_eval(static_eval, false));
+        assert(is_regular_eval(stand_pat, false));
     
-        stand_pat = static_eval;
-
         if (is_valid(transposition.value) && !is_decisive(transposition.value)
             && (
                 transposition.flag == TFlag::EXACT 
@@ -753,7 +750,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     
         if (stand_pat >= beta){
             if (!is_hit)
-                transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), static_eval,
+                transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), stand_pat,
                     DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
             return stand_pat;
         }
@@ -845,7 +842,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     if (depth == 0 || depth == -1)
         transposition_table.store(zobrist_hash, to_tt(max_value, ply),
-            static_eval, DEPTH_QSEARCH, best_move,
+            stand_pat, DEPTH_QSEARCH, best_move,
             max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
             static_cast<uint8_t>(pos.fullMoveNumber()), pv);
 
