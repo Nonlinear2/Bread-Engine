@@ -645,7 +645,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
 
     if (!in_check && !(best_move != Move::NO_MOVE && pos.isCapture(best_move))){
-        int bonus = std::clamp((max_value - static_eval) * depth/5, -1000, 1000);
+        int bonus = std::clamp((max_value - static_eval) * depth/7, -650, 650);
         pawn_corrhist.apply_bonus(pos.sideToMove(), pos.get_pawn_key(), bonus);
     }
 
@@ -684,6 +684,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(ply < MAX_PLY); // avoid stack overflow
 
     int static_eval = NO_VALUE;
+    int uncorrected_static_eval = NO_VALUE;
     int stand_pat   = NO_VALUE;
 
     // tablebase probe
@@ -734,13 +735,14 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     bool in_check = pos.inCheck();
 
     if (!in_check){
-        static_eval = transposition.static_eval;
+        uncorrected_static_eval = transposition.static_eval;
     
         if (!is_valid(static_eval))
-            static_eval = evaluate(pos);
-    
-        assert(is_regular_eval(static_eval, false));
-    
+            uncorrected_static_eval = evaluate(pos);
+
+        static_eval = std::clamp(uncorrected_static_eval + pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 120,
+            -BEST_VALUE, BEST_VALUE);
+
         stand_pat = static_eval;
 
         if (is_valid(transposition.value) && !is_decisive(transposition.value)
@@ -753,7 +755,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     
         if (stand_pat >= beta){
             if (!is_hit)
-                transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), static_eval,
+                transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), uncorrected_static_eval,
                     DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
             return stand_pat;
         }
@@ -845,7 +847,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     if (depth == 0 || depth == -1)
         transposition_table.store(zobrist_hash, to_tt(max_value, ply),
-            static_eval, DEPTH_QSEARCH, best_move,
+            uncorrected_static_eval, DEPTH_QSEARCH, best_move,
             max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
             static_cast<uint8_t>(pos.fullMoveNumber()), pv);
 
