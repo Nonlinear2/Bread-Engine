@@ -73,6 +73,7 @@ void TranspositionTable::allocateMB(int new_size){
 
 void TranspositionTable::increase_age(){
     age++;
+    age %= 256;
 }
 
 void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int depth,
@@ -89,7 +90,7 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
     // - the new depth is greater than the old depth
     // - the new depth is nonzero and an exact entry
     if (entry->depth_tflag == 0 ||
-        age > entry->age ||
+        age != entry->age ||
         depth > entry->depth() - 1 - 2*pv ||
         (depth != DEPTH_QSEARCH && flag == TFlag::EXACT))
     {
@@ -118,6 +119,7 @@ TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
 
 void TranspositionTable::clear(){
     std::fill(entries.begin(), entries.end(), TEntry());
+    age = 0;
 }
 
 int TranspositionTable::hashfull(){
