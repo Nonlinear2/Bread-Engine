@@ -1,6 +1,6 @@
 #include "transposition_table.hpp"
 
-TranspositionTable::TranspositionTable(){allocateMB(256);};
+TranspositionTable::TranspositionTable(): age(0) {allocateMB(256);};
 
 void TranspositionTable::info(){
     int used = 0;
@@ -71,8 +71,12 @@ void TranspositionTable::allocateMB(int new_size){
     entries.shrink_to_fit();
 }
 
+void TranspositionTable::increase_age(){
+    age++;
+}
+
 void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int depth,
-                               Move move, TFlag flag, uint8_t move_number, bool pv){
+                               Move move, TFlag flag, bool pv){
 
     assert(move != Move::NULL_MOVE);
 
@@ -85,7 +89,7 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
     // - the new depth is greater than the old depth
     // - the new depth is nonzero and an exact entry
     if (entry->depth_tflag == 0 ||
-        move_number > entry->move_number + 4 ||
+        age > entry->age ||
         depth > entry->depth() - 1 - 2*pv ||
         (depth != DEPTH_QSEARCH && flag == TFlag::EXACT))
     {
@@ -97,7 +101,7 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
         entry->value = value;
         entry->static_eval = static_eval;
         entry->depth_tflag = (static_cast<uint8_t>(depth) << 2) | (static_cast<uint8_t>(flag));
-        entry->move_number = move_number;
+        entry->age = age;
     };
 }
 
