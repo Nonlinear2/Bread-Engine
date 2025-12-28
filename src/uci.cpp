@@ -158,8 +158,6 @@ void UCIAgent::process_go(std::vector<std::string> command){
 
     std::string go_type = command[1];
 
-    engine.transposition_table.increase_age();
-
     if (go_type == "ponder"){
         cached_think_time = get_think_time_from_go_command(command);
         if (cached_think_time == -1) return; // error occured

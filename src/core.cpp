@@ -162,6 +162,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
 
+    transposition_table.increase_age();
+
     nodes = 0;
     current_depth = 0;
 
