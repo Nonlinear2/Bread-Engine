@@ -645,7 +645,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
 
     if (!in_check && !(best_move != Move::NO_MOVE && pos.isCapture(best_move))){
-        int bonus = std::clamp((max_value - static_eval) * depth/7, -650, 650);
+        int bonus = std::clamp((max_value - static_eval) * depth/9, -650, 650);
         pawn_corrhist.apply_bonus(pos.sideToMove(), pos.get_pawn_key(), bonus);
     }
 
