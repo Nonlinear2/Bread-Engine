@@ -292,7 +292,10 @@ Kd6 86. b7 Kc5 87. b8=Q Kxc6 88. h8=Q Kd5 89. Qb5+ Ke6 90. Qd7+ Kxd7 91. Qf6 Kc7
 # Acknowledgements
 
 - [stockfish](https://stockfishchess.org/) for their amazing community.
-    - Special thanks to [SweedishChef](https://github.com/JonathanHallstrom) for his help and hardware support.
+
+- In no particular order, special thanks to:
+    - [SweedishChef](https://github.com/JonathanHallstrom) for his help and hardware support.
+    - Micpilar for his hardware contributions.
 
 - [bullet](https://github.com/jw1912/bullet)
 
