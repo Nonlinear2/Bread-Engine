@@ -233,7 +233,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::update_capture_history(Move best_
 
     capture_history.apply_bonus(color, best_move.from(), best_move.to(), pos.at(best_move.to()), std::min(depth*120 + his_2, his_3));
 
-    for (int i = 0; i < moves.size(); i++){
+    for (int i = moves.num_left; i < moves.size(); i++){
         if (moves[i] != best_move && pos.isCapture(moves[i]))
             capture_history.apply_bonus(color, moves[i].from(), moves[i].to(), pos.at(best_move.to()), -std::min(depth*70 + his_2, 500));
     }

@@ -2,9 +2,11 @@
 
 UNACTIVE_TUNEABLE(CONTHIST_FILL_VALUE, int, 0, -5'000, 5'000, 50, 0.002);
 UNACTIVE_TUNEABLE(HIST_FILL_VALUE, int, 0, -5'000, 5'000, 50, 0.002);
+UNACTIVE_TUNEABLE(CAPTHIST_FILL_VALUE, int, 0, -5'000, 5'000, 50, 0.002);
 
 UNACTIVE_TUNEABLE(MAX_CONTHIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
 UNACTIVE_TUNEABLE(MAX_HIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
+UNACTIVE_TUNEABLE(MAX_CAPTHIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
 
 void ContinuationHistory::clear(){
     std::fill(std::begin(history), std::end(history), CONTHIST_FILL_VALUE);
@@ -54,7 +56,7 @@ void FromToHistory::load_from_stream(std::ifstream& ifs){
 
 
 void FromToPieceHistory::clear(){
-    std::fill(std::begin(history), std::end(history), 0);
+    std::fill(std::begin(history), std::end(history), CAPTHIST_FILL_VALUE);
 }
 
 int& FromToPieceHistory::get(bool color, Square from, Square to, Piece captured){
@@ -62,7 +64,7 @@ int& FromToPieceHistory::get(bool color, Square from, Square to, Piece captured)
 }
 
 void FromToPieceHistory::apply_bonus(bool color, Square from, Square to, Piece captured, int bonus){
-    get(color, from, to, captured) += bonus - get(color, from, to, captured) * std::abs(bonus) / MAX_HISTORY_BONUS;
+    get(color, from, to, captured) += bonus - get(color, from, to, captured) * std::abs(bonus) / MAX_CAPTHIST_BONUS;
 }
 
 void FromToPieceHistory::save_to_stream(std::ofstream& ofs){
