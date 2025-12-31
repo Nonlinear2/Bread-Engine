@@ -18,6 +18,8 @@ UNACTIVE_TUNEABLE(his_4, int, 34, 0, 300, 5, 0.002);
 UNACTIVE_TUNEABLE(his_5, int, 33, 0, 300, 5, 0.002);
 UNACTIVE_TUNEABLE(his_6, int, 1125, 0, 5000, 200, 0.002);
 
+FromToPieceHistory capture_history = FromToPieceHistory();
+
 template<>
 SortedMoveGen<movegen::MoveGenType::ALL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
     Square prev_to, NnueBoard& pos, int depth):
@@ -116,8 +118,8 @@ template<>
 void SortedMoveGen<movegen::MoveGenType::CAPTURE>::set_score(Move& move){
     const Piece from_piece = pos.at(move.from());
     const Piece to_piece = pos.at(move.to());
-
     int score = (to_piece == Piece::NONE ? -25000 : piece_value[to_piece.type()]) - piece_value[from_piece.type()]
+        + 800 * capture_history.get(pos.sideToMove(), move.from().index(), move.to().index(), to_piece) / 10'000
         + chk_2 * bool(check_squares[from_piece.type()] & Bitboard::fromSquare(move.to()));
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
