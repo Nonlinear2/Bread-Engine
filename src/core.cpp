@@ -16,6 +16,9 @@ TUNEABLE(se_2, int, 0, -100, 100, 0.5, 0.002);
 TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
 TUNEABLE(cont_1, int, 1141, 0, 3000, 150, 0.002);
 TUNEABLE(cont_2, int, 102, 0, 1500, 25, 0.002);
+TUNEABLE(cont_3, int, 30, 0, 1500, 6, 0.002);
+TUNEABLE(cont_4, int, 30, 0, 1500, 6, 0.002);
+TUNEABLE(cont_5, int, 500, 0, 3000, 100, 0.002);
 TUNEABLE(qs_fp_1, int, 1921, 0, 3000, 300, 0.002);
 TUNEABLE(qs_see_1, int, 268, 0, 900, 50, 0.002);
 TUNEABLE(qs_p_1, int, 1149, 0, 5000, 200, 0.002);
@@ -634,7 +637,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     if (max_value <= initial_alpha && !(ss - 1)->current_move_capture){
         move_gen.update_cont_history(
-            (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, std::min(depth*30 + 30, 500));
+            (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, std::min(depth*cont_3 + cont_4, cont_5));
     }
 
     // early return without storing the eval in the TT
