@@ -26,6 +26,7 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "readyok" << std::endl;
 
     } else if (first == "ucinewgame"){
+        engine.pos.setFen(constants::STARTPOS);
         engine.clear_state();
 
     } else if (first == "position"){
@@ -118,10 +119,12 @@ void UCIAgent::process_position(std::vector<std::string> command){
     if (command[1] == "startpos"){
         fen = constants::STARTPOS;
     } else if (command[1] == "fen") {
-        for (int i = 0; i < 5; i++)
-            fen += command[2+i] + " ";
-        fen += command[7];
+        for (int i = 2; i < command.size(); i++){
+            if (i > 2) fen += ' ';
+            fen += command[i];
+        }
     }
+
     engine.pos.setFen(fen);
 
     bool is_movelist = false; 
@@ -137,7 +140,7 @@ void UCIAgent::process_position(std::vector<std::string> command){
 
 void UCIAgent::process_bench(std::vector<std::string> command){
     if (command.size() == 1)
-        Benchmark::benchmark_engine(BENCHMARK_DEPTH);
+        Benchmark::benchmark_engine(engine, BENCHMARK_DEPTH);
     else if (command[1] == "nn")
         Benchmark::benchmark_nn();
 }

@@ -275,8 +275,9 @@ Move Engine::iterative_deepening(SearchLimit limit){
         // should the search really stop if there is a mate for the oponent?
         if (interrupt_flag
             || is_mate(best_move.score())
-            || (limit.type == LimitType::Depth && current_depth == limit.value)
             || current_depth >= ENGINE_MAX_DEPTH
+            || (limit.type == LimitType::Depth && current_depth == limit.value)
+            || (limit.type == LimitType::Nodes && nodes >= limit.value)
             || (limit.type == LimitType::Time && best_move_changes < 1 && run_time > 2*limit.value / 3))
             break;
     }
@@ -312,8 +313,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     assert(alpha < beta);
     assert(pv || (alpha == beta - 1));
 
-    nodes++;
-
     const bool root_node = ss == root_ss;
     assert(!root_node || pos.isGameOver().second == GameResult::NONE);
 
@@ -333,6 +332,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
     if (interrupt_flag || (depth >= 5 && update_interrupt_flag()))
         return NO_VALUE; // the value doesn't matter, it won't be used.
+
+    nodes++;
 
     if (ply >= MAX_PLY - 1)
         return evaluate(pos);
