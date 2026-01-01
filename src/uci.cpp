@@ -151,11 +151,6 @@ void UCIAgent::process_evaluate(std::vector<std::string> command){
 }
 
 void UCIAgent::process_go(std::vector<std::string> command){
-    if (command.size() < 3){
-        std::cout << "incorrect syntax" << std::endl;
-        return;
-    }
-
     std::string go_type = command[1];
 
     if (go_type == "ponder"){
