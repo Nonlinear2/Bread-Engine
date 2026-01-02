@@ -29,7 +29,7 @@ struct ModifiedFeatures {
         removed(removed),
         captured(captured) {};
 
-    bool valid();
+    bool valid() const;
 };
 
 namespace NNUE {

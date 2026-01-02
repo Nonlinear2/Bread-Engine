@@ -149,6 +149,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                 move = tt_move;
                 return true;
             }
+            [[fallthrough]];
 
         case GENERATE_MOVES:
             if (pos.inCheck())
@@ -160,6 +161,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);
             ++stage;
+            [[fallthrough]];
 
         case GET_MOVES:
             while (moves.num_left != 0){
@@ -167,6 +169,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                 if (move != tt_move)
                     return true;
             }
+            break;
     }
     return false;
 }
@@ -190,10 +193,10 @@ Move SortedMoveGen<MoveGenType>::pop_move(int move_idx){
 template<movegen::MoveGenType MoveGenType>
 Move SortedMoveGen<MoveGenType>::pop_best_score(){
     int score;
-    int best_move_idx;
+    int best_move_idx = -1;
     int best_move_score;
     while (true){
-        best_move_score = WORST_MOVE_SCORE;
+        best_move_score = WORST_MOVE_SCORE - 1;
         for (int i = 0; i < moves.num_left; i++){
             score = moves[i].score();
             if (score >= best_move_score){
@@ -201,6 +204,9 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
                 best_move_idx = i;
             }
         }
+
+        assert(best_move_score == WORST_MOVE_SCORE - 1 || best_move_idx != -1);
+
         if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], -bst))
             break;
         

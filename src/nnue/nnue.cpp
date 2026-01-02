@@ -41,7 +41,7 @@ extern "C" {
     extern const int32_t l1_bias_start[];
 };
 
-bool ModifiedFeatures::valid(){
+bool ModifiedFeatures::valid() const {
     return added != -1;
 }
 
