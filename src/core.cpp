@@ -241,6 +241,11 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
             best_move = root_moves[0];
             
+            assert(is_regular_eval(best_move.score(), false));
+
+            if (interrupt_flag)
+                break;
+
             if (best_move.score() <= asp_alpha)
                 asp_alpha -= asp_beta - asp_alpha;
             else if (best_move.score() >= asp_beta)
@@ -330,8 +335,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         return 0;
 
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
-    if (interrupt_flag || (depth >= 5 && update_interrupt_flag()))
+    if (interrupt_flag || (depth >= 5 && update_interrupt_flag())){
+        assert(!root_node);
         return NO_VALUE; // the value doesn't matter, it won't be used.
+    }
 
     nodes++;
 
