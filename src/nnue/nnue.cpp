@@ -17,7 +17,7 @@ using namespace NNUE_UTILS;
 #define INCBIN(name, file) \
     __asm__(".section " INCBIN_SECTION "\n" \
             ".global " STR(name) "_start\n" \
-            ".balign 16\n" \
+            ".balign 32\n" \
             STR(name) "_start:\n" \
             ".incbin \"" file "\"\n" \
             \
