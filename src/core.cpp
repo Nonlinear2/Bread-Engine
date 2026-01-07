@@ -335,10 +335,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         return 0;
 
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
-    if (interrupt_flag || (depth >= 5 && update_interrupt_flag())){
-        assert(!root_node);
+    if (interrupt_flag || (depth >= 5 && update_interrupt_flag()))
         return NO_VALUE; // the value doesn't matter, it won't be used.
-    }
 
     nodes++;
 
