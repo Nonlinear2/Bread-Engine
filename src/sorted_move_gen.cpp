@@ -196,7 +196,7 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
     int best_move_idx = -1;
     int best_move_score;
     while (true){
-        best_move_score = WORST_MOVE_SCORE - 1;
+        best_move_score = WORST_MOVE_SCORE;
         for (int i = 0; i < moves.num_left; i++){
             score = moves[i].score();
             if (score >= best_move_score){
@@ -205,7 +205,7 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
             }
         }
 
-        assert(best_move_score == WORST_MOVE_SCORE - 1 || best_move_idx != -1);
+        assert(best_move_score == WORST_MOVE_SCORE || best_move_idx != -1);
 
         if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], -bst))
             break;
