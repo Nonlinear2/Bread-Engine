@@ -671,6 +671,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(pv || (alpha == beta - 1));
     assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
     assert(alpha < beta);
+    assert(depth >= -QSEARCH_HARD_DEPTH_LIMIT);
 
     nodes++;
 
@@ -726,7 +727,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     bool in_check = pos.inCheck();
 
-    if (!in_check){
+    if (!in_check || depth <= -QSEARCH_HARD_DEPTH_LIMIT){
         stand_pat = transposition.static_eval;
     
         if (!is_valid(stand_pat))
@@ -751,7 +752,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
         alpha = std::max(alpha, stand_pat);
 
-        if (depth == -QSEARCH_MAX_DEPTH)
+        if (depth <= -QSEARCH_SOFT_DEPTH_LIMIT || depth <= -QSEARCH_HARD_DEPTH_LIMIT)
             return stand_pat;
     }
 
@@ -834,7 +835,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(is_valid(max_value));
 
     // avoid storing history dependant values
-    if (pos.halfMoveClock() + depth + QSEARCH_MAX_DEPTH >= 100)
+    if (pos.halfMoveClock() + depth + QSEARCH_SOFT_DEPTH_LIMIT >= 100)
         return max_value;
 
     if (depth == 0 || depth == -1)
