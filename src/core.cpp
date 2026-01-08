@@ -334,8 +334,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (pos.isRepetition(2) || pos.isHalfMoveDraw() || pos.isInsufficientMaterial())
         return 0;
 
-    // we check can_return only at depth 5 or higher to avoid doing it at all nodes
-    if (interrupt_flag || (depth >= 5 && update_interrupt_flag()))
+    if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
         return NO_VALUE; // the value doesn't matter, it won't be used.
 
     nodes++;
@@ -671,6 +670,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(alpha < beta);
     assert(depth >= -QSEARCH_HARD_DEPTH_LIMIT);
 
+    if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
+        return NO_VALUE; // the value doesn't matter, it won't be used.
+
     nodes++;
 
     const int ply = ss - root_ss;
@@ -789,6 +791,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         pos.update_state(move, transposition_table);
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
+
+        if (interrupt_flag)
+            return NO_VALUE;
 
         if (value > max_value){
             max_value = value;
