@@ -39,7 +39,7 @@ constexpr int TT_MAX_SIZE = 4096;
 constexpr int ENGINE_MAX_DEPTH = 63;
 
 constexpr int QSEARCH_SOFT_DEPTH_LIMIT = 6;
-constexpr int QSEARCH_HARD_DEPTH_LIMIT = 12;
+constexpr int QSEARCH_HARD_DEPTH_LIMIT = 9;
 
 constexpr int MAX_PLY = 256;
 constexpr int STACK_PADDING_SIZE = 2;
