@@ -20,14 +20,16 @@ struct ModifiedFeatures {
     int captured;
 
     ModifiedFeatures():
-        added(0),
-        removed(0),
-        captured(0) {};
+        added(-1),
+        removed(-1),
+        captured(-1) {};
 
     ModifiedFeatures(int added, int removed, int captured):
         added(added),
         removed(removed),
         captured(captured) {};
+
+    bool valid() const;
 };
 
 namespace NNUE {

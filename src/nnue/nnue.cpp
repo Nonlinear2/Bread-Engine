@@ -17,7 +17,7 @@ using namespace NNUE_UTILS;
 #define INCBIN(name, file) \
     __asm__(".section " INCBIN_SECTION "\n" \
             ".global " STR(name) "_start\n" \
-            ".balign 16\n" \
+            ".balign 32\n" \
             STR(name) "_start:\n" \
             ".incbin \"" file "\"\n" \
             \
@@ -40,6 +40,10 @@ extern "C" {
     extern const int16_t l1_weights_start[];
     extern const int32_t l1_bias_start[];
 };
+
+bool ModifiedFeatures::valid() const {
+    return added != -1;
+}
 
 /******************
 NNUE implementation
@@ -127,6 +131,7 @@ void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_fea
 };
 
 void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures m_features){
+    assert(m_features.valid());
 
     vec_int16 registers[NUM_AVX_REGISTERS];
     constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;

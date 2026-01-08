@@ -1,36 +1,39 @@
 #include "core.hpp"
 
-UNACTIVE_TUNEABLE(r_1, int, 199, 0, 500, 30, 0.002);
-UNACTIVE_TUNEABLE(r_2, int, 258, -100, 1000, 50, 0.002);
-UNACTIVE_TUNEABLE(rfp_1, int, 128, 0, 500, 30, 0.002);
-UNACTIVE_TUNEABLE(rfp_2, int, 36, 0, 1000, 10, 0.002);
-UNACTIVE_TUNEABLE(rfp_3, int, 66, 0, 1000, 10, 0.002);
-UNACTIVE_TUNEABLE(rfp_4, int, 105, -100, 1000, 25, 0.002);
-UNACTIVE_TUNEABLE(nmp_1, int, 107, -50, 250, 15, 0.002);
-UNACTIVE_TUNEABLE(nmp_2, int, 28, -300, 300, 5, 0.002);
-UNACTIVE_TUNEABLE(lmp_1, int, 98, -100, 500, 22, 0.002);
-UNACTIVE_TUNEABLE(see_1, int, 90, -100, 1000, 15, 0.002);
-UNACTIVE_TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
-UNACTIVE_TUNEABLE(se_1, int, 8, -100, 100, 0.5, 0.002);
-UNACTIVE_TUNEABLE(se_2, int, 0, -100, 100, 0.5, 0.002);
-UNACTIVE_TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
-UNACTIVE_TUNEABLE(cont_1, int, 1141, 0, 3000, 150, 0.002);
-UNACTIVE_TUNEABLE(cont_2, int, 102, 0, 1500, 25, 0.002);
-UNACTIVE_TUNEABLE(qs_fp_1, int, 1921, 0, 3000, 300, 0.002);
-UNACTIVE_TUNEABLE(qs_see_1, int, 268, 0, 900, 50, 0.002);
-UNACTIVE_TUNEABLE(qs_p_1, int, 1149, 0, 5000, 200, 0.002);
-UNACTIVE_TUNEABLE(cthis_1, int, 8238, 0, 16000, 1000, 0.002);
-UNACTIVE_TUNEABLE(cthis_2, int, 648, 0, 3000, 100, 0.002);
-UNACTIVE_TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
-UNACTIVE_TUNEABLE(asp_1, int, 98, 0, 5000, 20, 0.002);
-UNACTIVE_TUNEABLE(asp_2, int, 399, 0, 5000, 60, 0.002);
-UNACTIVE_TUNEABLE(red_1, int, 1326, 0, 10000, 200, 0.002);
-UNACTIVE_TUNEABLE(red_2, int, 1788, 0, 10000, 250, 0.002);
-UNACTIVE_TUNEABLE(red_3, int, 593, 0, 10000, 150, 0.002);
-UNACTIVE_TUNEABLE(red_4, int, 1689, 0, 10000, 200, 0.002);
-UNACTIVE_TUNEABLE(red_5, int, 1085, 0, 10000, 200, 0.002);
-UNACTIVE_TUNEABLE(red_6, int, 856, 0, 10000, 180, 0.002);
-UNACTIVE_TUNEABLE(red_th_1, int, 2262, 0, 10000, 450, 0.002);
+TUNEABLE(r_1, int, 199, 0, 500, 30, 0.002);
+TUNEABLE(r_2, int, 258, -100, 1000, 50, 0.002);
+TUNEABLE(rfp_1, int, 128, 0, 500, 30, 0.002);
+TUNEABLE(rfp_2, int, 36, 0, 1000, 10, 0.002);
+TUNEABLE(rfp_3, int, 66, 0, 1000, 10, 0.002);
+TUNEABLE(rfp_4, int, 105, -100, 1000, 25, 0.002);
+TUNEABLE(nmp_1, int, 107, -50, 250, 15, 0.002);
+TUNEABLE(nmp_2, int, 28, -300, 300, 5, 0.002);
+TUNEABLE(lmp_1, int, 98, -100, 500, 22, 0.002);
+TUNEABLE(see_1, int, 90, -100, 1000, 15, 0.002);
+TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
+TUNEABLE(se_1, int, 8, -100, 100, 0.5, 0.002);
+TUNEABLE(se_2, int, 0, -100, 100, 0.5, 0.002);
+TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
+TUNEABLE(cont_1, int, 1141, 0, 3000, 150, 0.002);
+TUNEABLE(cont_2, int, 102, 0, 1500, 25, 0.002);
+TUNEABLE(cont_3, int, 30, 0, 1500, 6, 0.002);
+TUNEABLE(cont_4, int, 30, 0, 1500, 6, 0.002);
+TUNEABLE(cont_5, int, 500, 0, 3000, 100, 0.002);
+TUNEABLE(qs_fp_1, int, 1921, 0, 3000, 300, 0.002);
+TUNEABLE(qs_see_1, int, 268, 0, 900, 50, 0.002);
+TUNEABLE(qs_p_1, int, 1149, 0, 5000, 200, 0.002);
+TUNEABLE(cthis_1, int, 8238, 0, 16000, 1000, 0.002);
+TUNEABLE(cthis_2, int, 648, 0, 3000, 100, 0.002);
+TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
+TUNEABLE(asp_1, int, 98, 0, 5000, 20, 0.002);
+TUNEABLE(asp_2, int, 399, 0, 5000, 60, 0.002);
+TUNEABLE(red_1, int, 1326, 0, 10000, 200, 0.002);
+TUNEABLE(red_2, int, 1788, 0, 10000, 250, 0.002);
+TUNEABLE(red_3, int, 593, 0, 10000, 150, 0.002);
+TUNEABLE(red_4, int, 1689, 0, 10000, 200, 0.002);
+TUNEABLE(red_5, int, 1085, 0, 10000, 200, 0.002);
+TUNEABLE(red_6, int, 856, 0, 10000, 180, 0.002);
+TUNEABLE(red_th_1, int, 2262, 0, 10000, 450, 0.002);
 
 int nnue_evaluate(NnueBoard& pos){
     return pos.evaluate();
@@ -238,6 +241,11 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
             best_move = root_moves[0];
             
+            assert(is_valid(best_move.score()));
+
+            if (interrupt_flag)
+                break;
+
             if (best_move.score() <= asp_alpha)
                 asp_alpha -= asp_beta - asp_alpha;
             else if (best_move.score() >= asp_beta)
@@ -272,8 +280,9 @@ Move Engine::iterative_deepening(SearchLimit limit){
         // should the search really stop if there is a mate for the oponent?
         if (interrupt_flag
             || is_mate(best_move.score())
-            || (limit.type == LimitType::Depth && current_depth == limit.value)
             || current_depth >= ENGINE_MAX_DEPTH
+            || (limit.type == LimitType::Depth && current_depth == limit.value)
+            || (limit.type == LimitType::Nodes && nodes >= limit.value)
             || (limit.type == LimitType::Time && best_move_changes < 1 && run_time > 2*limit.value / 3))
             break;
     }
@@ -309,8 +318,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     assert(alpha < beta);
     assert(pv || (alpha == beta - 1));
 
-    nodes++;
-
     const bool root_node = ss == root_ss;
     assert(!root_node || pos.isGameOver().second == GameResult::NONE);
 
@@ -330,6 +337,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     // we check can_return only at depth 5 or higher to avoid doing it at all nodes
     if (interrupt_flag || (depth >= 5 && update_interrupt_flag()))
         return NO_VALUE; // the value doesn't matter, it won't be used.
+
+    nodes++;
 
     if (ply >= MAX_PLY - 1)
         return evaluate(pos);
@@ -509,9 +518,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             int singular_beta = transposition.value - se_1 - se_2*depth;
 
             if (is_regular_eval(singular_beta)){
+                auto saved_ss = *ss;
                 ss->excluded_move = move;
                 value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss, cutnode);
-                ss->excluded_move = Move::NO_MOVE;
+                *ss = saved_ss;
     
                 if (interrupt_flag)
                     return NO_VALUE;
@@ -628,7 +638,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     if (max_value <= initial_alpha && !(ss - 1)->current_move_capture){
         move_gen.update_cont_history(
-            (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, std::min(depth*30 + 30, 500));
+            (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, std::min(depth*cont_3 + cont_4, cont_5));
     }
 
     // early return without storing the eval in the TT
@@ -659,6 +669,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(pv || (alpha == beta - 1));
     assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
     assert(alpha < beta);
+    assert(depth >= -QSEARCH_HARD_DEPTH_LIMIT);
 
     nodes++;
 
@@ -714,7 +725,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     bool in_check = pos.inCheck();
 
-    if (!in_check){
+    if (!in_check || depth <= -QSEARCH_HARD_DEPTH_LIMIT){
         stand_pat = transposition.static_eval;
     
         if (!is_valid(stand_pat))
@@ -739,7 +750,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
         alpha = std::max(alpha, stand_pat);
 
-        if (depth == -QSEARCH_MAX_DEPTH)
+        if (depth <= -QSEARCH_SOFT_DEPTH_LIMIT || depth <= -QSEARCH_HARD_DEPTH_LIMIT)
             return stand_pat;
     }
 
@@ -754,6 +765,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         Piece moved_piece = pos.at(move.from());
 
         if (!in_check && move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
+            if (!is_hit && capture_gen.index() > 10)
+                continue;
+
             if (stand_pat 
                 + piece_value[static_cast<int>(captured_piece.type())]
                 - piece_value[static_cast<int>(moved_piece.type())]
@@ -819,7 +833,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(is_valid(max_value));
 
     // avoid storing history dependant values
-    if (pos.halfMoveClock() + depth + QSEARCH_MAX_DEPTH >= 100)
+    if (pos.halfMoveClock() + depth + QSEARCH_SOFT_DEPTH_LIMIT >= 100)
         return max_value;
 
     if (depth == 0 || depth == -1)

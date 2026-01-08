@@ -149,6 +149,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                 move = tt_move;
                 return true;
             }
+            [[fallthrough]];
 
         case GENERATE_MOVES:
             if (pos.inCheck())
@@ -160,6 +161,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);
             ++stage;
+            [[fallthrough]];
 
         case GET_MOVES:
             while (moves.num_left != 0){
@@ -167,6 +169,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                 if (move != tt_move)
                     return true;
             }
+            break;
     }
     return false;
 }
@@ -190,7 +193,7 @@ Move SortedMoveGen<MoveGenType>::pop_move(int move_idx){
 template<movegen::MoveGenType MoveGenType>
 Move SortedMoveGen<MoveGenType>::pop_best_score(){
     int score;
-    int best_move_idx;
+    int best_move_idx = -1;
     int best_move_score;
     while (true){
         best_move_score = WORST_MOVE_SCORE;
@@ -201,6 +204,9 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
                 best_move_idx = i;
             }
         }
+
+        assert(best_move_score == WORST_MOVE_SCORE || best_move_idx != -1);
+
         if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], -bst))
             break;
         
@@ -222,7 +228,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, in
 
     history.apply_bonus(color, best_move.from(), best_move.to(), std::min(depth*depth*his_1 + his_2, his_3));
 
-    for (int i = 0; i < moves.size(); i++){
+    for (int i = moves.num_left; i < moves.size(); i++){
         if (moves[i] != best_move && !pos.isCapture(moves[i]))
             history.apply_bonus(color, moves[i].from(), moves[i].to(), -std::min(depth*depth*his_4 + his_5, his_6)/2);
     }
