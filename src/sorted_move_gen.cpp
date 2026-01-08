@@ -207,10 +207,10 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
 
         assert(best_move_score == WORST_MOVE_SCORE || best_move_idx != -1);
 
-        if (best_move_score < -BAD_SEE_TRESHOLD || SEE::evaluate(pos, moves[best_move_idx], -bst))
+        if (best_move_score < -BAD_SEE_THRESHOLD || SEE::evaluate(pos, moves[best_move_idx], -bst))
             break;
         
-        moves[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_TRESHOLD));
+        moves[best_move_idx].setScore(std::max(WORST_MOVE_SCORE, best_move_score - BAD_SEE_THRESHOLD));
     }
 
     return pop_move(best_move_idx);
