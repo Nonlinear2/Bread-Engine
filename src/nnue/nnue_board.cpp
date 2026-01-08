@@ -191,7 +191,7 @@ void NnueBoard::AccumulatorsStack::pop(){
 
 void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
     int i = idx;
-    while (queued_updates[i][(int)Color::WHITE].added != 0)
+    while (queued_updates[i][(int)Color::WHITE].valid())
         i--;
 
     for (; i < idx; i++){

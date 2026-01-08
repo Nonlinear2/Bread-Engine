@@ -241,6 +241,11 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
             best_move = root_moves[0];
             
+            assert(is_valid(best_move.score()));
+
+            if (interrupt_flag)
+                break;
+
             if (best_move.score() <= asp_alpha)
                 asp_alpha -= asp_beta - asp_alpha;
             else if (best_move.score() >= asp_beta)
@@ -513,9 +518,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             int singular_beta = transposition.value - se_1 - se_2*depth;
 
             if (is_regular_eval(singular_beta)){
+                auto saved_ss = *ss;
                 ss->excluded_move = move;
                 value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss, cutnode);
-                ss->excluded_move = Move::NO_MOVE;
+                *ss = saved_ss;
     
                 if (interrupt_flag)
                     return NO_VALUE;
