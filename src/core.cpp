@@ -334,9 +334,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (pos.isRepetition(2) || pos.isHalfMoveDraw() || pos.isInsufficientMaterial())
         return 0;
 
-    if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
-        return NO_VALUE; // the value doesn't matter, it won't be used.
-
     nodes++;
 
     if (ply >= MAX_PLY - 1)
@@ -522,9 +519,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss, cutnode);
                 *ss = saved_ss;
     
-                if (interrupt_flag)
-                    return NO_VALUE;
-    
                 if (value < singular_beta)
                     extension = 1;
                 else if (value >= beta && !is_decisive(value))
@@ -575,9 +569,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         pos.restore_state(move);
 
-        if (interrupt_flag)
-            return NO_VALUE;
-
         if (root_node)
             root_moves[move_gen.index()].setScore(value);
 
@@ -591,6 +582,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 std::rotate(root_moves.begin(), root_moves.begin() + move_gen.index(),
                     root_moves.begin() + move_gen.index() + 1);
             }
+        }
+
+        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag())){
+            assert(is_valid(max_value));
+            return max_value;
         }
 
         alpha = std::max(alpha, value);
@@ -669,9 +665,6 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
     assert(alpha < beta);
     assert(depth >= -QSEARCH_HARD_DEPTH_LIMIT);
-
-    if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
-        return NO_VALUE; // the value doesn't matter, it won't be used.
 
     nodes++;
 
@@ -792,13 +785,15 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
 
-        if (interrupt_flag)
-            return NO_VALUE;
-
         if (value > max_value){
             max_value = value;
             if (value > alpha)
                 best_move = move;
+        }
+
+        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag())){
+            assert(is_valid(max_value));
+            return max_value;
         }
 
         alpha = std::max(alpha, value);
