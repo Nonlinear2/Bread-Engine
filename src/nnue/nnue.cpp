@@ -100,9 +100,6 @@ void cleanup(){
 };
 
 void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features){
-    // we have 1024 int16 to process, and there are 16 avx registers which can hold 16 int16.
-    // therefore need four passes to the registers.
-
     vec_int16 registers[NUM_AVX_REGISTERS];
 
     constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS*INT16_PER_REG;
@@ -225,6 +222,7 @@ int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
 int run(Accumulators& accumulators, Color stm, int piece_count){
     constexpr int pieces_per_bucket = 32 / OUTPUT_BUCKET_COUNT;
     int bucket = (piece_count - 2) / pieces_per_bucket;
+    assert(bucket >= 0 && bucket <= OUTPUT_BUCKET_COUNT);
 
     int output = run_L1(accumulators, stm, bucket);
     return (output * 600) / (64 * 255); // scale is 600
