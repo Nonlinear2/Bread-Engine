@@ -81,8 +81,8 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 
     Piece curr_piece;
 
-    bool mirror_w = kingSq(Color::WHITE).file() >= File::FILE_E;
-    bool mirror_b = kingSq(Color::BLACK).file() >= File::FILE_E;
+    int mirror_w = kingSq(Color::WHITE).file() >= File::FILE_E ? 7 : 0;
+    int mirror_b = kingSq(Color::BLACK).file() >= File::FILE_E ? 7 : 0;
 
     int idx = 0;
     while (occupied){
@@ -93,9 +93,9 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
         int piece_idx = int(curr_piece.type());
         
         // white perspective
-        active_features_white[idx] = 384 * color + piece_idx*64 + (mirror_w ? (sq ^ 7) : sq);
+        active_features_white[idx] = 384 * color + 64 * piece_idx + sq ^ mirror_w;
         // black perspective
-        active_features_black[idx] = 384 * !color + piece_idx*64 + (mirror_b ? ((sq ^ 56) ^ 7) : (sq ^ 56));
+        active_features_black[idx] = 384 * !color + 64 * piece_idx + sq ^ 56 ^ mirror_b;
         idx++;
     }
 
