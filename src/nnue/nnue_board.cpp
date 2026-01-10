@@ -81,22 +81,28 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 
     Piece curr_piece;
 
-    int mirror_w = kingSq(Color::WHITE).file() >= File::FILE_E ? 7 : 0;
-    int mirror_b = kingSq(Color::BLACK).file() >= File::FILE_E ? 7 : 0;
+    Square king_sq_w = kingSq(Color::WHITE);
+    Square king_sq_b = kingSq(Color::BLACK);
+
+    int mirror_w = king_sq_w.file() >= File::FILE_E ? 7 : 0;
+    int mirror_b = king_sq_b.file() >= File::FILE_E ? 7 : 0;
 
     int idx = 0;
     while (occupied){
         int sq = occupied.pop();
 
         curr_piece = at(static_cast<Square>(sq));
-        bool color = curr_piece.color(); // white: 0, black: 1
-        int piece_idx = int(curr_piece.type());
 
         // white perspective
-        active_features_white[idx] = 384 * color + 64 * piece_idx + sq ^ mirror_w;
+        active_features_white[idx] = 768 * INPUT_BUCKETS[king_sq_w.index()]
+                                   + 384 * curr_piece.color() 
+                                   + 64 * curr_piece.type() 
+                                   + sq ^ mirror_w;
         // black perspective
-        active_features_black[idx] = 384 * !color + 64 * piece_idx + sq ^ 56 ^ mirror_b;
-
+        active_features_black[idx] = 768 * INPUT_BUCKETS[king_sq_b.index() ^ 56]
+                                   + 384 * !curr_piece.color()
+                                   + 64 * curr_piece.type()
+                                   + sq ^ 56 ^ mirror_b;
         idx++;
     }
 
@@ -111,30 +117,43 @@ ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
 
     int from = move.from().index();
     int to = move.to().index();
-
-    int flip = color == Color::BLACK ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4.
+    
+    int flip = color ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4.
     int mirror = kingSq(color).file() >= File::FILE_E ? 7 : 0; // mirror horizontally by flipping last 3 bits.
+
+    int king_bucket = INPUT_BUCKETS[kingSq(color).index() ^ flip];
 
     Piece curr_piece = at(move.from());
     assert(curr_piece != Piece::NONE);
 
-    int added = 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + to ^ flip ^ mirror;
-    int removed = 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + from ^ flip ^ mirror;
+    int added = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + to ^ flip ^ mirror;
+    int removed = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + from ^ flip ^ mirror;
 
     int captured = -1;
 
     Piece capt_piece = at(move.to());
     if (capt_piece != Piece::NONE)
-        captured = 384 * (capt_piece.color() ^ color) + 64 * capt_piece.type() + to ^ flip ^ mirror;
+        captured = 768 * king_bucket + 384 * (capt_piece.color() ^ color) + 64 * capt_piece.type() + to ^ flip ^ mirror;
 
     return ModifiedFeatures(added, removed, captured);
 }
 
 bool NnueBoard::is_updatable_move(Move move){
-    return move.typeOf() == Move::NORMAL && (
-        at(move.from()).type() != PieceType::KING
-        || !((move.from().file() == File::FILE_D && move.to().file() == File::FILE_E)
-            || (move.from().file() == File::FILE_E && move.to().file() == File::FILE_D)));
+    if (move.typeOf() != Move::NORMAL)
+        return false;
+
+    if (at(move.from()).type() != PieceType::KING)
+        return true;
+
+    const bool crosses_middle =
+        (move.from().file() == File::FILE_D && move.to().file() == File::FILE_E) ||
+        (move.from().file() == File::FILE_E && move.to().file() == File::FILE_D);
+
+    if (crosses_middle)
+        return false;
+
+    int flip = sideToMove() ? 56 : 0;
+    return INPUT_BUCKETS[move.from().index() ^ flip] == INPUT_BUCKETS[move.to().index() ^ flip];
 }
 
 NnueBoard::AccumulatorsStack::AccumulatorsStack(){
