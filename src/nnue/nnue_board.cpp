@@ -89,13 +89,14 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
         int sq = occupied.pop();
 
         curr_piece = at(static_cast<Square>(sq));
-        bool color = curr_piece.color() == Color::BLACK; // white: 0, black: 1
+        bool color = curr_piece.color(); // white: 0, black: 1
         int piece_idx = int(curr_piece.type());
-        
+
         // white perspective
         active_features_white[idx] = 384 * color + 64 * piece_idx + sq ^ mirror_w;
         // black perspective
         active_features_black[idx] = 384 * !color + 64 * piece_idx + sq ^ 56 ^ mirror_b;
+
         idx++;
     }
 
@@ -108,47 +109,23 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     assert(move != Move::NO_MOVE);
 
-    int from;
-    int to;
-    int curr_piece_idx;
-    int capt_piece_idx;
+    int from = move.from().index();
+    int to = move.to().index();
 
-    int added;
-    int removed;
+    int flip = color == Color::BLACK ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4.
+    int mirror = kingSq(color).file() >= File::FILE_E ? 7 : 0; // mirror horizontally by flipping last 3 bits.
+
+    Piece curr_piece = at(move.from());
+    assert(curr_piece != Piece::NONE);
+
+    int added = 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + to ^ flip ^ mirror;
+    int removed = 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + from ^ flip ^ mirror;
+
     int captured = -1;
 
-    from = move.from().index();
-    to = move.to().index();
-
-    Piece curr_piece = at(static_cast<Square>(from));
-    Piece capt_piece = at(static_cast<Square>(to));
-    assert(curr_piece != Piece::NONE);
-    bool piece_color = curr_piece.color() == Color::BLACK; // white: 0, black: 1
-    int piece_idx = int(curr_piece.type());
-
-    if (kingSq(color).file() >= File::FILE_E){
-        // mirror horizontally by flipping last 3 bits.
-        from ^= 7;
-        to ^= 7;
-    }
-
-    if (color == Color::WHITE) {
-        added = 384 * piece_color + piece_idx*64 + to;
-        removed = 384 * piece_color + piece_idx*64 + from;
-    } else {
-        added = 384 * !piece_color + piece_idx*64 + (to ^ 56);
-        removed = 384 * !piece_color + piece_idx*64 + (from ^ 56);
-    }
-
-    if (capt_piece != Piece::NONE){
-        bool capt_piece_color = capt_piece.color() == Color::BLACK; // white: 0, black: 1
-        int capt_piece_idx = int(capt_piece.type());
-
-        if (color == Color::WHITE)
-            captured = 384 * capt_piece_color + capt_piece_idx*64 + to;
-        else
-            captured = 384 * !capt_piece_color + capt_piece_idx*64 + (to ^ 56);
-    }
+    Piece capt_piece = at(move.to());
+    if (capt_piece != Piece::NONE)
+        captured = 384 * (capt_piece.color() ^ color) + 64 * capt_piece.type() + to ^ flip ^ mirror;
 
     return ModifiedFeatures(added, removed, captured);
 }
