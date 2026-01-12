@@ -9,10 +9,22 @@
 NNUE constants
 *************/
 
-constexpr int INPUT_SIZE = 768;
-constexpr int ACC_SIZE = 1024;
+constexpr int INPUT_BUCKET_COUNT = 5;
+constexpr int INPUT_BUCKETS[64] = {
+    0, 0, 1, 1,  1, 1, 0, 0,
+    2, 2, 2, 2,  2, 2, 2, 2,
+    3, 3, 3, 3,  3, 3, 3, 3,
+    3, 3, 3, 3,  3, 3, 3, 3,
+    4, 4, 4, 4,  4, 4, 4, 4,
+    4, 4, 4, 4,  4, 4, 4, 4,
+    4, 4, 4, 4,  4, 4, 4, 4,
+    4, 4, 4, 4,  4, 4, 4, 4,
+};
 
 constexpr int OUTPUT_BUCKET_COUNT = 8;
+
+constexpr int INPUT_SIZE = 768 * INPUT_BUCKET_COUNT;
+constexpr int ACC_SIZE = 1024;
 
 constexpr int L1_INPUT_SIZE = 2 * ACC_SIZE;
 constexpr int L1_OUTPUT_SIZE = 1;
