@@ -8,7 +8,7 @@ set(bread_DEFAULT_NAME "bread_engine_${CMAKE_PROJECT_VERSION}")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-
+ 
 set(bread_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(bread_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 set(bread_NEURAL_NETWORKS ${CMAKE_CURRENT_SOURCE_DIR}/neural_networks)
