@@ -166,6 +166,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
 
     nodes = 0;
+    tb_hits = 0;
+    seldepth = 0;
     current_depth = 0;
 
     root_moves.clear();
@@ -178,9 +180,10 @@ Move Engine::iterative_deepening(SearchLimit limit){
     bool root_tb_hit = tablebase_loaded && TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
     if (root_tb_hit && !(is_nonsense && best_move.score() == TB_VALUE && !Nonsense::only_knight_bishop(pos))){
         update_run_time();
-        std::cout << "info depth 0";
+        std::cout << "info depth 0 seldepth 0";
         std::cout << " score cp " << best_move.score();
         std::cout << " nodes 0 nps 0";
+        std::cout << " tbhits 0";
         std::cout << " time " << run_time;
         std::cout << " hashfull " << transposition_table.hashfull();
         std::cout << " pv " << uci::moveToUci(best_move) << std::endl;
@@ -266,6 +269,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
         // do not count interrupted searches in depth
         std::cout << "info depth " << current_depth - interrupt_flag;
+        std::cout << " seldepth " << seldepth;
         if (is_mate(best_move.score()))
             std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
         else
@@ -273,6 +277,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
         std::cout << " nodes " << nodes;
         std::cout << " nps " << nodes * 1000 / run_time;
+        std::cout << " tbhits " << tb_hits;
         std::cout << " time " << run_time;
         std::cout << " hashfull " << transposition_table.hashfull();
         std::cout << " pv" << pv << std::endl;
@@ -324,6 +329,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     const int ply = ss - root_ss;
     assert(ply < MAX_PLY); // avoid stack overflow
 
+    nodes++;
+    if (ply > seldepth)
+        seldepth = ply;
+
     if (root_node)
         pos.synchronize();
 
@@ -333,8 +342,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     if (pos.isRepetition(2) || pos.isHalfMoveDraw() || pos.isInsufficientMaterial())
         return 0;
-
-    nodes++;
 
     if (ply >= MAX_PLY - 1)
         return evaluate(pos);
@@ -348,6 +355,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     // tablebase probe
     if (!root_node && tablebase_loaded && TB::probe_wdl(pos, eval)){
+        tb_hits++;
         if (nonsense_stage == Nonsense::STANDARD
             || nonsense_stage == Nonsense::CHECKMATE
             || eval == 0)
@@ -666,17 +674,21 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(alpha < beta);
     assert(depth >= -QSEARCH_HARD_DEPTH_LIMIT);
 
-    nodes++;
-
     const int ply = ss - root_ss;
     assert(ply < MAX_PLY); // avoid stack overflow
+
+    nodes++;
+    if (ply > seldepth)
+        seldepth = ply;
 
     int stand_pat = NO_VALUE;
 
     // tablebase probe
-    if (tablebase_loaded && TB::probe_wdl(pos, stand_pat))
+    if (tablebase_loaded && TB::probe_wdl(pos, stand_pat)){
+        tb_hits++;
         if (evaluate != Nonsense::evaluate || stand_pat == 0)
             return stand_pat;
+    }
 
     if (pos.isHalfMoveDraw() || pos.isInsufficientMaterial() || pos.isRepetition(1) || pos.isRepetition(2)) 
         return 0;
