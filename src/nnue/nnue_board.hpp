@@ -12,6 +12,8 @@
 
 using BothModifiedFeatures = std::array<ModifiedFeatures, 2>;
 
+class NnueBoard;
+
 class AllBitboards {
     public:
     Bitboard bb[2][6];
