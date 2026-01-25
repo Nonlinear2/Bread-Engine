@@ -36,7 +36,7 @@ void TranspositionTable::info(){
     }
     int used_percentage = used*100/entries.size();
 
-    std::cout << "====================" << std::endl;
+    std::cout << "=================================" << std::endl;
     std::cout << "transposition table:" << std::endl;
     std::cout << "size " << size_mb << " MB" << std::endl;
     std::cout << "number of entries " << entries.size() << std::endl;
@@ -50,14 +50,15 @@ void TranspositionTable::info(){
         std::cout << "lower bound eval percentage " << (num_lower*100)/used << "%" << std::endl;
         std::cout << "upper bound eval percentage " << (num_upper*100)/used << "%" << std::endl;
     }
-    std::cout << "====================" << std::endl;
+    std::cout << "=================================" << std::endl;
 }
 
 void TranspositionTable::allocateMB(int new_size){
+    assert(new_size >= 2);
     assert((new_size & (new_size - 1)) == 0); // make sure the size is a power of 2
 
-    new_size = std::max(new_size, 0);
-    new_size = std::min(new_size, max_size_mb);
+    new_size = std::max(new_size, TT_MIN_SIZE);
+    new_size = std::min(new_size, TT_MAX_SIZE);
 
     size_mb = new_size;
 
@@ -71,7 +72,10 @@ void TranspositionTable::allocateMB(int new_size){
 }
 
 void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int depth,
-                               Move move, TFlag flag, uint8_t move_number){
+                               Move move, TFlag flag, uint8_t move_number, bool pv){
+
+    assert(move != Move::NULL_MOVE);
+
     // no need to store the side to move, as it is in the zobrist hash.
     TEntry* entry = &entries[zobrist & (entries.size() - 1)];
 
@@ -82,12 +86,11 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
     // - the new depth is nonzero and an exact entry
     if (entry->depth_tflag == 0 ||
         move_number > entry->move_number + 4 ||
-        depth > entry->depth() - 1 ||
+        depth > entry->depth() - 1 - 2*pv ||
         (depth != DEPTH_QSEARCH && flag == TFlag::EXACT))
     {
         // add move if the old entry didn't hold the same position or if the new move is better
-        if (entry->zobrist_hash != zobrist ||
-            (move != Move::NO_MOVE && (entry->move == Move::NO_MOVE || depth > entry->depth())))
+        if (entry->zobrist_hash != zobrist || move != Move::NO_MOVE)
             entry->move = move.move();
 
         entry->zobrist_hash = zobrist;
@@ -99,6 +102,7 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
 }
 
 TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
+    assert((entries.size() & (entries.size() - 1)) == 0);
     TEntry* entry = &entries[zobrist & (entries.size() - 1)];
     is_hit = (entry->zobrist_hash == zobrist);
 
@@ -120,28 +124,14 @@ int TranspositionTable::hashfull(){
     return used;
 }
 
-void TranspositionTable::save_to_file(std::string file){
-    std::ofstream ofs = std::ofstream(file, std::ios::binary | std::ios::out);
-    if (!ofs) {
-        std::cout << "Could not open file for writing." << std::endl;
-        return;
-    }
-
+void TranspositionTable::save_to_stream(std::ofstream& ofs){
     for (const auto& entry : entries) {
         ofs.write(reinterpret_cast<const char*>(&entry), sizeof(TEntry));
     }
-
-    ofs.close();
 }
 
-void TranspositionTable::load_from_file(std::string file){
-    std::ifstream ifs(file, std::ios::binary | std::ios::in);
-    if (!ifs) {
-        std::cout << "Could not open file for reading." << std::endl;
+void TranspositionTable::load_from_stream(std::ifstream& ifs){
+    for (auto& entry : entries) {
+        ifs.read(reinterpret_cast<char*>(&entry), sizeof(TEntry));
     }
-    for (size_t i = 0; i < entries.size(); ++i) {
-        ifs.read(reinterpret_cast<char*>(&entries[i]), sizeof(TEntry));
-    }
-
-    ifs.close();
 }
