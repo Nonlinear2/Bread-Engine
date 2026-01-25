@@ -71,7 +71,7 @@ void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_fea
 
 void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures m_features);
 
-void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const std::vector<int> m_features);
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeaturesArray m_features);
 
 int run(Accumulators& accumulators, Color stm, int piece_count);
 

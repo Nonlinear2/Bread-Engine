@@ -185,7 +185,7 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
 }
 
 
-void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const std::vector<int> m_features){
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeaturesArray m_features){
     vec_int16 registers[NUM_AVX_REGISTERS];
 
     constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS*INT16_PER_REG;
@@ -195,12 +195,22 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const std::
             registers[i] = load_epi16(&prev_acc[j + i*INT16_PER_REG]); 
         }
 
-        for (const int &a: m_features){
+        for (const int &a: m_features.added){
             for (int i = 0; i < NUM_AVX_REGISTERS; i++){
                 // a*acc size is the index of the a-th row. We then accumulate the weights.
                 registers[i] = add_epi16(
                     registers[i],
                     load_epi16(&ft_weights[a*ACC_SIZE + j + i*INT16_PER_REG])
+                    );
+            }
+        }
+
+        for (const int &r: m_features.removed){
+            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                // a*acc size is the index of the a-th row. We then accumulate the weights.
+                registers[i] = sub_epi16(
+                    registers[i],
+                    load_epi16(&ft_weights[r*ACC_SIZE + j + i*INT16_PER_REG])
                     );
             }
         }

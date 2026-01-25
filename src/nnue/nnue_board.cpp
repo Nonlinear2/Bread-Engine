@@ -60,25 +60,40 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     Accumulators& new_accs = accumulators_stack.push_empty();
 
-    if (is_updatable_move(move)){
-        int flip = sideToMove() ? 56 : 0;
-        // single move update
-        if (INPUT_BUCKETS[move.from().index() ^ flip] == INPUT_BUCKETS[move.to().index() ^ flip])
-            accumulators_stack.set_top_update(
-                get_modified_features(move, Color::WHITE), 
-                get_modified_features(move, Color::BLACK)
-            );
-        else { // finny tables update
-            Accumulators last_accs = finny_table[move.to().index() ^ flip];
-            
-        }
-        makeMove(move);
-    } else {
+    bool king_move = at(move.from()).type() == PieceType::KING;
+
+    const bool crosses_middle =
+        (move.from().file() == File::FILE_D && move.to().file() == File::FILE_E) ||
+        (move.from().file() == File::FILE_E && move.to().file() == File::FILE_D);
+
+    int flip = sideToMove() ? 56 : 0;
+
+    if (move.typeOf() != Move::NORMAL || (king_move && crosses_middle)){
         makeMove(move);
         auto features = get_features();
         NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
         NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
         accumulators_stack.clear_top_update();
+
+    } else if (king_move && INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip]){
+        auto [prev_pos, last_accs] = finny_table[INPUT_BUCKETS[move.to().index() ^ flip]];
+        makeMove(move);
+        auto features = get_features_difference(
+            kingSq(Color::WHITE), kingSq(Color::BLACK), prev_pos, AllBitboards(*this)
+        );
+
+        accumulators_stack.apply_lazy_updates();
+        Accumulators accs = accumulators_stack.top();
+
+        NNUE::update_accumulator(accs[(int)Color::WHITE], new_accs[(int)Color::WHITE], features.first);
+        NNUE::update_accumulator(accs[(int)Color::BLACK], new_accs[(int)Color::BLACK], features.second);
+
+    } else {
+        accumulators_stack.set_top_update(
+            get_modified_features(move, Color::WHITE), 
+            get_modified_features(move, Color::BLACK)
+        );
+        makeMove(move);
     }
     __builtin_prefetch(&tt.entries[hash() & (tt.entries.size() - 1)]);
 }
@@ -219,23 +234,6 @@ std::pair<ModifiedFeaturesArray, ModifiedFeaturesArray> NnueBoard::get_features_
     }
 
     return std::make_pair(features_white, features_black);
-}
-
-bool NnueBoard::is_updatable_move(Move move){
-    if (move.typeOf() != Move::NORMAL)
-        return false;
-
-    if (at(move.from()).type() != PieceType::KING)
-        return true;
-
-    const bool crosses_middle =
-        (move.from().file() == File::FILE_D && move.to().file() == File::FILE_E) ||
-        (move.from().file() == File::FILE_E && move.to().file() == File::FILE_D);
-
-    if (crosses_middle)
-        return false;
-
-    return true;
 }
 
 NnueBoard::AccumulatorsStack::AccumulatorsStack(){

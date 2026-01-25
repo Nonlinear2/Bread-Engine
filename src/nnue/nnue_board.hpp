@@ -8,6 +8,7 @@
 #include "transposition_table.hpp"
 #include "nnue.hpp"
 #include "misc.hpp"
+#include "constants.hpp"
 
 using BothModifiedFeatures = std::array<ModifiedFeatures, 2>;
 
@@ -68,9 +69,7 @@ class NnueBoard: public Board {
 
     AccumulatorsStack accumulators_stack;
 
-    std::vector<Accumulators> finny_table = std::vector<Accumulators>(32);
+    std::array<std::pair<AllBitboards, Accumulators>, INPUT_BUCKET_COUNT> finny_table;
 
     ModifiedFeatures get_modified_features(Move move, Color color);
-
-    bool is_updatable_move(Move move);
 };
