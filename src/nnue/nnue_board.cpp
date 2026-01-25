@@ -70,17 +70,16 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
             AllBitboards(*this), accumulators_stack.top()
         );
 
-        auto [prev_pos, last_accs] = finny_table[INPUT_BUCKETS[move.to().index() ^ flip]];
+        auto [prev_pos, prev_accs] = finny_table[INPUT_BUCKETS[move.to().index() ^ flip]];
         makeMove(move);
         auto features = get_features_difference(
             kingSq(Color::WHITE), kingSq(Color::BLACK), prev_pos, AllBitboards(*this)
         );
 
         accumulators_stack.apply_lazy_updates();
-        Accumulators accs = accumulators_stack.top();
 
-        NNUE::update_accumulator(accs[(int)Color::WHITE], new_accs[(int)Color::WHITE], features.first);
-        NNUE::update_accumulator(accs[(int)Color::BLACK], new_accs[(int)Color::BLACK], features.second);
+        NNUE::update_accumulator(prev_accs[(int)Color::WHITE], new_accs[(int)Color::WHITE], features.first);
+        NNUE::update_accumulator(prev_accs[(int)Color::BLACK], new_accs[(int)Color::BLACK], features.second);
 
     } else {
         accumulators_stack.set_top_update(
