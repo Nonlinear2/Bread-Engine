@@ -70,8 +70,10 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
             AllBitboards(*this), accumulators_stack.top()
         );
 
-        auto [prev_pos, prev_accs] = finny_table[INPUT_BUCKETS[move.to().index() ^ flip]];
         makeMove(move);
+
+        auto [prev_pos, prev_accs] = finny_table[INPUT_BUCKETS[move.to().index() ^ flip]];
+
         auto features = get_features_difference(
             kingSq(Color::WHITE), kingSq(Color::BLACK), prev_pos, AllBitboards(*this)
         );
@@ -192,6 +194,7 @@ std::pair<ModifiedFeaturesArray, ModifiedFeaturesArray> NnueBoard::get_features_
         for (int pt = 0; pt < PIECETYPE_COUNT; pt++){
             Bitboard added = new_pos.bb[color][pt] & (~prev_pos.bb[color][pt]);
             Bitboard removed = prev_pos.bb[color][pt] & (~new_pos.bb[color][pt]);
+
             while (added){
                 int sq = added.pop();
                 // white perspective
