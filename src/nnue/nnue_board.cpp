@@ -67,11 +67,12 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     } else if (king_move && INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip]){
         accumulators_stack.apply_lazy_updates();
-        Accumulators& new_accs = accumulators_stack.push_empty();
 
         finny_table[INPUT_BUCKETS[move.from().index() ^ flip]] = std::make_pair(
             AllBitboards(*this), accumulators_stack.top()
         );
+
+        Accumulators& new_accs = accumulators_stack.push_empty();
 
         makeMove(move);
 
