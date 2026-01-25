@@ -11,6 +11,34 @@
 
 using BothModifiedFeatures = std::array<ModifiedFeatures, 2>;
 
+class AllBitboards {
+    Bitboard black_pawns;
+    Bitboard white_pawns;
+
+    Bitboard black_knights;
+    Bitboard white_knights;
+
+    Bitboard black_bishops;
+    Bitboard white_bishops;
+
+    Bitboard black_rooks;
+    Bitboard white_rooks;
+
+    Bitboard black_queens;
+    Bitboard white_queens;
+
+    AllBitboards(NnueBoard pos);
+    AllBitboards(
+        Bitboard black_pawns, Bitboard white_pawns,
+        Bitboard black_knights, Bitboard white_knights,
+        Bitboard black_bishops, Bitboard white_bishops,
+        Bitboard black_rooks, Bitboard white_rooks,
+        Bitboard black_queens, Bitboard white_queens
+    );
+
+    AllBitboards operator^(const AllBitboards& other) const;
+};
+
 class NnueBoard: public Board {
     public:
 
@@ -32,6 +60,11 @@ class NnueBoard: public Board {
     bool is_stalemate();
 
     std::pair<std::vector<int>, std::vector<int>> get_features();
+
+    std::pair<std::vector<int>, std::vector<int>> get_features_from_difference(
+        Square king_sq_w, 
+        Square king_sq_b, 
+        AllBitboards difference);
 
     private:
     class AccumulatorsStack {

@@ -1,5 +1,49 @@
 #include "nnue_board.hpp"
 
+
+AllBitboards AllBitboards::operator^(const AllBitboards& other) const {
+    return AllBitboards(
+        black_pawns ^ other.black_pawns, 
+        white_pawns ^ other.white_pawns,
+        black_knights ^ other.black_knights,
+        white_knights ^ other.white_knights,
+        black_bishops ^ other.black_bishops,
+        white_bishops ^ other.white_bishops,
+        black_rooks ^ other.black_rooks,
+        white_rooks ^ other.white_rooks,
+        black_queens ^ other.black_queens,
+        white_queens ^ other.white_queens);
+}
+
+AllBitboards::AllBitboards(NnueBoard pos){
+    black_pawns = pos.pieces(PieceType::PAWN, Color::BLACK);
+    white_pawns = pos.pieces(PieceType::PAWN, Color::WHITE);
+
+    black_knights = pos.pieces(PieceType::KNIGHT, Color::BLACK);
+    white_knights = pos.pieces(PieceType::KNIGHT, Color::WHITE);
+
+    black_bishops = pos.pieces(PieceType::BISHOP, Color::BLACK);
+    white_bishops = pos.pieces(PieceType::BISHOP, Color::WHITE);
+
+    black_rooks = pos.pieces(PieceType::ROOK, Color::BLACK);
+    white_rooks = pos.pieces(PieceType::ROOK, Color::WHITE);
+
+    black_queens = pos.pieces(PieceType::QUEEN, Color::BLACK);
+    white_queens = pos.pieces(PieceType::QUEEN, Color::WHITE);   
+}
+
+AllBitboards::AllBitboards(
+    Bitboard black_pawns, Bitboard white_pawns,
+    Bitboard black_knights, Bitboard white_knights,
+    Bitboard black_bishops, Bitboard white_bishops,
+    Bitboard black_rooks, Bitboard white_rooks,
+    Bitboard black_queens, Bitboard white_queens
+): black_pawns(black_pawns), white_pawns(white_pawns),
+black_knights(black_knights), white_knights(white_knights),
+black_bishops(black_bishops), white_bishops(white_bishops),
+black_rooks(black_rooks), white_rooks(white_rooks),
+black_queens(black_queens), white_queens(white_queens) {}
+
 NnueBoard::NnueBoard(){
     NNUE::init();
     accumulators_stack.push_empty();
@@ -121,6 +165,7 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 // it assumes it it not castling, en passant or a promotion
 ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     assert(move != Move::NO_MOVE);
+    assert(pos.legal(move));
 
     int from = move.from().index();
     int to = move.to().index();
@@ -143,6 +188,36 @@ ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
         captured = 768 * king_bucket + 384 * (capt_piece.color() ^ color) + 64 * capt_piece.type() + to ^ flip ^ mirror;
 
     return ModifiedFeatures(added, removed, captured);
+}
+
+std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features_from_difference(
+    Square king_sq_w, Square king_sq_b, AllBitboards difference){
+
+    int mirror_w = king_sq_w.file() >= File::FILE_E ? 7 : 0;
+    int mirror_b = king_sq_b.file() >= File::FILE_E ? 7 : 0;
+    
+    std::vector<int> active_features_white = std::vector<int>();
+    std::vector<int> active_features_black = std::vector<int>();
+
+    for (Piece piece: {Piece::WHITEPAWN, Piece::BLACKPAWN}){
+        while (difference[piece]){
+            int sq = occupied.pop();
+            // white perspective
+            active_features_white.push_back(
+                768 * INPUT_BUCKETS[king_sq_w.index()]
+                                       + 384 * piece.color() 
+                                       + 64 * piece.type() 
+                                       + sq ^ mirror_w);
+            // black perspective
+            active_features_black.push_back(
+                768 * INPUT_BUCKETS[king_sq_b.index() ^ 56]
+                                       + 384 * !piece.color()
+                                       + 64 * piece.type()
+                                       + sq ^ 56 ^ mirror_b);
+        }
+    }
+
+    return std::make_pair(active_features_white, active_features_black);
 }
 
 bool NnueBoard::is_updatable_move(Move move){
