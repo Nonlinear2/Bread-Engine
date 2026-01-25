@@ -32,6 +32,12 @@ struct ModifiedFeatures {
     bool valid() const;
 };
 
+struct ModifiedFeaturesArray {
+    std::vector<int> added;
+    std::vector<int> removed;
+    ModifiedFeaturesArray() {};
+};
+
 namespace NNUE {
 
 /*****************
@@ -64,6 +70,8 @@ void load_model();
 void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features);
 
 void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures m_features);
+
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const std::vector<int> m_features);
 
 int run(Accumulators& accumulators, Color stm, int piece_count);
 
