@@ -48,8 +48,6 @@ bool NnueBoard::legal(Move move){
 
 void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
-    Accumulators& new_accs = accumulators_stack.push_empty();
-
     bool king_move = at(move.from()).type() == PieceType::KING;
 
     const bool crosses_middle =
@@ -59,6 +57,8 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
     int flip = sideToMove() ? 56 : 0;
 
     if (move.typeOf() != Move::NORMAL || (king_move && crosses_middle)){
+        Accumulators& new_accs = accumulators_stack.push_empty();
+
         makeMove(move);
         auto features = get_features();
         NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
@@ -66,6 +66,9 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         accumulators_stack.clear_top_update();
 
     } else if (king_move && INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip]){
+        accumulators_stack.apply_lazy_updates();
+        Accumulators& new_accs = accumulators_stack.push_empty();
+
         finny_table[INPUT_BUCKETS[move.from().index() ^ flip]] = std::make_pair(
             AllBitboards(*this), accumulators_stack.top()
         );
@@ -78,12 +81,12 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
             kingSq(Color::WHITE), kingSq(Color::BLACK), prev_pos, AllBitboards(*this)
         );
 
-        accumulators_stack.apply_lazy_updates();
-
         NNUE::update_accumulator(prev_accs[(int)Color::WHITE], new_accs[(int)Color::WHITE], features.first);
         NNUE::update_accumulator(prev_accs[(int)Color::BLACK], new_accs[(int)Color::BLACK], features.second);
 
     } else {
+        accumulators_stack.push_empty();
+
         accumulators_stack.set_top_update(
             get_modified_features(move, Color::WHITE), 
             get_modified_features(move, Color::BLACK)
@@ -165,14 +168,14 @@ ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     Piece curr_piece = at(move.from());
     assert(curr_piece != Piece::NONE);
 
-    int added = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + to ^ flip ^ mirror;
-    int removed = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + from ^ flip ^ mirror;
+    int added = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + (to ^ flip ^ mirror);
+    int removed = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + (from ^ flip ^ mirror);
 
     int captured = -1;
 
     Piece capt_piece = at(move.to());
     if (capt_piece != Piece::NONE)
-        captured = 768 * king_bucket + 384 * (capt_piece.color() ^ color) + 64 * capt_piece.type() + to ^ flip ^ mirror;
+        captured = 768 * king_bucket + 384 * (capt_piece.color() ^ color) + 64 * capt_piece.type() + (to ^ flip ^ mirror);
 
     return ModifiedFeatures(added, removed, captured);
 }
@@ -202,13 +205,13 @@ std::pair<ModifiedFeaturesArray, ModifiedFeaturesArray> NnueBoard::get_features_
                     768 * INPUT_BUCKETS[king_sq_w.index()]
                                         + 384 * color
                                         + 64 * pt
-                                        + sq ^ mirror_w);
+                                        + (sq ^ mirror_w));
                 // black perspective
                 features_black.added.push_back(
                     768 * INPUT_BUCKETS[king_sq_b.index() ^ 56]
                                         + 384 * !color
                                         + 64 * pt
-                                        + sq ^ 56 ^ mirror_b);
+                                        + (sq ^ 56 ^ mirror_b));
             }
 
             while (removed){
@@ -218,13 +221,13 @@ std::pair<ModifiedFeaturesArray, ModifiedFeaturesArray> NnueBoard::get_features_
                     768 * INPUT_BUCKETS[king_sq_w.index()]
                                         + 384 * color
                                         + 64 * pt
-                                        + sq ^ mirror_w);
+                                        + (sq ^ mirror_w));
                 // black perspective
                 features_black.removed.push_back(
                     768 * INPUT_BUCKETS[king_sq_b.index() ^ 56]
                                         + 384 * !color
                                         + 64 * pt
-                                        + sq ^ 56 ^ mirror_b);
+                                        + (sq ^ 56 ^ mirror_b));
             }
         }
     }
