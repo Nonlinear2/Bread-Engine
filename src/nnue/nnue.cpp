@@ -228,22 +228,27 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
 // -> accumulate for nnz chunks, and get output.
 
 // sparse matrix multiplication
-void NNUE::run_sparse(int8_t* input, int32_t* output, int input_size, int output_size, int8_t* weights, int32_t* bias){
-    const int num_input_chunks = input_size/int8_per_reg;
-    const int num_output_chunks = output_size/int32_per_reg;
+void NNUE::run_L2_sparse(int8_t* input, int32_t* output){
+
+    int16_t* stm_data = accumulators[stm].data();
+    int16_t* nstm_data = accumulators[!stm].data();
 
     // 4 int8s at a time, as an int32.
-    const int MAX_NNZ_INPUTS = input_size / 4;
+    const int MAX_NNZ_INPUTS = ACC_SIZE / 4;
     int nnz_indices[MAX_NNZ_INPUTS];
     int num_nnz_inputs = 0;
 
-    __m256i output_chunks[num_output_chunks];
-    const __m256i one = _mm256_set1_epi16(1);
+    const vec_int16 one = set1_epi16(1);
 
-    for (int i = 0; i < num_input_chunks; i++){
-        __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]);
+    const vec_int16 zero = setzero_epi16();
+    const vec_int16 qscale = set1_epi16(255);
+    vec_int32 result = set1_epi32(0);
+
+    for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
+        vec_int16 in = load_epi16(&stm_data[i]);
+
         uint8_t z_bitmask = _mm256_movemask_ps(
-            (__m256)_mm256_cmpeq_epi32(input_chunk, _mm256_setzero_si256())
+            (__m256)_mm256_cmpeq_epi32(in, _mm256_setzero_si256())
         );
 
         uint8_t nnz_bitmask = ~z_bitmask;
@@ -251,34 +256,37 @@ void NNUE::run_sparse(int8_t* input, int32_t* output, int input_size, int output
         while (nnz_bitmask){
             idx = lsb(nnz_bitmask);
             nnz_bitmask &= nnz_bitmask - 1;
-            nnz_indices[num_nnz_inputs++] = i*int8_per_reg + idx*4;
+            nnz_indices[num_nnz_inputs++] = i*INT8_PER_REG + idx*4;
         }
     }
 
     assert(num_nnz_inputs <= MAX_NNZ_INPUTS);
     // std::cout << num_nnz_inputs << " ";
 
+    vec_int16 registers[NUM_AVX_REGISTERS];
+    constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;
+
     // load the bias from memory
-    for (int i = 0; i < num_output_chunks; i++){
-        output_chunks[i] = _mm256_loadu_si256((const __m256i*)&bias[i*int32_per_reg]);
+    for (int i = 0; i < L1_OUTPUT_SIZE; i += INT32_PER_REG){
+        registers[i] = load_epi16(&l1_bias[i*INT32_PER_REG]);
     }
 
     for (int i = 0; i < num_nnz_inputs; i++){
         // load the nonzero input group
-        __m256i input_group = _mm256_set1_epi32(*reinterpret_cast<const uint32_t*>(&input[nnz_indices[i]]));
-        for (int j = 0; j < num_output_chunks; j++){
+        __m256i input_group = set1_epi32(*reinterpret_cast<const uint32_t*>(&input[nnz_indices[i]]));
+        for (int j = 0; j < L1_OUTPUT_SIZE; j += INT32_PER_REG){
             __m256i mixed_input = _mm256_maddubs_epi16(
                 input_group,
-                _mm256_loadu_si256((const __m256i*)&weights[(nnz_indices[i]*output_size) + j*int8_per_reg])
+                load_epi16(&l1_weights[(nnz_indices[i]*L1_OUTPUT_SIZE) + j*INT8_PER_REG])
             );
-            output_chunks[j] = _mm256_add_epi32(output_chunks[j], _mm256_madd_epi16(mixed_input, one)); // hadd pairs to int32
+            registers[j] = add_epi32(registers[j], madd_epi16(mixed_input, one)); // hadd pairs to int32
         }
     }
 
-    for (int i = 0; i < num_output_chunks; i++){
+    for (int i = 0; i < L1_OUTPUT_SIZE; i += INT32_PER_REG){
         // this integer divides the result by 64 which is the scale.
-        output_chunks[i] = _mm256_srai_epi32(output_chunks[i], 6);
-        _mm256_storeu_si256((__m256i*)&output[i*int32_per_reg], output_chunks[i]); // store int32
+        registers[i] = _mm256_srai_epi32(registers[i], 6);
+        store_epi32(&output[i*INT32_PER_REG], registers[i]);
     }
 };
 
@@ -341,26 +349,26 @@ void NNUE::run_sparse(int8_t* input, int32_t* output, int input_size, int output
 //     }
 // };
 
-// dense matrix multiplication
-void NNUE::run_dense(int8_t* input, int32_t* output, int input_size, int output_size, int8_t* weights, int32_t* bias){
-    const int num_input_chunks = input_size/int8_per_reg;
-    const int num_output_chunks = output_size/int32_per_reg;
+// // dense matrix multiplication
+// void NNUE::run_dense(int8_t* input, int32_t* output, int input_size, int output_size, int8_t* weights, int32_t* bias){
+//     const int num_input_chunks = input_size/int8_per_reg;
+//     const int num_output_chunks = output_size/int32_per_reg;
 
-    __m256i process_chunks[int32_per_reg];
-    const __m256i one = _mm256_set1_epi16(1);
+//     __m256i process_chunks[int32_per_reg];
+//     const __m256i one = _mm256_set1_epi16(1);
 
-    for (int j = 0; j < num_output_chunks; j++){
-        __m256i result = _mm256_loadu_si256((const __m256i*)&bias[j*int32_per_reg]);
-        for (int i = 0; i < num_input_chunks; i++){
-            __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]); // load int8
-            for (int k = 0; k < int32_per_reg; k++){
-                process_chunks[k] = _mm256_maddubs_epi16(
-                    input_chunk,
-                    _mm256_loadu_si256((const __m256i*)&weights[(j*int32_per_reg+k) * input_size + i*int8_per_reg]) //load int8
-                );
-                process_chunks[k] = _mm256_madd_epi16(process_chunks[k], one); // hadd pairs to int32
-            }
-            result = _mm256_add_epi32(result, _mm256_add8x256_epi32(process_chunks));
+//     for (int j = 0; j < num_output_chunks; j++){
+//         __m256i result = _mm256_loadu_si256((const __m256i*)&bias[j*int32_per_reg]);
+//         for (int i = 0; i < num_input_chunks; i++){
+//             __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]); // load int8
+//             for (int k = 0; k < int32_per_reg; k++){
+//                 process_chunks[k] = _mm256_maddubs_epi16(
+//                     input_chunk,
+//                     _mm256_loadu_si256((const __m256i*)&weights[(j*int32_per_reg+k) * input_size + i*int8_per_reg]) //load int8
+//                 );
+//                 process_chunks[k] = _mm256_madd_epi16(process_chunks[k], one); // hadd pairs to int32
+//             }
+//             result = _mm256_add_epi32(result, _mm256_add8x256_epi32(process_chunks));
 
 int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
     int16_t* stm_data = accumulators[stm].data();
