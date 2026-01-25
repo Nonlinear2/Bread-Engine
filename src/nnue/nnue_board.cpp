@@ -11,16 +11,6 @@ AllBitboards::AllBitboards(const NnueBoard& pos) {
             );
 }
 
-AllBitboards AllBitboards::operator^(const AllBitboards& other) const {
-    AllBitboards result;
-    for (int color = 0; color < 2; color++)
-        for (int pt = 0; pt < PIECETYPE_COUNT; pt++)
-            result.bb[color][pt] = bb[color][pt] ^ other.bb[color][pt];
-
-    return result;
-}
-
-
 NnueBoard::NnueBoard(){
     NNUE::init();
     accumulators_stack.push_empty();

@@ -18,8 +18,6 @@ class AllBitboards {
 
     AllBitboards();
     AllBitboards(const NnueBoard& pos);
-
-    AllBitboards operator^(const AllBitboards& other) const;
 };
 
 class NnueBoard: public Board {
