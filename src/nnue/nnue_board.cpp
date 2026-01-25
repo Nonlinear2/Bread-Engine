@@ -15,6 +15,13 @@ NnueBoard::NnueBoard(){
     NNUE::init();
     accumulators_stack.push_empty();
     synchronize();
+
+    AllBitboards empty_pos = AllBitboards(); // empty position;
+    Accumulators empty_accs = ; // accumulators for an empty position;
+    for (int i = 0; i < INPUT_BUCKET_COUNT; i++){
+        finny_table[i] = std::make_pair(empty_pos, default_accs);
+    }
+
 };
 
 NnueBoard::NnueBoard(std::string_view fen){
