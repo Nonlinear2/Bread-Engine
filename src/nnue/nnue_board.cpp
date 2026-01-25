@@ -40,10 +40,17 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
     Accumulators& new_accs = accumulators_stack.push_empty();
 
     if (is_updatable_move(move)){
-        accumulators_stack.set_top_update(
-            get_modified_features(move, Color::WHITE), 
-            get_modified_features(move, Color::BLACK)
-        );
+        int flip = sideToMove() ? 56 : 0;
+        // single move update
+        if (INPUT_BUCKETS[move.from().index() ^ flip] == INPUT_BUCKETS[move.to().index() ^ flip])
+            accumulators_stack.set_top_update(
+                get_modified_features(move, Color::WHITE), 
+                get_modified_features(move, Color::BLACK)
+            );
+        else { // finny tables update
+            Accumulators last_accs = finny_table[move.to().index() ^ flip];
+            
+        }
         makeMove(move);
     } else {
         makeMove(move);
@@ -152,8 +159,7 @@ bool NnueBoard::is_updatable_move(Move move){
     if (crosses_middle)
         return false;
 
-    int flip = sideToMove() ? 56 : 0;
-    return INPUT_BUCKETS[move.from().index() ^ flip] == INPUT_BUCKETS[move.to().index() ^ flip];
+    return true;
 }
 
 NnueBoard::AccumulatorsStack::AccumulatorsStack(){

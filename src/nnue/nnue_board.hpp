@@ -52,6 +52,8 @@ class NnueBoard: public Board {
 
     AccumulatorsStack accumulators_stack;
 
+    std::vector<Accumulators> finny_table = std::vector<Accumulators>(32);
+
     ModifiedFeatures get_modified_features(Move move, Color color);
 
     bool is_updatable_move(Move move);
