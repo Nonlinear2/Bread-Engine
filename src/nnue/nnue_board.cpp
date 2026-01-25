@@ -66,6 +66,10 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         accumulators_stack.clear_top_update();
 
     } else if (king_move && INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip]){
+        finny_table[INPUT_BUCKETS[move.from().index() ^ flip]] = std::make_pair(
+            AllBitboards(*this), accumulators_stack.top()
+        );
+
         auto [prev_pos, last_accs] = finny_table[INPUT_BUCKETS[move.to().index() ^ flip]];
         makeMove(move);
         auto features = get_features_difference(
