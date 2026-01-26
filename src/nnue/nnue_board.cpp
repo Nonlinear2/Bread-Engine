@@ -59,7 +59,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
     } else if (king_move && (crosses_middle || INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip])){
         makeMove(move);
         auto features = get_features();
-    
+
         if (sideToMove() == Color::WHITE){
             NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
             accumulators_stack.set_top_update(
@@ -216,9 +216,15 @@ void NnueBoard::AccumulatorsStack::pop(){
 }
 
 void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
-    int i = idx;
-    while (queued_updates[i][(int)Color::WHITE].valid())
-        i--;
+    int i_w = idx;
+    int i_b = idx;
+    while (queued_updates[i_w][(int)Color::WHITE].valid())
+        i_w--;
+
+    while (queued_updates[i_b][(int)Color::BLACK].valid())
+        i_b--;
+
+    int i = std::min(i_w, i_b);
 
     for (; i < idx; i++){
         Accumulators& prev_accs = stack[i];
@@ -229,11 +235,15 @@ void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
         __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed * ACC_SIZE]);
 
         // white
-        NNUE::update_accumulator(prev_accs[0], new_accs[0], queued_updates[i + 1][0]);
-        queued_updates[i + 1][0] = ModifiedFeatures();
+        if (i >= i_w){
+            NNUE::update_accumulator(prev_accs[0], new_accs[0], queued_updates[i + 1][0]);
+            queued_updates[i + 1][0] = ModifiedFeatures();
+        }
 
         // black
-        NNUE::update_accumulator(prev_accs[1], new_accs[1], queued_updates[i + 1][1]);
-        queued_updates[i + 1][1] = ModifiedFeatures();
+        if (i >= i_b){
+            NNUE::update_accumulator(prev_accs[1], new_accs[1], queued_updates[i + 1][1]);
+            queued_updates[i + 1][1] = ModifiedFeatures();
+        }
     }
 }
