@@ -1,6 +1,10 @@
 #include "nnue_board.hpp"
 
-AllBitboards::AllBitboards(){}
+AllBitboards::AllBitboards(){
+    for (int color = 0; color < 2; ++color)
+        for (int pt = 0; pt < PIECETYPE_COUNT; ++pt)
+            bb[color][pt] = Bitboard(0);
+}
 
 AllBitboards::AllBitboards(const NnueBoard& pos) {
     for (int color = 0; color < 2; color++)
@@ -41,6 +45,11 @@ void NnueBoard::synchronize(){
     NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
     NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
     accumulators_stack.clear_top_update();
+
+    int flip = sideToMove() ? 56 : 0;
+    int bucket = INPUT_BUCKETS[kingSq(sideToMove()).index() ^ flip];
+    finny_table[bucket] = std::make_pair(AllBitboards(*this), new_accs);
+    
 }
 
 bool NnueBoard::legal(Move move){
@@ -164,7 +173,7 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 // it assumes it it not castling, en passant or a promotion
 ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     assert(move != Move::NO_MOVE);
-    assert(pos.legal(move));
+    assert(legal(move));
 
     int from = move.from().index();
     int to = move.to().index();
