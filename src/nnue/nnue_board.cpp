@@ -39,19 +39,49 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     Accumulators& new_accs = accumulators_stack.push_empty();
 
-    if (is_updatable_move(move)){
-        accumulators_stack.set_top_update(
-            get_modified_features(move, Color::WHITE), 
-            get_modified_features(move, Color::BLACK)
-        );
-        makeMove(move);
-    } else {
+    
+    bool king_move = at(move.from()).type() == PieceType::KING;
+
+    const bool crosses_middle =
+        (move.from().file() == File::FILE_D && move.to().file() == File::FILE_E) ||
+        (move.from().file() == File::FILE_E && move.to().file() == File::FILE_D);
+
+    int flip = sideToMove() ? 56 : 0;
+
+    if (move.typeOf() != Move::NORMAL){
+
         makeMove(move);
         auto features = get_features();
         NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
         NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
         accumulators_stack.clear_top_update();
+
+    } else if (king_move && (crosses_middle || INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip])){
+        makeMove(move);
+        auto features = get_features();
+    
+        if (sideToMove() == Color::WHITE){
+            NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
+            accumulators_stack.set_top_update(
+                get_modified_features(move, Color::WHITE), 
+                ModifiedFeatures()
+            );
+        } else {
+            NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+            accumulators_stack.set_top_update(
+                ModifiedFeatures(),
+                get_modified_features(move, Color::BLACK)
+            );
+        }
+
+    } else {
+        accumulators_stack.set_top_update(
+            get_modified_features(move, Color::WHITE), 
+            get_modified_features(move, Color::BLACK)
+        );
+        makeMove(move);
     }
+
     __builtin_prefetch(&tt.entries[hash() & (tt.entries.size() - 1)]);
 }
 
