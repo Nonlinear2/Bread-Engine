@@ -147,12 +147,12 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
         features_white[idx] = 768 * INPUT_BUCKETS[king_sq_w.index()]
                                    + 384 * curr_piece.color() 
                                    + 64 * curr_piece.type() 
-                                   + sq ^ mirror_w;
+                                   + (sq ^ mirror_w);
         // black perspective
         features_black[idx] = 768 * INPUT_BUCKETS[king_sq_b.index() ^ 56]
                                    + 384 * !curr_piece.color()
                                    + 64 * curr_piece.type()
-                                   + sq ^ 56 ^ mirror_b;
+                                   + (sq ^ 56 ^ mirror_b);
         idx++;
     }
 
