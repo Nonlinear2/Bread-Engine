@@ -57,20 +57,26 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         accumulators_stack.clear_top_update();
 
     } else if (king_move && (crosses_middle || INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip])){
+        Color stm = sideToMove();
+        
+        ModifiedFeatures other_side_updates = stm == Color::WHITE 
+            ? get_modified_features(move, Color::BLACK)
+            : get_modified_features(move, Color::WHITE);
+
         makeMove(move);
         auto features = get_features();
-
-        if (sideToMove() == Color::WHITE){
+        
+        if (stm == Color::WHITE){
             NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
             accumulators_stack.set_top_update(
-                get_modified_features(move, Color::WHITE), 
-                ModifiedFeatures()
+                ModifiedFeatures(),
+                other_side_updates
             );
         } else {
             NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
             accumulators_stack.set_top_update(
-                ModifiedFeatures(),
-                get_modified_features(move, Color::BLACK)
+                other_side_updates, 
+                ModifiedFeatures()
             );
         }
 
