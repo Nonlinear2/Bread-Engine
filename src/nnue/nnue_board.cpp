@@ -64,16 +64,15 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
             : get_modified_features(move, Color::WHITE);
 
         makeMove(move);
-        auto features = get_features();
         
         if (stm == Color::WHITE){
-            NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
+            NNUE::compute_accumulator(new_accs[(int)Color::WHITE], get_features(stm));
             accumulators_stack.set_top_update(
                 ModifiedFeatures(),
                 other_side_updates
             );
         } else {
-            NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+            NNUE::compute_accumulator(new_accs[(int)Color::BLACK], get_features(stm));
             accumulators_stack.set_top_update(
                 other_side_updates, 
                 ModifiedFeatures()
@@ -145,6 +144,35 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
     return std::make_pair(active_features_white, active_features_black);
 }
 
+std::vector<int> NnueBoard::get_features(Color color){
+    Bitboard occupied = occ();
+
+    std::vector<int> active_features = std::vector<int>(occupied.count());
+
+    Piece curr_piece;
+
+    Square king_sq = kingSq(color);
+
+    int mirror = king_sq.file() >= File::FILE_E ? 7 : 0;
+    
+    int flip = color ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4.
+
+    int idx = 0;
+    while (occupied){
+        int sq = occupied.pop();
+
+        curr_piece = at(static_cast<Square>(sq));
+
+        active_features[idx] = 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
+                                   + 384 * (curr_piece.color() ^ color)
+                                   + 64 * curr_piece.type()
+                                   + (sq ^ flip ^ mirror);
+
+        idx++;
+    }
+
+    return active_features;
+}
 
 // this function must be called before pushing the move
 // it assumes it it not castling, en passant or a promotion
