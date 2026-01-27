@@ -32,6 +32,7 @@ class NnueBoard: public Board {
     bool is_stalemate();
 
     std::pair<std::vector<int>, std::vector<int>> get_features();
+    std::vector<int> get_features(Color color);
 
     private:
     class AccumulatorsStack {
