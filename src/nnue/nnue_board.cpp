@@ -39,7 +39,6 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     Accumulators& new_accs = accumulators_stack.push_empty();
 
-    
     bool king_move = at(move.from()).type() == PieceType::KING;
 
     const bool crosses_middle =
@@ -58,21 +57,18 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     } else if (king_move && (crosses_middle || INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip])){
         Color stm = sideToMove();
-        
-        ModifiedFeatures modified_features = stm == Color::WHITE 
-            ? get_modified_features(move, Color::BLACK)
-            : get_modified_features(move, Color::WHITE);
+
+        ModifiedFeatures other_side_updates = get_modified_features(move, ~stm);
 
         makeMove(move);
-        
+
+        NNUE::compute_accumulator(new_accs[(int)stm], get_features(stm));
         if (stm == Color::WHITE){
-            NNUE::compute_accumulator(new_accs[(int)Color::WHITE], get_features(stm));
             accumulators_stack.set_top_update(
                 ModifiedFeatures(),
                 modified_features
             );
         } else {
-            NNUE::compute_accumulator(new_accs[(int)Color::BLACK], get_features(stm));
             accumulators_stack.set_top_update(
                 modified_features, 
                 ModifiedFeatures()
