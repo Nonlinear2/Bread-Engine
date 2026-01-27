@@ -192,11 +192,10 @@ ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     int captured = -1;
 
     Piece capt_piece = at(move.to());
-    if (capt_piece != Piece::NONE){
+    if (capt_piece != Piece::NONE)
         captured = 768 * king_bucket + 384 * (capt_piece.color() ^ color) + 64 * capt_piece.type() + to ^ flip ^ mirror;
-        return ModifiedFeatures({added}, {removed, captured});
-    }
-    return ModifiedFeatures({added}, {removed});
+
+    return ModifiedFeatures(added, removed, captured);
 }
 
 bool NnueBoard::is_updatable_move(Move move){
