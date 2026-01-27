@@ -24,9 +24,10 @@ NnueBoard::NnueBoard(){
     Accumulator empty_acc;
     NNUE::compute_accumulator(empty_acc, {}); // accumulators for an empty position;
     Accumulators empty_accs = {empty_acc, empty_acc};
-    for (int i = 0; i < INPUT_BUCKET_COUNT; i++){
-        finny_table[i] = std::make_pair(empty_pos, empty_accs);
-    }
+    for (int color = 0; color < 2; color++)
+        for (int j = 0; j < INPUT_BUCKET_COUNT; j++)
+            finny_table[color][j] = std::make_pair(empty_pos, empty_accs);
+
 };
 
 NnueBoard::NnueBoard(std::string_view fen){
@@ -48,8 +49,7 @@ void NnueBoard::synchronize(){
 
     int flip = sideToMove() ? 56 : 0;
     int bucket = INPUT_BUCKETS[kingSq(sideToMove()).index() ^ flip];
-    finny_table[bucket] = std::make_pair(AllBitboards(*this), new_accs);
-    
+    finny_table[sideToMove()][bucket] = std::make_pair(AllBitboards(*this), new_accs);   
 }
 
 bool NnueBoard::legal(Move move){
@@ -64,6 +64,7 @@ bool NnueBoard::legal(Move move){
 }
 
 void NnueBoard::update_state(Move move, TranspositionTable& tt){
+    Accumulators& new_accs = accumulators_stack.push_empty();
 
     bool king_move = at(move.from()).type() == PieceType::KING;
 
@@ -73,8 +74,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     int flip = sideToMove() ? 56 : 0;
 
-    if (move.typeOf() != Move::NORMAL || (king_move && crosses_middle)){
-        Accumulators& new_accs = accumulators_stack.push_empty();
+    if (move.typeOf() != Move::NORMAL){
 
         makeMove(move);
         auto features = get_features();
@@ -82,38 +82,57 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
         accumulators_stack.clear_top_update();
 
+    } else if (king_move && crosses_middle){
+        Color stm = sideToMove();
+
+        ModifiedFeatures modified_features = stm == Color::WHITE 
+            ? get_modified_features(move, Color::BLACK)
+            : get_modified_features(move, Color::WHITE);
+
+        makeMove(move);
+        
+        if (stm == Color::WHITE){
+            NNUE::compute_accumulator(new_accs[(int)Color::WHITE], get_features(stm));
+            accumulators_stack.set_top_update(
+                ModifiedFeatures(),
+                modified_features
+            );
+        } else {
+            NNUE::compute_accumulator(new_accs[(int)Color::BLACK], get_features(stm));
+            accumulators_stack.set_top_update(
+                modified_features, 
+                ModifiedFeatures()
+            );
+        }
+
     } else if (king_move && INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip]){
+        Color stm = sideToMove();
+
         accumulators_stack.apply_lazy_updates();
 
-        finny_table[INPUT_BUCKETS[move.from().index() ^ flip]] = std::make_pair(
+        finny_table[stm][INPUT_BUCKETS[move.from().index() ^ flip]] = std::make_pair(
             AllBitboards(*this), accumulators_stack.top()
         );
 
-        Accumulators& new_accs = accumulators_stack.push_empty();
-
         makeMove(move);
 
-        auto [prev_pos, prev_accs] = finny_table[INPUT_BUCKETS[move.to().index() ^ flip]];
+        auto [prev_pos, prev_accs] = finny_table[stm][INPUT_BUCKETS[move.to().index() ^ flip]];
 
-        auto features = get_features_difference(
-            kingSq(Color::WHITE), kingSq(Color::BLACK), prev_pos, AllBitboards(*this)
-        );
+        auto features = get_features_difference(stm, kingSq(Color::BLACK), prev_pos, AllBitboards(*this));
 
-        NNUE::update_accumulator(prev_accs[(int)Color::WHITE], new_accs[(int)Color::WHITE], features.first);
-        NNUE::update_accumulator(prev_accs[(int)Color::BLACK], new_accs[(int)Color::BLACK], features.second);
+        // NNUE::update_accumulator(prev_accs[(int)Color::WHITE], new_accs[(int)Color::WHITE], features);
 
     } else {
-        accumulators_stack.push_empty();
-
         accumulators_stack.set_top_update(
             get_modified_features(move, Color::WHITE), 
             get_modified_features(move, Color::BLACK)
         );
         makeMove(move);
     }
+
     __builtin_prefetch(&tt.entries[hash() & (tt.entries.size() - 1)]);
 }
-
+       
 void NnueBoard::restore_state(Move move){
     unmakeMove(move);
 
@@ -168,6 +187,35 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
     return std::make_pair(features_white, features_black);
 }
 
+std::vector<int> NnueBoard::get_features(Color color){
+    Bitboard occupied = occ();
+
+    std::vector<int> active_features = std::vector<int>(occupied.count());
+
+    Piece curr_piece;
+
+    Square king_sq = kingSq(color);
+
+    int mirror = king_sq.file() >= File::FILE_E ? 7 : 0;
+    
+    int flip = color ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4.
+
+    int idx = 0;
+    while (occupied){
+        int sq = occupied.pop();
+
+        curr_piece = at(static_cast<Square>(sq));
+
+        active_features[idx] = 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
+                                   + 384 * (curr_piece.color() ^ color)
+                                   + 64 * curr_piece.type()
+                                   + (sq ^ flip ^ mirror);
+
+        idx++;
+    }
+
+    return active_features;
+}
 
 // this function must be called before pushing the move
 // it assumes it it not castling, en passant or a promotion
@@ -198,18 +246,15 @@ ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     return ModifiedFeatures(added, removed, captured);
 }
 
-std::pair<ModifiedFeaturesArray, ModifiedFeaturesArray> NnueBoard::get_features_difference(
-    Square king_sq_w, Square king_sq_b, AllBitboards prev_pos, AllBitboards new_pos){
+ModifiedFeaturesArray NnueBoard::get_features_difference(Color stm,
+    Square king_sq, AllBitboards prev_pos, AllBitboards new_pos){
 
-    int mirror_w = king_sq_w.file() >= File::FILE_E ? 7 : 0;
-    int mirror_b = king_sq_b.file() >= File::FILE_E ? 7 : 0;
+    int mirror = king_sq.file() >= File::FILE_E ? 7 : 0;
+    int flip = stm ? 56 : 0;
 
-    ModifiedFeaturesArray features_white;
-    features_white.added.reserve(32);
-    features_white.removed.reserve(32);
-    ModifiedFeaturesArray features_black;
-    features_black.added.reserve(32);
-    features_black.removed.reserve(32);
+    ModifiedFeaturesArray features;
+    features.added.reserve(32);
+    features.removed.reserve(32);
 
     for (int color = 0; color < 2; color++){
         for (int pt = 0; pt < PIECETYPE_COUNT; pt++){
@@ -218,39 +263,25 @@ std::pair<ModifiedFeaturesArray, ModifiedFeaturesArray> NnueBoard::get_features_
 
             while (added){
                 int sq = added.pop();
-                // white perspective
-                features_white.added.push_back(
-                    768 * INPUT_BUCKETS[king_sq_w.index()]
-                                        + 384 * color
+                features.added.push_back(
+                    768 * INPUT_BUCKETS[king_sq.index() ^ flip]
+                                        + 384 * (color ^ stm)
                                         + 64 * pt
-                                        + (sq ^ mirror_w));
-                // black perspective
-                features_black.added.push_back(
-                    768 * INPUT_BUCKETS[king_sq_b.index() ^ 56]
-                                        + 384 * !color
-                                        + 64 * pt
-                                        + (sq ^ 56 ^ mirror_b));
+                                        + (sq ^ flip ^ mirror));
             }
 
             while (removed){
                 int sq = removed.pop();
-                // white perspective
-                features_white.removed.push_back(
-                    768 * INPUT_BUCKETS[king_sq_w.index()]
-                                        + 384 * color
+                features.removed.push_back(
+                    768 * INPUT_BUCKETS[king_sq.index() ^ flip]
+                                        + 384 * (color ^ stm)
                                         + 64 * pt
-                                        + (sq ^ mirror_w));
-                // black perspective
-                features_black.removed.push_back(
-                    768 * INPUT_BUCKETS[king_sq_b.index() ^ 56]
-                                        + 384 * !color
-                                        + 64 * pt
-                                        + (sq ^ 56 ^ mirror_b));
+                                        + (sq ^ flip ^ mirror));
             }
         }
     }
 
-    return std::make_pair(features_white, features_black);
+    return features;
 }
 
 NnueBoard::AccumulatorsStack::AccumulatorsStack(){
@@ -283,9 +314,15 @@ void NnueBoard::AccumulatorsStack::pop(){
 }
 
 void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
-    int i = idx;
-    while (queued_updates[i][(int)Color::WHITE].valid())
-        i--;
+    int i_w = idx;
+    int i_b = idx;
+    while (queued_updates[i_w][(int)Color::WHITE].valid())
+        i_w--;
+
+    while (queued_updates[i_b][(int)Color::BLACK].valid())
+        i_b--;
+
+    int i = std::min(i_w, i_b);
 
     for (; i < idx; i++){
         Accumulators& prev_accs = stack[i];
@@ -296,11 +333,15 @@ void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
         __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed * ACC_SIZE]);
 
         // white
-        NNUE::update_accumulator(prev_accs[0], new_accs[0], queued_updates[i + 1][0]);
-        queued_updates[i + 1][0] = ModifiedFeatures();
+        if (i >= i_w){
+            NNUE::update_accumulator(prev_accs[0], new_accs[0], queued_updates[i + 1][0]);
+            queued_updates[i + 1][0] = ModifiedFeatures();
+        }
 
         // black
-        NNUE::update_accumulator(prev_accs[1], new_accs[1], queued_updates[i + 1][1]);
-        queued_updates[i + 1][1] = ModifiedFeatures();
+        if (i >= i_b){
+            NNUE::update_accumulator(prev_accs[1], new_accs[1], queued_updates[i + 1][1]);
+            queued_updates[i + 1][1] = ModifiedFeatures();
+        }
     }
 }

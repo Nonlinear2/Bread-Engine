@@ -43,10 +43,11 @@ class NnueBoard: public Board {
     bool is_stalemate();
 
     std::pair<std::vector<int>, std::vector<int>> get_features();
+    std::vector<int> NnueBoard::get_features(Color color);
 
-    std::pair<ModifiedFeaturesArray, ModifiedFeaturesArray> get_features_difference(
-        Square king_sq_w, 
-        Square king_sq_b, 
+    ModifiedFeaturesArray get_features_difference(
+        Color stm, 
+        Square king_sq, 
         AllBitboards prev_pos,
         AllBitboards new_pos);
 
@@ -69,7 +70,7 @@ class NnueBoard: public Board {
 
     AccumulatorsStack accumulators_stack;
 
-    std::array<std::pair<AllBitboards, Accumulators>, INPUT_BUCKET_COUNT> finny_table;
+    std::array<std::array<std::pair<AllBitboards, Accumulators>, INPUT_BUCKET_COUNT>, 2> finny_table;
 
     ModifiedFeatures get_modified_features(Move move, Color color);
 };
