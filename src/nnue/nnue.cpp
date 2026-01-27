@@ -217,11 +217,6 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
                 }
             }
         }
-
-        // store the result in the accumulator
-        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-            store_epi16(&new_acc[j + i*INT16_PER_REG], registers[i]);
-        }
     }
 }
 

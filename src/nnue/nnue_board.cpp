@@ -58,7 +58,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
     } else if (king_move && (crosses_middle || INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip])){
         Color stm = sideToMove();
 
-        ModifiedFeatures other_side_updates = get_modified_features(move, ~stm);
+        ModifiedFeatures modified_features = get_modified_features(move, ~stm);
 
         makeMove(move);
 
@@ -262,10 +262,10 @@ void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
         Accumulators& new_accs = stack[i + 1];
 
         // prefetch weight rows for black while processing white
-        if (!queued_updates[i + 1][1].added.empty())
-            __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].added[0] * ACC_SIZE]);
-        if (!queued_updates[i + 1][1].removed.empty())
-            __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed[0] * ACC_SIZE]);
+        if (!queued_updates[i + 1][1].large_difference)
+            __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].added * ACC_SIZE]);
+        if (!queued_updates[i + 1][1].large_difference)
+            __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed * ACC_SIZE]);
 
         // white
         if (i >= i_w){

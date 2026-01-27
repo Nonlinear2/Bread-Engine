@@ -15,8 +15,9 @@
 using namespace chess;
 
 struct ModifiedFeatures {
-    std::vector<int> added;
-    std::vector<int> removed;
+    int added;
+    int removed;
+    int captured;
 
     bool large_difference;
     std::vector<int> added_vec;
