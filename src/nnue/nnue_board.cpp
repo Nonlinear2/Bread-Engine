@@ -196,11 +196,10 @@ ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     int captured = -1;
 
     Piece capt_piece = at(move.to());
-    if (capt_piece != Piece::NONE){
+    if (capt_piece != Piece::NONE)
         captured = 768 * king_bucket + 384 * (capt_piece.color() ^ color) + 64 * capt_piece.type() + to ^ flip ^ mirror;
-        return ModifiedFeatures({added}, {removed, captured});
-    }
-    return ModifiedFeatures({added}, {removed});
+
+    return ModifiedFeatures(added, removed, captured);
 }
 
 bool NnueBoard::is_updatable_move(Move move){
@@ -266,10 +265,8 @@ void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
         Accumulators& new_accs = stack[i + 1];
 
         // prefetch weight rows for black while processing white
-        if (!queued_updates[i + 1][1].added.empty())
-            __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].added[0] * ACC_SIZE]);
-        if (!queued_updates[i + 1][1].removed.empty())
-            __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed[0] * ACC_SIZE]);
+        __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].added * ACC_SIZE]);
+        __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed * ACC_SIZE]);
 
         // white
         if (i >= i_w){

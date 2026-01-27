@@ -15,14 +15,19 @@
 using namespace chess;
 
 struct ModifiedFeatures {
-    std::vector<int> added;
-    std::vector<int> removed;
+    int added;
+    int removed;
+    int captured;
 
-    ModifiedFeatures() {};
+    ModifiedFeatures():
+        added(-1),
+        removed(-1),
+        captured(-1) {};
 
-    ModifiedFeatures(std::vector<int> added, std::vector<int> removed):
+    ModifiedFeatures(int added, int removed, int captured):
         added(added),
-        removed(removed) {};
+        removed(removed),
+        captured(captured) {};
 
     bool valid() const;
 };
