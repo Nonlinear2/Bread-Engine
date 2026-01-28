@@ -127,12 +127,11 @@ void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_fea
     }
 };
 
-
 void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures m_features){
     assert(m_features.valid());
     vec_int16 registers[NUM_AVX_REGISTERS];
     constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;
-    
+
     if (m_features.captured != -1){
         for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
             for (int i = 0; i < NUM_AVX_REGISTERS; i++){
@@ -183,6 +182,7 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
         }
     }
 }
+
 
 int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
     int16_t* stm_data = accumulators[stm].data();

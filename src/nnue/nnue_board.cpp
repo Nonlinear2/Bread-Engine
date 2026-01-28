@@ -39,6 +39,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     Accumulators& new_accs = accumulators_stack.push_empty();
 
+
     bool king_move = at(move.from()).type() == PieceType::KING;
 
     const bool crosses_middle =
@@ -47,7 +48,15 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     int flip = sideToMove() ? 56 : 0;
 
-    if (king_move && (crosses_middle || INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip])){
+     if (move.typeOf() == Move::CASTLING){
+
+        makeMove(move);
+        auto features = get_features();
+        NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
+        NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+        accumulators_stack.clear_top_update();
+
+    } else if (king_move && (crosses_middle || INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip])){
         Color stm = sideToMove();
 
         ModifiedFeatures modified_features = get_modified_features(move, ~stm);
@@ -265,10 +274,8 @@ void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
         Accumulators& new_accs = stack[i + 1];
 
         // prefetch weight rows for black while processing white
-        if (queued_updates[i + 1][1].valid())
-            __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].added * ACC_SIZE]);
-        if (queued_updates[i + 1][1].valid())
-            __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed * ACC_SIZE]);
+        __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].added * ACC_SIZE]);
+        __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed * ACC_SIZE]);
 
         // white
         if (i >= i_w){
