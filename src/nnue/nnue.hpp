@@ -19,26 +19,15 @@ struct ModifiedFeatures {
     int removed;
     int captured;
 
-    bool large_difference;
-    std::vector<int> added_vec;
-    std::vector<int> removed_vec;
-
     ModifiedFeatures():
-        large_difference(false),
         added(-1),
         removed(-1),
         captured(-1) {};
 
     ModifiedFeatures(int added, int removed, int captured):
-        large_difference(false),
         added(added),
         removed(removed),
         captured(captured) {};
-
-    ModifiedFeatures(std::vector<int> added, std::vector<int> removed):
-        large_difference(true),
-        added_vec(added),
-        removed_vec(removed) {};
 
     bool valid() const;
 };

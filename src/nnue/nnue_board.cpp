@@ -163,36 +163,10 @@ std::vector<int> NnueBoard::get_features(Color color){
 }
 
 // this function must be called before pushing the move
-// it assumes it it not castling or a promotion
+// it assumes it it not castling
 ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     assert(move != Move::NO_MOVE);
     assert(legal(move));
-
-    if (move.typeOf() == Move::CASTLING){
-        assert(at<PieceType>(move.from()) == PieceType::KING);
-        assert(at<PieceType>(move.to()) == PieceType::ROOK);
-
-        const bool king_side = move.to() > move.from();
-
-        int rook_from = move.to().index();
-        int king_from = move.from().index();
-
-        int rook_to = Square::castling_rook_square(king_side, sideToMove()).index();
-        int king_to = Square::castling_king_square(king_side, sideToMove()).index();
-
-        int flip = color ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4.
-        int mirror = kingSq(color).file() >= File::FILE_E ? 7 : 0; // mirror horizontally by flipping last 3 bits.
-
-        int king_bucket = INPUT_BUCKETS[kingSq(color).index() ^ flip];
-
-        int added_king = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * int(PieceType::KING) + (king_to ^ flip ^ mirror);
-        int removed_king = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * int(PieceType::KING) + (king_from ^ flip ^ mirror);
-
-        int added_rook = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * int(PieceType::ROOK) + (rook_to ^ flip ^ mirror);
-        int removed_rook = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * int(PieceType::ROOK) + (rook_from ^ flip ^ mirror);
-
-        return ModifiedFeatures({added_king, added_rook}, {removed_king, removed_rook});
-    }
 
     assert(move.typeOf() != Move::CASTLING);
 
@@ -291,9 +265,9 @@ void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
         Accumulators& new_accs = stack[i + 1];
 
         // prefetch weight rows for black while processing white
-        if (queued_updates[i + 1][1].valid() && !queued_updates[i + 1][1].large_difference)
+        if (queued_updates[i + 1][1].valid())
             __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].added * ACC_SIZE]);
-        if (queued_updates[i + 1][1].valid() && !queued_updates[i + 1][1].large_difference)
+        if (queued_updates[i + 1][1].valid())
             __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed * ACC_SIZE]);
 
         // white
