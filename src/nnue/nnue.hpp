@@ -32,7 +32,8 @@ struct ModifiedFeatures {
     ModifiedFeatures(int added, int removed, int captured):
         large_difference(false),
         added(added),
-        removed(removed) {};
+        removed(removed),
+        captured(captured) {};
 
     ModifiedFeatures(std::vector<int> added, std::vector<int> removed):
         large_difference(true),
