@@ -56,9 +56,4 @@ class NnueBoard: public Board {
     ModifiedFeatures get_modified_features(Move move, Color color);
 
     bool is_updatable_move(Move move);
-
-    private:
-    inline int compute_feature_index(int king_bucket, Color piece_color, Color perspective_color, 
-                                      PieceType piece_type, int square, int flip, int mirror) const;
-    inline std::pair<int, int> get_flip_and_mirror(Color color) const;
 };
