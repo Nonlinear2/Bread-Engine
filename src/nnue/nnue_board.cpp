@@ -1,5 +1,20 @@
 #include "nnue_board.hpp"
 
+
+inline int NnueBoard::compute_feature_index(int king_bucket, Color piece_color, Color perspective_color, 
+                                              PieceType piece_type, int square, int flip, int mirror) const {
+    return 768 * king_bucket 
+         + 384 * (piece_color ^ perspective_color)
+         + 64 * piece_type
+         + (square ^ flip ^ mirror);
+}
+
+inline std::pair<int, int> NnueBoard::get_flip_and_mirror(Color color) const {
+    int flip = color ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4
+    int mirror = kingSq(color).file() >= File::FILE_E ? 7 : 0; // mirror horizontally by flipping last 3 bits
+    return {flip, mirror};
+}
+
 NnueBoard::NnueBoard(){
     NNUE::init();
     accumulators_stack.push_empty();
@@ -104,28 +119,24 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 
     Piece curr_piece;
 
-    Square king_sq_w = kingSq(Color::WHITE);
-    Square king_sq_b = kingSq(Color::BLACK);
 
-    int mirror_w = king_sq_w.file() >= File::FILE_E ? 7 : 0;
-    int mirror_b = king_sq_b.file() >= File::FILE_E ? 7 : 0;
+    auto [flip_w, mirror_w] = get_flip_and_mirror(Color::WHITE);
+    auto [flip_b, mirror_b] = get_flip_and_mirror(Color::BLACK);
+
+    int king_bucket_w = INPUT_BUCKETS[kingSq(Color::WHITE).index()];
+    int king_bucket_b = INPUT_BUCKETS[kingSq(Color::BLACK).index() ^ 56];
 
     int idx = 0;
     while (occupied){
         int sq = occupied.pop();
-
         curr_piece = at(static_cast<Square>(sq));
 
         // white perspective
-        active_features_white[idx] = 768 * INPUT_BUCKETS[king_sq_w.index()]
-                       + 384 * curr_piece.color() 
-                       + 64 * curr_piece.type() 
-                       + (sq ^ mirror_w);
+        active_features_white[idx] = compute_feature_index(king_bucket_w, curr_piece.color(), Color::WHITE, 
+                                                            curr_piece.type(), sq, flip_w, mirror_w);
         // black perspective
-        active_features_black[idx] = 768 * INPUT_BUCKETS[king_sq_b.index() ^ 56]
-                       + 384 * !curr_piece.color()
-                       + 64 * curr_piece.type()
-                       + (sq ^ 56 ^ mirror_b);
+        active_features_black[idx] = compute_feature_index(king_bucket_b, curr_piece.color(), Color::BLACK, 
+                                                            curr_piece.type(), sq, flip_b, mirror_b);
         idx++;
     }
 
@@ -140,10 +151,8 @@ std::vector<int> NnueBoard::get_features(Color color){
     Piece curr_piece;
 
     Square king_sq = kingSq(color);
-
-    int mirror = king_sq.file() >= File::FILE_E ? 7 : 0;
-    
-    int flip = color ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4.
+    auto [flip, mirror] = get_flip_and_mirror(color);
+    int king_bucket = INPUT_BUCKETS[king_sq.index() ^ flip];
 
     int idx = 0;
     while (occupied){
@@ -151,10 +160,8 @@ std::vector<int> NnueBoard::get_features(Color color){
 
         curr_piece = at(static_cast<Square>(sq));
 
-        active_features[idx] = 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
-                                   + 384 * (curr_piece.color() ^ color)
-                                   + 64 * curr_piece.type()
-                                   + (sq ^ flip ^ mirror);
+        active_features[idx] = compute_feature_index(king_bucket, curr_piece.color(), color, 
+                                                     curr_piece.type(), sq, flip, mirror);
 
         idx++;
     }
@@ -163,7 +170,7 @@ std::vector<int> NnueBoard::get_features(Color color){
 }
 
 // this function must be called before pushing the move
-// it assumes it it not castling or a promotion
+// it assumes it is not castling or a promotion
 ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     assert(move != Move::NO_MOVE);
     assert(legal(move));
@@ -172,30 +179,29 @@ ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
         int from = move.from().index();
         int to = move.to().index();
     
-        int flip = color ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4.
-        int mirror = kingSq(color).file() >= File::FILE_E ? 7 : 0; // mirror horizontally by flipping last 3 bits.
-    
+        auto [flip, mirror] = get_flip_and_mirror(color);
         int king_bucket = INPUT_BUCKETS[kingSq(color).index() ^ flip];
     
         Piece curr_piece = at(move.from());
         assert(curr_piece != Piece::NONE);
     
-        int added = -1;
-        int captured = -1;
+        int added;
+        if (move.typeOf() == Move::PROMOTION) {
+            added = compute_feature_index(king_bucket, sideToMove(), color, move.promotionType(), to, flip, mirror);
+        } else {
+            added = compute_feature_index(king_bucket, curr_piece.color(), color, curr_piece.type(), to, flip, mirror);
+        }
 
-        if (move.typeOf() == Move::PROMOTION)
-            added = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * move.promotionType() + (to ^ flip ^ mirror);
-        else
-            added = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + (to ^ flip ^ mirror);
-
-        int removed = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + (from ^ flip ^ mirror);
+        int removed = compute_feature_index(king_bucket, curr_piece.color(), color, curr_piece.type(), from, flip, mirror);
     
-        if (move.typeOf() == Move::ENPASSANT){
-            captured = 768 * king_bucket + 384 * (~sideToMove() ^ color) + 64 * int(PieceType::PAWN) + (move.to().ep_square().index() ^ flip ^ mirror);
+        int captured = -1;
+        if (move.typeOf() == Move::ENPASSANT) {
+            captured = compute_feature_index(king_bucket, ~sideToMove(), color, PieceType::PAWN, 
+                                            move.to().ep_square().index(), flip, mirror);
         } else {
             Piece capt_piece = at(move.to());
             if (capt_piece != Piece::NONE)
-                captured = 768 * king_bucket + 384 * (capt_piece.color() ^ color) + 64 * capt_piece.type() + (to ^ flip ^ mirror);
+                captured = compute_feature_index(king_bucket, capt_piece.color(), color, capt_piece.type(), to, flip, mirror);
         }
 
         return ModifiedFeatures(added, removed, captured);
@@ -214,16 +220,14 @@ ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     int rook_to    = Square::castling_rook_square(king_side, sideToMove()).index();
     int king_to    = Square::castling_king_square(king_side, sideToMove()).index();
 
-    int flip = color ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4.
-    int mirror = kingSq(color).file() >= File::FILE_E ? 7 : 0; // mirror horizontally by flipping last 3 bits.
-
+    auto [flip, mirror] = get_flip_and_mirror(color);
     int king_bucket = INPUT_BUCKETS[kingSq(color).index() ^ flip];
 
-    int added_king = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * int(PieceType::KING) + (king_to ^ flip ^ mirror);
-    int removed_king = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * int(PieceType::KING) + (king_from ^ flip ^ mirror);
+    int added_king = compute_feature_index(king_bucket, sideToMove(), color, PieceType::KING, king_to, flip, mirror);
+    int removed_king = compute_feature_index(king_bucket, sideToMove(), color, PieceType::KING, king_from, flip, mirror);
 
-    int added_rook = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * int(PieceType::ROOK) + (rook_to ^ flip ^ mirror);
-    int removed_rook = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * int(PieceType::ROOK) + (rook_from ^ flip ^ mirror);
+    int added_rook = compute_feature_index(king_bucket, sideToMove(), color, PieceType::ROOK, rook_to, flip, mirror);
+    int removed_rook = compute_feature_index(king_bucket, sideToMove(), color, PieceType::ROOK, rook_from, flip, mirror);
 
     return ModifiedFeatures({added_king, added_rook}, {removed_king, removed_rook});
 }
