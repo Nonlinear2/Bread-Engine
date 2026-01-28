@@ -175,61 +175,59 @@ ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     assert(move != Move::NO_MOVE);
     assert(legal(move));
 
-    if (move.typeOf() == Move::NORMAL || move.typeOf() == Move::ENPASSANT || move.typeOf() == Move::PROMOTION){
-        int from = move.from().index();
-        int to = move.to().index();
-    
+    if (move.typeOf() == Move::CASTLING){
+        assert(move.typeOf() == Move::CASTLING);
+        assert(at<PieceType>(move.from()) == PieceType::KING);
+        assert(at<PieceType>(move.to()) == PieceType::ROOK);
+
+        const bool king_side = move.to() > move.from();
+
+        int rook_from = move.to().index();
+        int king_from = move.from().index();
+
+        int rook_to    = Square::castling_rook_square(king_side, sideToMove()).index();
+        int king_to    = Square::castling_king_square(king_side, sideToMove()).index();
+
         auto [flip, mirror] = get_flip_and_mirror(color);
         int king_bucket = INPUT_BUCKETS[kingSq(color).index() ^ flip];
-    
-        Piece curr_piece = at(move.from());
-        assert(curr_piece != Piece::NONE);
-    
-        int added;
-        if (move.typeOf() == Move::PROMOTION) {
-            added = compute_feature_index(king_bucket, sideToMove(), color, move.promotionType(), to, flip, mirror);
-        } else {
-            added = compute_feature_index(king_bucket, curr_piece.color(), color, curr_piece.type(), to, flip, mirror);
-        }
 
-        int removed = compute_feature_index(king_bucket, curr_piece.color(), color, curr_piece.type(), from, flip, mirror);
-    
-        int captured = -1;
-        if (move.typeOf() == Move::ENPASSANT) {
-            captured = compute_feature_index(king_bucket, ~sideToMove(), color, PieceType::PAWN, 
-                                            move.to().ep_square().index(), flip, mirror);
-        } else {
-            Piece capt_piece = at(move.to());
-            if (capt_piece != Piece::NONE)
-                captured = compute_feature_index(king_bucket, capt_piece.color(), color, capt_piece.type(), to, flip, mirror);
-        }
+        int added_king = compute_feature_index(king_bucket, sideToMove(), color, PieceType::KING, king_to, flip, mirror);
+        int removed_king = compute_feature_index(king_bucket, sideToMove(), color, PieceType::KING, king_from, flip, mirror);
 
-        return ModifiedFeatures(added, removed, captured);
+        int added_rook = compute_feature_index(king_bucket, sideToMove(), color, PieceType::ROOK, rook_to, flip, mirror);
+        int removed_rook = compute_feature_index(king_bucket, sideToMove(), color, PieceType::ROOK, rook_from, flip, mirror);
+
+        return ModifiedFeatures({added_king, added_rook}, {removed_king, removed_rook});
     }
 
-    assert(move.typeOf() == Move::CASTLING);
-
-    assert(at<PieceType>(move.from()) == PieceType::KING);
-    assert(at<PieceType>(move.to()) == PieceType::ROOK);
-
-    const bool king_side = move.to() > move.from();
-
-    int rook_from = move.to().index();
-    int king_from = move.from().index();
-
-    int rook_to    = Square::castling_rook_square(king_side, sideToMove()).index();
-    int king_to    = Square::castling_king_square(king_side, sideToMove()).index();
+    int from = move.from().index();
+    int to = move.to().index();
 
     auto [flip, mirror] = get_flip_and_mirror(color);
     int king_bucket = INPUT_BUCKETS[kingSq(color).index() ^ flip];
 
-    int added_king = compute_feature_index(king_bucket, sideToMove(), color, PieceType::KING, king_to, flip, mirror);
-    int removed_king = compute_feature_index(king_bucket, sideToMove(), color, PieceType::KING, king_from, flip, mirror);
+    Piece curr_piece = at(move.from());
+    assert(curr_piece != Piece::NONE);
 
-    int added_rook = compute_feature_index(king_bucket, sideToMove(), color, PieceType::ROOK, rook_to, flip, mirror);
-    int removed_rook = compute_feature_index(king_bucket, sideToMove(), color, PieceType::ROOK, rook_from, flip, mirror);
+    int added;
+    if (move.typeOf() == Move::PROMOTION)
+        added = compute_feature_index(king_bucket, sideToMove(), color, move.promotionType(), to, flip, mirror);
+    else
+        added = compute_feature_index(king_bucket, curr_piece.color(), color, curr_piece.type(), to, flip, mirror);
 
-    return ModifiedFeatures({added_king, added_rook}, {removed_king, removed_rook});
+    int removed = compute_feature_index(king_bucket, curr_piece.color(), color, curr_piece.type(), from, flip, mirror);
+
+    int captured = -1;
+    if (move.typeOf() == Move::ENPASSANT) {
+        captured = compute_feature_index(king_bucket, ~sideToMove(), color, PieceType::PAWN, 
+                                        move.to().ep_square().index(), flip, mirror);
+    } else {
+        Piece capt_piece = at(move.to());
+        if (capt_piece != Piece::NONE)
+            captured = compute_feature_index(king_bucket, capt_piece.color(), color, capt_piece.type(), to, flip, mirror);
+    }
+
+    return ModifiedFeatures(added, removed, captured);
 }
 
 bool NnueBoard::is_updatable_move(Move move){
