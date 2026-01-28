@@ -126,14 +126,14 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 
         // white perspective
         active_features_white[idx] = 768 * INPUT_BUCKETS[king_sq_w.index()]
-                                   + 384 * curr_piece.color() 
-                                   + 64 * curr_piece.type() 
-                                   + sq ^ mirror_w;
+                       + 384 * curr_piece.color() 
+                       + 64 * curr_piece.type() 
+                       + (sq ^ mirror_w);
         // black perspective
         active_features_black[idx] = 768 * INPUT_BUCKETS[king_sq_b.index() ^ 56]
-                                   + 384 * !curr_piece.color()
-                                   + 64 * curr_piece.type()
-                                   + sq ^ 56 ^ mirror_b;
+                       + 384 * !curr_piece.color()
+                       + 64 * curr_piece.type()
+                       + (sq ^ 56 ^ mirror_b);
         idx++;
     }
 
@@ -186,14 +186,14 @@ ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     Piece curr_piece = at(move.from());
     assert(curr_piece != Piece::NONE);
 
-    int added = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + to ^ flip ^ mirror;
-    int removed = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + from ^ flip ^ mirror;
+    int added = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + (to ^ flip ^ mirror);
+    int removed = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + (from ^ flip ^ mirror);
 
     int captured = -1;
 
     Piece capt_piece = at(move.to());
     if (capt_piece != Piece::NONE)
-        captured = 768 * king_bucket + 384 * (capt_piece.color() ^ color) + 64 * capt_piece.type() + to ^ flip ^ mirror;
+        captured = 768 * king_bucket + 384 * (capt_piece.color() ^ color) + 64 * capt_piece.type() + (to ^ flip ^ mirror);
 
     return ModifiedFeatures(added, removed, captured);
 }
@@ -261,9 +261,9 @@ void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
         Accumulators& new_accs = stack[i + 1];
 
         // prefetch weight rows for black while processing white
-        if (!queued_updates[i + 1][1].large_difference)
+        if (queued_updates[i + 1][1].valid() && !queued_updates[i + 1][1].large_difference)
             __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].added * ACC_SIZE]);
-        if (!queued_updates[i + 1][1].large_difference)
+        if (queued_updates[i + 1][1].valid() && !queued_updates[i + 1][1].large_difference)
             __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed * ACC_SIZE]);
 
         // white
