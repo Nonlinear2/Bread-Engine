@@ -129,6 +129,7 @@ void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_fea
 
 void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures m_features){
     assert(m_features.valid());
+
     vec_int16 registers[NUM_AVX_REGISTERS];
     constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;
 

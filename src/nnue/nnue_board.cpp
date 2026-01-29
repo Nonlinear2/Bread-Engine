@@ -39,7 +39,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     Accumulators& new_accs = accumulators_stack.push_empty();
 
-
+    
     bool king_move = at(move.from()).type() == PieceType::KING;
 
     const bool crosses_middle =
