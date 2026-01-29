@@ -291,9 +291,9 @@ void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
         Accumulators& new_accs = stack[i + 1];
 
         // prefetch weight rows for black while processing white
-        if (queued_updates[i + 1][1].valid() && !queued_updates[i + 1][1].large_difference)
+        if (!queued_updates[i + 1][1].large_difference)
             __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].added * ACC_SIZE]);
-        if (queued_updates[i + 1][1].valid() && !queued_updates[i + 1][1].large_difference)
+        if (!queued_updates[i + 1][1].large_difference)
             __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed * ACC_SIZE]);
 
         // white
