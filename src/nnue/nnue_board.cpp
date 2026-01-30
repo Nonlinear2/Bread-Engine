@@ -48,7 +48,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     int flip = sideToMove() ? 56 : 0;
 
-    if (move.typeOf() != Move::NORMAL){
+     if (move.typeOf() == Move::CASTLING){
 
         makeMove(move);
         auto features = get_features();
@@ -58,21 +58,18 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     } else if (king_move && (crosses_middle || INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip])){
         Color stm = sideToMove();
-        
-        ModifiedFeatures modified_features = stm == Color::WHITE 
-            ? get_modified_features(move, Color::BLACK)
-            : get_modified_features(move, Color::WHITE);
+
+        ModifiedFeatures modified_features = get_modified_features(move, ~stm);
 
         makeMove(move);
-        
+
+        NNUE::compute_accumulator(new_accs[(int)stm], get_features(stm));
         if (stm == Color::WHITE){
-            NNUE::compute_accumulator(new_accs[(int)Color::WHITE], get_features(stm));
             accumulators_stack.set_top_update(
                 ModifiedFeatures(),
                 modified_features
             );
         } else {
-            NNUE::compute_accumulator(new_accs[(int)Color::BLACK], get_features(stm));
             accumulators_stack.set_top_update(
                 modified_features, 
                 ModifiedFeatures()
@@ -130,14 +127,14 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
 
         // white perspective
         active_features_white[idx] = 768 * INPUT_BUCKETS[king_sq_w.index()]
-                                   + 384 * curr_piece.color() 
-                                   + 64 * curr_piece.type() 
-                                   + sq ^ mirror_w;
+                       + 384 * curr_piece.color() 
+                       + 64 * curr_piece.type() 
+                       + (sq ^ mirror_w);
         // black perspective
         active_features_black[idx] = 768 * INPUT_BUCKETS[king_sq_b.index() ^ 56]
-                                   + 384 * !curr_piece.color()
-                                   + 64 * curr_piece.type()
-                                   + sq ^ 56 ^ mirror_b;
+                       + 384 * !curr_piece.color()
+                       + 64 * curr_piece.type()
+                       + (sq ^ 56 ^ mirror_b);
         idx++;
     }
 
@@ -175,9 +172,12 @@ std::vector<int> NnueBoard::get_features(Color color){
 }
 
 // this function must be called before pushing the move
-// it assumes it it not castling, en passant or a promotion
+// it assumes it it not castling
 ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     assert(move != Move::NO_MOVE);
+    assert(legal(move));
+
+    assert(move.typeOf() != Move::CASTLING);
 
     int from = move.from().index();
     int to = move.to().index();
@@ -187,17 +187,25 @@ ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
 
     int king_bucket = INPUT_BUCKETS[kingSq(color).index() ^ flip];
 
-    Piece curr_piece = at(move.from());
-    assert(curr_piece != Piece::NONE);
+    PieceType piece_type = at<PieceType>(move.from());
+    assert(piece_type != PieceType::NONE);
 
-    int added = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + to ^ flip ^ mirror;
-    int removed = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + from ^ flip ^ mirror;
+    int added = 768 * king_bucket
+          + 384 * (sideToMove() ^ color)
+          + 64 * (move.typeOf() == Move::PROMOTION ? move.promotionType() : piece_type)
+          + (to ^ flip ^ mirror);
 
+    int removed = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * piece_type + (from ^ flip ^ mirror);
     int captured = -1;
 
-    Piece capt_piece = at(move.to());
-    if (capt_piece != Piece::NONE)
-        captured = 768 * king_bucket + 384 * (capt_piece.color() ^ color) + 64 * capt_piece.type() + to ^ flip ^ mirror;
+
+    if (move.typeOf() == Move::ENPASSANT)
+        captured = 768 * king_bucket + 384 * (~sideToMove() ^ color) + 64 * int(PieceType::PAWN) + (move.to().ep_square().index() ^ flip ^ mirror);
+    else {
+        PieceType capt_piece = at<PieceType>(move.to());
+        if (capt_piece != PieceType::NONE)
+            captured = 768 * king_bucket + 384 * (~sideToMove() ^ color) + 64 * capt_piece + (to ^ flip ^ mirror);
+    }
 
     return ModifiedFeatures(added, removed, captured);
 }
