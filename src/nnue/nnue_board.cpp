@@ -76,6 +76,13 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
         accumulators_stack.clear_top_update();
 
+        AllBitboards empty_pos = AllBitboards(); // empty position;
+        Accumulator empty_acc;
+        NNUE::compute_accumulator(empty_acc, {}); // accumulators for an empty position;
+        for (int color = 0; color < 2; color++)
+            for (int j = 0; j < INPUT_BUCKET_COUNT; j++)
+                finny_table[color][j] = std::make_pair(empty_pos, empty_acc);
+
     } else if (king_move && crosses_middle){
         Accumulators& new_accs = accumulators_stack.push_empty();
 
@@ -95,7 +102,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
             for (int j = 0; j < INPUT_BUCKET_COUNT; j++)
                 finny_table[color][j] = std::make_pair(empty_pos, empty_acc);
 
-    } else if (INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip]){
+    } else if (king_move && (INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip])){
         Color stm = sideToMove();
 
         accumulators_stack.apply_lazy_updates();
