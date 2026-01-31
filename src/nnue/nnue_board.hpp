@@ -42,7 +42,6 @@ class NnueBoard: public Board {
         Accumulators& top();
         void clear_top_update();
         void clear_top_update(Color color);
-        void compute_top_update(Move move, Color color);
         void pop();
         void apply_lazy_updates();
 
@@ -50,9 +49,13 @@ class NnueBoard: public Board {
         std::vector<Accumulators> stack = std::vector<Accumulators>(MAX_PLY + 1);
         std::vector<BothModifiedFeatures> queued_updates = std::vector<BothModifiedFeatures>(MAX_PLY + 1);
         int idx;
+        
+        friend class NnueBoard;
     };
 
     AccumulatorsStack accumulators_stack;
+
+    void compute_top_update(Move move, Color color);
 
     bool is_updatable_move(Move move);
 };

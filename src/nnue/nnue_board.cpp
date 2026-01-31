@@ -50,7 +50,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
     if (king_move && (crosses_middle || INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip])){
         Color stm = sideToMove();
 
-        accumulators_stack.compute_top_update(move, ~stm);
+        compute_top_update(move, ~stm);
 
         makeMove(move);
 
@@ -58,8 +58,8 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         accumulators_stack.clear_top_update(stm);
 
     } else {
-        accumulators_stack.compute_top_update(move, Color::WHITE);
-        accumulators_stack.compute_top_update(move, Color::BLACK);
+        compute_top_update(move, Color::WHITE);
+        compute_top_update(move, Color::BLACK);
         makeMove(move);
     }
 
@@ -152,9 +152,11 @@ std::vector<int> NnueBoard::get_features(Color color){
 
 // this function must be called before pushing the move
 // it assumes it it not castling
-void NnueBoard::AccumulatorsStack::compute_top_update(Move move, Color color){
+void NnueBoard::compute_top_update(Move move, Color color){
     assert(move != Move::NO_MOVE);
     assert(legal(move));
+
+    auto& update = accumulators_stack.queued_updates[accumulators_stack.idx][color];
 
     if (move.typeOf() == Move::CASTLING){
         assert(at<PieceType>(move.from()) == PieceType::KING);
@@ -179,16 +181,14 @@ void NnueBoard::AccumulatorsStack::compute_top_update(Move move, Color color){
         int added_rook = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * int(PieceType::ROOK) + (rook_to ^ flip ^ mirror);
         int removed_rook = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * int(PieceType::ROOK) + (rook_from ^ flip ^ mirror);
 
-        queued_updates[idx][color].large_difference = true;
-
-        queued_updates[idx][color].added_count = 2;
-        queued_updates[idx][color].removed_count = 2;
-
-        queued_updates[idx][color].added_vec[0] = added_king;
-        queued_updates[idx][color].added_vec[1] = added_rook;
-
-        queued_updates[idx][color].removed_vec[0] = removed_king;
-        queued_updates[idx][color].removed_vec[1] = removed_rook;
+        update.large_difference = true;
+        update.added_count = 2;
+        update.removed_count = 2;
+        update.added_vec[0] = added_king;
+        update.added_vec[1] = added_rook;
+        update.removed_vec[0] = removed_king;
+        update.removed_vec[1] = removed_rook;
+        return;
     }
 
     assert(move.typeOf() != Move::CASTLING);
@@ -212,7 +212,6 @@ void NnueBoard::AccumulatorsStack::compute_top_update(Move move, Color color){
     int removed = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * piece_type + (from ^ flip ^ mirror);
     int captured = -1;
 
-
     if (move.typeOf() == Move::ENPASSANT)
         captured = 768 * king_bucket + 384 * (~sideToMove() ^ color) + 64 * int(PieceType::PAWN) + (move.to().ep_square().index() ^ flip ^ mirror);
     else {
@@ -221,11 +220,10 @@ void NnueBoard::AccumulatorsStack::compute_top_update(Move move, Color color){
             captured = 768 * king_bucket + 384 * (~sideToMove() ^ color) + 64 * capt_piece + (to ^ flip ^ mirror);
     }
     
-    queued_updates[idx][color].large_difference = false;
-
-    queued_updates[idx][color].added = added;
-    queued_updates[idx][color].removed = removed;
-    queued_updates[idx][color].captured = captured;
+    update.large_difference = false;
+    update.added = added;
+    update.removed = removed;
+    update.captured = captured;
 }
 
 bool NnueBoard::is_updatable_move(Move move){
