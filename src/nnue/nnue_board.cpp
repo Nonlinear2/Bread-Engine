@@ -67,7 +67,16 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     int flip = sideToMove() ? 56 : 0;
 
-    if (king_move && crosses_middle){
+    if (move.typeOf() == Move::CASTLING){
+        Accumulators& new_accs = accumulators_stack.push_empty();
+
+        makeMove(move);
+        auto features = get_features();
+        NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
+        NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+        accumulators_stack.clear_top_update();
+
+    } else if (king_move && crosses_middle){
         Accumulators& new_accs = accumulators_stack.push_empty();
 
         Color stm = sideToMove();
@@ -78,6 +87,13 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
         NNUE::compute_accumulator(new_accs[(int)stm], get_features(stm));
         accumulators_stack.clear_top_update(stm);
+
+        AllBitboards empty_pos = AllBitboards(); // empty position;
+        Accumulator empty_acc;
+        NNUE::compute_accumulator(empty_acc, {}); // accumulators for an empty position;
+        for (int color = 0; color < 2; color++)
+            for (int j = 0; j < INPUT_BUCKET_COUNT; j++)
+                finny_table[color][j] = std::make_pair(empty_pos, empty_acc);
 
     } else if (INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip]){
         Color stm = sideToMove();
@@ -98,7 +114,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
         compute_top_update(stm, kingSq(stm), prev_pos, AllBitboards(*this));
 
-        NNUE::update_accumulator(prev_acc, accumulators_stack.top()[stm], 
+        NNUE::update_accumulator(prev_acc, new_accs[stm], 
             accumulators_stack.queued_updates[accumulators_stack.idx][stm]);
         accumulators_stack.clear_top_update(stm);
 
