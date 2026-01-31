@@ -59,8 +59,6 @@ bool NnueBoard::legal(Move move){
 
 void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
-    Accumulators& new_accs = accumulators_stack.push_empty();
-
     bool king_move = at(move.from()).type() == PieceType::KING;
 
     const bool crosses_middle =
@@ -70,6 +68,8 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
     int flip = sideToMove() ? 56 : 0;
 
     if (king_move && crosses_middle){
+        Accumulators& new_accs = accumulators_stack.push_empty();
+
         Color stm = sideToMove();
 
         compute_top_update(move, ~stm);
@@ -88,6 +88,8 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
             AllBitboards(*this), accumulators_stack.top()[stm]
         );
 
+        Accumulators& new_accs = accumulators_stack.push_empty();
+
         compute_top_update(move, ~stm);
 
         makeMove(move);
@@ -98,8 +100,10 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
         NNUE::update_accumulator(prev_acc, accumulators_stack.top()[stm], 
             accumulators_stack.queued_updates[accumulators_stack.idx][stm]);
-        accumulators_stack.queued_updates[accumulators_stack.idx][stm] = ModifiedFeatures();
+        accumulators_stack.clear_top_update(stm);
+
     } else {
+        Accumulators& new_accs = accumulators_stack.push_empty();
         compute_top_update(move, Color::WHITE);
         compute_top_update(move, Color::BLACK);
         makeMove(move);
