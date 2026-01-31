@@ -275,34 +275,35 @@ void NnueBoard::compute_top_update(Color color, Square king_sq, AllBitboards pre
     int mirror = king_sq.file() >= File::FILE_E ? 7 : 0;
     int flip = color ? 56 : 0;
 
-    for (int color = 0; color < 2; color++){
-        for (int pt = 0; pt < PIECETYPE_COUNT; pt++){
-            Bitboard added = new_pos.bb[color][pt] & (~prev_pos.bb[color][pt]);
-            Bitboard removed = prev_pos.bb[color][pt] & (~new_pos.bb[color][pt]);
+    int added_idx = 0;
+    int removed_idx = 0;
 
-            int idx = 0;
+    for (int pc = 0; pc < 2; pc++){
+        for (int pt = 0; pt < PIECETYPE_COUNT; pt++){
+            Bitboard added = new_pos.bb[pc][pt] & (~prev_pos.bb[pc][pt]);
+            Bitboard removed = prev_pos.bb[pc][pt] & (~new_pos.bb[pc][pt]);
+
             while (added){
                 int sq = added.pop();
-                update.added_vec[idx] = 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
-                                        + 384 * (color ^ color)
+                update.added_vec[added_idx] = 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
+                                        + 384 * (pc ^ color)
                                         + 64 * pt
                                         + (sq ^ flip ^ mirror);
-                idx++;
+                added_idx++;
             }
-            update.added_count = idx;
 
-            idx = 0;
             while (removed){
                 int sq = removed.pop();
-                update.removed_vec[idx] = 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
-                                        + 384 * (color ^ color)
+                update.removed_vec[removed_idx] = 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
+                                        + 384 * (pc ^ color)
                                         + 64 * pt
                                         + (sq ^ flip ^ mirror);
-                idx++;
+                removed_idx++;
             }
-            update.removed_count = idx;
         }
     }
+    update.added_count = added_idx;
+    update.removed_count = removed_idx;
     return;
 }
 
