@@ -43,7 +43,7 @@ extern "C" {
 
 bool ModifiedFeatures::valid() const {
     if (large_difference)
-        return !added_vec.empty() || !removed_vec.empty();
+        return added_count > 0 || removed_count > 0;
     else
         return added != -1 && removed != -1;
 }
@@ -142,7 +142,8 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
                 registers[i] = load_epi16(&prev_acc[j + i*INT16_PER_REG]); 
             }
 
-            for (const int &a: m_features.added_vec){
+            for (int idx = 0; idx < m_features.added_count; ++idx){
+                int a = m_features.added_buffer[idx];
                 for (int i = 0; i < NUM_AVX_REGISTERS; i++){
                     // a*acc size is the index of the a-th row. We then accumulate the weights.
                     registers[i] = add_epi16(
@@ -152,9 +153,10 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
                 }
             }
 
-            for (const int &r: m_features.removed_vec){
+            for (int idx = 0; idx < m_features.removed_count; ++idx){
+                int r = m_features.removed_buffer[idx];
                 for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                    // a*acc size is the index of the a-th row. We then accumulate the weights.
+                    // r*acc size is the index of the r-th row. We then accumulate the weights.
                     registers[i] = sub_epi16(
                         registers[i],
                         load_epi16(&ft_weights[r*ACC_SIZE + j + i*INT16_PER_REG])

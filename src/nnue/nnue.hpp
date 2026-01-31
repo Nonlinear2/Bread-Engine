@@ -15,19 +15,17 @@
 using namespace chess;
 
 struct ModifiedFeatures {
-    int added;
-    int removed;
-    int captured;
-
+    int added = -1;
+    int removed = -1;
+    int captured = -1;
+    
     bool large_difference;
-    std::vector<int> added_vec;
-    std::vector<int> removed_vec;
+    std::array<int, 32> added_buffer = {};
+    std::array<int, 32> removed_buffer = {};
+    uint8_t added_count = 0;
+    uint8_t removed_count = 0;
 
-    ModifiedFeatures():
-        large_difference(false),
-        added(-1),
-        removed(-1),
-        captured(-1) {};
+    ModifiedFeatures() = default;
 
     ModifiedFeatures(int added, int removed, int captured):
         large_difference(false),
@@ -35,10 +33,13 @@ struct ModifiedFeatures {
         removed(removed),
         captured(captured) {};
 
-    ModifiedFeatures(std::vector<int> added, std::vector<int> removed):
-        large_difference(true),
-        added_vec(added),
-        removed_vec(removed) {};
+    ModifiedFeatures(const int* added, uint8_t added_count, const int* removed, uint8_t removed_count)
+        : large_difference(true), added_count(added_count), removed_count(removed_count) {
+        for (int i = 0; i < added_count; i++)
+            added_buffer[i] = added[i];
+        for (int i = 0; i < removed_count; i++)
+            removed_buffer[i] = removed[i];
+    }
 
     bool valid() const;
 };
