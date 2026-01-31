@@ -163,7 +163,7 @@ std::vector<int> NnueBoard::get_features(Color color){
 }
 
 // this function must be called before pushing the move
-// it assumes it it not castling or a promotion
+// it assumes it it not castling
 ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
     assert(move != Move::NO_MOVE);
     assert(legal(move));
@@ -204,25 +204,24 @@ ModifiedFeatures NnueBoard::get_modified_features(Move move, Color color){
 
     int king_bucket = INPUT_BUCKETS[kingSq(color).index() ^ flip];
 
-    Piece curr_piece = at(move.from());
-    assert(curr_piece != Piece::NONE);
+    PieceType piece_type = at<PieceType>(move.from());
+    assert(piece_type != PieceType::NONE);
 
-    int added = -1;
+    int added = 768 * king_bucket
+          + 384 * (sideToMove() ^ color)
+          + 64 * (move.typeOf() == Move::PROMOTION ? move.promotionType() : piece_type)
+          + (to ^ flip ^ mirror);
+
+    int removed = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * piece_type + (from ^ flip ^ mirror);
     int captured = -1;
 
-    if (move.typeOf() == Move::PROMOTION)
-        added = 768 * king_bucket + 384 * (sideToMove() ^ color) + 64 * move.promotionType() + (to ^ flip ^ mirror);
-    else
-        added = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + (to ^ flip ^ mirror);
 
-    int removed = 768 * king_bucket + 384 * (curr_piece.color() ^ color) + 64 * curr_piece.type() + (from ^ flip ^ mirror);
-
-    if (move.typeOf() == Move::ENPASSANT){
+    if (move.typeOf() == Move::ENPASSANT)
         captured = 768 * king_bucket + 384 * (~sideToMove() ^ color) + 64 * int(PieceType::PAWN) + (move.to().ep_square().index() ^ flip ^ mirror);
-    } else {
-        Piece capt_piece = at(move.to());
-        if (capt_piece != Piece::NONE)
-            captured = 768 * king_bucket + 384 * (capt_piece.color() ^ color) + 64 * capt_piece.type() + (to ^ flip ^ mirror);
+    else {
+        PieceType capt_piece = at<PieceType>(move.to());
+        if (capt_piece != PieceType::NONE)
+            captured = 768 * king_bucket + 384 * (~sideToMove() ^ color) + 64 * capt_piece + (to ^ flip ^ mirror);
     }
 
     return ModifiedFeatures(added, removed, captured);
