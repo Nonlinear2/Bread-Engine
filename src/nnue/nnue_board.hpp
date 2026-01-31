@@ -41,7 +41,8 @@ class NnueBoard: public Board {
         Accumulators& push_empty();
         Accumulators& top();
         void clear_top_update();
-        void set_top_update(ModifiedFeatures modified_white, ModifiedFeatures modified_black);
+        void clear_top_update(Color color);
+        void compute_top_update(Move move, Color color);
         void pop();
         void apply_lazy_updates();
 
@@ -52,8 +53,6 @@ class NnueBoard: public Board {
     };
 
     AccumulatorsStack accumulators_stack;
-
-    ModifiedFeatures get_modified_features(Move move, Color color);
 
     bool is_updatable_move(Move move);
 };

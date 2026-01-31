@@ -143,7 +143,7 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
             }
 
             for (int idx = 0; idx < m_features.added_count; ++idx){
-                int a = m_features.added_buffer[idx];
+                int a = m_features.added_vec[idx];
                 for (int i = 0; i < NUM_AVX_REGISTERS; i++){
                     // a*acc size is the index of the a-th row. We then accumulate the weights.
                     registers[i] = add_epi16(
@@ -154,7 +154,7 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
             }
 
             for (int idx = 0; idx < m_features.removed_count; ++idx){
-                int r = m_features.removed_buffer[idx];
+                int r = m_features.removed_vec[idx];
                 for (int i = 0; i < NUM_AVX_REGISTERS; i++){
                     // r*acc size is the index of the r-th row. We then accumulate the weights.
                     registers[i] = sub_epi16(
