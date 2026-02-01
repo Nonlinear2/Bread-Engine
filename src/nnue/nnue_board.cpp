@@ -279,7 +279,7 @@ void NnueBoard::compute_top_update(Move move, Color color){
         if (capt_piece != PieceType::NONE)
             captured = 768 * king_bucket + 384 * (~sideToMove() ^ color) + 64 * capt_piece + (to ^ flip ^ mirror);
     }
-    
+
     update.large_difference = false;
     update.added = added;
     update.removed = removed;
@@ -289,9 +289,6 @@ void NnueBoard::compute_top_update(Move move, Color color){
 void NnueBoard::compute_top_update(Color color, int mirror, int bucket, AllBitboards prev_pos, AllBitboards new_pos){
     auto& update = accumulators_stack.queued_updates[accumulators_stack.idx][color];
     update.large_difference = true;
-
-    Square old_king_sq = Square(prev_pos.bb[int(PieceType::underlying::KING)][color].lsb());
-    Square new_king_sq = Square(new_pos.bb[int(PieceType::underlying::KING)][color].lsb());
 
     int flip = color ? 56 : 0;
 
