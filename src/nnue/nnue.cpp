@@ -99,7 +99,7 @@ void cleanup(){
     operator delete[](l1_bias, std::align_val_t(32));
 };
 
-void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features){
+void compute_accumulator(Accumulator& new_acc, const Features active_features){
     vec_int16 registers[NUM_AVX_REGISTERS];
 
     constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS*INT16_PER_REG;
