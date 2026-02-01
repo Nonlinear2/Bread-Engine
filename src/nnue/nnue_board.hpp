@@ -40,6 +40,7 @@ class NnueBoard: public Board {
         AccumulatorsStack();
         Accumulators& push_empty();
         Accumulators& top();
+        BothModifiedFeatures& top_update();
         void clear_top_update();
         void clear_top_update(Color color);
         void pop();

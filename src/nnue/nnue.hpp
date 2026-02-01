@@ -18,28 +18,20 @@ struct ModifiedFeatures {
     int added = -1;
     int removed = -1;
     int captured = -1;
-
-    bool large_difference;
-    std::array<int, 32> added_vec = {};
-    std::array<int, 32> removed_vec = {};
-    uint8_t added_count = 0;
-    uint8_t removed_count = 0;
+    int added_2 = -1;
 
     ModifiedFeatures() = default;
 
     ModifiedFeatures(int added, int removed, int captured):
-        large_difference(false),
         added(added),
         removed(removed),
         captured(captured) {};
 
-    ModifiedFeatures(const int* added, uint8_t added_count, const int* removed, uint8_t removed_count)
-        : large_difference(true), added_count(added_count), removed_count(removed_count) {
-        for (int i = 0; i < added_count; i++)
-            added_vec[i] = added[i];
-        for (int i = 0; i < removed_count; i++)
-            removed_vec[i] = removed[i];
-    }
+    ModifiedFeatures(int added, int added_2, int removed, int removed_2):
+        added(added),
+        added_2(added_2),
+        removed(removed),
+        captured(removed_2) {};
 
     bool valid() const;
 };
