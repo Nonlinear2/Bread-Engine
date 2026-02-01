@@ -16,9 +16,9 @@ using namespace chess;
 
 struct ModifiedFeatures {
     int added = -1;
+    int added_2 = -1;
     int removed = -1;
     int captured = -1;
-    int added_2 = -1;
 
     ModifiedFeatures() = default;
 
