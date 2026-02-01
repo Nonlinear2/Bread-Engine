@@ -66,10 +66,11 @@ class NnueBoard: public Board {
 
     AccumulatorsStack accumulators_stack;
 
-    std::array<std::array<std::pair<AllBitboards, Accumulator>, INPUT_BUCKET_COUNT>, 2> finny_table;
+    // accessed by [bucket][stm][mirrored]
+    std::array<std::array<std::array<std::pair<AllBitboards, Accumulator>, 2>, 2>, INPUT_BUCKET_COUNT> finny_table;
 
     void compute_top_update(Move move, Color color);
-    void compute_top_update(Color stm, Square king_sq, AllBitboards prev_pos, AllBitboards new_pos);
+    void compute_top_update(Color stm, int mirror, int bucket, AllBitboards prev_pos, AllBitboards new_pos);
 
     bool is_updatable_move(Move move);
 };

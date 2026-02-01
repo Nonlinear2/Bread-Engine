@@ -41,9 +41,10 @@ void NnueBoard::synchronize(){
     AllBitboards empty_pos = AllBitboards(); // empty position;
     Accumulator empty_acc;
     NNUE::compute_accumulator(empty_acc, {}); // accumulators for an empty position;
-    for (int color = 0; color < 2; color++)
-        for (int j = 0; j < INPUT_BUCKET_COUNT; j++)
-            finny_table[color][j] = std::make_pair(empty_pos, empty_acc);
+    for (int bucket = 0; bucket < INPUT_BUCKET_COUNT; bucket++)
+        for (int color = 0; color < 2; color++)
+            for (int mirrored = 0; mirrored < 2; mirrored++)
+                finny_table[bucket][color][mirrored] = std::make_pair(empty_pos, empty_acc);
 }
 
 bool NnueBoard::legal(Move move){
@@ -61,9 +62,10 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     bool king_move = at(move.from()).type() == PieceType::KING;
 
-    const bool crosses_middle =
-        (move.from().file() == File::FILE_D && move.to().file() == File::FILE_E) ||
-        (move.from().file() == File::FILE_E && move.to().file() == File::FILE_D);
+    const bool queen_side_castle = move.typeOf() == Move::CASTLING && move.to() < move.from();
+    const bool crosses_middle = king_move &&
+        ((move.from().file() < File::FILE_E) != (move.to().file() < File::FILE_E)
+        || queen_side_castle);
 
     int flip = sideToMove() ? 56 : 0;
 
@@ -79,9 +81,10 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         AllBitboards empty_pos = AllBitboards(); // empty position;
         Accumulator empty_acc;
         NNUE::compute_accumulator(empty_acc, {}); // accumulators for an empty position;
-        for (int color = 0; color < 2; color++)
-            for (int j = 0; j < INPUT_BUCKET_COUNT; j++)
-                finny_table[color][j] = std::make_pair(empty_pos, empty_acc);
+        for (int bucket = 0; bucket < INPUT_BUCKET_COUNT; bucket++)
+            for (int color = 0; color < 2; color++)
+                for (int mirrored = 0; mirrored < 2; mirrored++)
+                    finny_table[bucket][color][mirrored] = std::make_pair(empty_pos, empty_acc);
 
     } else if (king_move && crosses_middle){
         Accumulators& new_accs = accumulators_stack.push_empty();
@@ -98,16 +101,19 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         AllBitboards empty_pos = AllBitboards(); // empty position;
         Accumulator empty_acc;
         NNUE::compute_accumulator(empty_acc, {}); // accumulators for an empty position;
-        for (int color = 0; color < 2; color++)
-            for (int j = 0; j < INPUT_BUCKET_COUNT; j++)
-                finny_table[color][j] = std::make_pair(empty_pos, empty_acc);
+        for (int bucket = 0; bucket < INPUT_BUCKET_COUNT; bucket++)
+            for (int color = 0; color < 2; color++)
+                for (int mirrored = 0; mirrored < 2; mirrored++)
+                    finny_table[bucket][color][mirrored] = std::make_pair(empty_pos, empty_acc);
 
     } else if (king_move && (INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip])){
         Color stm = sideToMove();
 
         accumulators_stack.apply_lazy_updates();
 
-        finny_table[stm][INPUT_BUCKETS[move.from().index() ^ flip]] = std::make_pair(
+        bool mirrored = kingSq(stm).file() >= File::FILE_E;
+
+        finny_table[INPUT_BUCKETS[move.from().index() ^ flip]][stm][mirrored] = std::make_pair(
             AllBitboards(*this), accumulators_stack.top()[stm]
         );
 
@@ -116,10 +122,12 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         compute_top_update(move, ~stm);
 
         makeMove(move);
+        int bucket = INPUT_BUCKETS[kingSq(stm).index() ^ flip];
+        mirrored = kingSq(stm).file() >= File::FILE_E;
 
-        auto [prev_pos, prev_acc] = finny_table[stm][INPUT_BUCKETS[move.to().index() ^ flip]];
+        auto [prev_pos, prev_acc] = finny_table[bucket][stm][mirrored];
 
-        compute_top_update(stm, kingSq(stm), prev_pos, AllBitboards(*this));
+        compute_top_update(stm, mirrored ? 7 : 0, bucket, prev_pos, AllBitboards(*this));
 
         NNUE::update_accumulator(prev_acc, new_accs[stm], 
             accumulators_stack.queued_updates[accumulators_stack.idx][stm]);
@@ -294,12 +302,13 @@ void NnueBoard::compute_top_update(Move move, Color color){
     update.captured = captured;
 }
 
-void NnueBoard::compute_top_update(Color color, Square king_sq, AllBitboards prev_pos, AllBitboards new_pos){
-
+void NnueBoard::compute_top_update(Color color, int mirror, int bucket, AllBitboards prev_pos, AllBitboards new_pos){
     auto& update = accumulators_stack.queued_updates[accumulators_stack.idx][color];
     update.large_difference = true;
 
-    int mirror = king_sq.file() >= File::FILE_E ? 7 : 0;
+    Square old_king_sq = Square(prev_pos.bb[int(PieceType::underlying::KING)][color].lsb());
+    Square new_king_sq = Square(new_pos.bb[int(PieceType::underlying::KING)][color].lsb());
+
     int flip = color ? 56 : 0;
 
     int added_idx = 0;
@@ -312,7 +321,7 @@ void NnueBoard::compute_top_update(Color color, Square king_sq, AllBitboards pre
 
             while (added){
                 int sq = added.pop();
-                update.added_vec[added_idx] = 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
+                update.added_vec[added_idx] = 768 * bucket
                                         + 384 * (pc ^ color)
                                         + 64 * pt
                                         + (sq ^ flip ^ mirror);
@@ -321,7 +330,7 @@ void NnueBoard::compute_top_update(Color color, Square king_sq, AllBitboards pre
 
             while (removed){
                 int sq = removed.pop();
-                update.removed_vec[removed_idx] = 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
+                update.removed_vec[removed_idx] = 768 * bucket
                                         + 384 * (pc ^ color)
                                         + 64 * pt
                                         + (sq ^ flip ^ mirror);
