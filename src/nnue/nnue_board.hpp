@@ -71,7 +71,7 @@ class NnueBoard: public Board {
     std::array<std::array<std::array<std::pair<AllBitboards, Accumulator>, 2>, 2>, INPUT_BUCKET_COUNT> finny_table;
 
     void compute_top_update(Move move, Color color);
-    std::pair<std::vector<int>, std::vector<int>> get_modified_features(
+    std::pair<Features,Features> get_modified_features(
         Color stm, int mirror, int bucket, AllBitboards prev_pos, AllBitboards new_pos);
 
     bool is_updatable_move(Move move);

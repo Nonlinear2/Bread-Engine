@@ -70,6 +70,8 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
     int flip = sideToMove() ? 56 : 0;
 
     if (king_move && crosses_middle){
+        Accumulators& new_accs = accumulators_stack.push_empty();
+
         Color stm = sideToMove();
 
         compute_top_update(move, ~stm);
@@ -264,13 +266,16 @@ void NnueBoard::compute_top_update(Move move, Color color){
     return;
 }
 
-std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_modified_features(
+std::pair<Features, Features> NnueBoard::get_modified_features(
     Color color, int mirror, int bucket, AllBitboards prev_pos, AllBitboards new_pos){
 
     int flip = color ? 56 : 0;
 
-    std::vector<int> added_features = std::vector<int>();
-    std::vector<int> removed_features = std::vector<int>();
+    Features added_features;
+    Features removed_features;
+
+    int added_idx = 0;
+    int removed_idx = 0;
 
     for (int pc = 0; pc < 2; pc++){
         for (int pt = 0; pt < PIECETYPE_COUNT; pt++){
@@ -279,21 +284,26 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_modified_features(
 
             while (added){
                 int sq = added.pop();
-                added_features.push_back(768 * bucket
+                added_features[added_idx] = 768 * bucket
                                         + 384 * (pc ^ color)
                                         + 64 * pt
-                                        + (sq ^ flip ^ mirror));
+                                        + (sq ^ flip ^ mirror);
+                added_idx++;
             }
 
             while (removed){
                 int sq = removed.pop();
-                removed_features.push_back(768 * bucket
+                removed_features[removed_idx] = 768 * bucket
                                         + 384 * (pc ^ color)
                                         + 64 * pt
-                                        + (sq ^ flip ^ mirror));
+                                        + (sq ^ flip ^ mirror);
+                removed_idx++;
             }
         }
     }
+    added_features.size = added_idx;
+    removed_features.size = removed_idx;
+
     return std::make_pair(added_features, removed_features);
 }
 

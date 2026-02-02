@@ -218,8 +218,8 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
 }
 
 void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
-        const std::vector<int>& added_features,
-        const std::vector<int>& removed_features){
+        const Features& added_features,
+        const Features& removed_features){
 
     assert(m_features.valid());
     vec_int16 registers[NUM_AVX_REGISTERS];
