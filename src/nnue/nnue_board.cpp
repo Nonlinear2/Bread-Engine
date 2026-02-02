@@ -72,21 +72,13 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
     if (king_move && (crosses_middle || (INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip]))){
         Color stm = sideToMove();
 
-        accumulators_stack.apply_lazy_updates();
-
-        bool mirrored = kingSq(stm).file() >= File::FILE_E;
-
-        finny_table[INPUT_BUCKETS[move.from().index() ^ flip]][stm][mirrored] = std::make_pair(
-            AllBitboards(*this), accumulators_stack.top()[stm]
-        );
-
         Accumulators& new_accs = accumulators_stack.push_empty();
 
         compute_top_update(move, ~stm);
 
         makeMove(move);
         int bucket = INPUT_BUCKETS[kingSq(stm).index() ^ flip];
-        mirrored = kingSq(stm).file() >= File::FILE_E;
+        int mirrored = kingSq(stm).file() >= File::FILE_E;
 
         auto [prev_pos, prev_acc] = finny_table[bucket][stm][mirrored];
 
@@ -94,6 +86,10 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
         NNUE::update_accumulator(prev_acc, new_accs[stm], modified.first, modified.second);
         accumulators_stack.clear_top_update(stm);
+
+        finny_table[bucket][stm][mirrored] = std::make_pair(
+            AllBitboards(*this), accumulators_stack.top()[stm]
+        );
 
     } else {
         Accumulators& new_accs = accumulators_stack.push_empty();
