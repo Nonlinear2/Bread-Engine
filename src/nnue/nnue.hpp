@@ -33,19 +33,23 @@ struct Features {
 };
 
 struct ModifiedFeatures {
-    int added;
-    int removed;
-    int captured;
+    int added = -1;
+    int added_2 = -1;
+    int removed = -1;
+    int captured = -1;
 
-    ModifiedFeatures():
-        added(-1),
-        removed(-1),
-        captured(-1) {};
+    ModifiedFeatures() = default;
 
     ModifiedFeatures(int added, int removed, int captured):
         added(added),
         removed(removed),
         captured(captured) {};
+
+    ModifiedFeatures(int added, int added_2, int removed, int removed_2):
+        added(added),
+        added_2(added_2),
+        removed(removed),
+        captured(removed_2) {};
 
     bool valid() const;
 };
@@ -81,7 +85,7 @@ void load_model();
 
 void compute_accumulator(Accumulator& new_acc, const Features active_features);
 
-void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures m_features);
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures& m_features);
 
 int run(Accumulators& accumulators, Color stm, int piece_count);
 
