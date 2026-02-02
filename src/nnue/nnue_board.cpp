@@ -69,19 +69,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     int flip = sideToMove() ? 56 : 0;
 
-    if (king_move && crosses_middle){
-        Accumulators& new_accs = accumulators_stack.push_empty();
-
-        Color stm = sideToMove();
-
-        compute_top_update(move, ~stm);
-
-        makeMove(move);
-
-        NNUE::compute_accumulator(new_accs[(int)stm], get_features(stm));
-        accumulators_stack.clear_top_update(stm);
-
-    } else if (king_move && (INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip])){
+    if (king_move && (crosses_middle || (INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip]))){
         Color stm = sideToMove();
 
         accumulators_stack.apply_lazy_updates();
