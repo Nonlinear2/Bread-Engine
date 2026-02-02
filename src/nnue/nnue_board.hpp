@@ -72,7 +72,7 @@ class NnueBoard: public Board {
 
     void compute_top_update(Move move, Color color);
     std::pair<Features,Features> get_modified_features(
-        Color stm, int mirror, int bucket, AllBitboards prev_pos, AllBitboards new_pos);
+        Color stm, int mirror, int bucket, AllBitboards prev_pos, const NnueBoard& new_pos);
 
     bool is_updatable_move(Move move);
 };

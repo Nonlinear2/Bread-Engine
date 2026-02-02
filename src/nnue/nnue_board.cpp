@@ -82,7 +82,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
         auto [prev_pos, prev_acc] = finny_table[bucket][stm][mirrored];
 
-        auto modified = get_modified_features(stm, mirrored ? 7 : 0, bucket, prev_pos, AllBitboards(*this));
+        auto modified = get_modified_features(stm, mirrored ? 7 : 0, bucket, prev_pos, *this);
 
         NNUE::update_accumulator(prev_acc, new_accs[stm], modified.first, modified.second);
         accumulators_stack.clear_top_update(stm);
@@ -251,7 +251,7 @@ void NnueBoard::compute_top_update(Move move, Color color){
 }
 
 std::pair<Features, Features> NnueBoard::get_modified_features(
-    Color color, int mirror, int bucket, AllBitboards prev_pos, AllBitboards new_pos){
+    Color color, int mirror, int bucket, AllBitboards prev_pos, const NnueBoard& new_pos){
 
     int flip = color ? 56 : 0;
 
@@ -263,8 +263,12 @@ std::pair<Features, Features> NnueBoard::get_modified_features(
 
     for (int pc = 0; pc < 2; pc++){
         for (int pt = 0; pt < PIECETYPE_COUNT; pt++){
-            Bitboard added = new_pos.bb[pc][pt] & (~prev_pos.bb[pc][pt]);
-            Bitboard removed = prev_pos.bb[pc][pt] & (~new_pos.bb[pc][pt]);
+            Bitboard new_bb = new_pos.pieces(
+                PieceType(static_cast<PieceType::underlying>(pt)),
+                static_cast<Color>(pc)
+            );
+            Bitboard added = new_bb & (~prev_pos.bb[pc][pt]);
+            Bitboard removed = prev_pos.bb[pc][pt] & (~new_bb);
 
             while (added){
                 int sq = added.pop();
