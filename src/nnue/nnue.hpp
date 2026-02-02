@@ -14,6 +14,24 @@
 
 using namespace chess;
 
+struct Features {
+    int size;
+    int features[32];
+
+    Features() = default;
+    Features(int size): size(size) {}
+
+    int* begin() { return features; }
+    int* end() { return features + size; }
+
+    const int* begin() const { return features; }
+    const int* end() const { return features + size; }
+
+    int& operator[](int index){
+        return features[index];
+    }
+};
+
 struct ModifiedFeatures {
     int added = -1;
     int added_2 = -1;
@@ -65,7 +83,7 @@ void cleanup();
 
 void load_model();
 
-void compute_accumulator(Accumulator& new_acc, const std::vector<int>& active_features);
+void compute_accumulator(Accumulator& new_acc, const Features active_features);
 
 void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures& m_features);
 void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,

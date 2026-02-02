@@ -69,18 +69,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     int flip = sideToMove() ? 56 : 0;
 
-    if (move.typeOf() == Move::CASTLING){
-        Accumulators& new_accs = accumulators_stack.push_empty();
-
-        makeMove(move);
-        auto features = get_features();
-        NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
-        NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
-        accumulators_stack.clear_top_update();
-
-    } else if (king_move && crosses_middle){
-        Accumulators& new_accs = accumulators_stack.push_empty();
-
+    if (king_move && crosses_middle){
         Color stm = sideToMove();
 
         compute_top_update(move, ~stm);
@@ -144,11 +133,11 @@ bool NnueBoard::is_stalemate(){
     return movelist.empty();
 }
 
-std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
+std::pair<Features, Features> NnueBoard::get_features(){
     Bitboard occupied = occ();
 
-    std::vector<int> active_features_white = std::vector<int>(occupied.count());
-    std::vector<int> active_features_black = std::vector<int>(occupied.count());
+    Features active_features_white = Features(occupied.count());
+    Features active_features_black = Features(occupied.count());
 
     Piece curr_piece;
 
@@ -180,10 +169,10 @@ std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
     return std::make_pair(active_features_white, active_features_black);
 }
 
-std::vector<int> NnueBoard::get_features(Color color){
+Features NnueBoard::get_features(Color color){
     Bitboard occupied = occ();
 
-    std::vector<int> active_features = std::vector<int>(occupied.count());
+    Features active_features = Features(occupied.count());
 
     Piece curr_piece;
 
