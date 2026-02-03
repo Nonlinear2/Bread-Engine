@@ -12,23 +12,12 @@ bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true
     int balance = 0;
     int value_on_square = 0;
 
-    Bitboard queens = board.pieces(PieceType::QUEEN);
-    Bitboard bishops_and_queens = board.pieces(PieceType::BISHOP) | queens;
-    Bitboard rooks_and_queens = board.pieces(PieceType::ROOK) | queens;
-
-    std::array<Bitboard, 2> attackers = {
-        attacks::attackers(board, ~attacker_color, to_sq),
-        attacks::attackers(board, attacker_color, to_sq)
-    };
-    
     Bitboard occupied = board.occ().clear(from_sq.index());
 
     switch (move.typeOf()){
         case Move::ENPASSANT:
             value_on_square = piece_value[static_cast<int>(PieceType::PAWN)];
             occupied.clear(to_sq.ep_square().index());
-            // update attacks
-            attackers[attacker_turn] |= attacks::rook(to_sq, occupied) & rooks_and_queens;
             break;
         case Move::PROMOTION:
             next_piece = move.promotionType();
@@ -39,6 +28,23 @@ bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true
     }
     if (board.at(to_sq) != Piece::NONE)
         value_on_square = piece_value[static_cast<int>(board.at(to_sq).type())];
+
+
+    if (value_on_square < threshold)
+        return false;
+
+    Bitboard queens = board.pieces(PieceType::QUEEN);
+    Bitboard bishops_and_queens = board.pieces(PieceType::BISHOP) | queens;
+    Bitboard rooks_and_queens = board.pieces(PieceType::ROOK) | queens;
+
+    std::array<Bitboard, 2> attackers = {
+        attacks::attackers(board, ~attacker_color, to_sq),
+        attacks::attackers(board, attacker_color, to_sq)
+    };
+
+    if (move.typeOf() == Move::ENPASSANT)
+            // update attacks
+            attackers[attacker_turn] |= attacks::rook(to_sq, occupied) & rooks_and_queens;
 
     do {
         // make capture
