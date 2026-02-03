@@ -62,16 +62,12 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     bool king_move = at(move.from()).type() == PieceType::KING;
 
-    const bool queen_side_castle = move.typeOf() == Move::CASTLING && move.to() < move.from();
     const bool crosses_middle = king_move &&
-        ((move.from().file() < File::FILE_E) != (move.to().file() < File::FILE_E)
-        || queen_side_castle);
+        ((move.from().file() < File::FILE_E) != (move.to().file() < File::FILE_E));
 
-    int flip = sideToMove() ? 56 : 0;
-    // const bool bucket_change = NNUE::input_bucket(move.from(), sideToMove()) != NNUE::input_bucket(move.to(), sideToMove());
-    const bool bucket_change = INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip];
+    const bool bucket_change = NNUE::input_bucket(move.from(), sideToMove()) != NNUE::input_bucket(move.to(), sideToMove());
 
-    if (king_move && (crosses_middle || bucket_change)){
+    if (king_move && (move.typeOf() == Move::CASTLING || crosses_middle || bucket_change)){
         Color stm = sideToMove();
 
         Accumulators& new_accs = accumulators_stack.push_empty();
@@ -79,8 +75,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         compute_top_update(move, ~stm);
 
         makeMove(move);
-        int bucket = INPUT_BUCKETS[kingSq(stm).index() ^ flip];
-        // int bucket = NNUE::input_bucket(kingSq(stm), stm);
+        int bucket = NNUE::input_bucket(kingSq(stm), stm);
         int mirrored = kingSq(stm).file() >= File::FILE_E;
 
         auto [prev_pos, prev_acc] = finny_table[bucket][stm][mirrored];
