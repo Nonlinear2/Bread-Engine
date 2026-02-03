@@ -51,6 +51,30 @@ NNUE implementation
 
 namespace NNUE {
 
+int input_bucket(Square sq, Color color){
+    return INPUT_BUCKETS[sq.index() ^ (color ? 56 : 0)];
+}
+
+int feature(Color persp, Color c, PieceType pt, Square sq, Square king_sq){
+    int flip = persp ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4
+    int mirror = king_sq.file() >= File::FILE_E ? 7 : 0; // mirror horizontally by flipping last 3 bits
+
+    return 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
+         + 384 * (c ^ persp)
+         + 64 * pt
+         + (sq.index() ^ flip ^ mirror);
+}
+
+int feature(Color persp, Piece p, Square sq, Square king_sq){
+    int flip = persp ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4
+    int mirror = king_sq.file() >= File::FILE_E ? 7 : 0; // mirror horizontally by flipping last 3 bits
+
+    return 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
+         + 384 * (p.color() ^ persp)
+         + 64 * p.type()
+         + (sq.index() ^ flip ^ mirror);
+}
+
 int16_t* ft_weights = nullptr;
 int16_t* ft_bias    = nullptr;
 

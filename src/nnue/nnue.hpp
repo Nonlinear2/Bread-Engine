@@ -56,6 +56,10 @@ struct ModifiedFeatures {
 
 namespace NNUE {
 
+int input_bucket(Square sq, Color color);
+int feature(Color persp, Color c, PieceType pt, Square sq, Square king_sq);
+int feature(Color persp, Piece p, Square sq, Square king_sq);
+
 /*****************
 Feature transformer
 ******************/
