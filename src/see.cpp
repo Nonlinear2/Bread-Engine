@@ -16,10 +16,11 @@ bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true
     Bitboard bishops_and_queens = board.pieces(PieceType::BISHOP) | queens;
     Bitboard rooks_and_queens = board.pieces(PieceType::ROOK) | queens;
 
-    std::array<Bitboard, 2> attackers;
-    attackers[0] = constants::DEFAULT_CHECKMASK; // defer opponent attackers computation with unreachable sentinel
-    attackers[1] = attacks::attackers(board, attacker_color, to_sq);
-
+    std::array<Bitboard, 2> attackers = {
+        attacks::attackers(board, ~attacker_color, to_sq),
+        attacks::attackers(board, attacker_color, to_sq)
+    };
+    
     Bitboard occupied = board.occ().clear(from_sq.index());
 
     switch (move.typeOf()){
@@ -61,10 +62,6 @@ bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true
             return true;
         if (!attacker_turn && balance < threshold)
             return false;
-        
-        if (attacker_turn == false && attackers[0] == constants::DEFAULT_CHECKMASK)
-            attackers[0] = attacks::attackers(board, ~attacker_color, to_sq);
-
         // prepare next piece
         next_piece = pop_lva(
             board,
