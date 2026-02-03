@@ -13,15 +13,29 @@ bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true
     int value_on_square = 0;
 
     Bitboard queens = board.pieces(PieceType::QUEEN);
-    Bitboard bishops_and_queens = board.pieces(PieceType::BISHOP) | queens;
-    Bitboard rooks_and_queens = board.pieces(PieceType::ROOK) | queens;
+    Bitboard bishops = board.pieces(PieceType::BISHOP);
+    Bitboard rooks = board.pieces(PieceType::ROOK);
+    Bitboard bishops_and_queens = bishops | queens;
+    Bitboard rooks_and_queens = rooks | queens;
+
+    Bitboard occupied = board.occ();
+    Bitboard attacker_pieces = board.us(attacker_color);
 
     std::array<Bitboard, 2> attackers;
     attackers[0] = constants::DEFAULT_CHECKMASK; // defer opponent attackers computation with unreachable sentinel
-    attackers[1] = attacks::attackers(board, attacker_color, to_sq);
+    
+    const auto attacker_queens = queens & attacker_pieces;
 
-    Bitboard occupied = board.occ().clear(from_sq.index());
+    auto atks = (attacks::pawn(~attacker_color, to_sq) & board.pieces(PieceType::PAWN, attacker_color));
+    atks |= (attacks::knight(to_sq) & board.pieces(PieceType::KNIGHT, attacker_color));
+    atks |= (attacks::bishop(to_sq, occupied) & ((bishops & attacker_pieces) | attacker_queens));
+    atks |= (attacks::rook(to_sq, occupied) & ((rooks & attacker_pieces) | attacker_queens));
+    atks |= (attacks::king(to_sq) & board.pieces(PieceType::KING, attacker_color));
 
+    attackers[1] = atks & occupied;
+
+    occupied = occupied.clear(from_sq.index());
+ 
     switch (move.typeOf()){
         case Move::ENPASSANT:
             value_on_square = piece_value[static_cast<int>(PieceType::PAWN)];
