@@ -43,7 +43,7 @@ class NnueBoard: public Board {
     bool is_stalemate();
 
     std::pair<Features, Features> get_features();
-    Features get_features(Color color);
+    Features get_features(Color persp);
 
     private:
     class AccumulatorsStack {
@@ -70,9 +70,7 @@ class NnueBoard: public Board {
     // accessed by [bucket][stm][mirrored]
     std::array<std::array<std::array<std::pair<AllBitboards, Accumulator>, 2>, 2>, INPUT_BUCKET_COUNT> finny_table;
 
-    void compute_top_update(Move move, Color color);
+    void compute_top_update(Move move, Color persp);
     std::pair<Features,Features> get_modified_features(
-        Color stm, int mirror, int bucket, AllBitboards prev_pos, const NnueBoard& new_pos);
-
-    bool is_updatable_move(Move move);
+        Color stm, AllBitboards prev_pos, const NnueBoard& new_pos);
 };
