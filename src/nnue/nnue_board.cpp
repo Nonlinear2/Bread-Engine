@@ -1,5 +1,20 @@
 #include "nnue_board.hpp"
 
+AllBitboards::AllBitboards(){
+    for (int color = 0; color < 2; ++color)
+        for (int pt = 0; pt < PIECETYPE_COUNT; ++pt)
+            bb[color][pt] = Bitboard(0);
+}
+
+AllBitboards::AllBitboards(const NnueBoard& pos) {
+    for (int color = 0; color < 2; color++)
+        for (int pt = 0; pt < PIECETYPE_COUNT; pt++)
+            bb[color][pt] = pos.pieces(
+                PieceType(static_cast<PieceType::underlying>(pt)),
+                static_cast<Color>(color)
+            );
+}
+
 NnueBoard::NnueBoard(){
     NNUE::init();
     accumulators_stack.push_empty();
@@ -22,6 +37,14 @@ void NnueBoard::synchronize(){
     NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
     NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
     accumulators_stack.clear_top_update();
+
+    AllBitboards empty_pos = AllBitboards(); // empty position;
+    Accumulator empty_acc;
+    NNUE::compute_accumulator(empty_acc, {}); // accumulators for an empty position;
+    for (int bucket = 0; bucket < INPUT_BUCKET_COUNT; bucket++)
+        for (int color = 0; color < 2; color++)
+            for (int mirrored = 0; mirrored < 2; mirrored++)
+                finny_table[bucket][color][mirrored] = std::make_pair(empty_pos, empty_acc);
 }
 
 bool NnueBoard::legal(Move move){
@@ -37,8 +60,6 @@ bool NnueBoard::legal(Move move){
 
 void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
-    Accumulators& new_accs = accumulators_stack.push_empty();
-
     bool king_move = at(move.from()).type() == PieceType::KING;
 
     const bool queen_side_castle = move.typeOf() == Move::CASTLING && move.to() < move.from();
@@ -48,17 +69,30 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
 
     int flip = sideToMove() ? 56 : 0;
 
-    if (king_move && (crosses_middle || INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip])){
+    if (king_move && (crosses_middle || (INPUT_BUCKETS[move.from().index() ^ flip] != INPUT_BUCKETS[move.to().index() ^ flip]))){
         Color stm = sideToMove();
+
+        Accumulators& new_accs = accumulators_stack.push_empty();
 
         compute_top_update(move, ~stm);
 
         makeMove(move);
+        int bucket = INPUT_BUCKETS[kingSq(stm).index() ^ flip];
+        int mirrored = kingSq(stm).file() >= File::FILE_E;
 
-        NNUE::compute_accumulator(new_accs[(int)stm], get_features(stm));
+        auto [prev_pos, prev_acc] = finny_table[bucket][stm][mirrored];
+
+        auto modified = get_modified_features(stm, mirrored ? 7 : 0, bucket, prev_pos, *this);
+
+        NNUE::update_accumulator(prev_acc, new_accs[stm], modified.first, modified.second);
         accumulators_stack.clear_top_update(stm);
 
+        finny_table[bucket][stm][mirrored] = std::make_pair(
+            AllBitboards(*this), accumulators_stack.top()[stm]
+        );
+
     } else {
+        Accumulators& new_accs = accumulators_stack.push_empty();
         compute_top_update(move, Color::WHITE);
         compute_top_update(move, Color::BLACK);
         makeMove(move);
@@ -131,7 +165,7 @@ Features NnueBoard::get_features(Color color){
     Square king_sq = kingSq(color);
 
     int mirror = king_sq.file() >= File::FILE_E ? 7 : 0;
-    
+
     int flip = color ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4.
 
     int idx = 0;
@@ -152,7 +186,6 @@ Features NnueBoard::get_features(Color color){
 }
 
 // this function must be called before pushing the move
-// it assumes it it not castling
 void NnueBoard::compute_top_update(Move move, Color color){
     assert(move != Move::NO_MOVE);
     assert(legal(move));
@@ -215,6 +248,51 @@ void NnueBoard::compute_top_update(Move move, Color color){
     
     accumulators_stack.top_update()[color] = ModifiedFeatures(added, removed, captured);
     return;
+}
+
+std::pair<Features, Features> NnueBoard::get_modified_features(
+    Color color, int mirror, int bucket, AllBitboards prev_pos, const NnueBoard& new_pos){
+
+    int flip = color ? 56 : 0;
+
+    Features added_features;
+    Features removed_features;
+
+    int added_idx = 0;
+    int removed_idx = 0;
+
+    for (int pc = 0; pc < 2; pc++){
+        for (int pt = 0; pt < PIECETYPE_COUNT; pt++){
+            Bitboard new_bb = new_pos.pieces(
+                PieceType(static_cast<PieceType::underlying>(pt)),
+                static_cast<Color>(pc)
+            );
+            Bitboard added = new_bb & (~prev_pos.bb[pc][pt]);
+            Bitboard removed = prev_pos.bb[pc][pt] & (~new_bb);
+
+            while (added){
+                int sq = added.pop();
+                added_features[added_idx] = 768 * bucket
+                                        + 384 * (pc ^ color)
+                                        + 64 * pt
+                                        + (sq ^ flip ^ mirror);
+                added_idx++;
+            }
+
+            while (removed){
+                int sq = removed.pop();
+                removed_features[removed_idx] = 768 * bucket
+                                        + 384 * (pc ^ color)
+                                        + 64 * pt
+                                        + (sq ^ flip ^ mirror);
+                removed_idx++;
+            }
+        }
+    }
+    added_features.size = added_idx;
+    removed_features.size = removed_idx;
+
+    return std::make_pair(added_features, removed_features);
 }
 
 bool NnueBoard::is_updatable_move(Move move){

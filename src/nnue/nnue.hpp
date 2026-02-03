@@ -86,6 +86,9 @@ void load_model();
 void compute_accumulator(Accumulator& new_acc, const Features active_features);
 
 void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures& m_features);
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
+        const Features& added_features,
+        const Features& removed_features);
 
 int run(Accumulators& accumulators, Color stm, int piece_count);
 
