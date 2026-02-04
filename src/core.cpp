@@ -165,8 +165,6 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
 
-    transposition_table.increase_age();
-
     nodes = 0;
     tb_hits = 0;
     seldepth = 0;
@@ -332,6 +330,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     assert(ply < MAX_PLY); // avoid stack overflow
 
     nodes++;
+
+    if (nodes % 8192 == 0)
+        transposition_table.increase_age();
+
     if (ply > seldepth)
         seldepth = ply;
 
