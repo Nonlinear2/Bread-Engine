@@ -89,17 +89,16 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
     // - the old entry is more than 4 moves older than the recent entry
     // - the new depth is greater than the old depth
     // - the new depth is nonzero and an exact entry
-    
-    // add move if the old entry didn't hold the same position or if the new move is better
-    if (entry->zobrist_hash != zobrist || move != Move::NO_MOVE)
-        entry->move = move.move();
-
     if (flag == TFlag::EXACT ||
         entry->zobrist_hash != zobrist ||
-        depth > entry->depth() - 4 - 2*pv ||
+        depth > entry->depth() - 1 - 2*pv ||
         age != entry->age
     )
     {
+        // add move if the old entry didn't hold the same position or if the new move is better
+        if (entry->zobrist_hash != zobrist || move != Move::NO_MOVE)
+            entry->move = move.move();
+
         entry->zobrist_hash = zobrist;
         entry->value = value;
         entry->static_eval = static_eval;
