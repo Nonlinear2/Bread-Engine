@@ -331,7 +331,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     nodes++;
 
-    if (nodes % 8192 == 0)
+    if (nodes % 16384 == 0)
         transposition_table.increase_age();
 
     if (ply > seldepth)
