@@ -10,7 +10,7 @@
 
 
 # Overview
-Bread is a chess engine rated around 3300 elo on the computer chess rating lists.
+Bread is a chess engine rated around 3400 elo on the computer chess rating lists.
 
 It uses minimax search, along with an efficiently updatable neural network trained from zero knowledge using games of self play.
 
@@ -292,7 +292,10 @@ Kd6 86. b7 Kc5 87. b8=Q Kxc6 88. h8=Q Kd5 89. Qb5+ Ke6 90. Qd7+ Kxd7 91. Qf6 Kc7
 # Acknowledgements
 
 - [stockfish](https://stockfishchess.org/) for their amazing community.
-    - Special thanks to [SweedishChef](https://github.com/JonathanHallstrom) for his help and hardware support.
+
+- In no particular order, special thanks to:
+    - [SweedishChef](https://github.com/JonathanHallstrom) for his help and hardware support.
+    - Micpilar for his hardware contributions.
 
 - [bullet](https://github.com/jw1912/bullet)
 

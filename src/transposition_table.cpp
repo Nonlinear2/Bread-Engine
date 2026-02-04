@@ -36,7 +36,7 @@ void TranspositionTable::info(){
     }
     int used_percentage = used*100/entries.size();
 
-    std::cout << "====================" << std::endl;
+    std::cout << "=================================" << std::endl;
     std::cout << "transposition table:" << std::endl;
     std::cout << "size " << size_mb << " MB" << std::endl;
     std::cout << "number of entries " << entries.size() << std::endl;
@@ -50,7 +50,7 @@ void TranspositionTable::info(){
         std::cout << "lower bound eval percentage " << (num_lower*100)/used << "%" << std::endl;
         std::cout << "upper bound eval percentage " << (num_upper*100)/used << "%" << std::endl;
     }
-    std::cout << "====================" << std::endl;
+    std::cout << "=================================" << std::endl;
 }
 
 void TranspositionTable::allocateMB(int new_size){
