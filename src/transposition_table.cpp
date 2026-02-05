@@ -84,7 +84,6 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
     // - the old entry is more than 4 moves older than the recent entry
     // - the new depth is greater than the old depth
     // - the new depth is nonzero and an exact entry
-    // - the new depth is nonzero and an exact entry
     if (flag == TFlag::EXACT ||
         move_number > entry->move_number + 4 ||
         depth > entry->depth() - 1 - 2*pv) // this will be true if the old entry is empty
