@@ -84,19 +84,20 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
     // no need to store the side to move, as it is in the zobrist hash.
     TEntry* entry = &entries[zobrist & (entries.size() - 1)];
 
+    // add move if the old entry didn't hold the same position or if the new move is better
+    if (entry->zobrist_hash != zobrist || move != Move::NO_MOVE)
+        entry->move = move.move();
+
     // we replace the old entry if:
     // - the old entry is empty
     // - the old entry is more than 4 moves older than the recent entry
     // - the new depth is greater than the old depth
     // - the new depth is nonzero and an exact entry
     if (age != entry->age ||
-        depth > entry->depth() - 1 - 2*pv ||
-        (depth != DEPTH_QSEARCH && flag == TFlag::EXACT))
+        (depth != DEPTH_QSEARCH && flag == TFlag::EXACT) ||
+        entry->zobrist_hash != zobrist ||
+        depth >= entry->depth() - 2*pv)
     {
-        // add move if the old entry didn't hold the same position or if the new move is better
-        if (entry->zobrist_hash != zobrist || move != Move::NO_MOVE)
-            entry->move = move.move();
-
         entry->zobrist_hash = zobrist;
         entry->value = value;
         entry->static_eval = static_eval;
