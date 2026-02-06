@@ -130,57 +130,70 @@ void compute_accumulator(Accumulator& new_acc, const Features active_features){
 
 void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures& m_features){
     assert(m_features.valid());
+    constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;
 
     if (m_features.added_2 != -1 && m_features.captured != -1){
-        for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
-            auto* prev = &prev_acc[i];
-            auto* out  = &new_acc[i];
+        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+            auto* prev = &prev_acc[j];
+            auto* out  = &new_acc[j];
 
-            auto* w_add  = &ft_weights[m_features.added   * ACC_SIZE + i];
-            auto* w_add2 = &ft_weights[m_features.added_2 * ACC_SIZE + i];
-            auto* w_rem  = &ft_weights[m_features.removed * ACC_SIZE + i];
-            auto* w_cap  = &ft_weights[m_features.captured* ACC_SIZE + i];
+            auto* w_add  = &ft_weights[m_features.added   * ACC_SIZE + j];
+            auto* w_add2 = &ft_weights[m_features.added_2 * ACC_SIZE + j];
+            auto* w_rem  = &ft_weights[m_features.removed * ACC_SIZE + j];
+            auto* w_cap  = &ft_weights[m_features.captured* ACC_SIZE + j];
 
-            auto r = load_epi16(prev);
+            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                int off = i * INT16_PER_REG;
 
-            r = add_epi16(r, load_epi16(w_add));
-            r = add_epi16(r, load_epi16(w_add2));
-            r = sub_epi16(r, load_epi16(w_rem));
-            r = sub_epi16(r, load_epi16(w_cap));
+                auto r = load_epi16(prev + off);
 
-            store_epi16(out, r);
+                r = add_epi16(r, load_epi16(w_add  + off));
+                r = add_epi16(r, load_epi16(w_add2 + off));
+                r = sub_epi16(r, load_epi16(w_rem  + off));
+                r = sub_epi16(r, load_epi16(w_cap  + off));
+
+                store_epi16(out + off, r);
+            }
         }
     } else if (m_features.captured != -1){
-        for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
-            auto* prev = &prev_acc[i];
-            auto* out  = &new_acc[i];
+        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+            auto* prev = &prev_acc[j];
+            auto* out  = &new_acc[j];
 
-            auto* w_add = &ft_weights[m_features.added   * ACC_SIZE + i];
-            auto* w_rem = &ft_weights[m_features.removed * ACC_SIZE + i];
-            auto* w_cap = &ft_weights[m_features.captured* ACC_SIZE + i];
+            auto* w_add = &ft_weights[m_features.added   * ACC_SIZE + j];
+            auto* w_rem = &ft_weights[m_features.removed * ACC_SIZE + j];
+            auto* w_cap = &ft_weights[m_features.captured* ACC_SIZE + j];
 
-            auto r = load_epi16(prev);
+            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                int off = i * INT16_PER_REG;
 
-            r = add_epi16(r, load_epi16(w_add));
-            r = sub_epi16(r, load_epi16(w_rem));
-            r = sub_epi16(r, load_epi16(w_cap));
+                auto r = load_epi16(prev + off);
 
-            store_epi16(out, r);
+                r = add_epi16(r, load_epi16(w_add + off));
+                r = sub_epi16(r, load_epi16(w_rem + off));
+                r = sub_epi16(r, load_epi16(w_cap + off));
+
+                store_epi16(out + off, r);
+            }
         }
     } else {
-        for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
-            auto* prev = &prev_acc[i];
-            auto* out  = &new_acc[i];
+        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+            auto* prev = &prev_acc[j];
+            auto* out  = &new_acc[j];
 
-            auto* w_add = &ft_weights[m_features.added   * ACC_SIZE + i];
-            auto* w_rem = &ft_weights[m_features.removed * ACC_SIZE + i];
+            auto* w_add = &ft_weights[m_features.added   * ACC_SIZE + j];
+            auto* w_rem = &ft_weights[m_features.removed * ACC_SIZE + j];
 
-            auto r = load_epi16(prev);
+            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                int off = i * INT16_PER_REG;
 
-            r = add_epi16(r, load_epi16(w_add));
-            r = sub_epi16(r, load_epi16(w_rem));
+                auto r = load_epi16(prev + off);
 
-            store_epi16(out, r);
+                r = add_epi16(r, load_epi16(w_add + off));
+                r = sub_epi16(r, load_epi16(w_rem + off));
+
+                store_epi16(out + off, r);
+            }
         }
     }
 }
