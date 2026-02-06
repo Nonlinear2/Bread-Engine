@@ -33,23 +33,37 @@ struct Features {
 };
 
 struct ModifiedFeatures {
-    int added = -1;
+    int added_1 = -1;
     int added_2 = -1;
-    int removed = -1;
-    int captured = -1;
+    int removed_1 = -1;
+    int removed_2 = -1;
+
+    enum {
+        NORMAL, CAPTURE, CASTLING
+    } type;
 
     ModifiedFeatures() = default;
 
+    ModifiedFeatures(int added, int removed):
+        added_1(added),
+        removed_1(removed) {
+            type = NORMAL;
+        };
+
     ModifiedFeatures(int added, int removed, int captured):
-        added(added),
-        removed(removed),
-        captured(captured) {};
+        added_1(added),
+        removed_1(removed),
+        removed_2(captured) {
+            type = CAPTURE;
+        };
 
     ModifiedFeatures(int added, int added_2, int removed, int removed_2):
-        added(added),
+        added_1(added),
         added_2(added_2),
-        removed(removed),
-        captured(removed_2) {};
+        removed_1(removed),
+        removed_2(removed_2) {
+            type = CASTLING;
+        };
 
     bool valid() const;
 };

@@ -205,17 +205,18 @@ void NnueBoard::compute_top_update(Move move, Color persp){
 
     int removed = NNUE::feature(persp, sideToMove(), piece_type, move.from(), kingSq(persp));
 
-    int captured = -1;
-
-    if (move.typeOf() == Move::ENPASSANT)
-        captured = NNUE::feature(persp, ~sideToMove(), PieceType::PAWN, move.to().ep_square(), kingSq(persp));
-    else {
-        Piece capt_piece = at(move.to());
-        if (capt_piece != Piece::NONE)
-            captured = NNUE::feature(persp, capt_piece, move.to(), kingSq(persp));
+    if (move.typeOf() == Move::ENPASSANT){
+        int captured = NNUE::feature(persp, ~sideToMove(), PieceType::PAWN, move.to().ep_square(), kingSq(persp));
+        accumulators_stack.top_update()[persp] = ModifiedFeatures(added, removed, captured);
+        return;
+    }
+    if (at(move.to()) != Piece::NONE){
+        int captured = NNUE::feature(persp, at(move.to()), move.to(), kingSq(persp));
+        accumulators_stack.top_update()[persp] = ModifiedFeatures(added, removed, captured);
+        return;
     }
 
-    accumulators_stack.top_update()[persp] = ModifiedFeatures(added, removed, captured);
+    accumulators_stack.top_update()[persp] = ModifiedFeatures(added, removed);
     return;
 }
 
@@ -305,8 +306,8 @@ void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
         Accumulators& new_accs = stack[i + 1];
 
         // prefetch weight rows for black while processing white
-        __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].added * ACC_SIZE]);
-        __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed * ACC_SIZE]);
+        __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].added_1 * ACC_SIZE]);
+        __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed_1 * ACC_SIZE]);
 
         // white
         if (i >= i_w){
