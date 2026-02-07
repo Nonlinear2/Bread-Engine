@@ -42,7 +42,7 @@ extern "C" {
 };
 
 bool ModifiedFeatures::valid() const {
-    return added != -1 && removed != -1;
+    return added_1 != -1 && removed_1 != -1;
 }
 
 /******************
@@ -132,69 +132,70 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
     assert(m_features.valid());
     constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;
 
-    if (m_features.added_2 != -1 && m_features.captured != -1){
+    switch (m_features.type)
+    {
+    case ModifiedFeatures::NORMAL:
         for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
             auto* prev = &prev_acc[j];
             auto* out  = &new_acc[j];
 
-            auto* w_add  = &ft_weights[m_features.added   * ACC_SIZE + j];
+            auto* w_add = &ft_weights[m_features.added_1   * ACC_SIZE + j];
+            auto* w_rem = &ft_weights[m_features.removed_1 * ACC_SIZE + j];
+
+            for (int i = 0; i < CHUNK_SIZE; i += INT16_PER_REG){
+
+                auto r = load_epi16(prev + i);
+
+                r = add_epi16(r, load_epi16(w_add + i));
+                r = sub_epi16(r, load_epi16(w_rem + i));
+
+                store_epi16(out + i, r);
+            }
+        }
+        break;
+    case ModifiedFeatures::CAPTURE:
+        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+            auto* prev = &prev_acc[j];
+            auto* out  = &new_acc[j];
+
+            auto* w_add = &ft_weights[m_features.added_1   * ACC_SIZE + j];
+            auto* w_rem = &ft_weights[m_features.removed_1 * ACC_SIZE + j];
+            auto* w_cap = &ft_weights[m_features.removed_2 * ACC_SIZE + j];
+
+            for (int i = 0; i < CHUNK_SIZE; i += INT16_PER_REG){
+                auto r = load_epi16(prev + i);
+
+                r = add_epi16(r, load_epi16(w_add + i));
+                r = sub_epi16(r, load_epi16(w_rem + i));
+                r = sub_epi16(r, load_epi16(w_cap + i));
+
+                store_epi16(out + i, r);
+            }
+        }
+        break;
+    case ModifiedFeatures::CASTLING:
+        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+            auto* prev = &prev_acc[j];
+            auto* out  = &new_acc[j];
+
+            auto* w_add  = &ft_weights[m_features.added_1   * ACC_SIZE + j];
             auto* w_add2 = &ft_weights[m_features.added_2 * ACC_SIZE + j];
-            auto* w_rem  = &ft_weights[m_features.removed * ACC_SIZE + j];
-            auto* w_cap  = &ft_weights[m_features.captured* ACC_SIZE + j];
+            auto* w_rem  = &ft_weights[m_features.removed_1 * ACC_SIZE + j];
+            auto* w_cap  = &ft_weights[m_features.removed_2 * ACC_SIZE + j];
 
-            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                int off = i * INT16_PER_REG;
+            for (int i = 0; i < CHUNK_SIZE; i += INT16_PER_REG){
 
-                auto r = load_epi16(prev + off);
+                auto r = load_epi16(prev + i);
 
-                r = add_epi16(r, load_epi16(w_add  + off));
-                r = add_epi16(r, load_epi16(w_add2 + off));
-                r = sub_epi16(r, load_epi16(w_rem  + off));
-                r = sub_epi16(r, load_epi16(w_cap  + off));
+                r = add_epi16(r, load_epi16(w_add  + i));
+                r = add_epi16(r, load_epi16(w_add2 + i));
+                r = sub_epi16(r, load_epi16(w_rem  + i));
+                r = sub_epi16(r, load_epi16(w_cap  + i));
 
-                store_epi16(out + off, r);
+                store_epi16(out + i, r);
             }
         }
-    } else if (m_features.captured != -1){
-        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
-            auto* prev = &prev_acc[j];
-            auto* out  = &new_acc[j];
-
-            auto* w_add = &ft_weights[m_features.added   * ACC_SIZE + j];
-            auto* w_rem = &ft_weights[m_features.removed * ACC_SIZE + j];
-            auto* w_cap = &ft_weights[m_features.captured* ACC_SIZE + j];
-
-            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                int off = i * INT16_PER_REG;
-
-                auto r = load_epi16(prev + off);
-
-                r = add_epi16(r, load_epi16(w_add + off));
-                r = sub_epi16(r, load_epi16(w_rem + off));
-                r = sub_epi16(r, load_epi16(w_cap + off));
-
-                store_epi16(out + off, r);
-            }
-        }
-    } else {
-        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
-            auto* prev = &prev_acc[j];
-            auto* out  = &new_acc[j];
-
-            auto* w_add = &ft_weights[m_features.added   * ACC_SIZE + j];
-            auto* w_rem = &ft_weights[m_features.removed * ACC_SIZE + j];
-
-            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                int off = i * INT16_PER_REG;
-
-                auto r = load_epi16(prev + off);
-
-                r = add_epi16(r, load_epi16(w_add + off));
-                r = sub_epi16(r, load_epi16(w_rem + off));
-
-                store_epi16(out + off, r);
-            }
-        }
+        break;
     }
 }
 
@@ -202,7 +203,6 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
         const Features& added_features,
         const Features& removed_features){
 
-    assert(m_features.valid());
     vec_int16 registers[NUM_AVX_REGISTERS];
     constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;
 
