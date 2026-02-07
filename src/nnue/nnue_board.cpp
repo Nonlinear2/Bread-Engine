@@ -78,16 +78,8 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         int bucket = NNUE::input_bucket(kingSq(stm), stm);
         int mirrored = kingSq(stm).file() >= File::FILE_E;
 
-        auto [prev_pos, prev_acc] = finny_table[bucket][stm][mirrored];
-
-        auto modified = get_modified_features(stm, prev_pos, *this);
-
-        NNUE::update_accumulator(prev_acc, new_accs[stm], modified.first, modified.second);
+        update_accumulator(stm, finny_table[bucket][stm][mirrored], new_accs[stm], *this);
         accumulators_stack.clear_top_update(stm);
-
-        finny_table[bucket][stm][mirrored] = std::make_pair(
-            AllBitboards(*this), accumulators_stack.top()[stm]
-        );
 
     } else {
         Accumulators& new_accs = accumulators_stack.push_empty();
@@ -220,15 +212,14 @@ void NnueBoard::compute_top_update(Move move, Color persp){
     return;
 }
 
-std::pair<Features, Features> NnueBoard::get_modified_features(Color color, AllBitboards prev_pos, const NnueBoard& new_pos){
-
-    Features added_features;
-    Features removed_features;
-
-    int added_idx = 0;
-    int removed_idx = 0;
+void update_accumulator(Color color, std::pair<AllBitboards, Accumulator>& finny_entry,
+    Accumulator& new_acc, const NnueBoard& new_pos){
 
     Square king_sq = new_pos.kingSq(color);
+
+    AllBitboards& prev_bb = finny_entry.first;
+    Accumulator& prev_acc = finny_entry.second;
+    AllBitboards new_bb = AllBitboards(new_pos);
 
     for (Color pc : {Color::WHITE, Color::BLACK}){
         for (PieceType pt : {
@@ -237,25 +228,50 @@ std::pair<Features, Features> NnueBoard::get_modified_features(Color color, AllB
             PieceType::QUEEN, PieceType::KING
         }){
 
-            Bitboard new_bb = new_pos.pieces(pt, pc);
-            Bitboard added = new_bb & (~prev_pos.bb[pc][pt]);
-            Bitboard removed = prev_pos.bb[pc][pt] & (~new_bb);
+            Bitboard added = new_bb.bb[pc][pt] & (~prev_bb.bb[pc][pt]);
+            Bitboard removed = prev_bb.bb[pc][pt] & (~new_bb.bb[pc][pt]);
+
+            while (added && removed){
+                Square sq_a = added.pop();
+                Square sq_r = removed.pop();
+
+                int feature_a = NNUE::feature(color, pc, pt, sq_a, king_sq);
+                int feature_r = NNUE::feature(color, pc, pt, sq_r, king_sq);
+                
+                for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
+                    auto r = load_epi16(&finny_entry.second[i]);
+                    r = add_epi16(r, load_epi16(&NNUE::ft_weights[feature_a * ACC_SIZE + i]));
+                    r = sub_epi16(r, load_epi16(&NNUE::ft_weights[feature_r * ACC_SIZE + i]));
+                    store_epi16(&finny_entry.second[i], r);
+                }
+            }
 
             while (added){
-                added_features[added_idx] = NNUE::feature(color, pc, pt, added.pop(), king_sq);
-                added_idx++;
+                Square sq = added.pop(); // Extract square once
+                int feature = NNUE::feature(color, pc, pt, sq, king_sq);
+                
+                for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
+                    auto r = load_epi16(&finny_entry.second[i]);
+                    r = add_epi16(r, load_epi16(&NNUE::ft_weights[feature * ACC_SIZE + i]));
+                    store_epi16(&finny_entry.second[i], r);
+                }
             }
 
             while (removed){
-                removed_features[removed_idx] = NNUE::feature(color, pc, pt, removed.pop(), king_sq);
-                removed_idx++;
+                Square sq = removed.pop(); // Extract square once
+                int feature = NNUE::feature(color, pc, pt, sq, king_sq);
+                
+                for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
+                    auto r = load_epi16(&finny_entry.second[i]);
+                    r = sub_epi16(r, load_epi16(&NNUE::ft_weights[feature * ACC_SIZE + i]));
+                    store_epi16(&finny_entry.second[i], r);
+                }
             }
         }
     }
-    added_features.size = added_idx;
-    removed_features.size = removed_idx;
 
-    return std::make_pair(added_features, removed_features);
+    std::copy(prev_acc.begin(), prev_acc.end(), new_acc.begin());
+    prev_bb = new_bb;
 }
 
 NnueBoard::AccumulatorsStack::AccumulatorsStack(){

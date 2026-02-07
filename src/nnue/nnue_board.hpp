@@ -74,3 +74,6 @@ class NnueBoard: public Board {
     std::pair<Features,Features> get_modified_features(
         Color stm, AllBitboards prev_pos, const NnueBoard& new_pos);
 };
+
+void update_accumulator(Color color, std::pair<AllBitboards, Accumulator>& finny_entry,
+    Accumulator& new_acc, const NnueBoard& new_pos);
