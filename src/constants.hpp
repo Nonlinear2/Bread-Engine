@@ -9,10 +9,22 @@
 NNUE constants
 *************/
 
-constexpr int INPUT_SIZE = 768;
-constexpr int ACC_SIZE = 1024;
+constexpr int INPUT_BUCKET_COUNT = 8;
+constexpr int INPUT_BUCKETS[64] = {
+    0, 1, 2, 3,  3, 2, 1, 0,
+    4, 4, 5, 5,  5, 5, 4, 4,
+    6, 6, 6, 6,  6, 6, 6, 6,
+    6, 6, 6, 6,  6, 6, 6, 6,
+    7, 7, 7, 7,  7, 7, 7, 7,
+    7, 7, 7, 7,  7, 7, 7, 7,
+    7, 7, 7, 7,  7, 7, 7, 7,
+    7, 7, 7, 7,  7, 7, 7, 7,
+};
 
 constexpr int OUTPUT_BUCKET_COUNT = 8;
+
+constexpr int INPUT_SIZE = 768 * INPUT_BUCKET_COUNT;
+constexpr int ACC_SIZE = 1024;
 
 constexpr int L1_INPUT_SIZE = 2 * ACC_SIZE;
 constexpr int L1_OUTPUT_SIZE = 1;
@@ -33,11 +45,15 @@ using Accumulators = std::array<Accumulator, 2>;
 general constants
 ****************/
 
+constexpr int PIECETYPE_COUNT = 6;
+
 constexpr int TT_MIN_SIZE = 2;
 constexpr int TT_MAX_SIZE = 4096;
 
 constexpr int ENGINE_MAX_DEPTH = 63;
-constexpr int QSEARCH_MAX_DEPTH = 6;
+
+constexpr int QSEARCH_SOFT_DEPTH_LIMIT = 6;
+constexpr int QSEARCH_HARD_DEPTH_LIMIT = 15;
 
 constexpr int MAX_PLY = 256;
 constexpr int STACK_PADDING_SIZE = 2;
@@ -49,7 +65,7 @@ constexpr int DEPTH_QSEARCH = 0;
 
 constexpr int BEST_MOVE_SCORE = 100'000;
 constexpr int WORST_MOVE_SCORE = -100'000;
-constexpr int BAD_SEE_TRESHOLD = 10'000;
+constexpr int BAD_SEE_THRESHOLD = 10'000;
 
 constexpr int MAX_MATE_PLY = 200;
 

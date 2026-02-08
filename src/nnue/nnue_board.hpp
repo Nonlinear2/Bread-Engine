@@ -8,8 +8,19 @@
 #include "transposition_table.hpp"
 #include "nnue.hpp"
 #include "misc.hpp"
+#include "constants.hpp"
 
 using BothModifiedFeatures = std::array<ModifiedFeatures, 2>;
+
+class NnueBoard;
+
+class AllBitboards {
+    public:
+    Bitboard bb[2][6];
+
+    AllBitboards();
+    AllBitboards(const NnueBoard& pos);
+};
 
 class NnueBoard: public Board {
     public:
@@ -31,7 +42,8 @@ class NnueBoard: public Board {
 
     bool is_stalemate();
 
-    std::pair<std::vector<int>, std::vector<int>> get_features();
+    std::pair<Features, Features> get_features();
+    Features get_features(Color persp);
 
     private:
     class AccumulatorsStack {
@@ -39,8 +51,9 @@ class NnueBoard: public Board {
         AccumulatorsStack();
         Accumulators& push_empty();
         Accumulators& top();
+        BothModifiedFeatures& top_update();
         void clear_top_update();
-        void set_top_update(ModifiedFeatures modified_white, ModifiedFeatures modified_black);
+        void clear_top_update(Color color);
         void pop();
         void apply_lazy_updates();
 
@@ -48,12 +61,17 @@ class NnueBoard: public Board {
         std::vector<Accumulators> stack = std::vector<Accumulators>(MAX_PLY + 1);
         std::vector<BothModifiedFeatures> queued_updates = std::vector<BothModifiedFeatures>(MAX_PLY + 1);
         int idx;
+        
+        friend class NnueBoard;
     };
 
     AccumulatorsStack accumulators_stack;
     uint16_t pawn_key;
 
-    ModifiedFeatures get_modified_features(Move move, Color color);
+    // accessed by [bucket][stm][mirrored]
+    std::array<std::array<std::array<std::pair<AllBitboards, Accumulator>, 2>, 2>, INPUT_BUCKET_COUNT> finny_table;
 
-    bool is_updatable_move(Move move);
+    void compute_top_update(Move move, Color persp);
+    std::pair<Features,Features> get_modified_features(
+        Color stm, AllBitboards prev_pos, const NnueBoard& new_pos);
 };

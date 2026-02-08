@@ -17,7 +17,7 @@ using namespace NNUE_UTILS;
 #define INCBIN(name, file) \
     __asm__(".section " INCBIN_SECTION "\n" \
             ".global " STR(name) "_start\n" \
-            ".balign 16\n" \
+            ".balign 32\n" \
             STR(name) "_start:\n" \
             ".incbin \"" file "\"\n" \
             \
@@ -40,6 +40,10 @@ extern "C" {
     extern const int16_t l1_weights_start[];
     extern const int32_t l1_bias_start[];
 };
+
+bool ModifiedFeatures::valid() const {
+    return added_1 != -1 && removed_1 != -1;
+}
 
 /******************
 NNUE implementation
@@ -95,10 +99,7 @@ void cleanup(){
     operator delete[](l1_bias, std::align_val_t(32));
 };
 
-void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features){
-    // we have 1024 int16 to process, and there are 16 avx registers which can hold 16 int16.
-    // therefore need four passes to the registers.
-
+void compute_accumulator(Accumulator& new_acc, const Features active_features){
     vec_int16 registers[NUM_AVX_REGISTERS];
 
     constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS*INT16_PER_REG;
@@ -126,62 +127,116 @@ void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_fea
     }
 };
 
-void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures m_features){
+
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures& m_features){
+    assert(m_features.valid());
+    constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;
+
+    switch (m_features.type)
+    {
+    case ModifiedFeatures::NORMAL:
+        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+            auto* prev = &prev_acc[j];
+            auto* out  = &new_acc[j];
+
+            auto* w_add = &ft_weights[m_features.added_1   * ACC_SIZE + j];
+            auto* w_rem = &ft_weights[m_features.removed_1 * ACC_SIZE + j];
+
+            for (int i = 0; i < CHUNK_SIZE; i += INT16_PER_REG){
+
+                auto r = load_epi16(prev + i);
+
+                r = add_epi16(r, load_epi16(w_add + i));
+                r = sub_epi16(r, load_epi16(w_rem + i));
+
+                store_epi16(out + i, r);
+            }
+        }
+        break;
+    case ModifiedFeatures::CAPTURE:
+        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+            auto* prev = &prev_acc[j];
+            auto* out  = &new_acc[j];
+
+            auto* w_add = &ft_weights[m_features.added_1   * ACC_SIZE + j];
+            auto* w_rem = &ft_weights[m_features.removed_1 * ACC_SIZE + j];
+            auto* w_cap = &ft_weights[m_features.removed_2 * ACC_SIZE + j];
+
+            for (int i = 0; i < CHUNK_SIZE; i += INT16_PER_REG){
+                auto r = load_epi16(prev + i);
+
+                r = add_epi16(r, load_epi16(w_add + i));
+                r = sub_epi16(r, load_epi16(w_rem + i));
+                r = sub_epi16(r, load_epi16(w_cap + i));
+
+                store_epi16(out + i, r);
+            }
+        }
+        break;
+    case ModifiedFeatures::CASTLING:
+        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+            auto* prev = &prev_acc[j];
+            auto* out  = &new_acc[j];
+
+            auto* w_add  = &ft_weights[m_features.added_1   * ACC_SIZE + j];
+            auto* w_add2 = &ft_weights[m_features.added_2 * ACC_SIZE + j];
+            auto* w_rem  = &ft_weights[m_features.removed_1 * ACC_SIZE + j];
+            auto* w_cap  = &ft_weights[m_features.removed_2 * ACC_SIZE + j];
+
+            for (int i = 0; i < CHUNK_SIZE; i += INT16_PER_REG){
+
+                auto r = load_epi16(prev + i);
+
+                r = add_epi16(r, load_epi16(w_add  + i));
+                r = add_epi16(r, load_epi16(w_add2 + i));
+                r = sub_epi16(r, load_epi16(w_rem  + i));
+                r = sub_epi16(r, load_epi16(w_cap  + i));
+
+                store_epi16(out + i, r);
+            }
+        }
+        break;
+    }
+}
+
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
+        const Features& added_features,
+        const Features& removed_features){
 
     vec_int16 registers[NUM_AVX_REGISTERS];
     constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;
 
-    if (m_features.captured != -1){
-        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+    for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+            registers[i] = load_epi16(&prev_acc[j + i*INT16_PER_REG]); 
+        }
+
+        for (const int &a: added_features){
             for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                registers[i] = load_epi16(&prev_acc[j + i*INT16_PER_REG]); 
-            }
-            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                // a*acc size is the index of the a-th row. We then accumulate the weights.
                 registers[i] = add_epi16(
                     registers[i],
-                    load_epi16(&ft_weights[m_features.added*ACC_SIZE + j + i*INT16_PER_REG])
-                );
-            }
-            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                registers[i] = sub_epi16(
-                    registers[i],
-                    load_epi16(&ft_weights[m_features.removed*ACC_SIZE + j + i*INT16_PER_REG])
-                );
-            }
-            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                registers[i] = sub_epi16(
-                    registers[i],
-                    load_epi16(&ft_weights[m_features.captured*ACC_SIZE + j + i*INT16_PER_REG])
-                );
-            }
-            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                store_epi16(&new_acc[j + i*INT16_PER_REG], registers[i]);
+                    load_epi16(&ft_weights[a*ACC_SIZE + j + i*INT16_PER_REG])
+                    );
             }
         }
-    } else {
-        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+
+        for (const int &r: removed_features){
             for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                registers[i] = load_epi16(&prev_acc[j + i*INT16_PER_REG]); 
-            }
-            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                registers[i] = add_epi16(
-                    registers[i],
-                    load_epi16(&ft_weights[m_features.added*ACC_SIZE + j + i*INT16_PER_REG])
-                );
-            }
-            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                // r*acc size is the index of the r-th row. We then accumulate the weights.
                 registers[i] = sub_epi16(
                     registers[i],
-                    load_epi16(&ft_weights[m_features.removed*ACC_SIZE + j + i*INT16_PER_REG])
-                );
+                    load_epi16(&ft_weights[r*ACC_SIZE + j + i*INT16_PER_REG])
+                    );
             }
-            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                store_epi16(&new_acc[j + i*INT16_PER_REG], registers[i]);
-            }
+        }
+
+        // store the result in the accumulator
+        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+            store_epi16(&new_acc[j + i*INT16_PER_REG], registers[i]);
         }
     }
 }
-
 
 int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
     int16_t* stm_data = accumulators[stm].data();
@@ -220,6 +275,7 @@ int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
 int run(Accumulators& accumulators, Color stm, int piece_count){
     constexpr int pieces_per_bucket = 32 / OUTPUT_BUCKET_COUNT;
     int bucket = (piece_count - 2) / pieces_per_bucket;
+    assert(bucket >= 0 && bucket <= OUTPUT_BUCKET_COUNT);
 
     int output = run_L1(accumulators, stm, bucket);
     return (output * 600) / (64 * 255); // scale is 600
