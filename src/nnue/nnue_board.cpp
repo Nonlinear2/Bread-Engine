@@ -221,11 +221,14 @@ void update_accumulator(Color color, std::pair<AllBitboards, Accumulator>& finny
     Accumulator& prev_acc = finny_entry.second;
     AllBitboards new_bb = AllBitboards(new_pos);
 
-    vec_int16 registers[NUM_AVX_REGISTERS];
-    constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;
+    constexpr int ACC_REGISTERS = 8;
+    constexpr int CHUNK_SIZE = ACC_REGISTERS * INT16_PER_REG;
+
+    vec_int16 registers[ACC_REGISTERS];
+    vec_int16 weight_a, weight_r;  // intermediate registers for weights
 
     for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
-        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+        for (int i = 0; i < ACC_REGISTERS; i++){
             registers[i] = load_epi16(&prev_acc[j + i * INT16_PER_REG]);
         }
 
@@ -246,9 +249,11 @@ void update_accumulator(Color color, std::pair<AllBitboards, Accumulator>& finny
                     int feature_a = NNUE::feature(color, pc, pt, sq_a, king_sq);
                     int feature_r = NNUE::feature(color, pc, pt, sq_r, king_sq);
                     
-                    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                        registers[i] = add_epi16(registers[i], load_epi16(&NNUE::ft_weights[feature_a * ACC_SIZE + j + i * INT16_PER_REG]));
-                        registers[i] = sub_epi16(registers[i], load_epi16(&NNUE::ft_weights[feature_r * ACC_SIZE + j + i * INT16_PER_REG]));
+                    for (int i = 0; i < ACC_REGISTERS; i++){
+                        weight_a = load_epi16(&NNUE::ft_weights[feature_a * ACC_SIZE + j + i * INT16_PER_REG]);
+                        weight_r = load_epi16(&NNUE::ft_weights[feature_r * ACC_SIZE + j + i * INT16_PER_REG]);
+                        registers[i] = add_epi16(registers[i], weight_a);
+                        registers[i] = sub_epi16(registers[i], weight_r);
                     }
                 }
 
@@ -256,8 +261,9 @@ void update_accumulator(Color color, std::pair<AllBitboards, Accumulator>& finny
                     Square sq = added.pop();
                     int feature = NNUE::feature(color, pc, pt, sq, king_sq);
                     
-                    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                        registers[i] = add_epi16(registers[i], load_epi16(&NNUE::ft_weights[feature * ACC_SIZE + j + i * INT16_PER_REG]));
+                    for (int i = 0; i < ACC_REGISTERS; i++){
+                        weight_a = load_epi16(&NNUE::ft_weights[feature * ACC_SIZE + j + i * INT16_PER_REG]);
+                        registers[i] = add_epi16(registers[i], weight_a);
                     }
                 }
 
@@ -265,14 +271,15 @@ void update_accumulator(Color color, std::pair<AllBitboards, Accumulator>& finny
                     Square sq = removed.pop();
                     int feature = NNUE::feature(color, pc, pt, sq, king_sq);
                     
-                    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                        registers[i] = sub_epi16(registers[i], load_epi16(&NNUE::ft_weights[feature * ACC_SIZE + j + i * INT16_PER_REG]));
+                    for (int i = 0; i < ACC_REGISTERS; i++){
+                        weight_r = load_epi16(&NNUE::ft_weights[feature * ACC_SIZE + j + i * INT16_PER_REG]);
+                        registers[i] = sub_epi16(registers[i], weight_r);
                     }
                 }
             }
         }
 
-        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+        for (int i = 0; i < ACC_REGISTERS; i++){
             store_epi16(&finny_entry.second[j + i * INT16_PER_REG], registers[i]);
             store_epi16(&new_acc[j + i * INT16_PER_REG], registers[i]);
         }
