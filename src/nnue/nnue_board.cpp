@@ -221,56 +221,63 @@ void update_accumulator(Color color, std::pair<AllBitboards, Accumulator>& finny
     Accumulator& prev_acc = finny_entry.second;
     AllBitboards new_bb = AllBitboards(new_pos);
 
-    for (Color pc : {Color::WHITE, Color::BLACK}){
-        for (PieceType pt : {
-            PieceType::PAWN, PieceType::KNIGHT,
-            PieceType::BISHOP, PieceType::ROOK,
-            PieceType::QUEEN, PieceType::KING
-        }){
+    vec_int16 registers[NUM_AVX_REGISTERS];
+    constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;
 
-            Bitboard added = new_bb.bb[pc][pt] & (~prev_bb.bb[pc][pt]);
-            Bitboard removed = prev_bb.bb[pc][pt] & (~new_bb.bb[pc][pt]);
+    for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+            registers[i] = load_epi16(&prev_acc[j + i * INT16_PER_REG]);
+        }
 
-            while (added && removed){
-                Square sq_a = added.pop();
-                Square sq_r = removed.pop();
+        for (Color pc : {Color::WHITE, Color::BLACK}){
+            for (PieceType pt : {
+                PieceType::PAWN, PieceType::KNIGHT,
+                PieceType::BISHOP, PieceType::ROOK,
+                PieceType::QUEEN, PieceType::KING
+            }){
 
-                int feature_a = NNUE::feature(color, pc, pt, sq_a, king_sq);
-                int feature_r = NNUE::feature(color, pc, pt, sq_r, king_sq);
-                
-                for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
-                    auto r = load_epi16(&finny_entry.second[i]);
-                    r = add_epi16(r, load_epi16(&NNUE::ft_weights[feature_a * ACC_SIZE + i]));
-                    r = sub_epi16(r, load_epi16(&NNUE::ft_weights[feature_r * ACC_SIZE + i]));
-                    store_epi16(&finny_entry.second[i], r);
+                Bitboard added = new_bb.bb[pc][pt] & (~prev_bb.bb[pc][pt]);
+                Bitboard removed = prev_bb.bb[pc][pt] & (~new_bb.bb[pc][pt]);
+
+                while (added && removed){
+                    Square sq_a = added.pop();
+                    Square sq_r = removed.pop();
+
+                    int feature_a = NNUE::feature(color, pc, pt, sq_a, king_sq);
+                    int feature_r = NNUE::feature(color, pc, pt, sq_r, king_sq);
+                    
+                    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                        registers[i] = add_epi16(registers[i], load_epi16(&NNUE::ft_weights[feature_a * ACC_SIZE + j + i * INT16_PER_REG]));
+                        registers[i] = sub_epi16(registers[i], load_epi16(&NNUE::ft_weights[feature_r * ACC_SIZE + j + i * INT16_PER_REG]));
+                    }
                 }
-            }
 
-            while (added){
-                Square sq = added.pop(); // Extract square once
-                int feature = NNUE::feature(color, pc, pt, sq, king_sq);
-                
-                for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
-                    auto r = load_epi16(&finny_entry.second[i]);
-                    r = add_epi16(r, load_epi16(&NNUE::ft_weights[feature * ACC_SIZE + i]));
-                    store_epi16(&finny_entry.second[i], r);
+                while (added){
+                    Square sq = added.pop();
+                    int feature = NNUE::feature(color, pc, pt, sq, king_sq);
+                    
+                    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                        registers[i] = add_epi16(registers[i], load_epi16(&NNUE::ft_weights[feature * ACC_SIZE + j + i * INT16_PER_REG]));
+                    }
                 }
-            }
 
-            while (removed){
-                Square sq = removed.pop(); // Extract square once
-                int feature = NNUE::feature(color, pc, pt, sq, king_sq);
-                
-                for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
-                    auto r = load_epi16(&finny_entry.second[i]);
-                    r = sub_epi16(r, load_epi16(&NNUE::ft_weights[feature * ACC_SIZE + i]));
-                    store_epi16(&finny_entry.second[i], r);
+                while (removed){
+                    Square sq = removed.pop();
+                    int feature = NNUE::feature(color, pc, pt, sq, king_sq);
+                    
+                    for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                        registers[i] = sub_epi16(registers[i], load_epi16(&NNUE::ft_weights[feature * ACC_SIZE + j + i * INT16_PER_REG]));
+                    }
                 }
             }
         }
+
+        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+            store_epi16(&finny_entry.second[j + i * INT16_PER_REG], registers[i]);
+            store_epi16(&new_acc[j + i * INT16_PER_REG], registers[i]);
+        }
     }
 
-    std::copy(prev_acc.begin(), prev_acc.end(), new_acc.begin());
     prev_bb = new_bb;
 }
 
