@@ -99,10 +99,6 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
     }
 
     __builtin_prefetch(&tt.entries[hash() & (tt.entries.size() - 1)]);
-
-    uint16_t  pawn_k = get_pawn_key();
-    recompute_pawn_key();
-    assert(get_pawn_key() == pawn_k);
 }
 
 void NnueBoard::restore_state(Move move){
