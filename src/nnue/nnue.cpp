@@ -100,33 +100,15 @@ void cleanup(){
 };
 
 void compute_accumulator(Accumulator& new_acc, const Features active_features){
-    vec_int16 registers[NUM_AVX_REGISTERS];
+    for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
+        auto r = load_epi16(&ft_bias[i]);
 
-    constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS*INT16_PER_REG;
+        for (const int &a: active_features)
+            r = add_epi16(r, load_epi16(&ft_weights[a * ACC_SIZE + i]));
 
-    for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
-        // load the bias from memory
-        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-            registers[i] = load_epi16(&ft_bias[j + i*INT16_PER_REG]);
-        }
-
-        for (const int &a: active_features){
-            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                // a*acc size is the index of the a-th row. We then accumulate the weights.
-                registers[i] = add_epi16(
-                    registers[i],
-                    load_epi16(&ft_weights[a*ACC_SIZE + j + i*INT16_PER_REG])
-                    );
-            }
-        }
-
-        // store the result in the accumulator
-        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-            store_epi16(&new_acc[j + i*INT16_PER_REG], registers[i]);
-        }
+        store_epi16(&new_acc[i], r);
     }
 };
-
 
 void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures& m_features){
     assert(m_features.valid());
