@@ -46,9 +46,9 @@ class SortedMoveGen {
     Move tt_move = Move::NO_MOVE;
     private:
     Movelist moves;
-    
+
     Bitboard attacked_by_pawn;
-    std::vector<Bitboard> check_squares;
+    std::array<Bitboard, 6> check_squares;
     Movelist* to_search = NULL;
 
     int depth = DEPTH_UNSEARCHED;

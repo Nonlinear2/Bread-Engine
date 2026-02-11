@@ -96,7 +96,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         makeMove(move);
     }
 
-    __builtin_prefetch(&tt.entries[hash() & (tt.entries.size() - 1)]);
+    __builtin_prefetch(&tt.entries[hash() & (tt.size - 1)]);
 }
 
 void NnueBoard::restore_state(Move move){
