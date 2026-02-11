@@ -661,7 +661,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         && (transposition.flag == TFlag::EXACT
 			|| transposition.flag == TFlag::LOWER_BOUND && max_value > ss->static_eval
 			|| transposition.flag == TFlag::UPPER_BOUND && max_value < ss->static_eval)){
-        int bonus = std::clamp((max_value - static_eval) * depth/7, -650, 650);
+        int bonus = std::clamp((max_value - static_eval) * depth/7, -500, 500);
         pawn_corrhist.apply_bonus(pos.sideToMove(), pos.get_pawn_key(), bonus);
     }
 
