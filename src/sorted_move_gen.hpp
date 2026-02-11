@@ -46,7 +46,7 @@ class SortedMoveGen {
     bool empty();
     int index();
     void update_history(Move best_move, int bonus);
-    void update_cont_history(Piece piece, Square to, int bonus);
+    void update_cont_history(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus);
     void set_score(Move& move);
     void prepare_pos_data();
 
@@ -59,12 +59,10 @@ class SortedMoveGen {
 
     Bitboard attacked_by_pawn;
     std::vector<Bitboard> check_squares;
-    bool is_endgame;
     Movelist* to_search = NULL;
 
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
-    bool use_tt_move;
 
     GenerationStage stage = TT_MOVE;
     Move pop_best_score(SeeScore see_value);

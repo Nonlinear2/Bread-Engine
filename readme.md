@@ -10,7 +10,7 @@
 
 
 # Overview
-Bread is rated around 3300 elo on the computer chess rating lists.
+Bread is a chess engine rated around 3400 elo on the computer chess rating lists.
 
 It uses minimax search, along with an efficiently updatable neural network trained from zero knowledge using games of self play.
 
@@ -26,9 +26,7 @@ Bread engine does not have a graphical interface built in. However it supports t
 </td></tr>
 </table>
 
-You can download precompiled binaries for Windows in the <a href="https://github.com/Nonlinear2/Bread-Engine/releases"><kbd>Release Section</kbd></a>.
-
-To use the engine on Linux, you need to build the project yourself.
+You can download precompiled binaries for Windows and Linux in the <a href="https://github.com/Nonlinear2/Bread-Engine/releases"><kbd>Release Section</kbd></a>.
 
 ## How to build the project yourself
 
@@ -48,7 +46,7 @@ This will generate a build folder with the executable.
 
 ## Linux
 
-Run the script `compile_script_for_linux.sh`. The executable will be generated in the `build` folder.
+You can build the project by cloning the repository and running `make` in the root folder. You can specify the compiler with `make CXX=<compiler>`.
 
 ---
 
@@ -294,7 +292,10 @@ Kd6 86. b7 Kc5 87. b8=Q Kxc6 88. h8=Q Kd5 89. Qb5+ Ke6 90. Qd7+ Kxd7 91. Qf6 Kc7
 # Acknowledgements
 
 - [stockfish](https://stockfishchess.org/) for their amazing community.
-    - Special thanks to [SweedishChef](https://github.com/JonathanHallstrom) for his help and hardware support.
+
+- In no particular order, special thanks to:
+    - [SweedishChef](https://github.com/JonathanHallstrom) for his help and hardware support.
+    - Micpilar for his hardware contributions.
 
 - [bullet](https://github.com/jw1912/bullet)
 

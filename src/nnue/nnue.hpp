@@ -14,73 +14,120 @@
 
 using namespace chess;
 
-struct modified_features {
-    int added;
-    int removed;
-    int captured;
+struct Features {
+    int size;
+    int features[32];
 
-    modified_features(int added, int removed, int captured):
-        added(added),
-        removed(removed),
-        captured(captured) {};
+    Features() = default;
+    Features(int size): size(size) {}
+
+    int* begin() { return features; }
+    int* end() { return features + size; }
+
+    const int* begin() const { return features; }
+    const int* end() const { return features + size; }
+
+    int& operator[](int index){
+        return features[index];
+    }
 };
 
-class NNUE {
-    public:
+struct ModifiedFeatures {
+    int added_1 = -1;
+    int added_2 = -1;
+    int removed_1 = -1;
+    int removed_2 = -1;
 
-    /*****************
-    Feature transformer
-    ******************/
+    enum {
+        NORMAL, CAPTURE, CASTLING
+    } type;
 
-    // 2*input_size -> 2*acc_size 
+    ModifiedFeatures() = default;
 
-    // weights are flattened 2d array, to be contiguous in memory.
-    // otherways it would be an array of pointers pointing to scattered memory locations, 
-    // which would be slower and unpractical.
-    // weights are stored in row major
-    int16_t* ft_weights;
-    int16_t* ft_bias;
+    ModifiedFeatures(int added, int removed):
+        added_1(added),
+        removed_1(removed) {
+            type = NORMAL;
+        };
 
-    // all computations happen in int16. Scale is 127
-    // to make sure that even after accumulation no overflows happen : there can be a maximum of 30 active input features,
-    // so we need (sum of 30 weights) + bias < 32767
-    // we need to make sure this limit is not reached before converting the model.
+    ModifiedFeatures(int added, int removed, int captured):
+        added_1(added),
+        removed_1(removed),
+        removed_2(captured) {
+            type = CAPTURE;
+        };
 
-    // unclipped output is in accumulator
+    ModifiedFeatures(int added, int added_2, int removed, int removed_2):
+        added_1(added),
+        added_2(added_2),
+        removed_1(removed),
+        removed_2(removed_2) {
+            type = CASTLING;
+        };
 
-    // apply crelu16 and store
-    int16_t ft_clipped_output[ACC_SIZE*2];
-
-    /******
-    Layer 1
-    *******/
-
-    // 2*acc_size -> 1
-
-    // int8 weights with scale 64. Multiplication outputs in int16, so no overflows,
-    // and sum is computed in int32. Maximum weights times maximum input with accumulation is 127*127*512 = 8258048
-    // maximum bias is therefore (2,147,483,647-8,258,048)/32 = 66850799 which is totally fine.
-
-    int16_t* l1_weights;
-    int32_t* l1_bias;
-
-    // also, output is scaled back by 64, so total scale is still only 127. as we only do integer division,
-    // error caused by the division is max 1/127.
-    
-    // max output value is 1*(127*127) + bias, the max possible output with the max possible weight.
-    // this is 16129+bias which is less than the max int16 if bias is less than (int16_max - 16129)/(127*64) = 2.04
-
-    // output is not scaled back by 64, so scale is 64*127 times true output.
-    int32_t run_L1(Accumulators& accumulators, Color stm, int bucket);
-
-    NNUE();
-    ~NNUE();
-
-    void load_model();
-
-    void compute_accumulator(Accumulator& new_acc, const std::vector<int> active_features);
-
-    void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const modified_features m_features);
-
-    int run(Accumulators& accumulators, Color stm, int piece_count);
+    bool valid() const;
 };
+
+namespace NNUE {
+
+inline int input_bucket(Square sq, Color color){
+    return INPUT_BUCKETS[sq.index() ^ (color ? 56 : 0)];
+}
+
+inline int feature(Color persp, Color c, PieceType pt, Square sq, Square king_sq){
+    int flip = persp ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4
+    int mirror = king_sq.file() >= File::FILE_E ? 7 : 0; // mirror horizontally by flipping last 3 bits
+
+    return 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
+         + 384 * (c ^ persp)
+         + 64 * pt
+         + (sq.index() ^ flip ^ mirror);
+}
+
+inline int feature(Color persp, Piece p, Square sq, Square king_sq){
+    int flip = persp ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4
+    int mirror = king_sq.file() >= File::FILE_E ? 7 : 0; // mirror horizontally by flipping last 3 bits
+
+    return 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
+         + 384 * (p.color() ^ persp)
+         + 64 * p.type()
+         + (sq.index() ^ flip ^ mirror);
+}
+
+/*****************
+Feature transformer
+******************/
+
+// 2*input_size -> 2*acc_size 
+
+// weights are flattened 2d array, to be contiguous in memory.
+// weights are stored in row major
+extern int16_t* ft_weights;
+extern int16_t* ft_bias;
+
+/******
+Layer 1
+*******/
+
+// 2*acc_size -> 1
+
+extern int16_t* l1_weights;
+extern int32_t* l1_bias;
+
+int32_t run_L1(Accumulators& accumulators, Color stm, int bucket);
+
+void init();
+void cleanup();
+
+void load_model();
+
+void compute_accumulator(Accumulator& new_acc, const Features active_features);
+
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures& m_features);
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
+        const Features& added_features,
+        const Features& removed_features);
+
+int run(Accumulators& accumulators, Color stm, int piece_count);
+
+}; // namespace NNUE

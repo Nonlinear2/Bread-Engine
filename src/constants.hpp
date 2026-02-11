@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assert.h>
+#include <cstdint>
 #include <cmath>
 #include <array>
 
@@ -8,10 +9,22 @@
 NNUE constants
 *************/
 
-constexpr int INPUT_SIZE = 768;
-constexpr int ACC_SIZE = 1024;
+constexpr int INPUT_BUCKET_COUNT = 8;
+constexpr int INPUT_BUCKETS[64] = {
+    0, 1, 2, 3,  3, 2, 1, 0,
+    4, 4, 5, 5,  5, 5, 4, 4,
+    6, 6, 6, 6,  6, 6, 6, 6,
+    6, 6, 6, 6,  6, 6, 6, 6,
+    7, 7, 7, 7,  7, 7, 7, 7,
+    7, 7, 7, 7,  7, 7, 7, 7,
+    7, 7, 7, 7,  7, 7, 7, 7,
+    7, 7, 7, 7,  7, 7, 7, 7,
+};
 
 constexpr int OUTPUT_BUCKET_COUNT = 8;
+
+constexpr int INPUT_SIZE = 768 * INPUT_BUCKET_COUNT;
+constexpr int ACC_SIZE = 1024;
 
 constexpr int L1_INPUT_SIZE = 2 * ACC_SIZE;
 constexpr int L1_OUTPUT_SIZE = 1;
@@ -32,16 +45,20 @@ using Accumulators = std::array<Accumulator, 2>;
 general constants
 ****************/
 
+constexpr int PIECETYPE_COUNT = 6;
+
 constexpr int TT_MIN_SIZE = 2;
 constexpr int TT_MAX_SIZE = 4096;
 
 constexpr int ENGINE_MAX_DEPTH = 63;
-constexpr int QSEARCH_MAX_DEPTH = 6;
+
+constexpr int QSEARCH_SOFT_DEPTH_LIMIT = 6;
+constexpr int QSEARCH_HARD_DEPTH_LIMIT = 15;
 
 constexpr int MAX_PLY = 256;
 constexpr int STACK_PADDING_SIZE = 2;
 
-constexpr int BENCHMARK_DEPTH = 10;
+constexpr int BENCHMARK_DEPTH = 12;
 
 constexpr int DEPTH_UNSEARCHED = -1;
 constexpr int DEPTH_QSEARCH = 0;
@@ -57,7 +74,6 @@ constexpr int MATE_VALUE = 32'700;
 constexpr int INFINITE_VALUE = 32'701;
 constexpr int NO_VALUE = 32'702;
 
-constexpr int MAX_HISTORY_BONUS = 10'000;
 constexpr int SEE_KING_VALUE = 150'000;
 
 // |    value            |          name                    | is_valid  | is_mate   | is_decisive |
@@ -109,18 +125,4 @@ constexpr bool is_decisive(int value){
 constexpr bool is_regular_eval(int value, bool zws_safe = true){
     assert(std::abs(value) <= NO_VALUE);
     return std::abs(value) <= BEST_VALUE - (zws_safe ? 1 : 0);
-}
-
-constexpr int increment_mate_ply(int value){
-    assert(is_mate(value));
-    assert(is_mate(std::abs(value) - 1)); // make sure new value is still mate
-    return (is_win(value) ? 1 : -1)*(std::abs(value) - 1);
-}
-
-// to make the engine prefer faster checkmates instead of stalling,
-// we decrease the value if the checkmate is deeper in the search tree.
-constexpr int get_mate_in_moves(int value){
-    assert(is_mate(value));
-    int ply = MATE_VALUE - std::abs(value);
-    return (is_win(value) ? 1: -1)*(ply/2 + (ply%2 != 0));
 }

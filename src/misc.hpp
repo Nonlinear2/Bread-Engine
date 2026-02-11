@@ -3,17 +3,14 @@
 #include <array>
 #include <fstream>
 #include <vector>
-#include "piece_square_tables.hpp"
 #include "constants.hpp"
 #include "chess.hpp"
 
 using namespace chess;
 
-constexpr PieceSquareMaps psm = PieceSquareMaps();
-
 const std::vector<int> piece_value = {
     150, // pawn
-    450, // knight
+    440, // knight
     450, // bishop
     750, // rook
     1350, // queen
@@ -24,6 +21,7 @@ const std::vector<int> piece_value = {
 struct Stack {
     Move excluded_move = Move::NO_MOVE;
     Move current_move = Move::NO_MOVE;
+    bool current_move_capture = false;
     Piece moved_piece = Piece::NONE;
     int static_eval = NO_VALUE;
 };
@@ -55,16 +53,12 @@ class SearchLimit {
     int value;
 };
 
-class AccumulatorsStack {
-    public:
-    AccumulatorsStack();
-    Accumulators& push_empty();
-    Accumulators& top();
-    void pop();
+int root_to_pos_mate_value(int value, int ply);
 
-    private:
-    std::vector<Accumulators> stack = std::vector<Accumulators>(MAX_PLY + 1);
-    int idx;
-};
+int pos_to_root_mate_value(int value, int ply);
+
+int to_tt(int value, int ply);
+
+int get_mate_in_moves(int value);
 
 bool is_number_string(const std::string& s);

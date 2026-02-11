@@ -7,6 +7,7 @@
 #include "tbprobe.hpp"
 #include "constants.hpp"
 #include "nnue_board.hpp"
+#include "piece_square_tables.hpp"
 #include "misc.hpp"
 
 namespace Nonsense {

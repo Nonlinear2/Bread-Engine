@@ -2,35 +2,42 @@
 #include "uci.hpp"
 #include <iostream>
 #include <fstream>
-#include <chrono>
-#include <thread>
 
 int main(){
-    UCIAgent uci_engine = UCIAgent();
+    UCIAgent uci_engine;
     std::ifstream file(bread_DEBUG_UCI_COMMANDS_PATH);
     std::string input;
-    bool running;
 
     if (!file.is_open()) {
         std::cerr << "failed to open file" << std::endl;
         return 1;
     }
 
+    std::vector<bool> correct_nodes = {};
     while (std::getline(file, input)) {
         std::cout << "-> " << input << std::endl;
-        running = uci_engine.process_uci_command(input);
-        if (UCIAgent::split_string(input)[0] == "go")
-            // avoid writing logic to check if the thread is running
-            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+        bool running = uci_engine.process_uci_command(input);
         if (!running)
             break;
+
+        auto tokens = UCIAgent::split_string(input);
+        if (!tokens.empty() && tokens[0] == "go") {
+            if (uci_engine.main_search_thread.joinable()) {
+                uci_engine.main_search_thread.join();
+            }
+            correct_nodes.push_back(std::stoi(tokens[2]) == uci_engine.engine.nodes);
+        }
     }
 
     if (uci_engine.main_search_thread.joinable()) {
         uci_engine.main_search_thread.join();
     }
 
-    // uci_engine.engine.save_state("saved_state.bin");
     std::cout << "ok\n";
+    for (int i = 0; i < correct_nodes.size(); i++){
+        if (!correct_nodes[i])
+        std::cout << "missmatch between go nodes and command number: " << i << std::endl;
+    }
     return 0;
 }

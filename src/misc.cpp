@@ -31,22 +31,28 @@ void KillerMoves::load_from_stream(std::ifstream& ifs){
             ifs.read(reinterpret_cast<char*>(&v), sizeof(uint16_t));
 }
 
-AccumulatorsStack::AccumulatorsStack(){
-    idx = 0;
+int root_to_pos_mate_value(int value, int ply){
+    assert(is_mate(value));
+    assert(is_mate(std::abs(value) + ply)); // make sure new value is still mate
+    return is_win(value) ? value + ply : value - ply;
 }
 
-Accumulators& AccumulatorsStack::push_empty(){
-    assert(idx < MAX_PLY + 1);
-    return stack[++idx];
+int pos_to_root_mate_value(int value, int ply){
+    assert(is_mate(value));
+    assert(is_mate(std::abs(value) - ply)); // make sure new value is still mate
+    return is_win(value) ? value - ply : value + ply;
 }
 
-Accumulators& AccumulatorsStack::top(){
-    return stack[idx];
+int to_tt(int value, int ply){
+    return is_mate(value) ? root_to_pos_mate_value(value, ply) : value;
 }
 
-void AccumulatorsStack::pop(){
-    assert(idx > 0);
-    idx--;
+// to make the engine prefer faster checkmates instead of stalling,
+// we decrease the value if the checkmate is deeper in the search tree.
+int get_mate_in_moves(int value){
+    assert(is_mate(value));
+    int ply = MATE_VALUE - std::abs(value);
+    return (is_win(value) ? 1: -1)*(ply/2 + (ply%2 != 0));
 }
 
 bool is_number_string(const std::string& s){

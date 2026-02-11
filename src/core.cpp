@@ -1,45 +1,50 @@
 #include "core.hpp"
 
-
-TUNEABLE(r_1, int, 164, 0, 500, 20, 0.002);
-TUNEABLE(r_2, int, 279, -100, 1000, 25, 0.002);
-TUNEABLE(rfp_1, int, 159, 0, 500, 25, 0.002);
-TUNEABLE(rfp_2, int, 50, 0, 1000, 50, 0.002);
-TUNEABLE(rfp_3, int, 53, 0, 1000, 50, 0.002);
-TUNEABLE(rfp_4, int, 144, -100, 1000, 20, 0.002);
-TUNEABLE(nmp_1, int, 84, -50, 250, 10, 0.002);
-TUNEABLE(nmp_2, int, 24, -300, 300, 15, 0.002);
-TUNEABLE(lmp_1, int, 117, -100, 500, 20, 0.002);
-TUNEABLE(see_1, int, 89, -100, 1000, 25, 0.002);
-TUNEABLE(see_2, int, 10, 0, 100, 0.5, 0.002);
-TUNEABLE(se_1, int, 8, -100, 100, 1, 0.002);
-TUNEABLE(se_2, int, 1, -100, 100, 1, 0.002);
+TUNEABLE(r_1, int, 199, 0, 500, 30, 0.002);
+TUNEABLE(r_2, int, 258, -100, 1000, 50, 0.002);
+TUNEABLE(rfp_1, int, 128, 0, 500, 30, 0.002);
+TUNEABLE(rfp_2, int, 36, 0, 1000, 10, 0.002);
+TUNEABLE(rfp_3, int, 66, 0, 1000, 10, 0.002);
+TUNEABLE(rfp_4, int, 105, -100, 1000, 25, 0.002);
+TUNEABLE(nmp_1, int, 107, -50, 250, 15, 0.002);
+TUNEABLE(nmp_2, int, 28, -300, 300, 5, 0.002);
+TUNEABLE(lmp_1, int, 98, -100, 500, 22, 0.002);
+TUNEABLE(see_1, int, 90, -100, 1000, 15, 0.002);
+TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
+TUNEABLE(se_1, int, 8, -100, 100, 0.5, 0.002);
+TUNEABLE(se_2, int, 0, -100, 100, 0.5, 0.002);
 TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
-TUNEABLE(cont_1, int, 945, 0, 3000, 70, 0.002);
-TUNEABLE(cont_2, int, 131, 0, 1500, 35, 0.002);
-TUNEABLE(qs_fp_1, int, 1681, 0, 3000, 70, 0.002);
-TUNEABLE(qs_see_1, int, 286, 0, 900, 25, 0.002);
-TUNEABLE(qs_p_1, int, 1029, 0, 5000, 70, 0.002);
-TUNEABLE(cthis_1, int, 8479, 0, 16000, 250, 0.002);
-TUNEABLE(cthis_2, int, 578, 0, 3000, 60, 0.002);
-TUNEABLE(qs_p_idx, int, 7, 0, 20, 1, 0.002);
-TUNEABLE(his_1, int, 28, 0, 300, 7, 0.002);
-TUNEABLE(his_2, int, 26, 0, 300, 5, 0.002);
-TUNEABLE(his_3, int, 1003, 0, 5000, 70, 0.002);
-
+TUNEABLE(cont_1, int, 1141, 0, 3000, 150, 0.002);
+TUNEABLE(cont_2, int, 102, 0, 1500, 25, 0.002);
+TUNEABLE(cont_3, int, 30, 0, 1500, 6, 0.002);
+TUNEABLE(cont_4, int, 30, 0, 1500, 6, 0.002);
+TUNEABLE(cont_5, int, 500, 0, 3000, 100, 0.002);
+TUNEABLE(qs_fp_1, int, 1921, 0, 3000, 300, 0.002);
+TUNEABLE(qs_see_1, int, 268, 0, 900, 50, 0.002);
+TUNEABLE(qs_p_1, int, 1149, 0, 5000, 200, 0.002);
+TUNEABLE(cthis_1, int, 8238, 0, 16000, 1000, 0.002);
+TUNEABLE(cthis_2, int, 648, 0, 3000, 100, 0.002);
+TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
+TUNEABLE(asp_1, int, 98, 0, 5000, 20, 0.002);
+TUNEABLE(asp_2, int, 399, 0, 5000, 60, 0.002);
+TUNEABLE(red_1, int, 1326, 0, 10000, 200, 0.002);
+TUNEABLE(red_2, int, 1788, 0, 10000, 250, 0.002);
+TUNEABLE(red_3, int, 593, 0, 10000, 150, 0.002);
+TUNEABLE(red_4, int, 1689, 0, 10000, 200, 0.002);
+TUNEABLE(red_5, int, 1085, 0, 10000, 200, 0.002);
+TUNEABLE(red_6, int, 856, 0, 10000, 180, 0.002);
+TUNEABLE(red_th_1, int, 2262, 0, 10000, 450, 0.002);
 
 int nnue_evaluate(NnueBoard& pos){
     return pos.evaluate();
 }
 
 int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
-    float move_num = num_moves_out_of_book < 10 ? static_cast<float>(num_moves_out_of_book) : 10;
-    float factor = 2 -  move_num / 10;
     float target = num_moves_until_time_control == 0
-        ? time_left / 30
+        ? time_left / 20
         : time_left / (num_moves_until_time_control+5);
-    
-    return static_cast<int>(factor*target + 0.9F*increment);
+
+    return static_cast<int>(target + 0.9F*increment);
 }
 
 bool Engine::update_interrupt_flag(){
@@ -99,7 +104,7 @@ void Engine::load_state(std::string file){
 void Engine::update_run_time(){
     run_time = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::high_resolution_clock::now() - start_time
-    ).count();
+    ).count() + 1; // add 1 to avoid divisions by 0
 };
 
 std::pair<std::string, std::string> Engine::get_pv_pmove(){
@@ -161,6 +166,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
 
     nodes = 0;
+    tb_hits = 0;
+    seldepth = 0;
     current_depth = 0;
 
     root_moves.clear();
@@ -173,9 +180,10 @@ Move Engine::iterative_deepening(SearchLimit limit){
     bool root_tb_hit = tablebase_loaded && TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
     if (root_tb_hit && !(is_nonsense && best_move.score() == TB_VALUE && !Nonsense::only_knight_bishop(pos))){
         update_run_time();
-        std::cout << "info depth 0";
+        std::cout << "info depth 0 seldepth 0";
         std::cout << " score cp " << best_move.score();
         std::cout << " nodes 0 nps 0";
+        std::cout << " tbhits 0";
         std::cout << " time " << run_time;
         std::cout << " hashfull " << transposition_table.hashfull();
         std::cout << " pv " << uci::moveToUci(best_move) << std::endl;
@@ -190,8 +198,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
                 break;
             }
 
-            if (root_tb_hit || pos.them(engine_color).count() == 1)
-            {
+            if (root_tb_hit || pos.them(engine_color).count() == 1){
                 clear_state();
                 evaluate = Nonsense::evaluate;
                 nonsense_stage = Nonsense::PROMOTE;
@@ -204,8 +211,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
                 break;
             }
 
-            if (Nonsense::only_knight_bishop(pos))
-            {
+            if (Nonsense::only_knight_bishop(pos)){
                 clear_state();
                 evaluate = nnue_evaluate;
                 nonsense_stage = Nonsense::CHECKMATE;
@@ -215,32 +221,63 @@ Move Engine::iterative_deepening(SearchLimit limit){
         default:
             break;
     }
-
+    int best_move_changes = 0;
     while (true){
         current_depth++;
 
-        negamax<true>(current_depth, -INFINITE_VALUE, INFINITE_VALUE, root_ss, false);
-        best_move = root_moves[0];
+        int asp_alpha;
+        int asp_beta;
+        if (current_depth <= 6){
+            asp_alpha = -INFINITE_VALUE;
+            asp_beta = INFINITE_VALUE;
+        } else {
+            int margin = asp_1 + asp_2*std::abs(best_move.score())/1024;
+            asp_alpha = std::clamp(best_move.score() - margin, -INFINITE_VALUE, INFINITE_VALUE);
+            asp_beta = std::clamp(best_move.score() + margin, -INFINITE_VALUE, INFINITE_VALUE);
+        }
+
+        while (true){
+            negamax<true>(current_depth, asp_alpha, asp_beta, root_ss, false);
+
+            if (best_move != Move::NO_MOVE && best_move != root_moves[0])
+                best_move_changes++;
+
+            best_move = root_moves[0];
+            
+            assert(is_valid(best_move.score()));
+
+            if (interrupt_flag)
+                break;
+
+            if (best_move.score() <= asp_alpha)
+                asp_alpha -= asp_beta - asp_alpha;
+            else if (best_move.score() >= asp_beta)
+                asp_beta += asp_beta - asp_alpha;
+            else
+                break;
+
+            asp_alpha = std::clamp(asp_alpha, -INFINITE_VALUE, INFINITE_VALUE);
+            asp_beta = std::clamp(asp_beta, -INFINITE_VALUE, INFINITE_VALUE);
+        }
 
         std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
         pv = pv_pmove.first;
-        if (pv_pmove.second.size() > 0){
+        if (pv_pmove.second.size() > 0)
             ponder_move = pv_pmove.second;
-        }
 
         update_run_time();
-        if (run_time == 0)
-            run_time = 1; // avoid division by 0;
 
         // do not count interrupted searches in depth
         std::cout << "info depth " << current_depth - interrupt_flag;
-        if (is_mate(best_move.score())){
+        std::cout << " seldepth " << seldepth;
+        if (is_mate(best_move.score()))
             std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
-        } else {
+        else
             std::cout << " score cp " << best_move.score();
-        }
+
         std::cout << " nodes " << nodes;
         std::cout << " nps " << nodes * 1000 / run_time;
+        std::cout << " tbhits " << tb_hits;
         std::cout << " time " << run_time;
         std::cout << " hashfull " << transposition_table.hashfull();
         std::cout << " pv" << pv << std::endl;
@@ -248,8 +285,10 @@ Move Engine::iterative_deepening(SearchLimit limit){
         // should the search really stop if there is a mate for the oponent?
         if (interrupt_flag
             || is_mate(best_move.score())
+            || current_depth >= ENGINE_MAX_DEPTH
             || (limit.type == LimitType::Depth && current_depth == limit.value)
-            || current_depth >= ENGINE_MAX_DEPTH)
+            || (limit.type == LimitType::Nodes && nodes >= limit.value)
+            || (limit.type == LimitType::Time && best_move_changes < 1 && run_time > 2*limit.value / 3))
             break;
     }
 
@@ -284,13 +323,15 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     assert(alpha < beta);
     assert(pv || (alpha == beta - 1));
 
-    nodes++;
-
     const bool root_node = ss == root_ss;
     assert(!root_node || pos.isGameOver().second == GameResult::NONE);
 
     const int ply = ss - root_ss;
     assert(ply < MAX_PLY); // avoid stack overflow
+
+    nodes++;
+    if (ply > seldepth)
+        seldepth = ply;
 
     if (root_node)
         pos.synchronize();
@@ -301,10 +342,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     if (pos.isRepetition(2) || pos.isHalfMoveDraw() || pos.isInsufficientMaterial())
         return 0;
-
-    // we check can_return only at depth 5 or higher to avoid doing it at all nodes
-    if (interrupt_flag || (depth >= 5 && update_interrupt_flag()))
-        return NO_VALUE; // the value doesn't matter, it won't be used.
 
     if (ply >= MAX_PLY - 1)
         return evaluate(pos);
@@ -317,11 +354,20 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     int static_eval, eval;
 
     // tablebase probe
-    if (tablebase_loaded && TB::probe_wdl(pos, eval)){
+    if (!root_node && tablebase_loaded && TB::probe_wdl(pos, eval)){
+        tb_hits++;
         if (nonsense_stage == Nonsense::STANDARD
             || nonsense_stage == Nonsense::CHECKMATE
             || eval == 0)
             return eval;
+    }
+
+    // mate distance pruning
+    if (!root_node){
+        alpha = std::max(pos_to_root_mate_value(-MATE_VALUE, ply), alpha);
+        beta  = std::min(pos_to_root_mate_value(MATE_VALUE, ply), beta);
+        if (alpha >= beta)
+            return alpha;
     }
 
     int max_value = -INFINITE_VALUE;
@@ -329,7 +375,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     Move move;
     int value;
     Piece prev_piece = (ss - 1)->moved_piece;
-    Square prev_to = (ss - 1)->current_move.to();
+    Square prev_to = ((ss - 1)->current_move == Move::NULL_MOVE 
+                      || (ss - 1)->current_move == Move::NO_MOVE) ? Square::NO_SQ : (ss - 1)->current_move.to();
 
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
@@ -355,10 +402,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
-
-    static_eval = eval = transposition.static_eval;
-    eval = transposition.value;
-    move_gen.set_tt_move(transposition.move);
+    if (is_mate(transposition.value))
+        transposition.value = pos_to_root_mate_value(transposition.value, ply);
     
     chess::Move excluded_move = ss->excluded_move;
     if (!root_node && !pv && transposition.depth >= depth && excluded_move == Move::NO_MOVE){
@@ -381,7 +426,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (beta <= alpha)
         return transposition.value;
 
-    bool in_check = pos.inCheck();
+    move_gen.set_tt_move(transposition.move);
+
+    static_eval = transposition.static_eval;
+    eval = transposition.value;
 
     if (static_eval == NO_VALUE)
         static_eval = evaluate(pos);
@@ -395,6 +443,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     bool tt_capture = transposition.move != Move::NO_MOVE && pos.isCapture(transposition.move);
 
+    bool in_check = pos.inCheck();
+
     // pruning
     if (!root_node && !pv && !in_check){
 
@@ -406,23 +456,24 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
 
         // reverse futility pruning
-        if (depth < 6 && eval - depth * (rfp_1 - rfp_2*cutnode) - rfp_3 + rfp_4*improving >= beta)
+        if (depth < 6 + 3*(!is_hit)
+            && eval - depth * (rfp_1 - rfp_2*cutnode) - rfp_3 + rfp_4*improving >= beta)
             return eval;
 
         // null move pruning
         // maybe check for zugzwang?
-        int null_move_eval;
         if (cutnode && (ss - 1)->current_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
             && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta)){
 
-            int R = 2 + (eval >= beta) + depth / 4 + tt_capture;
+            int R = 3 + (eval >= beta) + depth / 4 + tt_capture;
             ss->moved_piece = Piece::NONE;
             ss->current_move = Move::NULL_MOVE;
+            ss->current_move_capture = false;
             pos.makeNullMove();
-            null_move_eval = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1, false);
+            int null_move_value = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1, false);
             pos.unmakeNullMove();
-            if (null_move_eval >= beta && !is_win(null_move_eval))
-                return null_move_eval;
+            if (null_move_value >= beta && !is_win(null_move_value))
+                return null_move_value;
         }
     }
 
@@ -435,6 +486,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.in_buffer(depth, move);
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
+
+            if (!is_capture && move_gen.index() >= 6 + 2*depth*depth + 3*improving)
+                continue;
+
             // lmp
             if (!in_check && !is_capture && move_gen.index() > 2 + depth + improving 
                 && !is_hit && eval - lmp_1 * !improving < alpha)
@@ -467,12 +522,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             int singular_beta = transposition.value - se_1 - se_2*depth;
 
             if (is_regular_eval(singular_beta)){
+                auto saved_ss = *ss;
                 ss->excluded_move = move;
                 value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss, cutnode);
-                ss->excluded_move = Move::NO_MOVE;
-    
-                if (interrupt_flag)
-                    return NO_VALUE;
+                *ss = saved_ss;
     
                 if (value < singular_beta)
                     extension = 1;
@@ -485,21 +538,24 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         ss->moved_piece = pos.at(move.from());
         ss->current_move = move;
-        pos.update_state(move);
+        ss->current_move_capture = is_capture;
+        pos.update_state(move, transposition_table);
 
         bool gives_check = pos.inCheck();
 
-        // late move reductions
-        new_depth += gives_check && !root_node;
-        new_depth -= depth > 5 && !is_hit && !is_killer; // IIR
+        new_depth -= depth > 5 && !is_hit; // IIR
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
-        int reduced_depth = new_depth;
-        reduced_depth -= move_gen.index() > 1 && !is_capture;
-        reduced_depth -= tt_capture && !is_capture;
-        reduced_depth -= move_gen.index() > lmr_1;
+        int reduction = 0;
 
-        reduced_depth = std::min(reduced_depth, ENGINE_MAX_DEPTH);
+        reduction -= red_1 * (gives_check && !root_node);
+        reduction += red_2 * (move_gen.index() > 1 && !is_capture);
+        reduction += red_3 * (tt_capture && !is_capture);
+        reduction += red_4 * (move_gen.index() > lmr_1);
+        reduction += red_5 * (cutnode && depth > 7);
+        reduction += red_6 * (depth > 3 && !improving);
+
+        int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
         if (move_gen.index() > 0 && depth >= 2){
             value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1, true);
@@ -507,22 +563,19 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             if (value > alpha && reduced_depth < new_depth){
                 value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
                 if (!is_capture)
-                    move_gen.update_cont_history(ss->moved_piece, move.to().index(), cont_1);
+                    move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), cont_1);
             } else if (value <= alpha && !is_capture)
-                move_gen.update_cont_history(ss->moved_piece, move.to().index(), -cont_2);
+                move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
 
         } else if (!pv || move_gen.index() > 0){
             value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
         }
 
         if (pv && (move_gen.index() == 0 || value > alpha)){
-            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1, false);
+            value = -negamax<true>(new_depth - (reduction > red_th_1), -beta, -alpha, ss + 1, false);
         }
 
         pos.restore_state(move);
-
-        if (interrupt_flag)
-            return NO_VALUE;
 
         if (root_node)
             root_moves[move_gen.index()].setScore(value);
@@ -539,10 +592,15 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             }
         }
 
+        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag())){
+            assert(is_valid(max_value));
+            return max_value;
+        }
+
         alpha = std::max(alpha, value);
         if (beta <= alpha){
             if (!is_capture)
-                move_gen.update_history(move, std::min(depth*depth*his_1 + his_2, his_3));
+                move_gen.update_history(move, depth);
             SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.add_move(depth, move);
             break;
         }
@@ -550,17 +608,17 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     if (!is_valid(max_value)){
         assert(!root_node);
-        if (move_gen.tt_move == Move::NO_MOVE && move_gen.empty()){ // avoid calling expensive try_outcome_eval function
+        if (move_gen.tt_move == Move::NO_MOVE && move_gen.empty()){
             // If board is in check, it is checkmate
             // if there are no legal moves and it's not check, it is stalemate so eval is 0
-            max_value = pos.inCheck() ? -MATE_VALUE : 0;
+            max_value = pos.inCheck() ? pos_to_root_mate_value(-MATE_VALUE, ply) : 0;
 
             if (nonsense_stage == Nonsense::TAKE_PIECES
                 && pos.them(engine_color).count() != 1
                 && pos.sideToMove() != engine_color
                 && is_loss(max_value))
                 max_value = TB_VALUE;
-                
+
             // if it should be checkmate, but there are not only bishops and knights, then say the position is winning
             if (nonsense_stage == Nonsense::PROMOTE
                 && !Nonsense::only_knight_bishop(pos)
@@ -581,6 +639,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         return alpha;
     }
 
+    if (max_value <= initial_alpha && !(ss - 1)->current_move_capture){
+        move_gen.update_cont_history(
+            (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, std::min(depth*cont_3 + cont_4, cont_5));
+    }
+
     // early return without storing the eval in the TT
     if (!root_node && pos.halfMoveClock() + depth >= 100)
         return max_value;
@@ -598,10 +661,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     assert(is_valid(max_value));
 
-    if (is_mate(max_value))
-        max_value = increment_mate_ply(max_value);
-
-    transposition_table.store(zobrist_hash, max_value, static_eval, depth, best_move, node_type, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+    transposition_table.store(zobrist_hash, to_tt(max_value, ply), static_eval, depth, best_move,
+        node_type, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
 
     return max_value;
 }
@@ -609,21 +670,31 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 template<bool pv>
 int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(pv || (alpha == beta - 1));
+    assert(alpha < INFINITE_VALUE && beta > -INFINITE_VALUE);
+    assert(alpha < beta);
+    assert(depth >= -QSEARCH_HARD_DEPTH_LIMIT);
+
+    const int ply = ss - root_ss;
+    assert(ply < MAX_PLY); // avoid stack overflow
 
     nodes++;
+    if (ply > seldepth)
+        seldepth = ply;
 
     int stand_pat = NO_VALUE;
 
     // tablebase probe
-    if (tablebase_loaded && TB::probe_wdl(pos, stand_pat))
+    if (tablebase_loaded && TB::probe_wdl(pos, stand_pat)){
+        tb_hits++;
         if (evaluate != Nonsense::evaluate || stand_pat == 0)
             return stand_pat;
+    }
 
-    if (pos.isHalfMoveDraw()) 
+    if (pos.isHalfMoveDraw() || pos.isInsufficientMaterial() || pos.isRepetition(1) || pos.isRepetition(2)) 
         return 0;
 
-    const int ply = ss - root_ss;
-    assert(ply < MAX_PLY); // avoid stack overflow
+    if (ply >= MAX_PLY - 1)
+        return evaluate(pos);
 
     int value;
     Move move;
@@ -632,14 +703,14 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = pos.hash();
 
-    // first we check for transposition. If it is outcome, it should have already been stored
-    // with an exact flag, so the stand pat will be correct anyways.
     SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(
         (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos
     );
 
     bool is_hit;
     TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
+    if (is_mate(transposition.value))
+        transposition.value = pos_to_root_mate_value(transposition.value, ply);
 
     if (!pv && is_valid(transposition.value)){
         switch (transposition.flag){
@@ -659,35 +730,40 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             return transposition.value;
     }
 
-    stand_pat = transposition.static_eval;
+    bool in_check = pos.inCheck();
 
-    if (!is_valid(stand_pat))
-        stand_pat = evaluate(pos);
+    if (!in_check || depth <= -QSEARCH_HARD_DEPTH_LIMIT){
+        stand_pat = transposition.static_eval;
+    
+        if (!is_valid(stand_pat))
+            stand_pat = evaluate(pos);
+    
+        assert(is_regular_eval(stand_pat, false));
+    
+        if (is_valid(transposition.value) && !is_decisive(transposition.value)
+            && (
+                transposition.flag == TFlag::EXACT 
+                || (transposition.flag == TFlag::LOWER_BOUND && transposition.value >= stand_pat)
+                || (transposition.flag == TFlag::UPPER_BOUND && transposition.value <= stand_pat)
+                ))
+                stand_pat = transposition.value;
+    
+        if (stand_pat >= beta){
+            if (!is_hit)
+                transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), stand_pat,
+                    DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+            return stand_pat;
+        }
 
-    assert(is_regular_eval(stand_pat, false));
+        alpha = std::max(alpha, stand_pat);
 
-    if (is_valid(transposition.value) && !is_decisive(transposition.value)
-        && (
-            transposition.flag == TFlag::EXACT 
-            || (transposition.flag == TFlag::LOWER_BOUND && transposition.value >= stand_pat)
-            || (transposition.flag == TFlag::UPPER_BOUND && transposition.value <= stand_pat)
-            ))
-            stand_pat = transposition.value;
-
-    if (stand_pat >= beta){
-        if (!is_hit)
-            transposition_table.store(zobrist_hash, stand_pat, stand_pat, DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
-        return stand_pat;
+        if (depth <= -QSEARCH_SOFT_DEPTH_LIMIT || depth <= -QSEARCH_HARD_DEPTH_LIMIT)
+            return stand_pat;
     }
 
     capture_gen.set_tt_move(transposition.move);
-    
-    if (depth == -QSEARCH_MAX_DEPTH || ply >= MAX_PLY - 1)
-        return stand_pat;
 
-    alpha = std::max(alpha, stand_pat);
-
-    int max_value = stand_pat;
+    int max_value = in_check ? -INFINITE_VALUE : stand_pat;
 
     Square previous_to_square = ((ss - 1)->current_move).to();
 
@@ -695,7 +771,10 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         Piece captured_piece = pos.at(move.to());
         Piece moved_piece = pos.at(move.from());
 
-        if (move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
+        if (!in_check && move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
+            if (!is_hit && capture_gen.index() > 10)
+                continue;
+
             if (stand_pat 
                 + piece_value[static_cast<int>(captured_piece.type())]
                 - piece_value[static_cast<int>(moved_piece.type())]
@@ -713,13 +792,20 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
         ss->moved_piece = moved_piece;
         ss->current_move = move;
-        pos.update_state(move);
+        ss->current_move_capture = (captured_piece != Piece::NONE);
+        pos.update_state(move, transposition_table);
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
 
         if (value > max_value){
             max_value = value;
-            best_move = move;
+            if (value > alpha)
+                best_move = move;
+        }
+
+        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag())){
+            assert(is_valid(max_value));
+            return max_value;
         }
 
         alpha = std::max(alpha, value);
@@ -727,7 +813,14 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             break;
     }
 
-    if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() && pos.try_outcome_eval(stand_pat)){
+    assert(!pos.isInsufficientMaterial());
+    if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() 
+        && (in_check || pos.is_stalemate())){
+
+        if (in_check)
+            stand_pat = pos_to_root_mate_value(-MATE_VALUE, ply);
+        else
+            stand_pat = 0;
 
         if (nonsense_stage == Nonsense::TAKE_PIECES
             && pos.them(engine_color).count() != 1
@@ -743,22 +836,23 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             stand_pat = TB_VALUE;
         }
 
+        transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), NO_VALUE, DEPTH_QSEARCH,
+            Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
         return stand_pat;
     }
 
+    // assert(pos.isGameOver().second == GameResult::NONE);
+    assert(is_valid(max_value));
+
     // avoid storing history dependant values
-    if (pos.halfMoveClock() + depth + QSEARCH_MAX_DEPTH >= 100)
+    if (pos.halfMoveClock() + depth + QSEARCH_SOFT_DEPTH_LIMIT >= 100)
         return max_value;
 
     if (depth == 0 || depth == -1)
-        transposition_table.store(zobrist_hash, max_value,
-            stand_pat,
-            DEPTH_QSEARCH, best_move,
+        transposition_table.store(zobrist_hash, to_tt(max_value, ply),
+            stand_pat, DEPTH_QSEARCH, best_move,
             max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
             static_cast<uint8_t>(pos.fullMoveNumber()), pv);
-
-    if (is_mate(max_value))
-        max_value = increment_mate_ply(max_value);
 
     return max_value;
 }

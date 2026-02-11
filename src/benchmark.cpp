@@ -51,16 +51,15 @@ void benchmark_nn(){
     std::cout << "============================== \n";
 }
 
-void benchmark_engine(int depth){
-
-    Engine engine = Engine();
+void benchmark_engine(Engine& engine, int depth){
 
     std::vector<int> times;
     std::vector<int> nodes;
     
-    Board cb = Board();
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
+    int count = 1;
     for (auto fen: fens){
+        std::cout << "position " << count++ << " / " << fens.size() << ": " << fen << std::endl;
 
         start_time = std::chrono::high_resolution_clock::now();
 
@@ -71,17 +70,19 @@ void benchmark_engine(int depth){
         ).count());
         nodes.push_back(engine.nodes);
 
-        cb.setFen(fen);
-
-        std::cout << engine.current_depth << std::endl;
+        std::cout << std::endl;
     }
+
     engine.transposition_table.info();
-    std::cout << "============================== \n";
-    std::cout << "total nodes: " << sum(nodes) << "\n";
-    std::cout << "average nodes: " << sum(nodes) / fens.size() << "\n";
-    std::cout << "total time: " << sum(times) << " ms\n";
-    std::cout << "average nodes per second: " << 1000 * sum(nodes) / sum(times) << "\n";
-    std::cout << "============================== \n";
+    std::cout << "=================================" << std::endl;
+    std::cout << "total nodes: " << sum(nodes) << std::endl;
+    std::cout << "average nodes: " << sum(nodes) / fens.size() << std::endl;
+    std::cout << "total time: " << sum(times) << " ms" << std::endl;
+    std::cout << "average nodes per second: " << 1000 * sum(nodes) / sum(times) << std::endl;
+    std::cout << "=================================" << std::endl;
+
+    engine.pos.setFen(constants::STARTPOS);
+    engine.clear_state();
 }
 
 } // namespace Benchmark
