@@ -39,5 +39,5 @@ class PawnCorrectionHistory {
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
-    std::array<int, 2*65536> history = {};
+    std::array<int, 2*PAWN_CORRHIST_SIZE> history = {};
 };

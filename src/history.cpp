@@ -60,7 +60,7 @@ void PawnCorrectionHistory::clear(){
 }
 
 int& PawnCorrectionHistory::get(bool color, uint16_t pawn_key){
-    return history[2*pawn_key + color];
+    return history[2*(pawn_key % PAWN_CORRHIST_SIZE) + color];
 }
 
 void PawnCorrectionHistory::apply_bonus(bool color, uint16_t pawn_key, int bonus){
