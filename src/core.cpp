@@ -759,11 +759,6 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (!in_check || depth <= -QSEARCH_HARD_DEPTH_LIMIT){
         uncorrected_static_eval = transposition.static_eval;
     
-        if (!is_valid(stand_pat))
-            stand_pat = evaluate(pos);
-    
-        assert(is_regular_eval(stand_pat, false));
-    
         if (!is_valid(static_eval))
             uncorrected_static_eval = evaluate(pos);
 
@@ -771,6 +766,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             -BEST_VALUE, BEST_VALUE);
 
         stand_pat = static_eval;
+        assert(is_regular_eval(stand_pat, false));
 
         if (is_valid(transposition.value) && !is_decisive(transposition.value)
             && (
