@@ -34,6 +34,8 @@ TUNEABLE(red_4, int, 1689, 0, 10000, 200, 0.002);
 TUNEABLE(red_5, int, 1085, 0, 10000, 200, 0.002);
 TUNEABLE(red_6, int, 856, 0, 10000, 180, 0.002);
 TUNEABLE(red_th_1, int, 2262, 0, 10000, 450, 0.002);
+TUNEABLE(corr_1, int, 100, 0, 10000, 20, 0.002);
+TUNEABLE(corr_2, int, 650, 0, 10000, 130, 0.002);
 
 
 inline PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 
@@ -440,7 +442,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (uncorrected_static_eval == NO_VALUE)
         uncorrected_static_eval = evaluate(pos);
 
-    static_eval = std::clamp(uncorrected_static_eval + pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 120,
+    static_eval = std::clamp(
+        uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 12000,
         -BEST_VALUE, BEST_VALUE);
 
     ss->static_eval = static_eval;
@@ -659,7 +662,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     if (!in_check && !(best_move != Move::NO_MOVE && pos.isCapture(best_move))
         && (max_value > ss->static_eval) == (best_move != Move::NO_MOVE)){
-        int bonus = std::clamp((max_value - static_eval) * depth/7, -650, 650);
+        int bonus = std::clamp((max_value - static_eval) * depth/7, -corr_2, corr_2);
         pawn_corrhist.apply_bonus(pos.sideToMove(), pos.get_pawn_key(), bonus);
     }
 
@@ -760,7 +763,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         if (!is_valid(static_eval))
             uncorrected_static_eval = evaluate(pos);
 
-        static_eval = std::clamp(uncorrected_static_eval + pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 120,
+        static_eval = std::clamp(
+            uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 12000,
             -BEST_VALUE, BEST_VALUE);
 
         stand_pat = static_eval;
