@@ -66,6 +66,7 @@ class NnueBoard: public Board {
     };
 
     AccumulatorsStack accumulators_stack;
+    uint16_t pawn_key;
 
     // accessed by [bucket][stm][mirrored]
     std::array<std::array<std::array<std::pair<AllBitboards, Accumulator>, 2>, 2>, INPUT_BUCKET_COUNT> finny_table;

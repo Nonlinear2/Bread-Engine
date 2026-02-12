@@ -38,6 +38,8 @@ void NnueBoard::synchronize(){
     NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
     accumulators_stack.clear_top_update();
 
+    recompute_pawn_key();
+
     AllBitboards empty_pos = AllBitboards(); // empty position;
     Accumulator empty_acc;
     NNUE::compute_accumulator(empty_acc, {}); // accumulators for an empty position;
