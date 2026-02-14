@@ -34,6 +34,12 @@ TUNEABLE(red_4, int, 1689, 0, 10000, 200, 0.002);
 TUNEABLE(red_5, int, 1085, 0, 10000, 200, 0.002);
 TUNEABLE(red_6, int, 856, 0, 10000, 180, 0.002);
 TUNEABLE(red_th_1, int, 2262, 0, 10000, 450, 0.002);
+TUNEABLE(corr_1, int, 100, 0, 10000, 20, 0.002);
+TUNEABLE(corr_2, int, 650, 0, 10000, 130, 0.002);
+
+
+inline PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 
+
 
 int nnue_evaluate(NnueBoard& pos){
     return pos.evaluate();
@@ -67,6 +73,7 @@ bool Engine::update_interrupt_flag(){
 void Engine::clear_state(){
     transposition_table.clear();
     SortedMoveGen<movegen::MoveGenType::ALL>::history.clear();
+    pawn_corrhist.clear();
     SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.clear();
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
 }
@@ -80,6 +87,7 @@ void Engine::save_state(std::string file){
 
     transposition_table.save_to_stream(ofs);
     SortedMoveGen<movegen::MoveGenType::ALL>::history.save_to_stream(ofs);
+    pawn_corrhist.save_to_stream(ofs);
     SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.save_to_stream(ofs);
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.save_to_stream(ofs);
 
@@ -95,6 +103,7 @@ void Engine::load_state(std::string file){
 
     transposition_table.load_from_stream(ifs);
     SortedMoveGen<movegen::MoveGenType::ALL>::history.load_from_stream(ifs);
+    pawn_corrhist.load_from_stream(ifs);
     SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.load_from_stream(ifs);
     SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.load_from_stream(ifs);
 
@@ -351,7 +360,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (depth <= 0)
         return qsearch<pv>(alpha, beta, 0, ss + 1);
 
-    int static_eval, eval;
+    int static_eval, uncorrected_static_eval, eval;
 
     // tablebase probe
     if (!root_node && tablebase_loaded && TB::probe_wdl(pos, eval)){
@@ -428,15 +437,21 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     move_gen.set_tt_move(transposition.move);
 
-    static_eval = transposition.static_eval;
-    eval = transposition.value;
+    uncorrected_static_eval = transposition.static_eval;
 
-    if (static_eval == NO_VALUE)
-        static_eval = evaluate(pos);
-    if (eval == NO_VALUE)
-        eval = static_eval;
+    if (uncorrected_static_eval == NO_VALUE)
+        uncorrected_static_eval = evaluate(pos);
+
+    static_eval = std::clamp(
+        uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 12000,
+        -BEST_VALUE, BEST_VALUE);
 
     ss->static_eval = static_eval;
+
+    if (transposition.value == NO_VALUE)
+        eval = static_eval;
+    else
+        eval = transposition.value;
 
     bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval)
         && ss->static_eval > (ss - 2)->static_eval;
@@ -644,6 +659,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, std::min(depth*cont_3 + cont_4, cont_5));
     }
 
+
+    if (!in_check && !(best_move != Move::NO_MOVE && pos.isCapture(best_move))
+        && (max_value > ss->static_eval) == (best_move != Move::NO_MOVE)){
+        int bonus = std::clamp((max_value - static_eval) * depth/7, -corr_2, corr_2);
+        pawn_corrhist.apply_bonus(pos.sideToMove(), pos.get_pawn_key(), bonus);
+    }
+
     // early return without storing the eval in the TT
     if (!root_node && pos.halfMoveClock() + depth >= 100)
         return max_value;
@@ -661,7 +683,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     assert(is_valid(max_value));
 
-    transposition_table.store(zobrist_hash, to_tt(max_value, ply), static_eval, depth, best_move,
+    transposition_table.store(zobrist_hash, to_tt(max_value, ply), uncorrected_static_eval, depth, best_move,
         node_type, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
 
     return max_value;
@@ -677,11 +699,14 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     const int ply = ss - root_ss;
     assert(ply < MAX_PLY); // avoid stack overflow
 
+
     nodes++;
     if (ply > seldepth)
         seldepth = ply;
 
     int stand_pat = NO_VALUE;
+    int static_eval = NO_VALUE;
+    int uncorrected_static_eval = NO_VALUE;
 
     // tablebase probe
     if (tablebase_loaded && TB::probe_wdl(pos, stand_pat)){
@@ -733,13 +758,18 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     bool in_check = pos.inCheck();
 
     if (!in_check || depth <= -QSEARCH_HARD_DEPTH_LIMIT){
-        stand_pat = transposition.static_eval;
+        uncorrected_static_eval = transposition.static_eval;
     
-        if (!is_valid(stand_pat))
-            stand_pat = evaluate(pos);
-    
+        if (!is_valid(static_eval))
+            uncorrected_static_eval = evaluate(pos);
+
+        static_eval = std::clamp(
+            uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 12000,
+            -BEST_VALUE, BEST_VALUE);
+
+        stand_pat = static_eval;
         assert(is_regular_eval(stand_pat, false));
-    
+
         if (is_valid(transposition.value) && !is_decisive(transposition.value)
             && (
                 transposition.flag == TFlag::EXACT 
@@ -750,7 +780,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     
         if (stand_pat >= beta){
             if (!is_hit)
-                transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), stand_pat,
+                transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), uncorrected_static_eval,
                     DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
             return stand_pat;
         }
@@ -850,7 +880,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     if (depth == 0 || depth == -1)
         transposition_table.store(zobrist_hash, to_tt(max_value, ply),
-            stand_pat, DEPTH_QSEARCH, best_move,
+            uncorrected_static_eval, DEPTH_QSEARCH, best_move,
             max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
             static_cast<uint8_t>(pos.fullMoveNumber()), pv);
 

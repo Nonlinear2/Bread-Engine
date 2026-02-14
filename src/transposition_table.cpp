@@ -1,6 +1,12 @@
 #include "transposition_table.hpp"
 
-TranspositionTable::TranspositionTable(){allocateMB(256);};
+TranspositionTable::TranspositionTable(){
+    allocateMB(256);
+};
+
+TranspositionTable::~TranspositionTable(){
+    delete[] entries;
+};
 
 void TranspositionTable::info(){
     int used = 0;
@@ -10,7 +16,7 @@ void TranspositionTable::info(){
     int num_upper = 0;
     int num_lower = 0;
 
-    for (int i = 0; i < entries.size(); i++){
+    for (int i = 0; i < size; i++){
         TEntry entry = entries[i];
         if (entry.zobrist_hash != 0){
             used++;
@@ -34,12 +40,12 @@ void TranspositionTable::info(){
             }
         }
     }
-    int used_percentage = used*100/entries.size();
+    int used_percentage = used*100/size;
 
     std::cout << "=================================" << std::endl;
     std::cout << "transposition table:" << std::endl;
     std::cout << "size " << size_mb << " MB" << std::endl;
-    std::cout << "number of entries " << entries.size() << std::endl;
+    std::cout << "number of entries " << size << std::endl;
     std::cout << "used entries " << used << std::endl;
     std::cout << "used percentage " << used_percentage << "%" << std::endl;
     if (used != 0){
@@ -60,15 +66,14 @@ void TranspositionTable::allocateMB(int new_size){
     new_size = std::max(new_size, TT_MIN_SIZE);
     new_size = std::min(new_size, TT_MAX_SIZE);
 
-    size_mb = new_size;
-
     // closest power of 2 to 1'000'000 / 16 is 2^16 = 65536
     assert(sizeof(TEntry) == 16);
     constexpr int entries_in_one_mb = 65536;
-    int num_entries = size_mb * entries_in_one_mb;
+    size = new_size * entries_in_one_mb;
+    size_mb = new_size;
 
-    entries.resize(num_entries, TEntry());
-    entries.shrink_to_fit();
+    delete[] entries;
+    entries = new TEntry[size];
 }
 
 void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int depth,
@@ -77,16 +82,15 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
     assert(move != Move::NULL_MOVE);
 
     // no need to store the side to move, as it is in the zobrist hash.
-    TEntry* entry = &entries[zobrist & (entries.size() - 1)];
+    TEntry* entry = &entries[zobrist & (size - 1)];
 
     // we replace the old entry if:
     // - the old entry is empty
     // - the old entry is more than 4 moves older than the recent entry
     // - the new depth is greater than the old depth
     // - the new depth is nonzero and an exact entry
-    if (entry->depth_tflag == 0 ||
-        move_number > entry->move_number + 4 ||
-        depth > entry->depth() - 1 - 2*pv ||
+    if (move_number > entry->move_number + 4 ||
+        depth > entry->depth() - 1 - 2*pv || // this will be true if the old entry is empty
         (depth != DEPTH_QSEARCH && flag == TFlag::EXACT))
     {
         // add move if the old entry didn't hold the same position or if the new move is better
@@ -102,8 +106,8 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
 }
 
 TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
-    assert((entries.size() & (entries.size() - 1)) == 0);
-    TEntry* entry = &entries[zobrist & (entries.size() - 1)];
+    assert((size & (size - 1)) == 0);
+    TEntry* entry = &entries[zobrist & (size - 1)];
     is_hit = (entry->zobrist_hash == zobrist);
 
     if (is_hit)
@@ -113,7 +117,9 @@ TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
 }
 
 void TranspositionTable::clear(){
-    std::fill(entries.begin(), entries.end(), TEntry());
+    for (size_t i = 0; i < size; i++) {
+        entries[i] = TEntry();
+    }
 }
 
 int TranspositionTable::hashfull(){
@@ -125,13 +131,9 @@ int TranspositionTable::hashfull(){
 }
 
 void TranspositionTable::save_to_stream(std::ofstream& ofs){
-    for (const auto& entry : entries) {
-        ofs.write(reinterpret_cast<const char*>(&entry), sizeof(TEntry));
-    }
+    ofs.write(reinterpret_cast<const char*>(entries), size * sizeof(TEntry));
 }
 
 void TranspositionTable::load_from_stream(std::ifstream& ifs){
-    for (auto& entry : entries) {
-        ifs.read(reinterpret_cast<char*>(&entry), sizeof(TEntry));
-    }
+    ifs.read(reinterpret_cast<char*>(entries), size * sizeof(TEntry));
 }

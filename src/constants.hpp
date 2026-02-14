@@ -41,9 +41,18 @@ constexpr int BUCKETED_L1_BIAS_SIZE = OUTPUT_BUCKET_COUNT * L1_BIAS_SIZE;
 using Accumulator = std::array<int16_t, ACC_SIZE>;
 using Accumulators = std::array<Accumulator, 2>;
 
+
+/****************
+history constants
+****************/
+
+constexpr int PAWN_CORRHIST_SIZE = 16384;
+
 /****************
 general constants
 ****************/
+
+constexpr int PIECETYPE_COUNT = 6;
 
 constexpr int TT_MIN_SIZE = 2;
 constexpr int TT_MAX_SIZE = 4096;
