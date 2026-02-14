@@ -806,8 +806,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
                 continue;
 
             if (stand_pat 
-                + piece_value[static_cast<int>(captured_piece.type())]
-                - piece_value[static_cast<int>(moved_piece.type())]
+                + piece_value[captured_piece.type()]
+                - piece_value[moved_piece.type()]
                 + qs_fp_1 < alpha)
                 continue;
 

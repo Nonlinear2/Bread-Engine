@@ -59,7 +59,7 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
     const Square to = move.to();
     const Piece piece = pos.at(from);
     const Piece to_piece = pos.at(to);
-    const int from_value = piece_value[static_cast<int>(piece.type())];
+    const int from_value = piece_value[piece.type()];
     assert(piece.type() != PieceType::NONE);
 
     int score = 0;
@@ -69,17 +69,17 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         score -= att_2 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value / 150;
     }
 
-    if (check_squares[static_cast<int>(piece.type())] & Bitboard::fromSquare(to))
+    if (check_squares[piece.type()] & Bitboard::fromSquare(to))
         score += chk_1;
 
     // captures should be searched early, so
     // to_value = piece_value(to) - piece_value(from) doesn't seem to work.
     // however, find a way to make these captures even better ?
     if (to_piece != Piece::NONE)
-        score += cpt * piece_value[static_cast<int>(to_piece.type())] / 150;
+        score += cpt * piece_value[to_piece.type()] / 150;
 
     if (move.typeOf() == Move::PROMOTION)
-        score += prm * piece_value[static_cast<int>(move.promotionType())] / 150;
+        score += prm * piece_value[move.promotionType()] / 150;
 
     assert(depth != DEPTH_UNSEARCHED);
     if (killer_moves.in_buffer(depth, move))
@@ -115,8 +115,8 @@ void SortedMoveGen<GenType::QSEARCH>::prepare_pos_data(){
 
 template<>
 void SortedMoveGen<GenType::QSEARCH>::set_score(Move& move){
-    const int piece_type = static_cast<int>(pos.at(move.from()).type());
-    const int to_piece_type = static_cast<int>(pos.at(move.to()).type());
+    const PieceType piece_type = pos.at(move.from()).type();
+    const PieceType to_piece_type = pos.at(move.to()).type();
 
     int score = (to_piece_type == 6 ? -25000 : piece_value[to_piece_type]) - piece_value[piece_type]
         + chk_2 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
