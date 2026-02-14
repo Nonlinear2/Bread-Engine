@@ -167,12 +167,12 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                     continue;
 
                 if (SEE::evaluate(pos, move, -bst))
-                    return move;
+                    return true;
                 else
                     bad_captures.add(move);
             }
             ++stage;
-            if (!pos.inCheck() && MoveGenType == QSEARCH)
+            if (!pos.inCheck() && MoveGenType == GenType::QSEARCH)
                 stage = BAD_CAPTURES;
             [[fallthrough]];
 
@@ -187,7 +187,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             while (moves.num_left != 0){
                 move = pop_best_score();
                 if (move != tt_move)    
-                    return move;
+                    return true;
             }
             ++stage;
             [[fallthrough]];
@@ -196,7 +196,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             while (moves.num_left != 0){
                 move = pop_move(0);
                 if (move != tt_move)    
-                    return move;
+                    return true;
             }
             break;
     }

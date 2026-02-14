@@ -72,10 +72,10 @@ bool Engine::update_interrupt_flag(){
 
 void Engine::clear_state(){
     transposition_table.clear();
-    SortedMoveGen<movegen::MoveGenType::ALL>::history.clear();
+    SortedMoveGen<GenType::NORMAL>::history.clear();
     pawn_corrhist.clear();
-    SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.clear();
-    SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
+    SortedMoveGen<GenType::NORMAL>::cont_history.clear();
+    SortedMoveGen<GenType::NORMAL>::killer_moves.clear();
 }
 
 void Engine::save_state(std::string file){
@@ -86,10 +86,10 @@ void Engine::save_state(std::string file){
     }
 
     transposition_table.save_to_stream(ofs);
-    SortedMoveGen<movegen::MoveGenType::ALL>::history.save_to_stream(ofs);
+    SortedMoveGen<GenType::NORMAL>::history.save_to_stream(ofs);
     pawn_corrhist.save_to_stream(ofs);
-    SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.save_to_stream(ofs);
-    SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.save_to_stream(ofs);
+    SortedMoveGen<GenType::NORMAL>::cont_history.save_to_stream(ofs);
+    SortedMoveGen<GenType::NORMAL>::killer_moves.save_to_stream(ofs);
 
     ofs.close();
 }
@@ -102,10 +102,10 @@ void Engine::load_state(std::string file){
     }
 
     transposition_table.load_from_stream(ifs);
-    SortedMoveGen<movegen::MoveGenType::ALL>::history.load_from_stream(ifs);
+    SortedMoveGen<GenType::NORMAL>::history.load_from_stream(ifs);
     pawn_corrhist.load_from_stream(ifs);
-    SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.load_from_stream(ifs);
-    SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.load_from_stream(ifs);
+    SortedMoveGen<GenType::NORMAL>::cont_history.load_from_stream(ifs);
+    SortedMoveGen<GenType::NORMAL>::killer_moves.load_from_stream(ifs);
 
     ifs.close();
 }
@@ -172,7 +172,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     Move best_move = Move::NO_MOVE;
     engine_color = pos.sideToMove();
 
-    SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
+    SortedMoveGen<GenType::NORMAL>::killer_moves.clear();
 
     nodes = 0;
     tb_hits = 0;
@@ -390,7 +390,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
 
-    SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(
+    SortedMoveGen move_gen = SortedMoveGen<GenType::NORMAL>(
         root_node ? &root_moves : NULL, prev_piece, prev_to, pos, depth
     );
 
@@ -498,7 +498,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (move == excluded_move)
             continue;
 
-        bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.in_buffer(depth, move);
+        bool is_killer = SortedMoveGen<GenType::NORMAL>::killer_moves.in_buffer(depth, move);
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
 
@@ -616,7 +616,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (beta <= alpha){
             if (!is_capture)
                 move_gen.update_history(move, depth);
-            SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.add_move(depth, move);
+            SortedMoveGen<GenType::NORMAL>::killer_moves.add_move(depth, move);
             break;
         }
     }
@@ -728,7 +728,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = pos.hash();
 
-    SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(
+    SortedMoveGen capture_gen = SortedMoveGen<GenType::QSEARCH>(
         (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos
     );
 
