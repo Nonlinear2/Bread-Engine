@@ -80,11 +80,6 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
 
         int score = 0;
 
-        if (piece.type() != PieceType::PAWN && piece.type() != PieceType::KING){
-            score += att_1 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value / 150;
-            score -= att_2 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value / 150;
-        }
-
         if (check_squares[piece.type()] & Bitboard::fromSquare(to))
             score += chk_1;
 
