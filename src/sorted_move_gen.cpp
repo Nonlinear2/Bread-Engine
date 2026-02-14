@@ -10,7 +10,7 @@ UNACTIVE_TUNEABLE(kil, int, 134, 0, 1000, 25, 0.002);
 UNACTIVE_TUNEABLE(his, int, 153, 0, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(chis, int, 129, 0, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(chk_2, int, 348, 0, 2000, 20, 0.002);
-UNACTIVE_TUNEABLE(bst, int, 118, 0, 1500, 20, 0.002);
+UNACTIVE_TUNEABLE(bst, int, 218, 0, 1500, 20, 0.002);
 UNACTIVE_TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
 UNACTIVE_TUNEABLE(his_2, int, 33, 0, 300, 5, 0.002);
 UNACTIVE_TUNEABLE(his_3, int, 1125, 0, 5000, 200, 0.002);
@@ -37,6 +37,22 @@ void SortedMoveGen<GenType::NORMAL>::prepare_pos_data(){
     while (pawn_attackers)
         attacked_by_pawn |= attacks::pawn(~stm, pawn_attackers.pop());
 
+    const Square opp_king_sq = pos.kingSq(~stm);
+    const Bitboard occ = pos.occ();
+
+    check_squares = {
+        attacks::pawn(~stm, opp_king_sq), // pawn
+        attacks::knight(opp_king_sq), // knight
+        attacks::bishop(opp_king_sq, occ), // bishop
+        attacks::rook(opp_king_sq, occ), // rook
+        attacks::queen(opp_king_sq, occ), // queen
+        0, // king
+    };
+}
+
+template<>
+void SortedMoveGen<GenType::QSEARCH>::prepare_pos_data(){
+    const Color stm = pos.sideToMove();
     const Square opp_king_sq = pos.kingSq(~stm);
     const Bitboard occ = pos.occ();
 
@@ -94,23 +110,6 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
     move.setScore(score);
-}
-
-
-template<>
-void SortedMoveGen<GenType::QSEARCH>::prepare_pos_data(){
-    const Color stm = pos.sideToMove();
-    const Square opp_king_sq = pos.kingSq(~stm);
-    const Bitboard occ = pos.occ();
-
-    check_squares = {
-        attacks::pawn(~stm, opp_king_sq), // pawn
-        attacks::knight(opp_king_sq), // knight
-        attacks::bishop(opp_king_sq, occ), // bishop
-        attacks::rook(opp_king_sq, occ), // rook
-        attacks::queen(opp_king_sq, occ), // queen
-        0, // king
-    };
 }
 
 template<>
