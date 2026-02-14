@@ -10,17 +10,26 @@
 #include "see.hpp"
 #include "tune.hpp"
 
-enum GenerationStage: int{
+enum GenerationStage: int {
     TT_MOVE,
-    GENERATE_MOVES,
-    GET_MOVES,
+    GENERATE_CAPTURES,
+    GOOD_CAPTURES,
+    GENERATE_QUIETS,
+    QUIETS,
+    BAD_CAPTURES,
+};
+
+
+enum GenType: int {
+    NORMAL,
+    QSEARCH,
 };
 
 constexpr GenerationStage& operator++(GenerationStage& g) {
     return g = static_cast<GenerationStage>(static_cast<int>(g) + 1);
 }
 
-template<movegen::MoveGenType MoveGenType>
+template<GenType MoveGenType>
 class SortedMoveGen {
     public:
 
@@ -46,6 +55,7 @@ class SortedMoveGen {
     Move tt_move = Move::NO_MOVE;
     private:
     Movelist moves;
+    Movelist bad_captures;
 
     Bitboard attacked_by_pawn;
     std::array<Bitboard, 6> check_squares;
