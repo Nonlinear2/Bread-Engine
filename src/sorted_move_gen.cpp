@@ -162,7 +162,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 
         case GOOD_CAPTURES:
             while (moves.num_left != 0){
-                move = pop_best_score();
+                move = pop_best_score(moves);
                 if (move == tt_move)    
                     continue;
 
@@ -185,7 +185,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 
         case QUIETS:
             while (moves.num_left != 0){
-                move = pop_best_score();
+                move = pop_best_score(moves);
                 if (move != tt_move)    
                     return true;
             }
@@ -193,8 +193,8 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             [[fallthrough]];
 
         case BAD_CAPTURES:
-            while (moves.num_left != 0){
-                move = pop_move(0);
+            while (bad_captures.num_left != 0){
+                move = pop_move(bad_captures, 0);
                 if (move != tt_move)    
                     return true;
             }
@@ -204,28 +204,28 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 }
 
 template<GenType MoveGenType>
-Move SortedMoveGen<MoveGenType>::pop_move(int move_idx){
+Move SortedMoveGen<MoveGenType>::pop_move(Movelist& ml, int move_idx){
     // to implement element removal from a movelist object,
     // the movelist is split into an unseen part first, and a seen part.
 
     // if the move is not in the last position, move it there.
-    if (move_idx != moves.num_left-1){
-        Move swap = moves[move_idx];
-        moves[move_idx] = moves[moves.num_left-1];
-        moves[moves.num_left-1] = swap;
+    if (move_idx != ml.num_left-1){
+        Move swap = ml[move_idx];
+        ml[move_idx] = ml[ml.num_left-1];
+        ml[ml.num_left-1] = swap;
     }
 
-    moves.num_left--;
-    return moves[moves.num_left];
+    ml.num_left--;
+    return ml[ml.num_left];
 }
 
 template<GenType MoveGenType>
-Move SortedMoveGen<MoveGenType>::pop_best_score(){
+Move SortedMoveGen<MoveGenType>::pop_best_score(Movelist& ml){
     int score;
     int best_move_idx = -1;
     int best_move_score = WORST_MOVE_SCORE;
-    for (int i = 0; i < moves.num_left; i++){
-        score = moves[i].score();
+    for (int i = 0; i < ml.num_left; i++){
+        score = ml[i].score();
         if (score >= best_move_score){
             best_move_score = score;
             best_move_idx = i;
@@ -233,7 +233,7 @@ Move SortedMoveGen<MoveGenType>::pop_best_score(){
     }
     assert(best_move_score == WORST_MOVE_SCORE || best_move_idx != -1);
 
-    return pop_move(best_move_idx);
+    return pop_move(ml, best_move_idx);
 }
 
 template<GenType MoveGenType>

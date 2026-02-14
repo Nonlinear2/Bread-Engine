@@ -65,6 +65,6 @@ class SortedMoveGen {
     int move_idx = -1;
 
     GenerationStage stage = TT_MOVE;
-    Move pop_move(int move_idx);
-    Move pop_best_score();
+    Move pop_move(Movelist& ml, int move_idx);
+    Move pop_best_score(Movelist& ml);
 };
