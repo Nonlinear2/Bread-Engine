@@ -63,7 +63,7 @@ class SortedMoveGen {
 
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
-
+    bool in_check;
     GenerationStage stage = TT_MOVE;
     Move pop_move(Movelist& ml, int move_idx);
     Move pop_best_score(Movelist& ml);
