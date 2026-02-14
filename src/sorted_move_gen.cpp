@@ -188,14 +188,12 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                 if (move != tt_move)    
                     return true;
             }
-            idx = 0;
             ++stage;
             [[fallthrough]];
 
         case BAD_CAPTURES:
-            while (idx < bad_captures.size()){
-                move = bad_captures[idx];
-                idx++;
+            while (bad_captures.num_left != 0){
+                move = pop_move(bad_captures, 0);
                 if (move != tt_move)    
                     return true;
             }
