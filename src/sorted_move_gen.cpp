@@ -92,11 +92,6 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (killer_moves.in_buffer(depth, move))
             score += kil;
 
-        score += his * history.get(stm == Color::WHITE, from.index(), to.index()) / 10'000;
-
-        if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
-            score += chis * cont_history.get(prev_piece, prev_to, piece, to.index()) / 10'000;
-
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
         move.setScore(score);
