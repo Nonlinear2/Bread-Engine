@@ -514,7 +514,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             if (!in_check && !is_capture && move_gen.index() > 2 + depth + improving 
                 && !is_hit && eval - lmp_1 * !improving < alpha)
             {
-                skip_quiets = true;
+                if (depth < 4)
+                    skip_quiets = true;
                 continue;
             }
 
