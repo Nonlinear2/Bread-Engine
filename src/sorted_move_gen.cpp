@@ -83,7 +83,7 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (check_squares[piece.type()] & Bitboard::fromSquare(to))
             score += chk_1;
 
-        score += cpt * (piece_value[to_piece.type()] - from_value) / 150;
+        score += 200 * (piece_value[to_piece.type()] - from_value) / 150;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
