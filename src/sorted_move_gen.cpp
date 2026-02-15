@@ -1,22 +1,24 @@
 #include "sorted_move_gen.hpp"
 
-UNACTIVE_TUNEABLE(endg, int, 11, 0, 32, 0.5, 0.002);
-UNACTIVE_TUNEABLE(att_1, int, 46, 0, 500, 10, 0.002);
-UNACTIVE_TUNEABLE(att_2, int, 54, 0, 500, 10, 0.002);
-UNACTIVE_TUNEABLE(chk_1, int, 160, 0, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(cpt, int, 153, 0, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(prm, int, 102, 0, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(kil, int, 134, 0, 1000, 25, 0.002);
-UNACTIVE_TUNEABLE(his, int, 153, 0, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(chis, int, 129, 0, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(chk_2, int, 348, 0, 2000, 20, 0.002);
-UNACTIVE_TUNEABLE(bst, int, 218, 0, 1500, 20, 0.002);
-UNACTIVE_TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
-UNACTIVE_TUNEABLE(his_2, int, 33, 0, 300, 5, 0.002);
-UNACTIVE_TUNEABLE(his_3, int, 1125, 0, 5000, 200, 0.002);
-UNACTIVE_TUNEABLE(his_4, int, 34, 0, 300, 5, 0.002);
-UNACTIVE_TUNEABLE(his_5, int, 33, 0, 300, 5, 0.002);
-UNACTIVE_TUNEABLE(his_6, int, 1125, 0, 5000, 200, 0.002);
+TUNEABLE(q_att_1, int, 46, 0, 500, 10, 0.002);
+TUNEABLE(q_att_2, int, 54, 0, 500, 10, 0.002);
+TUNEABLE(c_chk_1, int, 160, 0, 1000, 25, 0.002);
+TUNEABLE(q_chk_1, int, 160, 0, 1000, 25, 0.002);
+TUNEABLE(c_cpt, int, 153, 0, 1000, 25, 0.002);
+TUNEABLE(c_prm, int, 102, 0, 1000, 20, 0.002);
+TUNEABLE(q_prm, int, 102, 0, 1000, 20, 0.002);
+TUNEABLE(c_kil, int, 134, 0, 1000, 25, 0.002);
+TUNEABLE(q_kil, int, 134, 0, 1000, 25, 0.002);
+TUNEABLE(q_his, int, 153, 0, 1000, 25, 0.002);
+TUNEABLE(q_chis, int, 129, 0, 1000, 25, 0.002);
+TUNEABLE(chk_2, int, 348, 0, 2000, 70, 0.002);
+TUNEABLE(bst, int, 218, 0, 1500, 40, 0.002);
+TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
+TUNEABLE(his_2, int, 33, 0, 300, 5, 0.002);
+TUNEABLE(his_3, int, 1125, 0, 5000, 200, 0.002);
+TUNEABLE(his_4, int, 17, 0, 300, 3, 0.002);
+TUNEABLE(his_5, int, 16, 0, 300, 3, 0.002);
+TUNEABLE(his_6, int, 562, 0, 5000, 110, 0.002);
 
 template<>
 SortedMoveGen<GenType::NORMAL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
@@ -80,16 +82,16 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         int score = 0;
 
         if (check_squares[piece.type()] & Bitboard::fromSquare(to))
-            score += chk_1;
+            score += c_chk_1;
 
-        score += cpt * piece_value[to_piece.type()] / 150;
+        score += c_cpt * piece_value[to_piece.type()] / 150;
 
         if (move.typeOf() == Move::PROMOTION)
-            score += prm * piece_value[move.promotionType()] / 150;
+            score += c_prm * piece_value[move.promotionType()] / 150;
 
         assert(depth != DEPTH_UNSEARCHED);
         if (killer_moves.in_buffer(depth, move))
-            score += kil;
+            score += c_kil;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -108,25 +110,25 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         int score = 0;
 
         if (piece.type() != PieceType::PAWN && piece.type() != PieceType::KING){
-            score += att_1 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value / 150;
-            score -= att_2 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value / 150;
+            score += q_att_1 * bool(attacked_by_pawn & Bitboard::fromSquare(from)) * from_value / 150;
+            score -= q_att_2 * bool(attacked_by_pawn & Bitboard::fromSquare(to)) * from_value / 150;
         }
 
         if (check_squares[piece.type()] & Bitboard::fromSquare(to))
-            score += chk_1;
+            score += q_chk_1;
 
         if (move.typeOf() == Move::PROMOTION)
-            score += prm * piece_value[move.promotionType()] / 150;
+            score += q_prm * piece_value[move.promotionType()] / 150;
 
         assert(depth != DEPTH_UNSEARCHED);
         if (killer_moves.in_buffer(depth, move))
-            score += kil;
+            score += q_kil;
 
         // cant be less than worst move score
-        score += his * history.get(stm == Color::WHITE, from.index(), to.index()) / 10'000;
+        score += q_his * history.get(stm == Color::WHITE, from.index(), to.index()) / 10'000;
 
         if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
-            score += chis * cont_history.get(prev_piece, prev_to, piece, to.index()) / 10'000;
+            score += q_chis * cont_history.get(prev_piece, prev_to, piece, to.index()) / 10'000;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -273,7 +275,7 @@ void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth){
 
     for (int i = moves.num_left; i < moves.size(); i++){
         if (moves[i] != best_move && !pos.isCapture(moves[i]))
-            history.apply_bonus(color, moves[i].from(), moves[i].to(), -std::min(depth*depth*his_4 + his_5, his_6)/2);
+            history.apply_bonus(color, moves[i].from(), moves[i].to(), -std::min(depth*depth*his_4 + his_5, his_6));
     }
 }
 
