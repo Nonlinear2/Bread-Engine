@@ -82,7 +82,7 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (check_squares[piece.type()] & Bitboard::fromSquare(to))
             score += chk_1;
 
-        score += 240 * piece_value[to_piece.type()] / 150;
+        score += cpt * piece_value[to_piece.type()] / 150;
 
         if (move.typeOf() == Move::PROMOTION)
             score += prm * piece_value[move.promotionType()] / 150;
@@ -274,7 +274,7 @@ void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth){
     history.apply_bonus(color, best_move.from(), best_move.to(), std::min(depth*depth*his_1 + his_2, his_3));
 
     for (int i = moves.num_left; i < moves.size(); i++){
-        if (moves[i] != best_move && !pos.isCapture(moves[i]))
+        if (moves[i] != best_move)
             history.apply_bonus(color, moves[i].from(), moves[i].to(), -std::min(depth*depth*his_4 + his_5, his_6)/2);
     }
 }
