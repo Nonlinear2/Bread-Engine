@@ -491,12 +491,17 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 return null_move_value;
         }
     }
-
+    
+    bool skip_quiets = false;
     while (move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
 
         if (move == excluded_move)
             continue;
+
+        if (!is_capture && skip_quiets)
+            continue;
+
 
         bool is_killer = SortedMoveGen<GenType::NORMAL>::killer_moves.in_buffer(depth, move);
 
@@ -508,7 +513,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             // lmp
             if (!in_check && !is_capture && move_gen.index() > 2 + depth + improving 
                 && !is_hit && eval - lmp_1 * !improving < alpha)
+            {
+                skip_quiets = true;
                 continue;
+            }
 
             // SEE pruning
             if (!in_check && move_gen.index() > 5 + depth / 2
