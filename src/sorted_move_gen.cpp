@@ -75,7 +75,6 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         const Square to = move.to();
         const Piece piece = pos.at(from);
         const Piece to_piece = pos.at(to);
-        const int from_value = piece_value[piece.type()];
         assert(piece.type() != PieceType::NONE);
 
         int score = 0;
@@ -91,8 +90,6 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         assert(depth != DEPTH_UNSEARCHED);
         if (killer_moves.in_buffer(depth, move))
             score += kil;
-
-        score += his * history.get(stm == Color::WHITE, from.index(), to.index()) / 10'000;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
