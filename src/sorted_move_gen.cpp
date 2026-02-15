@@ -80,7 +80,7 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         int score = 0;
 
         if (check_squares[piece.type()] & Bitboard::fromSquare(to))
-            score += 200;
+            score += 110;
 
         score += cpt * piece_value[to_piece.type()] / 150;
 
