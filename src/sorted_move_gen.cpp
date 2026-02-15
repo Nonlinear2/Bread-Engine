@@ -10,7 +10,7 @@ UNACTIVE_TUNEABLE(kil, int, 134, 0, 1000, 25, 0.002);
 UNACTIVE_TUNEABLE(his, int, 153, 0, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(chis, int, 129, 0, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(chk_2, int, 348, 0, 2000, 20, 0.002);
-UNACTIVE_TUNEABLE(bst, int, 158, 0, 1500, 20, 0.002);
+UNACTIVE_TUNEABLE(bst, int, 218, 0, 1500, 20, 0.002);
 UNACTIVE_TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
 UNACTIVE_TUNEABLE(his_2, int, 33, 0, 300, 5, 0.002);
 UNACTIVE_TUNEABLE(his_3, int, 1125, 0, 5000, 200, 0.002);
@@ -218,8 +218,9 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             [[fallthrough]];
 
         case BAD_CAPTURES:
-            while (bad_captures.num_left != 0){
-                move = pop_move(bad_captures, 0);
+             while (bad_capture_idx < bad_captures.size()){
+                move = bad_captures[bad_capture_idx];
+                bad_capture_idx++;
                 if (move != tt_move)    
                     return true;
             }
