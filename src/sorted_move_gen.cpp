@@ -83,7 +83,16 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (check_squares[piece.type()] & Bitboard::fromSquare(to))
             score += chk_1;
 
-        score += 100 * (piece_value[to_piece.type()] - from_value) / 150;
+        score += cpt * piece_value[to_piece.type()] / 150;
+
+        if (move.typeOf() == Move::PROMOTION)
+            score += prm * piece_value[move.promotionType()] / 150;
+
+        assert(depth != DEPTH_UNSEARCHED);
+        if (killer_moves.in_buffer(depth, move))
+            score += kil;
+
+        score += his * history.get(stm == Color::WHITE, from.index(), to.index()) / 10'000;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
