@@ -85,9 +85,6 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
 
         score += cpt * (piece_value[to_piece.type()] - from_value) / 150;
 
-        if (move.typeOf() == Move::PROMOTION)
-            score += prm * piece_value[move.promotionType()] / 150;
-
         assert(depth != DEPTH_UNSEARCHED);
         if (killer_moves.in_buffer(depth, move))
             score += kil;
