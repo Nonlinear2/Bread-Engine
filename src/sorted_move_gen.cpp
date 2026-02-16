@@ -86,7 +86,7 @@ void SortedMoveGen<movegen::MoveGenType::ALL>::set_score(Move& move){
         score += kil;
 
     // cant be less than worst move score
-    score += his * history.get(stm == Color::WHITE, from.index(), to.index()) / 10'000;
+    score += his * history.get(stm, from.index(), to.index()) / 10'000;
 
     if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
         score += chis * cont_history.get(prev_piece, prev_to, piece, to.index()) / 10'000;
@@ -224,13 +224,18 @@ inline int SortedMoveGen<MoveGenType>::index(){ return move_idx; }
 
 template<>
 void SortedMoveGen<movegen::MoveGenType::ALL>::update_history(Move best_move, int depth){
-    bool color = pos.sideToMove() == Color::WHITE;
 
-    history.apply_bonus(color, best_move.from(), best_move.to(), std::min(depth*depth*his_1 + his_2, his_3));
+    history.apply_bonus(
+        pos.sideToMove(), best_move.from(), 
+        best_move.to(), std::min(depth*depth*his_1 + his_2, his_3)
+    );
 
     for (int i = moves.num_left; i < moves.size(); i++){
         if (moves[i] != best_move && !pos.isCapture(moves[i]))
-            history.apply_bonus(color, moves[i].from(), moves[i].to(), -std::min(depth*depth*his_4 + his_5, his_6)/2);
+            history.apply_bonus(
+                pos.sideToMove(), moves[i].from(), moves[i].to(), 
+                -std::min(depth*depth*his_4 + his_5, his_6)/2
+            );
     }
 }
 
