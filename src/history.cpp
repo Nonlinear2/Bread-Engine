@@ -36,11 +36,11 @@ void FromToHistory::clear(){
     std::fill(std::begin(history), std::end(history), HIST_FILL_VALUE);
 }
 
-int& FromToHistory::get(bool color, Square from, Square to){
+int& FromToHistory::get(Color color, Square from, Square to){
     return history[color*64*64 + from.index()*64 + to.index()];
 }
 
-void FromToHistory::apply_bonus(bool color, Square from, Square to, int bonus){
+void FromToHistory::apply_bonus(Color color, Square from, Square to, int bonus){
     get(color, from, to) += bonus - get(color, from, to) * std::abs(bonus) / MAX_HIST_BONUS;
 }
 
@@ -59,11 +59,11 @@ void PawnCorrectionHistory::clear(){
     std::fill(std::begin(history), std::end(history), PAWN_CORRHIST_FILL_VALUE);
 }
 
-int& PawnCorrectionHistory::get(bool color, uint16_t pawn_key){
+int& PawnCorrectionHistory::get(Color color, uint16_t pawn_key){
     return history[2*(pawn_key % PAWN_CORRHIST_SIZE) + color];
 }
 
-void PawnCorrectionHistory::apply_bonus(bool color, uint16_t pawn_key, int bonus){
+void PawnCorrectionHistory::apply_bonus(Color color, uint16_t pawn_key, int bonus){
     get(color, pawn_key) += bonus - get(color, pawn_key) * std::abs(bonus) / MAX_PAWN_CORRHIST_BONUS;
 }
 
