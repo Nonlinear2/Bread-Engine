@@ -14,8 +14,9 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "option name Nonsense type check default false" << std::endl;
         // spsa tune options
         auto& tuneables = SPSA::get_values();
-        for (const auto& pair : tuneables) {
-            std::cout << "option name " << pair.first << " type spin default " << *pair.second << std::endl;
+        for (const auto& [name, info] : tuneables) {
+            std::cout << "option name " << name << " type spin default " << *info.val_ptr
+                      << " min " << info.min << " max " << info.max << std::endl;
         }
 
         std::cout << "uciok" << std::endl;
