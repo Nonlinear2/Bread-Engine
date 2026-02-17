@@ -1,24 +1,25 @@
 #include "sorted_move_gen.hpp"
 
-TUNEABLE(q_att_1, int, 46, 0, 500, 10, 0.002);
-TUNEABLE(q_att_2, int, 54, 0, 500, 10, 0.002);
-TUNEABLE(c_chk_1, int, 160, 0, 1000, 25, 0.002);
-TUNEABLE(q_chk_1, int, 160, 0, 1000, 25, 0.002);
-TUNEABLE(c_cpt, int, 153, 0, 1000, 25, 0.002);
-TUNEABLE(c_prm, int, 102, 0, 1000, 20, 0.002);
-TUNEABLE(q_prm, int, 102, 0, 1000, 20, 0.002);
-TUNEABLE(c_kil, int, 134, 0, 1000, 25, 0.002);
-TUNEABLE(q_kil, int, 134, 0, 1000, 25, 0.002);
-TUNEABLE(q_his, int, 153, 0, 1000, 25, 0.002);
-TUNEABLE(q_chis, int, 129, 0, 1000, 25, 0.002);
-TUNEABLE(chk_2, int, 348, 0, 2000, 70, 0.002);
-TUNEABLE(bst, int, 218, 0, 1500, 40, 0.002);
+TUNEABLE(q_att_1, int, 50, 0, 500, 10, 0.002);
+TUNEABLE(q_att_2, int, 55, 0, 500, 10, 0.002);
+TUNEABLE(c_chk_1, int, 164, 0, 1000, 25, 0.002);
+TUNEABLE(q_chk_1, int, 139, 0, 1000, 25, 0.002);
+TUNEABLE(c_cpt, int, 175, 0, 1000, 25, 0.002);
+TUNEABLE(c_prm, int, 103, 0, 1000, 20, 0.002);
+TUNEABLE(q_prm, int, 101, 0, 1000, 20, 0.002);
+TUNEABLE(c_kil, int, 144, 0, 1000, 25, 0.002);
+TUNEABLE(q_kil, int, 132, 0, 1000, 25, 0.002);
+TUNEABLE(q_his, int, 164, 0, 1000, 25, 0.002);
+TUNEABLE(q_chis, int, 154, 0, 1000, 25, 0.002);
+TUNEABLE(chk_2, int, 363, 0, 2000, 70, 0.002);
+TUNEABLE(bst, int, 206, 0, 1500, 40, 0.002);
 TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
-TUNEABLE(his_2, int, 33, 0, 300, 5, 0.002);
-TUNEABLE(his_3, int, 1125, 0, 5000, 200, 0.002);
-TUNEABLE(his_4, int, 17, 0, 300, 3, 0.002);
+TUNEABLE(his_2, int, 35, 0, 300, 5, 0.002);
+TUNEABLE(his_3, int, 1162, 0, 5000, 200, 0.002);
+TUNEABLE(his_4, int, 18, 0, 300, 3, 0.002);
 TUNEABLE(his_5, int, 16, 0, 300, 3, 0.002);
-TUNEABLE(his_6, int, 562, 0, 5000, 110, 0.002);
+TUNEABLE(his_6, int, 512, 0, 5000, 110, 0.002);
+
 
 template<>
 SortedMoveGen<GenType::NORMAL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
