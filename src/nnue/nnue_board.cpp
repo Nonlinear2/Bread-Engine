@@ -108,6 +108,15 @@ void NnueBoard::restore_state(Move move){
     accumulators_stack.pop();
 }
 
+void NnueBoard::make_null_move(TranspositionTable& tt){
+    makeNullMove();
+
+    __builtin_prefetch(&tt.entries[hash() & (tt.size - 1)]);
+}
+
+void NnueBoard::unmake_null_move(){
+    unmakeNullMove();
+}
 int NnueBoard::evaluate(){
     accumulators_stack.apply_lazy_updates();
     return std::clamp(NNUE::run(accumulators_stack.top(), sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
