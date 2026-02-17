@@ -96,7 +96,6 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
     } else if (option_name == "Hash"){
         int size = std::stoi(option_value);
         if ((size & (size - 1)) == 0){
-            size = std::clamp(size, 2, 4096);
             engine.transposition_table.allocateMB(size);
             std::cout << "info string hash size set to " << size << std::endl;
         } else {
@@ -150,8 +149,7 @@ void UCIAgent::process_evaluate(std::vector<std::string> command){
     engine.pos.synchronize();
     int score = engine.pos.sideToMove() == Color::BLACK ? -1 : 1;
     score *= engine.pos.evaluate();
-    std::string sign = score >= 0 ? "+" : "";
-    std::cout << "NNUE Evaluation: " << sign << score << std::endl;
+    std::cout << "NNUE Evaluation: " << (score >= 0 ? "+" : "") << score << std::endl;
 }
 
 void UCIAgent::process_go(std::vector<std::string> command){
@@ -159,7 +157,8 @@ void UCIAgent::process_go(std::vector<std::string> command){
 
     if (go_type == "ponder"){
         cached_think_time = get_think_time_from_go_command(command);
-        if (cached_think_time == -1) return; // error occured
+        if (cached_think_time == -1)
+            return; // error occured
         main_search_thread = std::thread(&Engine::iterative_deepening,
             &engine, SearchLimit(LimitType::Depth, ENGINE_MAX_DEPTH));
         return;
@@ -210,16 +209,16 @@ int UCIAgent::get_think_time_from_go_command(std::vector<std::string> command){
             movestogo = std::stoi(command[i+1]);
     };
 
-    if ((wtime == -1) || (btime == -1)){
+    if (wtime == -1 || btime == -1){
         std::cout << "no time specified\n";
         return -1;
     }
 
-    bool engine_color = (engine.pos.sideToMove() == Color::WHITE);
-    return engine.get_think_time(engine_color ? wtime: btime, 
+    bool engine_white = (engine.pos.sideToMove() == Color::WHITE);
+    return engine.get_think_time(engine_white ? wtime: btime, 
                                  num_moves_out_of_book,
                                  movestogo,
-                                 engine_color ? winc: binc);
+                                 engine_white ? winc: binc);
 }
 
 void UCIAgent::interrupt_if_searching(){

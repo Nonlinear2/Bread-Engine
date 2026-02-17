@@ -22,8 +22,8 @@ class ContinuationHistory {
 class FromToHistory {
     public:
     void clear();
-    int& get(bool color, Square from, Square to);
-    void apply_bonus(bool color, Square from, Square to, int bonus);
+    int& get(Color color, Square from, Square to);
+    void apply_bonus(Color color, Square from, Square to, int bonus);
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
@@ -34,8 +34,8 @@ class FromToHistory {
 class PawnCorrectionHistory {
     public:
     void clear();
-    int& get(bool color, uint16_t pawn_key);
-    void apply_bonus(bool color, uint16_t pawn_key, int bonus);
+    int& get(Color color, uint16_t pawn_key);
+    void apply_bonus(Color color, uint16_t pawn_key, int bonus);
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
