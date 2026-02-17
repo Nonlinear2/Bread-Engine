@@ -38,9 +38,6 @@ class NnueBoard: public Board {
 
     void restore_state(Move move);
 
-    void make_null_move(TranspositionTable& tt);
-    void unmake_null_move();
-
     int evaluate();
 
     bool is_stalemate();
