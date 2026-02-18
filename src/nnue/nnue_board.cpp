@@ -113,10 +113,11 @@ int NnueBoard::evaluate(){
 
     const int nnue = NNUE::run(accumulators_stack.top(), sideToMove(), occ().count());
     const int material_scale = 2048
-        + 75 * pieces(PieceType::KNIGHT).count() 
-        + 75 * pieces(PieceType::BISHOP).count()
-        + 150 * pieces(PieceType::ROOK).count()
-        + 300 * pieces(PieceType::QUEEN).count();
+        + 25 * pieces(PieceType::PAWN).count() 
+        + 85 * pieces(PieceType::KNIGHT).count() 
+        + 85 * pieces(PieceType::BISHOP).count()
+        + 170 * pieces(PieceType::ROOK).count()
+        + 340 * pieces(PieceType::QUEEN).count();
 
     return std::clamp(nnue * material_scale / 4096, -BEST_VALUE, BEST_VALUE);
 }
