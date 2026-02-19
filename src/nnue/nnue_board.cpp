@@ -1,5 +1,11 @@
 #include "nnue_board.hpp"
 
+TUNEABLE(mat_base, int, 8192, 0, 30000, 30, 0.002);
+TUNEABLE(k_scale, int, 360, 0, 10000, 30, 0.002);
+TUNEABLE(b_scale, int, 360, 0, 10000, 50, 0.002);
+TUNEABLE(r_scale, int, 720, 0, 10000, 30, 0.002);
+TUNEABLE(q_scale, int, 1440, 0, 10000, 10, 0.002);
+
 AllBitboards::AllBitboards(){
     for (int color = 0; color < 2; ++color)
         for (int pt = 0; pt < PIECETYPE_COUNT; ++pt)
@@ -112,13 +118,13 @@ int NnueBoard::evaluate(){
     accumulators_stack.apply_lazy_updates();
 
     const int nnue = NNUE::run(accumulators_stack.top(), sideToMove(), occ().count());
-    const int material_scale = 2048
-        + 90 * pieces(PieceType::KNIGHT).count() 
-        + 90 * pieces(PieceType::BISHOP).count()
-        + 180 * pieces(PieceType::ROOK).count()
-        + 360 * pieces(PieceType::QUEEN).count();
+    const int material_scale = mat_base
+        + k_scale * pieces(PieceType::KNIGHT).count() 
+        + b_scale * pieces(PieceType::BISHOP).count()
+        + r_scale * pieces(PieceType::ROOK).count()
+        + q_scale * pieces(PieceType::QUEEN).count();
 
-    return std::clamp(nnue * material_scale / 4096, -BEST_VALUE, BEST_VALUE);
+    return std::clamp(nnue * material_scale / 16384, -BEST_VALUE, BEST_VALUE);
 }
 
 bool NnueBoard::is_stalemate(){
