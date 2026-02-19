@@ -9,7 +9,6 @@
 #include "nnue.hpp"
 #include "misc.hpp"
 #include "constants.hpp"
-#include "tune.hpp"
 
 using BothModifiedFeatures = std::array<ModifiedFeatures, 2>;
 
