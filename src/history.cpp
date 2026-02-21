@@ -55,19 +55,19 @@ void FromToHistory::load_from_stream(std::ifstream& ifs){
             ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
 }
 
-void FromToPieceHistory::clear(){
+void CaptureHistory::clear(){
     std::fill(std::begin(history), std::end(history), CAPTHIST_FILL_VALUE);
 }
 
-int& FromToPieceHistory::get(Color color, Square from, Square to, Piece captured){
-    return history[color*64*64*6 + from.index()*64*6 + to.index()*6 + static_cast<int>(captured.type())];
+int& CaptureHistory::get(Color color, Piece piece, Square to, Piece captured){
+    return history[color*12*64*6 + piece*64*6 + to.index()*6 + static_cast<int>(captured.type())];
 }
 
-void FromToPieceHistory::apply_bonus(Color color, Square from, Square to, Piece captured, int bonus){
-    get(color, from, to, captured) += bonus - get(color, from, to, captured) * std::abs(bonus) / MAX_CAPTHIST_BONUS;
+void CaptureHistory::apply_bonus(Color color, Piece piece, Square to, Piece captured, int bonus){
+    get(color, piece, to, captured) += bonus - get(color, piece, to, captured) * std::abs(bonus) / MAX_CAPTHIST_BONUS;
 }
 
-void FromToPieceHistory::save_to_stream(std::ofstream& ofs){
+void CaptureHistory::save_to_stream(std::ofstream& ofs){
     for (const auto& v : history)
             ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
 }
@@ -89,7 +89,7 @@ void PawnCorrectionHistory::save_to_stream(std::ofstream& ofs){
             ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
 }
 
-void FromToPieceHistory::load_from_stream(std::ifstream& ifs){
+void CaptureHistory::load_from_stream(std::ifstream& ifs){
     for (auto& v : history)
         ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
 }

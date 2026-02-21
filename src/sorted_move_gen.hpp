@@ -29,7 +29,7 @@ constexpr GenerationStage& operator++(GenerationStage& g) {
     return g = static_cast<GenerationStage>(static_cast<int>(g) + 1);
 }
 
-extern FromToPieceHistory capture_history;
+extern CaptureHistory capture_history;
 
 template<GenType MoveGenType>
 class SortedMoveGen {
