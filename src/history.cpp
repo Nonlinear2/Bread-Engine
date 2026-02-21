@@ -63,7 +63,7 @@ int& FromToPieceHistory::get(Color color, Square from, Square to, Piece captured
     return history[color*64*64*6 + from.index()*64*6 + to.index()*6 + static_cast<int>(captured.type())];
 }
 
-void FromToPieceHistory::apply_bonus(bool color, Square from, Square to, Piece captured, int bonus){
+void FromToPieceHistory::apply_bonus(Color color, Square from, Square to, Piece captured, int bonus){
     get(color, from, to, captured) += bonus - get(color, from, to, captured) * std::abs(bonus) / MAX_CAPTHIST_BONUS;
 }
 

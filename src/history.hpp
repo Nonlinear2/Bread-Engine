@@ -33,8 +33,8 @@ class FromToHistory {
 class FromToPieceHistory {
     public:
     void clear();
-    int& get(bool color, Square from, Square to, Piece captured);
-    void apply_bonus(bool color, Square from, Square to, Piece captured, int bonus);
+    int& get(Color color, Square from, Square to, Piece captured);
+    void apply_bonus(Color color, Square from, Square to, Piece captured, int bonus);
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
