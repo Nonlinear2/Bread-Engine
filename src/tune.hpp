@@ -9,17 +9,23 @@
 
 namespace SPSA {
 
+struct TuneableInfo {
+    int* val_ptr;
+    int min;
+    int max;
+};
+
 // make sure values is initialized when the TUNEABLE macro runs
-inline std::unordered_map<std::string, int*>& get_values(){
-    static std::unordered_map<std::string, int*> values; // created once
+inline std::unordered_map<std::string, TuneableInfo>& get_values(){
+    static std::unordered_map<std::string, TuneableInfo> values; // created once
     return values;
 }
 
-inline void register_tuneable(const std::string& name, int* ptr){
+inline void register_tuneable(const std::string& name, int* val_ptr, int min, int max){
     auto& values = get_values();
     if (values.find(name) != values.end())
         throw std::runtime_error("duplicate tuneable: " + name);
-    values[name] = ptr;
+    values[name] = {val_ptr, min, max};
 }
 
 inline bool is_registered(const std::string& name){
@@ -31,7 +37,7 @@ inline void set_value(const std::string& name, int value){
     auto& values = get_values();
     if (values.find(name) == values.end())
         throw std::runtime_error("unknown tuneable: " + name);
-    *values[name] = value;
+    *values[name].val_ptr = value;
 }
 
 inline int get_value(const std::string& name){
@@ -39,7 +45,7 @@ inline int get_value(const std::string& name){
     auto it = values.find(name);
     if (it == values.end())
         throw std::runtime_error("tuneable not found: " + name);
-    return *it->second;
+    return *it->second.val_ptr;
 }
 
 } // namespace SPSA
@@ -49,7 +55,7 @@ inline int get_value(const std::string& name){
     #define TUNEABLE(name, type, value, min, max, c, r) \
         type name = value; \
         static bool name##_init = []() { \
-            SPSA::register_tuneable(#name, &name); \
+            SPSA::register_tuneable(#name, &name, min, max); \
             std::cout << #name << ", " << #type << ", " << (float)(value) << ", " \
                       << (float)(min) << ", " << (float)(max) << ", " \
                       << (float)(c) << ", " << (float)(r) << std::endl; \

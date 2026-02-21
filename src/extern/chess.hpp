@@ -1827,14 +1827,16 @@ class Board {
    private:
     struct State {
         U64 hash;
+        uint16_t pawn_key;
         CastlingRights castling;
         Square enpassant;
         std::uint8_t half_moves;
         Piece captured_piece;
 
-        State(const U64 &hash, const CastlingRights &castling, const Square &enpassant, const std::uint8_t &half_moves,
-              const Piece &captured_piece)
+        State(const U64 &hash, const uint16_t &pawn_key, const CastlingRights &castling, const Square &enpassant,
+              const std::uint8_t &half_moves, const Piece &captured_piece)
             : hash(hash),
+              pawn_key(pawn_key),
               castling(castling),
               enpassant(enpassant),
               half_moves(half_moves),
@@ -2001,6 +2003,44 @@ class Board {
 
         return ss;
     }
+ 
+    void recompute_pawn_key(){
+        pawn_key_ = 0;
+        Bitboard white_pawns = pieces(PieceType::PAWN, Color::WHITE);
+        while (white_pawns)
+            pawn_key_ ^= Zobrist::piece(Piece::WHITEPAWN, Square(white_pawns.pop()));
+        
+        Bitboard black_pawns = pieces(PieceType::PAWN, Color::BLACK);
+        while (black_pawns)
+            pawn_key_ ^= Zobrist::piece(Piece::BLACKPAWN, Square(black_pawns.pop()));
+    }
+
+    // should be called before playing the move
+    void update_pawn_key(Move move){
+        switch (move.typeOf()){
+        case Move::PROMOTION:
+            pawn_key_ ^= Zobrist::piece(at(move.from()), move.from());
+            break;
+
+        case Move::ENPASSANT:
+            pawn_key_ ^= Zobrist::piece(at(move.from()), move.from());
+            pawn_key_ ^= Zobrist::piece(at(move.from()), move.to());    
+
+            // remove captured pawn
+            pawn_key_ ^= Zobrist::piece(Piece(PieceType::PAWN, ~sideToMove()), move.to().ep_square());    
+            break;
+
+        default:
+            if (at(move.from()).type() == PieceType::PAWN){
+                pawn_key_ ^= Zobrist::piece(at(move.from()), move.from());
+                pawn_key_ ^= Zobrist::piece(at(move.from()), move.to());
+            }
+
+            if (at(move.to()).type() == PieceType::PAWN)
+                pawn_key_ ^= Zobrist::piece(at(move.to()), move.to());
+            break;
+        }
+    }
 
     /**
      * @brief Make a move on the board. The move must be legal otherwise the
@@ -2019,10 +2059,12 @@ class Board {
         // Validate side to move
         assert((at(move.from()) < Piece::BLACKPAWN) == (stm_ == Color::WHITE));
 
-        prev_states_.emplace_back(key_, cr_, ep_sq_, hfm_, captured);
+        prev_states_.emplace_back(key_, pawn_key_, cr_, ep_sq_, hfm_, captured);
 
         hfm_++;
         plies_++;
+
+        update_pawn_key(move);
 
         if (ep_sq_ != Square::NO_SQ) key_ ^= Zobrist::enpassant(ep_sq_.file());
         ep_sq_ = Square::NO_SQ;
@@ -2232,6 +2274,7 @@ class Board {
         }
 
         key_ = prev.hash;
+        pawn_key_ = prev.pawn_key;
         prev_states_.pop_back();
     }
 
@@ -2239,7 +2282,7 @@ class Board {
      * @brief Make a null move. (Switches the side to move)
      */
     void makeNullMove() {
-        prev_states_.emplace_back(key_, cr_, ep_sq_, hfm_, Piece::NONE);
+        prev_states_.emplace_back(key_, pawn_key_, cr_, ep_sq_, hfm_, Piece::NONE);
 
         key_ ^= Zobrist::sideToMove();
         if (ep_sq_ != Square::NO_SQ) key_ ^= Zobrist::enpassant(ep_sq_.file());
@@ -2358,6 +2401,7 @@ class Board {
      * @return
      */
     [[nodiscard]] U64 hash() const noexcept { return key_; }
+    [[nodiscard]] uint16_t get_pawn_key() const noexcept { return pawn_key_; }
     [[nodiscard]] Color sideToMove() const noexcept { return stm_; }
     [[nodiscard]] Square enpassantSq() const noexcept { return ep_sq_; }
     [[nodiscard]] CastlingRights castlingRights() const noexcept { return cr_; }
@@ -2878,6 +2922,7 @@ class Board {
     std::array<Piece, 64> board_       = {};
 
     U64 key_             = 0ULL;
+    uint16_t pawn_key_   = 0;
     CastlingRights cr_   = {};
     std::uint16_t plies_ = 0;
     Color stm_           = Color::WHITE;

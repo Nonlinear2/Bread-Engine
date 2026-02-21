@@ -8,7 +8,7 @@
 
 using namespace chess;
 
-const std::vector<int> piece_value = {
+constexpr std::array<int, 7> piece_value = {
     150, // pawn
     440, // knight
     450, // bishop

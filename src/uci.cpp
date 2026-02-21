@@ -14,8 +14,9 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "option name Nonsense type check default false" << std::endl;
         // spsa tune options
         auto& tuneables = SPSA::get_values();
-        for (const auto& pair : tuneables) {
-            std::cout << "option name " << pair.first << " type spin default " << *pair.second << std::endl;
+        for (const auto& [name, info] : tuneables) {
+            std::cout << "option name " << name << " type spin default " << *info.val_ptr
+                      << " min " << info.min << " max " << info.max << std::endl;
         }
 
         std::cout << "uciok" << std::endl;
@@ -26,6 +27,7 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "readyok" << std::endl;
 
     } else if (first == "ucinewgame"){
+        engine.pos.setFen(constants::STARTPOS);
         engine.clear_state();
 
     } else if (first == "position"){
@@ -94,7 +96,6 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
     } else if (option_name == "Hash"){
         int size = std::stoi(option_value);
         if ((size & (size - 1)) == 0){
-            size = std::clamp(size, 2, 4096);
             engine.transposition_table.allocateMB(size);
             std::cout << "info string hash size set to " << size << std::endl;
         } else {
@@ -118,10 +119,12 @@ void UCIAgent::process_position(std::vector<std::string> command){
     if (command[1] == "startpos"){
         fen = constants::STARTPOS;
     } else if (command[1] == "fen") {
-        for (int i = 0; i < 5; i++)
-            fen += command[2+i] + " ";
-        fen += command[7];
+        for (int i = 2; i < command.size(); i++){
+            if (i > 2) fen += ' ';
+            fen += command[i];
+        }
     }
+
     engine.pos.setFen(fen);
 
     bool is_movelist = false; 
@@ -137,7 +140,7 @@ void UCIAgent::process_position(std::vector<std::string> command){
 
 void UCIAgent::process_bench(std::vector<std::string> command){
     if (command.size() == 1)
-        Benchmark::benchmark_engine(BENCHMARK_DEPTH);
+        Benchmark::benchmark_engine(engine, BENCHMARK_DEPTH);
     else if (command[1] == "nn")
         Benchmark::benchmark_nn();
 }
@@ -146,21 +149,16 @@ void UCIAgent::process_evaluate(std::vector<std::string> command){
     engine.pos.synchronize();
     int score = engine.pos.sideToMove() == Color::BLACK ? -1 : 1;
     score *= engine.pos.evaluate();
-    std::string sign = score >= 0 ? "+" : "";
-    std::cout << "NNUE Evaluation: " << sign << score << std::endl;
+    std::cout << "NNUE Evaluation: " << (score >= 0 ? "+" : "") << score << std::endl;
 }
 
 void UCIAgent::process_go(std::vector<std::string> command){
-    if (command.size() < 3){
-        std::cout << "incorrect syntax" << std::endl;
-        return;
-    }
-
     std::string go_type = command[1];
 
     if (go_type == "ponder"){
         cached_think_time = get_think_time_from_go_command(command);
-        if (cached_think_time == -1) return; // error occured
+        if (cached_think_time == -1)
+            return; // error occured
         main_search_thread = std::thread(&Engine::iterative_deepening,
             &engine, SearchLimit(LimitType::Depth, ENGINE_MAX_DEPTH));
         return;
@@ -211,16 +209,16 @@ int UCIAgent::get_think_time_from_go_command(std::vector<std::string> command){
             movestogo = std::stoi(command[i+1]);
     };
 
-    if ((wtime == -1) || (btime == -1)){
+    if (wtime == -1 || btime == -1){
         std::cout << "no time specified\n";
         return -1;
     }
 
-    bool engine_color = (engine.pos.sideToMove() == Color::WHITE);
-    return engine.get_think_time(engine_color ? wtime: btime, 
+    bool engine_white = (engine.pos.sideToMove() == Color::WHITE);
+    return engine.get_think_time(engine_white ? wtime: btime, 
                                  num_moves_out_of_book,
                                  movestogo,
-                                 engine_color ? winc: binc);
+                                 engine_white ? winc: binc);
 }
 
 void UCIAgent::interrupt_if_searching(){

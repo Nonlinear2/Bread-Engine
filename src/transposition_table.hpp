@@ -2,7 +2,6 @@
 
 #include "chess.hpp"
 #include "misc.hpp"
-#include <vector>
 #include <fstream>
 
 
@@ -73,6 +72,7 @@ struct TTData {
 class TranspositionTable {
     public:
     TranspositionTable();
+    ~TranspositionTable();
     void info();
 
     void allocateMB(int new_size);
@@ -88,7 +88,8 @@ class TranspositionTable {
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
-    std::vector<TEntry> entries;
+    TEntry* entries;
+    size_t size;
     private:
     int size_mb;
 };
