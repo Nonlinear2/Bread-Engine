@@ -59,12 +59,12 @@ void CaptureHistory::clear(){
     std::fill(std::begin(history), std::end(history), CAPTHIST_FILL_VALUE);
 }
 
-int& CaptureHistory::get(Color color, Piece piece, Square to, Piece captured){
-    return history[color*12*64*6 + piece*64*6 + to.index()*6 + static_cast<int>(captured.type())];
+int& CaptureHistory::get(Piece piece, Square to, Piece captured){
+    return history[piece*64*6 + to.index()*6 + static_cast<int>(captured.type())];
 }
 
-void CaptureHistory::apply_bonus(Color color, Piece piece, Square to, Piece captured, int bonus){
-    get(color, piece, to, captured) += bonus - get(color, piece, to, captured) * std::abs(bonus) / MAX_CAPTHIST_BONUS;
+void CaptureHistory::apply_bonus(Piece piece, Square to, Piece captured, int bonus){
+    get(piece, to, captured) += bonus - get(piece, to, captured) * std::abs(bonus) / MAX_CAPTHIST_BONUS;
 }
 
 void CaptureHistory::save_to_stream(std::ofstream& ofs){

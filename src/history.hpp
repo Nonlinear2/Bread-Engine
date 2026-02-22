@@ -33,12 +33,13 @@ class FromToHistory {
 class CaptureHistory {
     public:
     void clear();
-    int& get(Color color, Piece piece, Square to, Piece captured);
-    void apply_bonus(Color color, Piece piece, Square to, Piece captured, int bonus);
+    int& get(Piece piece, Square to, Piece captured);
+    void apply_bonus(Piece piece, Square to, Piece captured, int bonus);
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
-    std::array<int, 2*12*64*12> history = {};
+    // [piece][to square][captured piece type]
+    std::array<int, 12*64*6> history = {};
 };
 
 class PawnCorrectionHistory {

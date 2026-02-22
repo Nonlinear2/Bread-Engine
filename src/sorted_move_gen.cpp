@@ -96,7 +96,7 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (killer_moves.in_buffer(depth, move))
             score += c_kil;
 
-        score += 800 * capture_history.get(pos.sideToMove(), piece, to.index(), to_piece) / 10'000;
+        score += 800 * capture_history.get(piece, to.index(), to_piece) / 10'000;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -291,13 +291,13 @@ void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth){
 template<>
 void SortedMoveGen<GenType::NORMAL>::update_capture_history(Move best_move, int depth){
     capture_history.apply_bonus(
-        pos.sideToMove(), pos.at(best_move.from()),
-        best_move.to(), pos.at(best_move.to()), std::min(depth*120 + his_2, his_3));
+        pos.at(best_move.from()), best_move.to(), 
+        pos.at(best_move.to()), std::min(depth*120 + his_2, his_3));
 
     for (int i = moves.num_left; i < moves.size(); i++){
         if (moves[i] != best_move && pos.isCapture(moves[i]))
             capture_history.apply_bonus(
-                pos.sideToMove(), pos.at(moves[i].from()), moves[i].to(),
+                pos.at(moves[i].from()), moves[i].to(),
                 pos.at(moves[i].to()), -std::min(depth*70 + 35, 500));
     }
 }
