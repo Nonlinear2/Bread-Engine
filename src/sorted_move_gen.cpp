@@ -96,6 +96,8 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (killer_moves.in_buffer(depth, move))
             score += c_kil;
 
+        score += 200 * capture_history.get(piece, to.index(), to_piece) / 10'000;
+
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
         move.setScore(score);
@@ -142,12 +144,11 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
 
 template<>
 void SortedMoveGen<GenType::QSEARCH>::set_score(Move& move){
-    const Piece piece = pos.at(move.from());
-    const Piece to_piece = pos.at(move.to());
+    const PieceType piece_type = pos.at(move.from()).type();
+    const PieceType to_piece_type = pos.at(move.to()).type();
 
-    int score = (to_piece.type() == PieceType::NONE ? -25000 : piece_value[to_piece.type()]) - piece_value[piece.type()]
-        + chk_2 * bool(check_squares[piece.type()] & Bitboard::fromSquare(move.to()))
-        + 200 * capture_history.get(piece, move.to().index(), to_piece) / 10'000;
+    int score = (to_piece_type == 6 ? -25000 : piece_value[to_piece_type]) - piece_value[piece_type]
+        + chk_2 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -291,13 +292,14 @@ template<>
 void SortedMoveGen<GenType::NORMAL>::update_capture_history(Move best_move, int depth){
     capture_history.apply_bonus(
         pos.at(best_move.from()), best_move.to(), 
-        pos.at(best_move.to()), std::min(depth*120 + his_2, his_3));
+        pos.at(best_move.to()), std::min(depth*depth*his_1 + his_2, his_3));
 
     for (int i = moves.num_left; i < moves.size(); i++){
         if (moves[i] != best_move && pos.isCapture(moves[i]))
             capture_history.apply_bonus(
                 pos.at(moves[i].from()), moves[i].to(),
-                pos.at(moves[i].to()), -std::min(depth*70 + 35, 500));
+                pos.at(moves[i].to()), -std::min(depth*depth*his_4 + his_5, his_6)
+            );
     }
 }
 
