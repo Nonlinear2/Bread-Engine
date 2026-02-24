@@ -63,8 +63,9 @@ and the engine should return a chess move.
 # Custom commands
 
 Bread engine supports the following commands:
-- `bench`: gives the total number of nodes and nodes per seconds on a series of positions.
-- `bench nn`: gives the speed of the neural network inference
+- `bench`: prints the total number of nodes and nodes per seconds on a series of positions.
+- `bench nn`: prints the speed of the neural network inference
+- `eval`: prints the static evaluation of the position
 
 Bread engine also has a uci option called `nonsense`, which makes it bongcloud, underpromote to bishops and knights, as well as print lyrics from "never gonna give you up" during search.
 

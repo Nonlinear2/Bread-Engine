@@ -36,8 +36,8 @@ bool UCIAgent::process_uci_command(std::string command){
     } else if (first == "bench"){
         process_bench(parsed_command);
 
-    } else if (first == "evaluate"){
-        process_evaluate(parsed_command);
+    } else if (first == "eval"){
+        process_eval(parsed_command);
 
     } else if (first == "go"){
         interrupt_if_searching();
@@ -145,11 +145,11 @@ void UCIAgent::process_bench(std::vector<std::string> command){
         Benchmark::benchmark_nn();
 }
 
-void UCIAgent::process_evaluate(std::vector<std::string> command){
+void UCIAgent::process_eval(std::vector<std::string> command){
     engine.pos.synchronize();
     int score = engine.pos.sideToMove() == Color::BLACK ? -1 : 1;
     score *= engine.pos.evaluate();
-    std::cout << "NNUE Evaluation: " << (score >= 0 ? "+" : "") << score << std::endl;
+    std::cout << "static evaluation: " << (score >= 0 ? "+" : "") << score << std::endl;
 }
 
 void UCIAgent::process_go(std::vector<std::string> command){
