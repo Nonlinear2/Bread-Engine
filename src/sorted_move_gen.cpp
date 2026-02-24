@@ -73,7 +73,6 @@ void SortedMoveGen<GenType::QSEARCH>::prepare_pos_data(){
 template<>
 void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
     if (stage == GENERATE_CAPTURES){
-        const Color stm = pos.sideToMove();
         const Square from = move.from();
         const Square to = move.to();
         const Piece piece = pos.at(from);
@@ -230,14 +229,14 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 }
 
 template<GenType MoveGenType>
-Move SortedMoveGen<MoveGenType>::pop_move(Movelist& ml, int move_idx){
+Move SortedMoveGen<MoveGenType>::pop_move(Movelist& ml, int idx){
     // to implement element removal from a movelist object,
     // the movelist is split into an unseen part first, and a seen part.
 
     // if the move is not in the last position, move it there.
-    if (move_idx != ml.num_left-1){
-        Move swap = ml[move_idx];
-        ml[move_idx] = ml[ml.num_left-1];
+    if (idx != ml.num_left-1){
+        Move swap = ml[idx];
+        ml[idx] = ml[ml.num_left-1];
         ml[ml.num_left-1] = swap;
     }
 

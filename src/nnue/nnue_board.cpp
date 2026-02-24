@@ -27,12 +27,6 @@ NnueBoard::NnueBoard(){
     synchronize();
 };
 
-NnueBoard::NnueBoard(std::string_view fen){
-    NNUE::init();
-    accumulators_stack.push_empty();
-    synchronize();
-};
-
 NnueBoard::~NnueBoard(){
     NNUE::cleanup();
 };
@@ -98,7 +92,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         );
 
     } else {
-        Accumulators& new_accs = accumulators_stack.push_empty();
+        accumulators_stack.push_empty();
         compute_top_update(move, Color::WHITE);
         compute_top_update(move, Color::BLACK);
         makeMove(move);

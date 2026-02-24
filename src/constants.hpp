@@ -52,6 +52,8 @@ constexpr int PAWN_CORRHIST_SIZE = 16384;
 general constants
 ****************/
 
+constexpr int NUM_GENFENS_RANDOM_MOVES = 10;
+
 constexpr int PIECETYPE_COUNT = 6;
 
 constexpr int TT_MIN_SIZE = 2;

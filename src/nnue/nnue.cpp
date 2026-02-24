@@ -236,7 +236,6 @@ int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
     int16_t* stm_data = accumulators[stm].data();
     int16_t* nstm_data = accumulators[!stm].data();
 
-    const vec_int16 one = set1_epi16(1);
     const vec_int16 zero = setzero_epi16();
     const vec_int16 qscale = set1_epi16(255);
     vec_int32 result = set1_epi32(0);
