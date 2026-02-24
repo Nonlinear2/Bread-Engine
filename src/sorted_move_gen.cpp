@@ -269,16 +269,16 @@ template<GenType MoveGenType>
 inline int SortedMoveGen<MoveGenType>::index(){ return move_idx; }
 
 template<>
-void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth){
+void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth, Movelist searched_quiets){
     history.apply_bonus(
         pos.sideToMove(), best_move.from(), 
         best_move.to(), std::min(depth*depth*his_1 + his_2, his_3)
     );
 
-    for (int i = moves.num_left; i < moves.size(); i++){
-        if (moves[i] != best_move && !pos.isCapture(moves[i]))
+    for (auto& move: searched_quiets){
+        if (move != best_move)
             history.apply_bonus(
-                pos.sideToMove(), moves[i].from(), moves[i].to(), 
+                pos.sideToMove(), move.from(), move.to(),
                 -std::min(depth*depth*his_4 + his_5, his_6)
             );
     }

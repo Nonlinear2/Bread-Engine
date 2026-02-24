@@ -492,11 +492,16 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
     }
 
+    Movelist searched_quiets;
+
     while (move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
 
         if (move == excluded_move)
             continue;
+
+        if (!is_capture)
+            searched_quiets.add(move);
 
         bool is_killer = SortedMoveGen<GenType::NORMAL>::killer_moves.in_buffer(depth, move);
 
@@ -615,7 +620,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         alpha = std::max(alpha, value);
         if (beta <= alpha){
             if (!is_capture)
-                move_gen.update_history(move, depth);
+                move_gen.update_history(move, depth, searched_quiets);
             SortedMoveGen<GenType::NORMAL>::killer_moves.add_move(depth, move);
             break;
         }
