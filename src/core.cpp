@@ -484,9 +484,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             ss->moved_piece = Piece::NONE;
             ss->current_move = Move::NULL_MOVE;
             ss->current_move_capture = false;
+
             pos.makeNullMove();
+            __builtin_prefetch(&transposition_table.entries[pos.hash() & (transposition_table.size - 1)]);
+
             int null_move_value = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1, false);
             pos.unmakeNullMove();
+
             if (null_move_value >= beta && !is_win(null_move_value))
                 return null_move_value;
         }
