@@ -284,12 +284,5 @@ void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth){
     }
 }
 
-template<>
-void SortedMoveGen<GenType::NORMAL>::update_cont_history(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus){
-    if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ)
-        && piece != int(Piece::NONE) && to != int(Square::underlying::NO_SQ))
-        cont_history.apply_bonus(prev_piece, prev_to, piece, to, bonus);
-}
-
 template class SortedMoveGen<GenType::QSEARCH>;
 template class SortedMoveGen<GenType::NORMAL>;

@@ -31,6 +31,11 @@ void ContinuationHistory::load_from_stream(std::ifstream& ifs){
         ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
 }
 
+void ContinuationHistory::update(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus){
+    if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ)
+        && piece != int(Piece::NONE) && to != int(Square::underlying::NO_SQ))
+        cont_history.apply_bonus(prev_piece, prev_to, piece, to, bonus);
+}
 
 void FromToHistory::clear(){
     std::fill(std::begin(history), std::end(history), HIST_FILL_VALUE);
@@ -76,3 +81,6 @@ void PawnCorrectionHistory::load_from_stream(std::ifstream& ifs){
     for (auto& v : history)
             ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
 }
+
+ContinuationHistory cont_history = ContinuationHistory();
+PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 

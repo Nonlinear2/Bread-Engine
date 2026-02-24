@@ -35,7 +35,6 @@ class SortedMoveGen {
 
     static inline KillerMoves killer_moves = KillerMoves();
     static inline FromToHistory history = FromToHistory();
-    static inline ContinuationHistory cont_history = ContinuationHistory();
 
     Piece prev_piece;
     Square prev_to;
@@ -48,7 +47,6 @@ class SortedMoveGen {
     bool empty();
     int index();
     void update_history(Move best_move, int depth);
-    void update_cont_history(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus);
     void set_score(Move& move);
     void prepare_pos_data();
 

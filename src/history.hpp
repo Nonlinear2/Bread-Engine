@@ -16,6 +16,8 @@ class ContinuationHistory {
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
+    void update(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus);
+
     std::array<int, 64*12*64*12> history = {};
 };
 
@@ -41,3 +43,6 @@ class PawnCorrectionHistory {
 
     std::array<int, 2*PAWN_CORRHIST_SIZE> history = {};
 };
+
+extern ContinuationHistory cont_history;
+extern PawnCorrectionHistory pawn_corrhist; 

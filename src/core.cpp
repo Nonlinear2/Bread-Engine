@@ -37,10 +37,6 @@ TUNEABLE(red_th_1, int, 2262, 0, 10000, 450, 0.002);
 TUNEABLE(corr_1, int, 100, 0, 10000, 20, 0.002);
 TUNEABLE(corr_2, int, 650, 0, 10000, 130, 0.002);
 
-
-inline PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 
-
-
 int nnue_evaluate(NnueBoard& pos){
     return pos.evaluate();
 }
@@ -74,7 +70,7 @@ void Engine::clear_state(){
     transposition_table.clear();
     SortedMoveGen<GenType::NORMAL>::history.clear();
     pawn_corrhist.clear();
-    SortedMoveGen<GenType::NORMAL>::cont_history.clear();
+    cont_history.clear();
     SortedMoveGen<GenType::NORMAL>::killer_moves.clear();
 }
 
@@ -88,7 +84,7 @@ void Engine::save_state(std::string file){
     transposition_table.save_to_stream(ofs);
     SortedMoveGen<GenType::NORMAL>::history.save_to_stream(ofs);
     pawn_corrhist.save_to_stream(ofs);
-    SortedMoveGen<GenType::NORMAL>::cont_history.save_to_stream(ofs);
+    cont_history.save_to_stream(ofs);
     SortedMoveGen<GenType::NORMAL>::killer_moves.save_to_stream(ofs);
 
     ofs.close();
@@ -104,7 +100,7 @@ void Engine::load_state(std::string file){
     transposition_table.load_from_stream(ifs);
     SortedMoveGen<GenType::NORMAL>::history.load_from_stream(ifs);
     pawn_corrhist.load_from_stream(ifs);
-    SortedMoveGen<GenType::NORMAL>::cont_history.load_from_stream(ifs);
+    cont_history.load_from_stream(ifs);
     SortedMoveGen<GenType::NORMAL>::killer_moves.load_from_stream(ifs);
 
     ifs.close();
@@ -519,7 +515,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             if (!is_capture && !in_check
                 && prev_piece != int(Piece::NONE)
                 && prev_to != int(Square::underlying::NO_SQ)
-                && move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
+                && cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
                 continue;
         }
 
@@ -578,9 +574,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             if (value > alpha && reduced_depth < new_depth){
                 value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
                 if (!is_capture)
-                    move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), cont_1);
+                    cont_history.update(prev_piece, prev_to, ss->moved_piece, move.to(), cont_1);
             } else if (value <= alpha && !is_capture)
-                move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
+                cont_history.update(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
 
         } else if (!pv || move_gen.index() > 0){
             value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
@@ -655,8 +651,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     }
 
     if (max_value <= initial_alpha && !(ss - 1)->current_move_capture){
-        move_gen.update_cont_history(
-            (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, std::min(depth*cont_3 + cont_4, cont_5));
+        cont_history.update(
+            (ss - 2)->moved_piece, ((ss - 2)->current_move).to(),
+            prev_piece, prev_to, std::min(depth*cont_3 + cont_4, cont_5));
     }
 
 
