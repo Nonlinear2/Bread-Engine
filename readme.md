@@ -3,7 +3,7 @@
 
 <p align="center">
   <picture><source srcset="https://img.shields.io/badge/Architectures-x86%2C%20x64-%23f78b04?style=for-the-badge&labelColor=%23013c5a&color=%23013c5a"><img alt="Architectures: x86, x64">
-  </picture><a href="https://github.com/Nonlinear2/Bread-Engine/releases"><img src="https://img.shields.io/github/v/release/Nonlinear2/Bread-Engine?include_prereleases&style=for-the-badge&label=Lastest%20Release&labelColor=%23950502&color=%23013c5a" alt="Latest Release"></a>
+  </picture><a href="https://github.com/Nonlinear2/Bread-Engine/releases"><img src="https://img.shields.io/github/v/release/Nonlinear2/Bread-Engine?include_prereleases&style=for-the-badge&label=Latest%20Release&labelColor=%23950502&color=%23013c5a" alt="Latest Release"></a>
   <picture><source srcset="https://img.shields.io/github/license/Nonlinear2/Bread-Engine?style=for-the-badge&labelColor=%23950502&color=%23950502"><img alt="License"></picture>
 </p>
 
