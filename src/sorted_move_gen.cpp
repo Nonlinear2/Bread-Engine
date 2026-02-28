@@ -198,6 +198,10 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             ++stage;
             if (!pos.inCheck() && MoveGenType == GenType::QSEARCH)
                 stage = BAD_CAPTURES;
+
+            if (skip_quiets_)
+                stage = BAD_CAPTURES;
+
             [[fallthrough]];
 
         case GENERATE_QUIETS:
@@ -209,6 +213,9 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 
         case QUIETS:
             while (moves.num_left != 0){
+                if (skip_quiets_)
+                    break;
+
                 move = pop_best_score(moves);
                 if (move != tt_move)    
                     return true;
@@ -227,6 +234,9 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
     }
     return false;
 }
+
+template<GenType MoveGenType>
+void SortedMoveGen<MoveGenType>::skip_quiets(){ skip_quiets_ = true; }
 
 template<GenType MoveGenType>
 Move SortedMoveGen<MoveGenType>::pop_move(Movelist& ml, int idx){
