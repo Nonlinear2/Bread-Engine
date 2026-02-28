@@ -9,7 +9,7 @@
 NNUE constants
 *************/
 
-constexpr int INPUT_BUCKET_COUNT = 8;
+constexpr int NUM_INPUT_BUCKETS = 8;
 constexpr int INPUT_BUCKETS[64] = {
     0, 1, 2, 3,  3, 2, 1, 0,
     4, 4, 5, 5,  5, 5, 4, 4,
@@ -21,9 +21,9 @@ constexpr int INPUT_BUCKETS[64] = {
     7, 7, 7, 7,  7, 7, 7, 7,
 };
 
-constexpr int OUTPUT_BUCKET_COUNT = 8;
+constexpr int NUM_OUTPUT_BUCKETS = 8;
 
-constexpr int INPUT_SIZE = 768 * INPUT_BUCKET_COUNT;
+constexpr int INPUT_SIZE = 768 * NUM_INPUT_BUCKETS;
 constexpr int ACC_SIZE = 1024;
 
 constexpr int L1_INPUT_SIZE = 2 * ACC_SIZE;
@@ -35,8 +35,8 @@ constexpr int L0_BIAS_SIZE = ACC_SIZE;
 constexpr int L1_WEIGHTS_SIZE = L1_INPUT_SIZE * L1_OUTPUT_SIZE;
 constexpr int L1_BIAS_SIZE = L1_OUTPUT_SIZE;
 
-constexpr int BUCKETED_L1_WEIGHTS_SIZE = OUTPUT_BUCKET_COUNT * L1_WEIGHTS_SIZE;
-constexpr int BUCKETED_L1_BIAS_SIZE = OUTPUT_BUCKET_COUNT * L1_BIAS_SIZE;
+constexpr int BUCKETED_L1_WEIGHTS_SIZE = NUM_OUTPUT_BUCKETS * L1_WEIGHTS_SIZE;
+constexpr int BUCKETED_L1_BIAS_SIZE = NUM_OUTPUT_BUCKETS * L1_BIAS_SIZE;
 
 using Accumulator = std::array<int16_t, ACC_SIZE>;
 using Accumulators = std::array<Accumulator, 2>;
@@ -53,7 +53,7 @@ constexpr int PAWN_CORRHIST_SIZE = 16384;
 chess constants
 **************/
 
-constexpr int PIECETYPE_COUNT = 6;
+constexpr int NUM_PIECETYPES = 6;
 constexpr int NUM_SQUARES = 64;
 
 /****************
