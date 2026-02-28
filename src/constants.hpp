@@ -53,6 +53,8 @@ constexpr int PAWN_CORRHIST_SIZE = 16384;
 chess constants
 **************/
 
+constexpr int NUM_COLORS = 2;
+constexpr int NUM_PIECES = 12;
 constexpr int NUM_PIECETYPES = 6;
 constexpr int NUM_SQUARES = 64;
 

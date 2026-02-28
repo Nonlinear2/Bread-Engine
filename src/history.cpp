@@ -13,7 +13,12 @@ void ContinuationHistory::clear(){
 }
 
 int& ContinuationHistory::get(Piece prev_piece, Square prev_to, Piece piece, Square to){
-    return history[prev_piece * 64*12*64 + prev_to.index() * 12*64 + piece * 64 + to.index()];
+    return history[
+        prev_piece * NUM_SQUARES * NUM_PIECES * NUM_SQUARES
+      + prev_to.index() * NUM_PIECES * NUM_SQUARES
+      + piece * NUM_SQUARES
+      + to.index()
+    ];
 }
 
 void ContinuationHistory::apply_bonus(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus){
@@ -37,7 +42,11 @@ void FromToHistory::clear(){
 }
 
 int& FromToHistory::get(Color color, Square from, Square to){
-    return history[color*64*64 + from.index()*64 + to.index()];
+    return history[
+        color * NUM_SQUARES * NUM_SQUARES
+      + from.index() * NUM_SQUARES
+      + to.index()
+    ];
 }
 
 void FromToHistory::apply_bonus(Color color, Square from, Square to, int bonus){
@@ -60,7 +69,7 @@ void PawnCorrectionHistory::clear(){
 }
 
 int& PawnCorrectionHistory::get(Color color, uint16_t pawn_key){
-    return history[2*(pawn_key % PAWN_CORRHIST_SIZE) + color];
+    return history[NUM_COLORS*(pawn_key % PAWN_CORRHIST_SIZE) + color];
 }
 
 void PawnCorrectionHistory::apply_bonus(Color color, uint16_t pawn_key, int bonus){
