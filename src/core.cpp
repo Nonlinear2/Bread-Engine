@@ -384,8 +384,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     Move move;
     int value;
     Piece prev_piece = (ss - 1)->moved_piece;
-    Square prev_to = ((ss - 1)->current_move == Move::NULL_MOVE 
-                      || (ss - 1)->current_move == Move::NO_MOVE) ? Square::NO_SQ : (ss - 1)->current_move.to();
+    Square prev_to = ((ss - 1)->curr_move == Move::NULL_MOVE || (ss - 1)->curr_move == Move::NO_MOVE)
+                     ? Square::NO_SQ : (ss - 1)->curr_move.to();
 
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
@@ -477,13 +477,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         // null move pruning
         // maybe check for zugzwang?
-        if (cutnode && (ss - 1)->current_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
+        if (cutnode && (ss - 1)->curr_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
             && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta)){
 
             int R = 3 + (eval >= beta) + depth / 4 + tt_capture;
             ss->moved_piece = Piece::NONE;
-            ss->current_move = Move::NULL_MOVE;
-            ss->current_move_capture = false;
+            ss->curr_move = Move::NULL_MOVE;
+            ss->curr_move_capture = false;
 
             pos.makeNullMove();
             __builtin_prefetch(&transposition_table.entries[pos.hash() & (transposition_table.size - 1)]);
@@ -554,8 +554,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         new_depth += extension;
 
         ss->moved_piece = pos.at(move.from());
-        ss->current_move = move;
-        ss->current_move_capture = is_capture;
+        ss->curr_move = move;
+        ss->curr_move_capture = is_capture;
         pos.update_state(move, transposition_table);
 
         bool gives_check = pos.inCheck();
@@ -656,9 +656,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         return alpha;
     }
 
-    if (max_value <= initial_alpha && !(ss - 1)->current_move_capture){
+    if (max_value <= initial_alpha && !(ss - 1)->curr_move_capture){
         move_gen.update_cont_history(
-            (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, std::min(depth*cont_3 + cont_4, cont_5));
+            (ss - 2)->moved_piece, ((ss - 2)->curr_move).to(), prev_piece, prev_to, std::min(depth*cont_3 + cont_4, cont_5));
     }
 
 
@@ -731,7 +731,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     uint64_t zobrist_hash = pos.hash();
 
     SortedMoveGen capture_gen = SortedMoveGen<GenType::QSEARCH>(
-        (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos
+        (ss - 1)->moved_piece, (ss - 1)->curr_move.to().index(), pos
     );
 
     bool is_hit;
@@ -797,7 +797,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     int max_value = in_check ? -INFINITE_VALUE : stand_pat;
 
-    Square previous_to_square = ((ss - 1)->current_move).to();
+    Square previous_to_square = ((ss - 1)->curr_move).to();
 
     while (capture_gen.next(move)){
         Piece captured_piece = pos.at(move.to());
@@ -823,8 +823,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         }
 
         ss->moved_piece = moved_piece;
-        ss->current_move = move;
-        ss->current_move_capture = (captured_piece != Piece::NONE);
+        ss->curr_move = move;
+        ss->curr_move_capture = (captured_piece != Piece::NONE);
         pos.update_state(move, transposition_table);
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
