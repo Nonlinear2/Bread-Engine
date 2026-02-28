@@ -25,8 +25,10 @@ enum GenType: int {
     QSEARCH,
 };
 
-constexpr GenerationStage& operator++(GenerationStage& g) {
-    return g = static_cast<GenerationStage>(static_cast<int>(g) + 1);
+constexpr GenerationStage operator++(GenerationStage& g, int) {
+    GenerationStage old = g;
+    g = static_cast<GenerationStage>(static_cast<int>(g) + 1);
+    return old;
 }
 
 template<GenType MoveGenType>
