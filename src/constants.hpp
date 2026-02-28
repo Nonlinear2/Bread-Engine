@@ -48,29 +48,38 @@ history constants
 
 constexpr int PAWN_CORRHIST_SIZE = 16384;
 
+
+/**************
+chess constants
+**************/
+
+constexpr int PIECETYPE_COUNT = 6;
+constexpr int NUM_SQUARES = 64;
+
 /****************
 general constants
 ****************/
 
 constexpr int NUM_GENFENS_RANDOM_MOVES = 10;
 
-constexpr int PIECETYPE_COUNT = 6;
-
 constexpr int TT_MIN_SIZE = 2;
 constexpr int TT_MAX_SIZE = 4096;
-
-constexpr int ENGINE_MAX_DEPTH = 63;
-
-constexpr int QSEARCH_SOFT_DEPTH_LIMIT = 6;
-constexpr int QSEARCH_HARD_DEPTH_LIMIT = 15;
 
 constexpr int MAX_PLY = 256;
 constexpr int STACK_PADDING_SIZE = 2;
 
 constexpr int BENCHMARK_DEPTH = 12;
+constexpr int ENGINE_MAX_DEPTH = 63;
 
 constexpr int DEPTH_UNSEARCHED = -1;
 constexpr int DEPTH_QSEARCH = 0;
+
+constexpr int QSEARCH_SOFT_DEPTH_LIMIT = 6;
+constexpr int QSEARCH_HARD_DEPTH_LIMIT = 15;
+
+/*****
+scores
+*****/
 
 constexpr int BEST_MOVE_SCORE = 100'000;
 constexpr int WORST_MOVE_SCORE = -100'000;
