@@ -54,9 +54,11 @@ class SortedMoveGen {
     void update_cont_history(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus);
     void set_score(Move& move);
     void prepare_pos_data();
+    void skip_quiets();
 
     Move tt_move = Move::NO_MOVE;
     private:
+    bool skip_quiets_ = false;
     Movelist moves;
     Movelist bad_captures;
 
