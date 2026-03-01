@@ -178,7 +178,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 
     switch (stage){
         case TT_MOVE:
-            stage++;
+            ++stage;
 
             if (tt_move != Move::NO_MOVE && pos.legal(tt_move)){
                 move = tt_move;
@@ -192,7 +192,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             prepare_pos_data();
             for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);
-            stage++;
+            ++stage;
             [[fallthrough]];
 
         case GOOD_CAPTURES:
@@ -206,7 +206,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                 else
                     bad_captures.add(move);
             }
-            stage++;
+            ++stage;
             if (!pos.inCheck() && MoveGenType == GenType::QSEARCH)
                 stage = BAD_CAPTURES;
 
@@ -219,7 +219,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             movegen::legalmoves<movegen::MoveGenType::QUIET>(moves, pos);
             for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);
-            stage++;
+            ++stage;
             [[fallthrough]];
 
         case QUIETS:
@@ -231,7 +231,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                 if (move != tt_move)    
                     return true;
             }
-            stage++;
+            ++stage;
             [[fallthrough]];
 
         case BAD_CAPTURES:
