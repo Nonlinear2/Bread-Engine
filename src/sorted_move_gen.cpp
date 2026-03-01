@@ -19,13 +19,13 @@ TUNEABLE(his_3, int, 1162, 0, 5000, 200, 0.002);
 TUNEABLE(his_4, int, 18, 0, 300, 3, 0.002);
 TUNEABLE(his_5, int, 16, 0, 300, 3, 0.002);
 TUNEABLE(his_6, int, 512, 0, 5000, 110, 0.002);
-
 TUNEABLE(chis_1, int, 34, 0, 300, 5, 0.002);
 TUNEABLE(chis_2, int, 35, 0, 300, 5, 0.002);
 TUNEABLE(chis_3, int, 1162, 0, 5000, 200, 0.002);
 TUNEABLE(chis_4, int, 18, 0, 300, 3, 0.002);
 TUNEABLE(chis_5, int, 16, 0, 300, 3, 0.002);
 TUNEABLE(chis_6, int, 512, 0, 5000, 110, 0.002);
+TUNEABLE(cphis, int, 300, 0, 5000, 60, 0.002);
 
 
 CaptureHistory capture_history = CaptureHistory();
@@ -102,7 +102,7 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (killer_moves.in_buffer(depth, move))
             score += c_kil;
 
-        score += 300 * capture_history.get(piece, to.index(), to_piece) / 10'000;
+        score += cphis * capture_history.get(piece, to.index(), to_piece) / 10'000;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
