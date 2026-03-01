@@ -10,7 +10,7 @@ TUNEABLE(q_prm, int, 101, 0, 1000, 20, 0.002);
 TUNEABLE(c_kil, int, 144, 0, 1000, 25, 0.002);
 TUNEABLE(q_kil, int, 132, 0, 1000, 25, 0.002);
 TUNEABLE(q_his, int, 164, 0, 1000, 25, 0.002);
-TUNEABLE(q_chis, int, 154, 0, 1000, 25, 0.002);
+TUNEABLE(q_cthis, int, 154, 0, 1000, 25, 0.002);
 TUNEABLE(chk_2, int, 363, 0, 2000, 70, 0.002);
 TUNEABLE(bst, int, 206, 0, 1500, 40, 0.002);
 TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
@@ -20,6 +20,15 @@ TUNEABLE(his_4, int, 18, 0, 300, 3, 0.002);
 TUNEABLE(his_5, int, 16, 0, 300, 3, 0.002);
 TUNEABLE(his_6, int, 512, 0, 5000, 110, 0.002);
 
+TUNEABLE(chis_1, int, 34, 0, 300, 5, 0.002);
+TUNEABLE(chis_2, int, 35, 0, 300, 5, 0.002);
+TUNEABLE(chis_3, int, 1162, 0, 5000, 200, 0.002);
+TUNEABLE(chis_4, int, 18, 0, 300, 3, 0.002);
+TUNEABLE(chis_5, int, 16, 0, 300, 3, 0.002);
+TUNEABLE(chis_6, int, 512, 0, 5000, 110, 0.002);
+
+
+CaptureHistory capture_history = CaptureHistory();
 
 template<>
 SortedMoveGen<GenType::NORMAL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
@@ -93,6 +102,8 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (killer_moves.in_buffer(depth, move))
             score += c_kil;
 
+        score += 300 * capture_history.get(piece, to.index(), to_piece) / 10'000;
+
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
         move.setScore(score);
@@ -128,7 +139,7 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         score += q_his * history.get(stm, from.index(), to.index()) / 10'000;
 
         if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
-            score += q_chis * cont_history.get(prev_piece, prev_to, piece, to.index()) / 10'000;
+            score += q_cthis * cont_history.get(prev_piece, prev_to, piece, to.index()) / 10'000;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -198,6 +209,10 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
             stage++;
             if (!pos.inCheck() && MoveGenType == GenType::QSEARCH)
                 stage = BAD_CAPTURES;
+
+            if (skip_quiets_)
+                stage = BAD_CAPTURES;
+
             [[fallthrough]];
 
         case GENERATE_QUIETS:
@@ -209,6 +224,9 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 
         case QUIETS:
             while (moves.num_left != 0){
+                if (skip_quiets_)
+                    break;
+
                 move = pop_best_score(moves);
                 if (move != tt_move)    
                     return true;
@@ -227,6 +245,9 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
     }
     return false;
 }
+
+template<GenType MoveGenType>
+void SortedMoveGen<MoveGenType>::skip_quiets(){ skip_quiets_ = true; }
 
 template<GenType MoveGenType>
 Move SortedMoveGen<MoveGenType>::pop_move(Movelist& ml, int idx){
@@ -279,6 +300,21 @@ void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth){
             history.apply_bonus(
                 pos.sideToMove(), moves[i].from(), moves[i].to(), 
                 -std::min(depth*depth*his_4 + his_5, his_6)
+            );
+    }
+}
+
+template<>
+void SortedMoveGen<GenType::NORMAL>::update_capture_history(Move best_move, int depth){
+    capture_history.apply_bonus(
+        pos.at(best_move.from()), best_move.to(), 
+        pos.at(best_move.to()), std::min(depth*depth*chis_1 + chis_2, chis_3));
+
+    for (int i = moves.num_left; i < moves.size(); i++){
+        if (moves[i] != best_move && pos.isCapture(moves[i]))
+            capture_history.apply_bonus(
+                pos.at(moves[i].from()), moves[i].to(),
+                pos.at(moves[i].to()), -std::min(depth*depth*chis_4 + chis_5, chis_6)
             );
     }
 }

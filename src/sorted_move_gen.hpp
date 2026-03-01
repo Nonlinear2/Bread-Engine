@@ -31,6 +31,8 @@ constexpr GenerationStage operator++(GenerationStage& g, int) {
     return old;
 }
 
+extern CaptureHistory capture_history;
+
 template<GenType MoveGenType>
 class SortedMoveGen {
     public:
@@ -50,12 +52,15 @@ class SortedMoveGen {
     bool empty();
     int index();
     void update_history(Move best_move, int depth);
+    void update_capture_history(Move best_move, int depth);
     void update_cont_history(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus);
     void set_score(Move& move);
     void prepare_pos_data();
+    void skip_quiets();
 
     Move tt_move = Move::NO_MOVE;
     private:
+    bool skip_quiets_ = false;
     Movelist moves;
     Movelist bad_captures;
 
