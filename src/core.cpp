@@ -72,6 +72,7 @@ bool Engine::update_interrupt_flag(){
 
 void Engine::clear_state(){
     transposition_table.clear();
+    capture_history.clear();
     SortedMoveGen<GenType::NORMAL>::history.clear();
     pawn_corrhist.clear();
     SortedMoveGen<GenType::NORMAL>::cont_history.clear();
@@ -86,6 +87,7 @@ void Engine::save_state(std::string file){
     }
 
     transposition_table.save_to_stream(ofs);
+    capture_history.save_to_stream(ofs);
     SortedMoveGen<GenType::NORMAL>::history.save_to_stream(ofs);
     pawn_corrhist.save_to_stream(ofs);
     SortedMoveGen<GenType::NORMAL>::cont_history.save_to_stream(ofs);
@@ -102,6 +104,7 @@ void Engine::load_state(std::string file){
     }
 
     transposition_table.load_from_stream(ifs);
+    capture_history.load_from_stream(ifs);
     SortedMoveGen<GenType::NORMAL>::history.load_from_stream(ifs);
     pawn_corrhist.load_from_stream(ifs);
     SortedMoveGen<GenType::NORMAL>::cont_history.load_from_stream(ifs);
@@ -616,7 +619,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         alpha = std::max(alpha, value);
         if (beta <= alpha){
-            if (!is_capture)
+            if (is_capture)
+                move_gen.update_capture_history(move, depth);
+            else
                 move_gen.update_history(move, depth);
             SortedMoveGen<GenType::NORMAL>::killer_moves.add_move(depth, move);
             break;

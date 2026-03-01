@@ -21,6 +21,8 @@ TUNEABLE(his_5, int, 16, 0, 300, 3, 0.002);
 TUNEABLE(his_6, int, 512, 0, 5000, 110, 0.002);
 
 
+CaptureHistory capture_history = CaptureHistory();
+
 template<>
 SortedMoveGen<GenType::NORMAL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
     Square prev_to, NnueBoard& pos, int depth):
@@ -92,6 +94,8 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         assert(depth != DEPTH_UNSEARCHED);
         if (killer_moves.in_buffer(depth, move))
             score += c_kil;
+
+        score += 300 * capture_history.get(piece, to.index(), to_piece) / 10'000;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -279,6 +283,21 @@ void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth){
             history.apply_bonus(
                 pos.sideToMove(), moves[i].from(), moves[i].to(), 
                 -std::min(depth*depth*his_4 + his_5, his_6)
+            );
+    }
+}
+
+template<>
+void SortedMoveGen<GenType::NORMAL>::update_capture_history(Move best_move, int depth){
+    capture_history.apply_bonus(
+        pos.at(best_move.from()), best_move.to(), 
+        pos.at(best_move.to()), std::min(depth*depth*his_1 + his_2, his_3));
+
+    for (int i = moves.num_left; i < moves.size(); i++){
+        if (moves[i] != best_move && pos.isCapture(moves[i]))
+            capture_history.apply_bonus(
+                pos.at(moves[i].from()), moves[i].to(),
+                pos.at(moves[i].to()), -std::min(depth*depth*his_4 + his_5, his_6)
             );
     }
 }
