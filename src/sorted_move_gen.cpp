@@ -148,7 +148,7 @@ void SortedMoveGen<GenType::QSEARCH>::set_score(Move& move){
     const PieceType piece_type = pos.at(move.from()).type();
     const PieceType to_piece_type = pos.at(move.to()).type();
 
-    int score = (to_piece_type == 6 ? -25000 : piece_value[to_piece_type]) - piece_value[piece_type]
+    int score = (to_piece_type == 6 ? -25000 : piece_value[to_piece_type])
         + chk_2 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
