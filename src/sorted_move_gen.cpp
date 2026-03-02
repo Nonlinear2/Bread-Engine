@@ -26,6 +26,7 @@ TUNEABLE(chis_4, int, 18, 0, 300, 3, 0.002);
 TUNEABLE(chis_5, int, 16, 0, 300, 3, 0.002);
 TUNEABLE(chis_6, int, 512, 0, 5000, 110, 0.002);
 TUNEABLE(cphis, int, 300, 0, 5000, 60, 0.002);
+TUNEABLE(cphis_2, int, 300, 0, 5000, 60, 0.002);
 
 
 CaptureHistory capture_history = CaptureHistory();
@@ -150,11 +151,13 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
 
 template<>
 void SortedMoveGen<GenType::QSEARCH>::set_score(Move& move){
-    const PieceType piece_type = pos.at(move.from()).type();
-    const PieceType to_piece_type = pos.at(move.to()).type();
+    const Piece piece = pos.at(move.from());
+    const Piece to_piece = pos.at(move.to());
 
-    int score = (to_piece_type == 6 ? -25000 : piece_value[to_piece_type]) - piece_value[piece_type]
-        + chk_2 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
+    int score = (to_piece.type() == 6 ? -25000 : piece_value[to_piece.type()]) - piece_value[piece.type()]
+        + chk_2 * bool(check_squares[piece.type()] & Bitboard::fromSquare(move.to()));
+    
+    score += cphis_2 * capture_history.get(piece, move.to().index(), to_piece) / 10'000;
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
