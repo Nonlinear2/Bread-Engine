@@ -98,7 +98,7 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (move.typeOf() == Move::PROMOTION)
             score += c_prm * piece_value[move.promotionType()] / 150;
 
-        score += cphis * capture_history.get(piece, to.index(), to_piece) / 10'000;
+        score += cphis * capture_history.get(piece, to, to_piece) / 10'000;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -150,9 +150,8 @@ void SortedMoveGen<GenType::QSEARCH>::set_score(Move& move){
     const Piece to_piece = pos.at(move.to());
 
     int score = (to_piece.type() == 6 ? -25000 : piece_value[to_piece.type()]) - piece_value[piece.type()]
-        + chk_2 * bool(check_squares[piece.type()] & Bitboard::fromSquare(move.to()));
-    
-    score += cphis_2 * capture_history.get(piece, move.to().index(), to_piece) / 10'000;
+        + chk_2 * bool(check_squares[piece.type()] & Bitboard::fromSquare(move.to()))
+        + cphis_2 * capture_history.get(piece, move.to(), to_piece) / 10'000;
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
