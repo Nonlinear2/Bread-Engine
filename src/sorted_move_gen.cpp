@@ -149,7 +149,7 @@ void SortedMoveGen<GenType::QSEARCH>::set_score(Move& move){
     const Piece piece = pos.at(move.from());
     const Piece to_piece = pos.at(move.to());
 
-    int score = (to_piece.type() == 6 ? -25000 : piece_value[to_piece.type()]) - piece_value[piece.type()]
+    int score = piece_value[to_piece.type()]
         + chk_2 * bool(check_squares[piece.type()] & Bitboard::fromSquare(move.to()))
         + cphis_2 * capture_history.get(piece, move.to(), to_piece) / 10'000;
 
