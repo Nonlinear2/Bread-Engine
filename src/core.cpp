@@ -499,15 +499,18 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     }
 
     Movelist seen_captures;
+    Movelist seen_quiets;
 
     while (move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
 
-        if (move == excluded_move)
-            continue;
-
         if (is_capture)
             seen_captures.add(move);
+        else
+            seen_quiets.add(move);
+
+        if (move == excluded_move)
+            continue;
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
 
@@ -628,7 +631,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             if (is_capture)
                 move_gen.update_capture_history(move, depth, seen_captures);
             else
-                move_gen.update_history(move, depth);
+                move_gen.update_history(move, depth, seen_quiets);
             SortedMoveGen<GenType::NORMAL>::killer_moves.add_move(depth, move);
             break;
         }

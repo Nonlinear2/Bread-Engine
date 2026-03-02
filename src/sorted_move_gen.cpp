@@ -193,7 +193,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
         case GOOD_CAPTURES:
             while (moves.num_left != 0){
                 move = pop_best_score(moves);
-                if (move == tt_move)    
+                if (move == tt_move)
                     continue;
 
                 if (SEE::evaluate(pos, move, -bst))
@@ -284,16 +284,16 @@ template<GenType MoveGenType>
 inline int SortedMoveGen<MoveGenType>::index(){ return move_idx; }
 
 template<>
-void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth){
+void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth, Movelist& seen_quiets){
     history.apply_bonus(
         pos.sideToMove(), best_move.from(), 
         best_move.to(), std::min(depth*depth*his_1 + his_2, his_3)
     );
 
-    for (int i = moves.num_left; i < moves.size(); i++){
-        if (moves[i] != best_move && !pos.isCapture(moves[i]))
+    for (auto& move: seen_quiets){
+        if (move != best_move)
             history.apply_bonus(
-                pos.sideToMove(), moves[i].from(), moves[i].to(), 
+                pos.sideToMove(), move.from(), move.to(), 
                 -std::min(depth*depth*his_4 + his_5, his_6)
             );
     }
@@ -305,11 +305,11 @@ void SortedMoveGen<GenType::NORMAL>::update_capture_history(Move best_move, int 
         pos.at(best_move.from()), best_move.to(), 
         pos.at(best_move.to()), std::min(depth*depth*chis_1 + chis_2, chis_3));
 
-    for (auto& move: seen_captures){
-        if (move != best_move)
+    for (int i = moves.num_left; i < moves.size(); i++){
+        if (moves[i] != best_move && pos.isCapture(moves[i]))
             capture_history.apply_bonus(
-                pos.at(move.from()), move.to(),
-                pos.at(move.to()), -std::min(depth*depth*chis_4 + chis_5, chis_6)
+                pos.at(moves[i].from()), moves[i].to(),
+                pos.at(moves[i].to()), -std::min(depth*depth*chis_4 + chis_5, chis_6)
             );
     }
 }

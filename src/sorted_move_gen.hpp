@@ -49,7 +49,7 @@ class SortedMoveGen {
     bool next(Move& move);
     bool empty();
     int index();
-    void update_history(Move best_move, int depth);
+    void update_history(Move best_move, int depth, Movelist& seen_quiets);
     void update_capture_history(Move best_move, int depth, Movelist& seen_captures);
     void update_cont_history(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus);
     void set_score(Move& move);
