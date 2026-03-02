@@ -1,42 +1,41 @@
 #include "core.hpp"
 
-TUNEABLE(r_1, int, 199, 0, 1000, 30, 0.002);
-TUNEABLE(r_2, int, 258, -100, 1000, 50, 0.002);
-TUNEABLE(rfp_1, int, 128, 0, 1000, 30, 0.002);
-TUNEABLE(rfp_2, int, 36, 0, 1000, 10, 0.002);
-TUNEABLE(rfp_3, int, 66, 0, 1000, 10, 0.002);
-TUNEABLE(rfp_4, int, 105, -100, 1000, 25, 0.002);
-TUNEABLE(nmp_1, int, 107, -50, 1000, 15, 0.002);
-TUNEABLE(nmp_2, int, 28, -300, 1000, 5, 0.002);
-TUNEABLE(lmp_1, int, 98, -100, 1000, 22, 0.002);
-TUNEABLE(see_1, int, 90, -100, 1000, 15, 0.002);
+TUNEABLE(r_1, int, 180, 0, 1000, 40, 0.002);
+TUNEABLE(r_2, int, 272, -100, 1000, 50, 0.002);
+TUNEABLE(rfp_1, int, 114, 0, 1000, 25, 0.002);
+TUNEABLE(rfp_2, int, 39, 0, 1000, 6, 0.002);
+TUNEABLE(rfp_3, int, 59, 0, 1000, 12, 0.002);
+TUNEABLE(rfp_4, int, 72, -100, 1000, 20, 0.002);
+TUNEABLE(nmp_1, int, 76, -50, 1000, 20, 0.002);
+TUNEABLE(nmp_2, int, 25, -300, 1000, 5, 0.002);
+TUNEABLE(lmp_1, int, 78, -100, 1000, 20, 0.002);
+TUNEABLE(see_1, int, 77, -100, 1000, 20, 0.002);
 TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
 TUNEABLE(se_1, int, 8, -100, 100, 0.5, 0.002);
-TUNEABLE(se_2, int, 0, -100, 100, 0.5, 0.002);
+TUNEABLE(se_2, int, 1, -100, 100, 0.5, 0.002);
 TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
-TUNEABLE(cont_1, int, 1141, 0, 10000, 150, 0.002);
-TUNEABLE(cont_2, int, 102, 0, 1500, 25, 0.002);
-TUNEABLE(cont_3, int, 30, 0, 1500, 6, 0.002);
-TUNEABLE(cont_4, int, 30, 0, 1500, 6, 0.002);
-TUNEABLE(cont_5, int, 500, 0, 3000, 100, 0.002);
-TUNEABLE(qs_fp_1, int, 1921, 0, 3000, 300, 0.002);
-TUNEABLE(qs_see_1, int, 268, 0, 1000, 50, 0.002);
-TUNEABLE(qs_p_1, int, 1149, 0, 5000, 200, 0.002);
-TUNEABLE(cthis_1, int, 8238, 0, 30000, 1000, 0.002);
-TUNEABLE(cthis_2, int, 648, 0, 3000, 100, 0.002);
+TUNEABLE(cont_1, int, 863, 0, 10000, 200, 0.002);
+TUNEABLE(cont_2, int, 97, 0, 1500, 20, 0.002);
+TUNEABLE(cont_3, int, 29, 0, 1500, 6, 0.002);
+TUNEABLE(cont_4, int, 28, 0, 1500, 6, 0.002);
+TUNEABLE(cont_5, int, 298, 0, 3000, 100, 0.002);
+TUNEABLE(qs_fp_1, int, 2129, 0, 3000, 400, 0.002);
+TUNEABLE(qs_see_1, int, 312, 0, 1000, 50, 0.002);
+TUNEABLE(qs_p_1, int, 1246, 0, 5000, 200, 0.002);
+TUNEABLE(cthis_1, int, 8248, 0, 30000, 1500, 0.002);
+TUNEABLE(cthis_2, int, 629, 0, 3000, 100, 0.002);
 TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
-TUNEABLE(asp_1, int, 98, 0, 5000, 20, 0.002);
-TUNEABLE(asp_2, int, 399, 0, 5000, 60, 0.002);
-TUNEABLE(red_1, int, 1326, 0, 10000, 200, 0.002);
-TUNEABLE(red_2, int, 1788, 0, 10000, 250, 0.002);
-TUNEABLE(red_3, int, 593, 0, 10000, 150, 0.002);
-TUNEABLE(red_4, int, 1689, 0, 10000, 200, 0.002);
-TUNEABLE(red_5, int, 1085, 0, 10000, 200, 0.002);
-TUNEABLE(red_6, int, 856, 0, 10000, 180, 0.002);
-TUNEABLE(red_th_1, int, 2262, 0, 10000, 450, 0.002);
-TUNEABLE(corr_1, int, 100, 0, 10000, 20, 0.002);
-TUNEABLE(corr_2, int, 650, 0, 10000, 130, 0.002);
-
+TUNEABLE(asp_1, int, 77, 0, 5000, 20, 0.002);
+TUNEABLE(asp_2, int, 430, 0, 5000, 80, 0.002);
+TUNEABLE(red_1, int, 1002, 0, 10000, 250, 0.002);
+TUNEABLE(red_2, int, 1742, 0, 10000, 300, 0.002);
+TUNEABLE(red_3, int, 815, 0, 10000, 150, 0.002);
+TUNEABLE(red_4, int, 1998, 0, 10000, 300, 0.002);
+TUNEABLE(red_5, int, 788, 0, 10000, 200, 0.002);
+TUNEABLE(red_6, int, 746, 0, 10000, 180, 0.002);
+TUNEABLE(red_th_1, int, 2135, 0, 10000, 450, 0.002);
+TUNEABLE(corr_1, int, 268, 0, 10000, 50, 0.002);
+TUNEABLE(corr_2, int, 592, 0, 10000, 130, 0.002);
 
 inline PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 
 
@@ -243,7 +242,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
             asp_alpha = -INFINITE_VALUE;
             asp_beta = INFINITE_VALUE;
         } else {
-            int margin = asp_1 + asp_2*std::abs(best_move.score())/1024;
+            int margin = asp_1 + asp_2 * std::abs(best_move.score()) / 1024;
             asp_alpha = std::clamp(best_move.score() - margin, -INFINITE_VALUE, INFINITE_VALUE);
             asp_beta = std::clamp(best_move.score() + margin, -INFINITE_VALUE, INFINITE_VALUE);
         }
@@ -446,7 +445,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         uncorrected_static_eval = evaluate(pos);
 
     static_eval = std::clamp(
-        uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 12000,
+        uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 32768,
         -BEST_VALUE, BEST_VALUE);
 
     ss->static_eval = static_eval;
@@ -541,7 +540,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             && depth >= 5 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
             && transposition.depth >= depth - 1)
         {
-            int singular_beta = transposition.value - se_1 - se_2*depth;
+            int singular_beta = transposition.value - se_1 - se_2*depth / 16;
 
             if (is_regular_eval(singular_beta)){
                 auto saved_ss = *ss;
@@ -773,7 +772,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             uncorrected_static_eval = evaluate(pos);
 
         static_eval = std::clamp(
-            uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 12000,
+            uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 32768,
             -BEST_VALUE, BEST_VALUE);
 
         stand_pat = static_eval;
