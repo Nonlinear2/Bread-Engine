@@ -223,7 +223,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                     break;
 
                 move = pop_best_score(moves);
-                if (move != tt_move)    
+                if (move != tt_move)
                     return true;
             }
             ++stage;
@@ -233,7 +233,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
              while (bad_capture_idx < bad_captures.size()){
                 move = bad_captures[bad_capture_idx];
                 bad_capture_idx++;
-                if (move != tt_move)    
+                if (move != tt_move)
                     return true;
             }
             break;
