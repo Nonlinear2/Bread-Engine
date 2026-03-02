@@ -26,7 +26,7 @@ TUNEABLE(chis_4, int, 18, 0, 300, 3, 0.002);
 TUNEABLE(chis_5, int, 16, 0, 300, 3, 0.002);
 TUNEABLE(chis_6, int, 512, 0, 5000, 110, 0.002);
 TUNEABLE(cphis, int, 300, 0, 5000, 60, 0.002);
-TUNEABLE(cphis_2, int, 400, 0, 5000, 60, 0.002);
+TUNEABLE(cphis_2, int, 100, 0, 5000, 60, 0.002);
 
 
 CaptureHistory capture_history = CaptureHistory();
