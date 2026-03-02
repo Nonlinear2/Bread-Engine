@@ -266,9 +266,9 @@ int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
 };
 
 int run(Accumulators& accumulators, Color stm, int piece_count){
-    constexpr int pieces_per_bucket = 32 / OUTPUT_BUCKET_COUNT;
+    constexpr int pieces_per_bucket = 32 / NUM_OUTPUT_BUCKETS;
     int bucket = (piece_count - 2) / pieces_per_bucket;
-    assert(bucket >= 0 && bucket <= OUTPUT_BUCKET_COUNT);
+    assert(bucket >= 0 && bucket <= NUM_OUTPUT_BUCKETS);
 
     int output = run_L1(accumulators, stm, bucket);
     return (output * 600) / (64 * 255); // scale is 600

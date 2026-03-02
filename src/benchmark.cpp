@@ -2,6 +2,8 @@
 
 namespace Benchmark {
 
+using namespace std::chrono;
+
 inline std::vector<std::string> fens = {
     "1k1r4/pp1b1R2/3q2pp/4p3/2B5/4Q3/PPP2B2/2K5 b - -",
     "3r1k2/4npp1/1ppr3p/p6P/P2PPPP1/1NR5/5K2/2R5 w - -",
@@ -41,12 +43,11 @@ void benchmark_nn(){
 
     NnueBoard board = NnueBoard();
 
-    auto start = std::chrono::high_resolution_clock::now();
-    int num_iter = 10'000'000;
-    for (int i = 0; i < num_iter; i++)
+    auto start = high_resolution_clock::now();
+    for (int i = 0; i < 10'000'000; i++)
         board.evaluate();
 
-    int mean = 1000*std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count()/num_iter;
+    int mean = 1000*duration_cast<microseconds>(high_resolution_clock::now() - start).count()/10'000'000;
     std::cout << "time taken: " << mean << " nanoseconds per call\n";
     std::cout << "============================== \n";
 }
@@ -56,18 +57,16 @@ void benchmark_engine(Engine& engine, int depth){
     std::vector<int> times;
     std::vector<int> nodes;
     
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
+    time_point<high_resolution_clock> start_time;
     int count = 1;
     for (auto fen: fens){
         std::cout << "position " << count++ << " / " << fens.size() << ": " << fen << std::endl;
 
-        start_time = std::chrono::high_resolution_clock::now();
+        start_time = high_resolution_clock::now();
 
         engine.search(fen, SearchLimit(LimitType::Depth, depth));
 
-        times.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::high_resolution_clock::now() - start_time
-        ).count());
+        times.push_back(duration_cast<milliseconds>(high_resolution_clock::now() - start_time).count());
         nodes.push_back(engine.nodes);
 
         std::cout << std::endl;

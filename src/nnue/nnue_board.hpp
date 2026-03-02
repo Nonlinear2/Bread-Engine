@@ -68,7 +68,7 @@ class NnueBoard: public Board {
     AccumulatorsStack accumulators_stack;
 
     // accessed by [bucket][stm][mirrored]
-    std::array<std::array<std::array<std::pair<AllBitboards, Accumulator>, 2>, 2>, INPUT_BUCKET_COUNT> finny_table;
+    std::array<std::array<std::array<std::pair<AllBitboards, Accumulator>, 2>, 2>, NUM_INPUT_BUCKETS> finny_table;
 
     void compute_top_update(Move move, Color persp);
     std::pair<Features,Features> get_modified_features(

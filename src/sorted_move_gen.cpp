@@ -99,10 +99,6 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (move.typeOf() == Move::PROMOTION)
             score += c_prm * piece_value[move.promotionType()] / 150;
 
-        assert(depth != DEPTH_UNSEARCHED);
-        if (killer_moves.in_buffer(depth, move))
-            score += c_kil;
-
         score += cphis * capture_history.get(piece, to.index(), to_piece) / 10'000;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
