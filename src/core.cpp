@@ -399,16 +399,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (root_node && root_moves.empty()){
         movegen::legalmoves(root_moves, pos);
         assert(!root_moves.empty());
-
-        move_gen.prepare_pos_data();
-        for (int i = 0; i < root_moves.size(); i++)
-            move_gen.set_score(root_moves[i]);
-
-        std::stable_sort(root_moves.begin(), root_moves.end(),
-            [](const Move a, const Move b){ return a.score() > b.score(); });
-
-        for (Move& m: root_moves)
-            m.setScore(NO_VALUE);
+        // no need to score and sort the moves for the first iid iteration.
     }
 
     bool is_hit;
