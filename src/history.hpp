@@ -16,7 +16,7 @@ class ContinuationHistory {
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
-    std::array<int, 64*12*64*12> history = {};
+    std::array<int, NUM_PIECES * NUM_SQUARES * NUM_PIECES * NUM_SQUARES> history = {};
 };
 
 class FromToHistory {
@@ -27,9 +27,20 @@ class FromToHistory {
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
-    std::array<int, 2*64*64> history = {};
+    std::array<int, NUM_COLORS * NUM_SQUARES * NUM_SQUARES> history = {};
 };
 
+class CaptureHistory {
+    public:
+    void clear();
+    int& get(Piece piece, Square to, Piece captured);
+    void apply_bonus(Piece piece, Square to, Piece captured, int bonus);
+    void save_to_stream(std::ofstream& ofs);
+    void load_from_stream(std::ifstream& ifs);
+
+    // [piece][to square][captured piece type]
+    std::array<int, 12*64*6> history = {};
+};
 
 class PawnCorrectionHistory {
     public:
@@ -39,5 +50,5 @@ class PawnCorrectionHistory {
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
-    std::array<int, 2*PAWN_CORRHIST_SIZE> history = {};
+    std::array<int, NUM_COLORS * PAWN_CORRHIST_SIZE> history = {};
 };

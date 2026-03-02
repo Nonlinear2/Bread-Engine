@@ -8,13 +8,13 @@ UNACTIVE_TUNEABLE(q_scale, int, 1440, 0, 10000, 10, 0.002);
 
 AllBitboards::AllBitboards(){
     for (int color = 0; color < 2; ++color)
-        for (int pt = 0; pt < PIECETYPE_COUNT; ++pt)
+        for (int pt = 0; pt < NUM_PIECETYPES; ++pt)
             bb[color][pt] = Bitboard(0);
 }
 
 AllBitboards::AllBitboards(const NnueBoard& pos) {
     for (int color = 0; color < 2; color++)
-        for (int pt = 0; pt < PIECETYPE_COUNT; pt++)
+        for (int pt = 0; pt < NUM_PIECETYPES; pt++)
             bb[color][pt] = pos.pieces(
                 PieceType(static_cast<PieceType::underlying>(pt)),
                 static_cast<Color>(color)
@@ -43,7 +43,7 @@ void NnueBoard::synchronize(){
     AllBitboards empty_pos = AllBitboards(); // empty position;
     Accumulator empty_acc;
     NNUE::compute_accumulator(empty_acc, {}); // accumulators for an empty position;
-    for (int bucket = 0; bucket < INPUT_BUCKET_COUNT; bucket++)
+    for (int bucket = 0; bucket < NUM_INPUT_BUCKETS; bucket++)
         for (int color = 0; color < 2; color++)
             for (int mirrored = 0; mirrored < 2; mirrored++)
                 finny_table[bucket][color][mirrored] = std::make_pair(empty_pos, empty_acc);

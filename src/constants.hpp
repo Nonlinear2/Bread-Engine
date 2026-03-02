@@ -9,7 +9,7 @@
 NNUE constants
 *************/
 
-constexpr int INPUT_BUCKET_COUNT = 8;
+constexpr int NUM_INPUT_BUCKETS = 8;
 constexpr int INPUT_BUCKETS[64] = {
     0, 1, 2, 3,  3, 2, 1, 0,
     4, 4, 5, 5,  5, 5, 4, 4,
@@ -21,9 +21,9 @@ constexpr int INPUT_BUCKETS[64] = {
     7, 7, 7, 7,  7, 7, 7, 7,
 };
 
-constexpr int OUTPUT_BUCKET_COUNT = 8;
+constexpr int NUM_OUTPUT_BUCKETS = 8;
 
-constexpr int INPUT_SIZE = 768 * INPUT_BUCKET_COUNT;
+constexpr int INPUT_SIZE = 768 * NUM_INPUT_BUCKETS;
 constexpr int ACC_SIZE = 1024;
 
 constexpr int L1_INPUT_SIZE = 2 * ACC_SIZE;
@@ -35,8 +35,8 @@ constexpr int L0_BIAS_SIZE = ACC_SIZE;
 constexpr int L1_WEIGHTS_SIZE = L1_INPUT_SIZE * L1_OUTPUT_SIZE;
 constexpr int L1_BIAS_SIZE = L1_OUTPUT_SIZE;
 
-constexpr int BUCKETED_L1_WEIGHTS_SIZE = OUTPUT_BUCKET_COUNT * L1_WEIGHTS_SIZE;
-constexpr int BUCKETED_L1_BIAS_SIZE = OUTPUT_BUCKET_COUNT * L1_BIAS_SIZE;
+constexpr int BUCKETED_L1_WEIGHTS_SIZE = NUM_OUTPUT_BUCKETS * L1_WEIGHTS_SIZE;
+constexpr int BUCKETED_L1_BIAS_SIZE = NUM_OUTPUT_BUCKETS * L1_BIAS_SIZE;
 
 using Accumulator = std::array<int16_t, ACC_SIZE>;
 using Accumulators = std::array<Accumulator, 2>;
@@ -48,29 +48,40 @@ history constants
 
 constexpr int PAWN_CORRHIST_SIZE = 16384;
 
+
+/**************
+chess constants
+**************/
+
+constexpr int NUM_COLORS = 2;
+constexpr int NUM_PIECES = 12;
+constexpr int NUM_PIECETYPES = 6;
+constexpr int NUM_SQUARES = 64;
+
 /****************
 general constants
 ****************/
 
 constexpr int NUM_GENFENS_RANDOM_MOVES = 10;
 
-constexpr int PIECETYPE_COUNT = 6;
-
 constexpr int TT_MIN_SIZE = 2;
 constexpr int TT_MAX_SIZE = 4096;
-
-constexpr int ENGINE_MAX_DEPTH = 63;
-
-constexpr int QSEARCH_SOFT_DEPTH_LIMIT = 6;
-constexpr int QSEARCH_HARD_DEPTH_LIMIT = 15;
 
 constexpr int MAX_PLY = 256;
 constexpr int STACK_PADDING_SIZE = 2;
 
 constexpr int BENCHMARK_DEPTH = 12;
+constexpr int ENGINE_MAX_DEPTH = 63;
 
 constexpr int DEPTH_UNSEARCHED = -1;
 constexpr int DEPTH_QSEARCH = 0;
+
+constexpr int QSEARCH_SOFT_DEPTH_LIMIT = 6;
+constexpr int QSEARCH_HARD_DEPTH_LIMIT = 15;
+
+/*****
+scores
+*****/
 
 constexpr int BEST_MOVE_SCORE = 100'000;
 constexpr int WORST_MOVE_SCORE = -100'000;
