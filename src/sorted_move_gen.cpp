@@ -62,20 +62,7 @@ void SortedMoveGen<GenType::NORMAL>::prepare_pos_data(){
 }
 
 template<>
-void SortedMoveGen<GenType::QSEARCH>::prepare_pos_data(){
-    const Color stm = pos.sideToMove();
-    const Square opp_king_sq = pos.kingSq(~stm);
-    const Bitboard occ = pos.occ();
-
-    check_squares = {
-        attacks::pawn(~stm, opp_king_sq), // pawn
-        attacks::knight(opp_king_sq), // knight
-        attacks::bishop(opp_king_sq, occ), // bishop
-        attacks::rook(opp_king_sq, occ), // rook
-        attacks::queen(opp_king_sq, occ), // queen
-        0, // king
-    };
-}
+void SortedMoveGen<GenType::QSEARCH>::prepare_pos_data(){}
 
 // set move score to be sorted later
 template<>
@@ -145,11 +132,8 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
 
 template<>
 void SortedMoveGen<GenType::QSEARCH>::set_score(Move& move){
-    const PieceType piece_type = pos.at(move.from()).type();
-    const PieceType to_piece_type = pos.at(move.to()).type();
 
-    int score = (to_piece_type == 6 ? -25000 : piece_value[to_piece_type])
-        + chk_2 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
+    int score = piece_value[pos.at(move.to()).type()];
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
