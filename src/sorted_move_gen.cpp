@@ -39,15 +39,8 @@ SortedMoveGen<GenType::QSEARCH>::SortedMoveGen(
     Piece prev_piece, Square prev_to, NnueBoard& pos): prev_piece(prev_piece), prev_to(prev_to), pos(pos) {};
 
 template<>
-void SortedMoveGen<GenType::NORMAL>::prepare_pos_data(){
+void SortedMoveGen<GenType::NORMAL>::prepare_capture_sort(){
     const Color stm = pos.sideToMove();
-
-    attacked_by_pawn = 0;
-
-    Bitboard pawn_attackers = pos.pieces(PieceType::PAWN, ~stm);
-    while (pawn_attackers)
-        attacked_by_pawn |= attacks::pawn(~stm, pawn_attackers.pop());
-
     const Square opp_king_sq = pos.kingSq(~stm);
     const Bitboard occ = pos.occ();
 
@@ -62,7 +55,21 @@ void SortedMoveGen<GenType::NORMAL>::prepare_pos_data(){
 }
 
 template<>
-void SortedMoveGen<GenType::QSEARCH>::prepare_pos_data(){}
+void SortedMoveGen<GenType::NORMAL>::prepare_quiet_sort(){
+    const Color stm = pos.sideToMove();
+
+    Bitboard pawn_attackers = pos.pieces(PieceType::PAWN, ~stm);
+
+    attacked_by_pawn = 0;
+    while (pawn_attackers)
+        attacked_by_pawn |= attacks::pawn(~stm, pawn_attackers.pop());
+}
+
+template<>
+void SortedMoveGen<GenType::QSEARCH>::prepare_capture_sort(){}
+
+template<>
+void SortedMoveGen<GenType::QSEARCH>::prepare_quiet_sort(){}
 
 // set move score to be sorted later
 template<>
@@ -168,7 +175,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
         case GENERATE_CAPTURES:
             movegen::legalmoves<movegen::MoveGenType::CAPTURE>(moves, pos);
 
-            prepare_pos_data();
+            prepare_capture_sort();
             for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);
             ++stage;
@@ -196,6 +203,8 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 
         case GENERATE_QUIETS:
             movegen::legalmoves<movegen::MoveGenType::QUIET>(moves, pos);
+
+            prepare_quiet_sort();
             for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);
             ++stage;
