@@ -887,7 +887,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (pos.halfMoveClock() + depth + QSEARCH_SOFT_DEPTH_LIMIT >= 100)
         return max_value;
 
-    if (depth == 0 || depth == -1)
+    if (depth == 0)
         transposition_table.store(zobrist_hash, to_tt(max_value, ply),
             uncorrected_static_eval, DEPTH_QSEARCH, best_move,
             max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
