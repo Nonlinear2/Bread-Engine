@@ -312,15 +312,6 @@ void SortedMoveGen<GenType::NORMAL>::update_capture_history(Move best_move, int 
                 pos.at(move.to()), -std::min(depth*depth*chis_4 + chis_5, chis_6)
             );
     }
-
-    if (stage == GOOD_CAPTURES)
-        for (auto& move: bad_captures){
-            if (move != best_move)
-                capture_history.apply_bonus(
-                    pos.at(move.from()), move.to(),
-                    pos.at(move.to()), -std::min(depth*depth*chis_4 + chis_5, chis_6)
-                );
-        }
 }
 
 template<>
