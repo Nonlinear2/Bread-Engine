@@ -1,288 +1,334 @@
 #include "nnue_board.hpp"
 
-NnueBoard::NnueBoard() {synchronize();};
+UNACTIVE_TUNEABLE(mat_base, int, 8192, 0, 30000, 30, 0.002);
+UNACTIVE_TUNEABLE(k_scale, int, 360, 0, 10000, 30, 0.002);
+UNACTIVE_TUNEABLE(b_scale, int, 360, 0, 10000, 50, 0.002);
+UNACTIVE_TUNEABLE(r_scale, int, 720, 0, 10000, 30, 0.002);
+UNACTIVE_TUNEABLE(q_scale, int, 1440, 0, 10000, 10, 0.002);
 
-NnueBoard::NnueBoard(std::string_view fen) {synchronize();};
-
-void NnueBoard::synchronize(){
-    auto features = get_features();
-    nnue_.compute_accumulator(features.first, true);
-    nnue_.compute_accumulator(features.second, false);
+AllBitboards::AllBitboards(){
+    for (int color = 0; color < 2; ++color)
+        for (int pt = 0; pt < NUM_PIECETYPES; ++pt)
+            bb[color][pt] = Bitboard(0);
 }
 
-void NnueBoard::update_state(Move move){
+AllBitboards::AllBitboards(const NnueBoard& pos) {
+    for (int color = 0; color < 2; color++)
+        for (int pt = 0; pt < NUM_PIECETYPES; pt++)
+            bb[color][pt] = pos.pieces(
+                PieceType(static_cast<PieceType::underlying>(pt)),
+                static_cast<Color>(color)
+            );
+}
 
-    accumulator_stack.push(nnue_.accumulator);
+NnueBoard::NnueBoard(){
+    NNUE::init();
+    accumulators_stack.push_empty();
+    synchronize();
+};
 
-    if (is_updatable_move(move)){
-        // white
-        modified_features mod_features = get_modified_features(move, true);
-        nnue_.update_accumulator(mod_features, true);
-        // black 
-        mod_features = get_modified_features(move, false);
-        nnue_.update_accumulator(mod_features, false);
+NnueBoard::~NnueBoard(){
+    NNUE::cleanup();
+};
+
+void NnueBoard::synchronize(){
+    Accumulators& new_accs = accumulators_stack.top();
+    auto features = get_features();
+    NNUE::compute_accumulator(new_accs[(int)Color::WHITE], features.first);
+    NNUE::compute_accumulator(new_accs[(int)Color::BLACK], features.second);
+    accumulators_stack.clear_top_update();
+
+    recompute_pawn_key();
+
+    AllBitboards empty_pos = AllBitboards(); // empty position;
+    Accumulator empty_acc;
+    NNUE::compute_accumulator(empty_acc, {}); // accumulators for an empty position;
+    for (int bucket = 0; bucket < NUM_INPUT_BUCKETS; bucket++)
+        for (int color = 0; color < 2; color++)
+            for (int mirrored = 0; mirrored < 2; mirrored++)
+                finny_table[bucket][color][mirrored] = std::make_pair(empty_pos, empty_acc);
+}
+
+bool NnueBoard::legal(Move move){
+    Piece piece = at(move.from());
+    if (piece.color() != sideToMove())
+        return false;
+
+    Movelist legal;
+    movegen::legalmoves(legal, *this, 1 << piece.type());
+
+    return std::find(legal.begin(), legal.end(), move) != legal.end();
+}
+
+void NnueBoard::update_state(Move move, TranspositionTable& tt){
+
+    bool king_move = at(move.from()).type() == PieceType::KING;
+
+    const bool crosses_middle = king_move &&
+        ((move.from().file() < File::FILE_E) != (move.to().file() < File::FILE_E));
+
+    const bool bucket_change = NNUE::input_bucket(move.from(), sideToMove()) != NNUE::input_bucket(move.to(), sideToMove());
+
+    if (king_move && (move.typeOf() == Move::CASTLING || crosses_middle || bucket_change)){
+        Color stm = sideToMove();
+
+        Accumulators& new_accs = accumulators_stack.push_empty();
+
+        compute_top_update(move, ~stm);
+
         makeMove(move);
+        int bucket = NNUE::input_bucket(kingSq(stm), stm);
+        int mirrored = kingSq(stm).file() >= File::FILE_E;
+
+        auto [prev_pos, prev_acc] = finny_table[bucket][stm][mirrored];
+
+        auto modified = get_modified_features(stm, prev_pos, *this);
+
+        NNUE::update_accumulator(prev_acc, new_accs[stm], modified.first, modified.second);
+        accumulators_stack.clear_top_update(stm);
+
+        finny_table[bucket][stm][mirrored] = std::make_pair(
+            AllBitboards(*this), accumulators_stack.top()[stm]
+        );
+
     } else {
+        accumulators_stack.push_empty();
+        compute_top_update(move, Color::WHITE);
+        compute_top_update(move, Color::BLACK);
         makeMove(move);
-        synchronize();
     }
+
+    __builtin_prefetch(&tt.entries[hash() & (tt.size - 1)]);
 }
 
 void NnueBoard::restore_state(Move move){
     unmakeMove(move);
 
     // last layer accumulators will never be used with this implementation.
-    nnue_.accumulator = accumulator_stack.top();
-    accumulator_stack.pop();
+    accumulators_stack.pop();
 }
 
 int NnueBoard::evaluate(){
-    return std::clamp(nnue_.run_cropped_nn(sideToMove() == Color::WHITE), -BEST_VALUE, BEST_VALUE);
+    accumulators_stack.apply_lazy_updates();
+
+    const int nnue = NNUE::run(accumulators_stack.top(), sideToMove(), occ().count());
+    const int material_scale = mat_base
+        + k_scale * pieces(PieceType::KNIGHT).count() 
+        + b_scale * pieces(PieceType::BISHOP).count()
+        + r_scale * pieces(PieceType::ROOK).count()
+        + q_scale * pieces(PieceType::QUEEN).count();
+
+    return std::clamp(nnue * material_scale / 16384, -BEST_VALUE, BEST_VALUE);
 }
 
-bool NnueBoard::try_outcome_eval(int& eval){
-    // we dont want history dependent data to be stored in the TT.
-    // the evaluation stored in the TT should only depend on the
-    // position on the board and not how we got there, otherwise these evals would be reused
-    // incorrectly.
-    // here, threefold repetition and the fifty move rule are already handled and resulting evals
-    // are not stored in the TT.
-    if (isInsufficientMaterial()){
-        eval = 0;
-        return true;
-    }
-
+bool NnueBoard::is_stalemate(){
     Movelist movelist;
     movegen::legalmoves(movelist, *this);
-
-    if (movelist.empty()){
-        // checkmate/stalemate.
-        eval = inCheck() ? -MATE_VALUE : 0;
-        return true;
-    }
-    return false;
+    return movelist.empty();
 }
 
-bool NnueBoard::probe_wdl(int& eval){
-    if (occ().count() > TB_LARGEST){
-        return false;
-    }
-
-    unsigned int ep_square = enpassantSq().index();
-    if (ep_square == 64) ep_square = 0;
-
-    unsigned int TB_hit = tb_probe_wdl(
-            us(Color::WHITE).getBits(), us(Color::BLACK).getBits(), 
-            pieces(PieceType::KING).getBits(), pieces(PieceType::QUEEN).getBits(),
-            pieces(PieceType::ROOK).getBits(), pieces(PieceType::BISHOP).getBits(),
-            pieces(PieceType::KNIGHT).getBits(), pieces(PieceType::PAWN).getBits(),
-            halfMoveClock(), castlingRights().has(sideToMove()),
-            ep_square, sideToMove() == Color::WHITE
-    );
-    switch(TB_hit){
-        case TB_WIN:
-            eval = TB_VALUE;
-            return true;
-        case TB_LOSS:
-            eval = -TB_VALUE;
-            return true;
-        case TB_DRAW:
-        case TB_CURSED_WIN:
-        case TB_BLESSED_LOSS:
-            eval = 0;
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool NnueBoard::probe_root_dtz(Move& move, Movelist& moves, bool generate_moves){
-    if (occ().count() > TB_LARGEST){
-        return false;
-    }
-
-    unsigned int ep_square = enpassantSq().index();
-    if (ep_square == 64) ep_square = 0;
-
-    unsigned int tb_moves[TB_MAX_MOVES];
-
-    unsigned int TB_hit = tb_probe_root(
-            us(Color::WHITE).getBits(), us(Color::BLACK).getBits(), 
-            pieces(PieceType::KING).getBits(), pieces(PieceType::QUEEN).getBits(),
-            pieces(PieceType::ROOK).getBits(), pieces(PieceType::BISHOP).getBits(),
-            pieces(PieceType::KNIGHT).getBits(), pieces(PieceType::PAWN).getBits(),
-            halfMoveClock(), castlingRights().has(sideToMove()),
-            ep_square, sideToMove() == Color::WHITE,
-            generate_moves ? tb_moves : NULL
-    );
-
-    if ((TB_hit == TB_RESULT_CHECKMATE) || (TB_hit == TB_RESULT_STALEMATE) || (TB_hit == TB_RESULT_FAILED)){
-        return false;
-    }
-
-    move = tb_result_to_move(TB_hit);
-
-    if (generate_moves){
-        Move current_move;
-        for (int i = 0; i < TB_MAX_MOVES; i++){
-            if (tb_moves[i] == TB_RESULT_FAILED) break;
-            current_move = tb_result_to_move(tb_moves[i]);
-            moves.add(current_move);
-        }
-    }
-    return true;
-}
-
-Move NnueBoard::tb_result_to_move(unsigned int tb_result){
-    Move move;
-    if (TB_GET_PROMOTES(tb_result) == TB_PROMOTES_NONE){
-        move = Move::make(
-            static_cast<Square>(TB_GET_FROM(tb_result)),
-            static_cast<Square>(TB_GET_TO(tb_result)));
-    } else {
-        PieceType promotion_type;
-
-        switch (TB_GET_PROMOTES(tb_result)){
-        case TB_PROMOTES_QUEEN:
-            promotion_type = PieceType::QUEEN;
-            break;
-        case TB_PROMOTES_KNIGHT:
-            promotion_type = PieceType::KNIGHT;
-            break;
-        case TB_PROMOTES_ROOK:
-            promotion_type = PieceType::ROOK;
-            break;
-        case TB_PROMOTES_BISHOP:
-            promotion_type = PieceType::BISHOP;
-            break;
-        }
-
-        move = Move::make<Move::PROMOTION>(
-            static_cast<Square>(TB_GET_FROM(tb_result)),
-            static_cast<Square>(TB_GET_TO(tb_result)),
-            promotion_type);
-    }
-
-    switch(TB_GET_WDL(tb_result)){
-        case TB_WIN:
-            move.setScore(TB_VALUE);
-            break;
-        case TB_LOSS:
-            move.setScore(-TB_VALUE);
-            break;
-        default: // TB_DRAW, TB_CURSED_WIN, TB_BLESSED_LOSS
-            move.setScore(0);
-    }
-
-    return move;
-}
-
-// const int piece_to_index_w[] = {
-//     9, // white pawn
-//     3, // white knight
-//     5, // white bishop
-//     1, // white rook
-//     7, // white queen
-//     10, // white king
-//     8, // black pawn
-//     2, // black knight
-//     4, // black bishop
-//     0, // black rook
-//     6, // black queen
-//     11, // black king
-// };
-
-// const int piece_to_index_b[] = {
-//     8, // white pawn
-//     2, // white knight
-//     4, // white bishop
-//     0, // white rook
-//     6, // white queen
-//     11, // white king
-//     9, // black pawn
-//     3, // black knight
-//     5, // black bishop
-//     1, // black rook
-//     7, // black queen
-//     10, // black king
-// };
-
-std::pair<std::vector<int>, std::vector<int>> NnueBoard::get_features(){
+std::pair<Features, Features> NnueBoard::get_features(){
     Bitboard occupied = occ();
 
-    std::vector<int> active_features_white = std::vector<int>(occupied.count());
-    std::vector<int> active_features_black = std::vector<int>(occupied.count());
+    Features active_features_white = Features(occupied.count());
+    Features active_features_black = Features(occupied.count());
 
     Piece curr_piece;
 
+    Square king_sq_w = kingSq(Color::WHITE);
+    Square king_sq_b = kingSq(Color::BLACK);
+
     int idx = 0;
     while (occupied){
-        int sq = occupied.pop();
+        Square sq = occupied.pop();
 
-        // let c = usize::from(piece & 8 > 0);
-        // let pc = 64 * usize::from(piece & 7);
-        // let sq = usize::from(square);
+        curr_piece = at(sq);
 
-        // let stm = [0, 384][c] + pc + sq;
-        // let ntm = [384, 0][c] + pc + (sq ^ 56);
-
-        curr_piece = at(static_cast<Square>(sq));
-        bool color = curr_piece.color() == Color::BLACK; // white: 0, black: 1
-        int piece_idx = int(curr_piece.type());
-        
         // white perspective
-        active_features_white[idx] = 384 * color + piece_idx*64 + sq;
+        active_features_white[idx] = NNUE::feature(Color::WHITE, curr_piece, sq, king_sq_w);
+
         // black perspective
-        active_features_black[idx] = 384 * !color + piece_idx*64 + (sq ^ 56);
+        active_features_black[idx] = NNUE::feature(Color::BLACK, curr_piece, sq, king_sq_b);
+
         idx++;
     }
 
     return std::make_pair(active_features_white, active_features_black);
 }
 
+Features NnueBoard::get_features(Color persp){
+    Bitboard occupied = occ();
 
-// this function must be called before pushing the move
-// it assumes it it not castling, en passant or a promotion
-modified_features NnueBoard::get_modified_features(Move move, bool color){
-    int from;
-    int to;
-    int curr_piece_idx;
-    int capt_piece_idx;
+    Features active_features = Features(occupied.count());
 
-    int added;
-    int removed;
-    int captured = -1;
+    Square king_sq = kingSq(persp);
 
-    from = move.from().index();
-    to = move.to().index();
+    int idx = 0;
+    while (occupied){
+        Square sq = occupied.pop();
 
-    Piece curr_piece = at(static_cast<Square>(from));
-    Piece capt_piece = at(static_cast<Square>(to));
+        active_features[idx] = NNUE::feature(persp, at(sq), sq, king_sq);
 
-    bool piece_color = curr_piece.color() == Color::BLACK; // white: 0, black: 1
-    int piece_idx = int(curr_piece.type());
-
-    if (color) { // white (yes this is confusing and inconsistent with piece color)
-        added = 384 * piece_color + piece_idx*64 + to;
-        removed = 384 * piece_color + piece_idx*64 + from;
-    } else {
-        added = 384 * !piece_color + piece_idx*64 + (to ^ 56);
-        removed = 384 * !piece_color + piece_idx*64 + (from ^ 56);
+        idx++;
     }
 
-    if (capt_piece != Piece::NONE){
-        bool capt_piece_color = capt_piece.color() == Color::BLACK; // white: 0, black: 1
-        int capt_piece_idx = int(capt_piece.type());
-
-        if (color)
-            captured = 384 * capt_piece_color + capt_piece_idx*64 + to;
-        else
-            captured = 384 * !capt_piece_color + capt_piece_idx*64 + (to ^ 56);
-    }
-
-    return modified_features(added, removed, captured);
+    return active_features;
 }
 
-bool NnueBoard::is_updatable_move(Move move){
-    return move.typeOf() == Move::NORMAL;
+// this function must be called before pushing the move
+void NnueBoard::compute_top_update(Move move, Color persp){
+    assert(move != Move::NO_MOVE);
+    assert(legal(move));
+
+    if (move.typeOf() == Move::CASTLING){
+        assert(at<PieceType>(move.from()) == PieceType::KING);
+        assert(at<PieceType>(move.to()) == PieceType::ROOK);
+
+        const bool king_side = move.to() > move.from();
+
+        Square rook_from = move.to();
+        Square king_from = move.from();
+
+        Square rook_to = Square::castling_rook_square(king_side, sideToMove());
+        Square king_to = Square::castling_king_square(king_side, sideToMove());
+
+        int added_king = NNUE::feature(persp, sideToMove(), PieceType::KING, king_to, kingSq(persp));
+
+        int removed_king = NNUE::feature(persp, sideToMove(), PieceType::KING, king_from, kingSq(persp));
+
+        int added_rook = NNUE::feature(persp, sideToMove(), PieceType::ROOK, rook_to, kingSq(persp));
+
+        int removed_rook = NNUE::feature(persp, sideToMove(), PieceType::ROOK, rook_from, kingSq(persp));
+
+        accumulators_stack.top_update()[persp] = ModifiedFeatures(added_king, added_rook, removed_king, removed_rook);
+        return;
+    }
+
+    assert(move.typeOf() != Move::CASTLING);
+
+    PieceType piece_type = at<PieceType>(move.from());
+    assert(piece_type != PieceType::NONE);
+
+    int added = NNUE::feature(persp, sideToMove(),
+        move.typeOf() == Move::PROMOTION ? move.promotionType() : piece_type,
+        move.to(), kingSq(persp));
+
+    int removed = NNUE::feature(persp, sideToMove(), piece_type, move.from(), kingSq(persp));
+
+    if (move.typeOf() == Move::ENPASSANT){
+        int captured = NNUE::feature(persp, ~sideToMove(), PieceType::PAWN, move.to().ep_square(), kingSq(persp));
+        accumulators_stack.top_update()[persp] = ModifiedFeatures(added, removed, captured);
+        return;
+    }
+    if (at(move.to()) != Piece::NONE){
+        int captured = NNUE::feature(persp, at(move.to()), move.to(), kingSq(persp));
+        accumulators_stack.top_update()[persp] = ModifiedFeatures(added, removed, captured);
+        return;
+    }
+
+    accumulators_stack.top_update()[persp] = ModifiedFeatures(added, removed);
+    return;
+}
+
+std::pair<Features, Features> NnueBoard::get_modified_features(Color color, AllBitboards prev_pos, const NnueBoard& new_pos){
+
+    Features added_features;
+    Features removed_features;
+
+    int added_idx = 0;
+    int removed_idx = 0;
+
+    Square king_sq = new_pos.kingSq(color);
+
+    for (Color pc : {Color::WHITE, Color::BLACK}){
+        for (PieceType pt : {
+            PieceType::PAWN, PieceType::KNIGHT,
+            PieceType::BISHOP, PieceType::ROOK,
+            PieceType::QUEEN, PieceType::KING
+        }){
+
+            Bitboard new_bb = new_pos.pieces(pt, pc);
+            Bitboard added = new_bb & (~prev_pos.bb[pc][pt]);
+            Bitboard removed = prev_pos.bb[pc][pt] & (~new_bb);
+
+            while (added){
+                added_features[added_idx] = NNUE::feature(color, pc, pt, added.pop(), king_sq);
+                added_idx++;
+            }
+
+            while (removed){
+                removed_features[removed_idx] = NNUE::feature(color, pc, pt, removed.pop(), king_sq);
+                removed_idx++;
+            }
+        }
+    }
+    added_features.size = added_idx;
+    removed_features.size = removed_idx;
+
+    return std::make_pair(added_features, removed_features);
+}
+
+NnueBoard::AccumulatorsStack::AccumulatorsStack(){
+    idx = 0;
+}
+
+Accumulators& NnueBoard::AccumulatorsStack::push_empty(){
+    assert(idx < MAX_PLY + 1);
+    return stack[++idx];
+}
+
+Accumulators& NnueBoard::AccumulatorsStack::top(){
+    return stack[idx];
+}
+
+BothModifiedFeatures& NnueBoard::AccumulatorsStack::top_update(){
+    return queued_updates[idx];
+}
+
+void NnueBoard::AccumulatorsStack::clear_top_update(){
+    queued_updates[idx][0] = ModifiedFeatures();
+    queued_updates[idx][1] = ModifiedFeatures();
+}
+
+void NnueBoard::AccumulatorsStack::clear_top_update(Color color){
+    queued_updates[idx][color] = ModifiedFeatures();
+}
+
+void NnueBoard::AccumulatorsStack::pop(){
+    assert(idx > 0);
+    clear_top_update();
+    idx--;
+}
+
+void NnueBoard::AccumulatorsStack::apply_lazy_updates(){
+    int i_w = idx;
+    int i_b = idx;
+    while (queued_updates[i_w][(int)Color::WHITE].valid())
+        i_w--;
+
+    while (queued_updates[i_b][(int)Color::BLACK].valid())
+        i_b--;
+
+    int i = std::min(i_w, i_b);
+
+    for (; i < idx; i++){
+        Accumulators& prev_accs = stack[i];
+        Accumulators& new_accs = stack[i + 1];
+
+        // prefetch weight rows for black while processing white
+        __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].added_1 * ACC_SIZE]);
+        __builtin_prefetch(&NNUE::ft_weights[queued_updates[i + 1][1].removed_1 * ACC_SIZE]);
+
+        // white
+        if (i >= i_w){
+            NNUE::update_accumulator(prev_accs[0], new_accs[0], queued_updates[i + 1][0]);
+            queued_updates[i + 1][0] = ModifiedFeatures();
+        }
+
+        // black
+        if (i >= i_b){
+            NNUE::update_accumulator(prev_accs[1], new_accs[1], queued_updates[i + 1][1]);
+            queued_updates[i + 1][1] = ModifiedFeatures();
+        }
+    }
 }

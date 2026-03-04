@@ -1,27 +1,23 @@
 #include "nnue.hpp"
 
+using namespace NNUE_UTILS;
+
 #define STR2(x) #x
 #define STR(x) STR2(x)
 
-#ifdef __APPLE__
-#define USTR(x) "_" STR(x)
-#else
-#define USTR(x) STR(x)
-#endif
-
 #ifdef _WIN32
-#define INCBIN_SECTION ".rdata, \"dr\""
+    #define INCBIN_SECTION ".rdata, \"dr\""
 #elif defined __APPLE__
-#define INCBIN_SECTION "__TEXT,__const"
+    #define INCBIN_SECTION "__TEXT,__const"
 #else
-#define INCBIN_SECTION ".rodata"
+    #define INCBIN_SECTION ".rodata"
 #endif
 
 // credit: https://gist.github.com/mmozeiko/ed9655cf50341553d282
 #define INCBIN(name, file) \
     __asm__(".section " INCBIN_SECTION "\n" \
             ".global " STR(name) "_start\n" \
-            ".balign 16\n" \
+            ".balign 32\n" \
             STR(name) "_start:\n" \
             ".incbin \"" file "\"\n" \
             \
@@ -41,39 +37,61 @@ extern "C" {
     extern const int16_t ft_weights_start[];
     extern const int16_t ft_bias_start[];
 
-    extern const int8_t l1_weights_start[];
+    extern const int16_t l1_weights_start[];
     extern const int32_t l1_bias_start[];
 };
 
-/****************
-Accumulator class
-****************/
-int16_t* Accumulator::operator[](bool color){
-    return color ? &accumulator[0] : &accumulator[ACC_SIZE];
-};
-/*********
-NNUE class
-*********/
+bool ModifiedFeatures::valid() const {
+    return added_1 != -1 && removed_1 != -1;
+}
 
-NNUE::NNUE(){
+/******************
+NNUE implementation
+******************/
+
+namespace NNUE {
+
+int16_t* ft_weights = nullptr;
+int16_t* ft_bias    = nullptr;
+
+int16_t* l1_weights = nullptr;
+int32_t* l1_bias    = nullptr;
+
+void load_model(){
+    // feature transformer
+    for (int i = 0; i < L0_WEIGHTS_SIZE; i++)
+        ft_weights[i] = ft_weights_start[i];
+
+    for (int i = 0; i < L0_BIAS_SIZE; i++)
+        ft_bias[i] = ft_bias_start[i];
+
+    // layer 1
+    for (int i = 0; i < BUCKETED_L1_WEIGHTS_SIZE; i++)
+        l1_weights[i] = l1_weights_start[i];
+
+    for (int i = 0; i < BUCKETED_L1_BIAS_SIZE; i++)
+        l1_bias[i] = l1_bias_start[i];
+};
+
+void init(){
     ft_weights = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*INPUT_SIZE*ACC_SIZE, std::align_val_t{32})
+        operator new[](sizeof(int16_t)*L0_WEIGHTS_SIZE, std::align_val_t{32})
     );
     ft_bias = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*ACC_SIZE, std::align_val_t{32})
+        operator new[](sizeof(int16_t)*L0_BIAS_SIZE, std::align_val_t{32})
     );
 
-    l1_weights = static_cast<int8_t*>(
-        operator new[](sizeof(int8_t)*l1_input_size*l1_output_size, std::align_val_t{32})
+    l1_weights = static_cast<int16_t*>(
+        operator new[](sizeof(int16_t)*BUCKETED_L1_WEIGHTS_SIZE, std::align_val_t{32})
     );
     l1_bias = static_cast<int32_t*>(
-        operator new[](sizeof(int32_t)*l1_output_size, std::align_val_t{32})
+        operator new[](sizeof(int32_t)*BUCKETED_L1_BIAS_SIZE, std::align_val_t{32})
     );
 
     load_model();
 };
 
-NNUE::~NNUE(){
+void cleanup(){
     operator delete[](ft_weights, std::align_val_t(32));
     operator delete[](ft_bias, std::align_val_t(32));
 
@@ -81,141 +99,179 @@ NNUE::~NNUE(){
     operator delete[](l1_bias, std::align_val_t(32));
 };
 
-void NNUE::load_model(){
-    // feature transformer
-    for (int i = 0; i < INPUT_SIZE*ACC_SIZE; i++){
-        ft_weights[i] = ft_weights_start[i];
-    }
-    for (int i = 0; i < ACC_SIZE; i++){
-        ft_bias[i] = ft_bias_start[i];
-    }
+void compute_accumulator(Accumulator& new_acc, const Features active_features){
+    for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
+        auto r = load_epi16(&ft_bias[i]);
 
-    // layer 1
-    for (int i = 0; i < l1_input_size*l1_output_size; i++){
-        l1_weights[i] = l1_weights_start[i];
-    }
-    for (int i = 0; i < l1_output_size; i++){
-        l1_bias[i] = l1_bias_start[i];
+        for (const int &a: active_features)
+            r = add_epi16(r, load_epi16(&ft_weights[a * ACC_SIZE + i]));
+
+        store_epi16(&new_acc[i], r);
     }
 };
 
-void NNUE::compute_accumulator(const std::vector<int> active_features, bool color){
-    // we have 256 int16 to process, and there are 16 avx registers which can hold 16 int16.
-    // therefore we need only one pass to the registers.
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures& m_features){
+    assert(m_features.valid());
+    constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;
 
-    __m256i avx_regs[num_avx_registers];
+    switch (m_features.type)
+    {
+    case ModifiedFeatures::NORMAL:
+        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+            auto* prev = &prev_acc[j];
+            auto* out  = &new_acc[j];
+            auto* w_add = &ft_weights[m_features.added_1 * ACC_SIZE + j];
+            auto* w_rem = &ft_weights[m_features.removed_1 * ACC_SIZE + j];
 
-    // load the bias from memory
-    for (int i = 0; i < num_avx_registers; i++){
-        avx_regs[i] = _mm256_loadu_si256((const __m256i*)&ft_bias[i*int16_per_reg]); // load int16
+            for (int i = 0; i < CHUNK_SIZE; i += INT16_PER_REG * 4){ // process 4 registers at once
+                
+                auto r1 = load_epi16(prev + i);
+                auto r2 = load_epi16(prev + i + INT16_PER_REG);
+                auto r3 = load_epi16(prev + i + INT16_PER_REG*2);
+                auto r4 = load_epi16(prev + i + INT16_PER_REG*3);
+
+                r1 = add_epi16(r1, load_epi16(w_add + i));
+                r2 = add_epi16(r2, load_epi16(w_add + i + INT16_PER_REG));
+                r3 = add_epi16(r3, load_epi16(w_add + i + INT16_PER_REG*2));
+                r4 = add_epi16(r4, load_epi16(w_add + i + INT16_PER_REG*3));
+
+                r1 = sub_epi16(r1, load_epi16(w_rem + i));
+                r2 = sub_epi16(r2, load_epi16(w_rem + i + INT16_PER_REG));
+                r3 = sub_epi16(r3, load_epi16(w_rem + i + INT16_PER_REG*2));
+                r4 = sub_epi16(r4, load_epi16(w_rem + i + INT16_PER_REG*3));
+
+                store_epi16(out + i, r1);
+                store_epi16(out + i + INT16_PER_REG, r2);
+                store_epi16(out + i + INT16_PER_REG*2, r3);
+                store_epi16(out + i + INT16_PER_REG*3, r4);
+            }
+        }
+        break;
+    case ModifiedFeatures::CAPTURE:
+        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+            auto* prev = &prev_acc[j];
+            auto* out  = &new_acc[j];
+
+            auto* w_add = &ft_weights[m_features.added_1   * ACC_SIZE + j];
+            auto* w_rem = &ft_weights[m_features.removed_1 * ACC_SIZE + j];
+            auto* w_cap = &ft_weights[m_features.removed_2 * ACC_SIZE + j];
+
+            for (int i = 0; i < CHUNK_SIZE; i += INT16_PER_REG){
+                auto r = load_epi16(prev + i);
+
+                r = add_epi16(r, load_epi16(w_add + i));
+                r = sub_epi16(r, load_epi16(w_rem + i));
+                r = sub_epi16(r, load_epi16(w_cap + i));
+
+                store_epi16(out + i, r);
+            }
+        }
+        break;
+    case ModifiedFeatures::CASTLING:
+        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+            auto* prev = &prev_acc[j];
+            auto* out  = &new_acc[j];
+
+            auto* w_add  = &ft_weights[m_features.added_1   * ACC_SIZE + j];
+            auto* w_add2 = &ft_weights[m_features.added_2 * ACC_SIZE + j];
+            auto* w_rem  = &ft_weights[m_features.removed_1 * ACC_SIZE + j];
+            auto* w_cap  = &ft_weights[m_features.removed_2 * ACC_SIZE + j];
+
+            for (int i = 0; i < CHUNK_SIZE; i += INT16_PER_REG){
+
+                auto r = load_epi16(prev + i);
+
+                r = add_epi16(r, load_epi16(w_add  + i));
+                r = add_epi16(r, load_epi16(w_add2 + i));
+                r = sub_epi16(r, load_epi16(w_rem  + i));
+                r = sub_epi16(r, load_epi16(w_cap  + i));
+
+                store_epi16(out + i, r);
+            }
+        }
+        break;
     }
+}
 
-    for (const int &a: active_features){
-        for (int i = 0; i < num_avx_registers; i++){
-            // a*acc size is the index of the a-th row. We then accumulate the weights.
-            avx_regs[i] = _mm256_add_epi16(
-                avx_regs[i],
-                _mm256_loadu_si256((const __m256i*)&ft_weights[a*ACC_SIZE + i*int16_per_reg]) // load int16
-                );
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
+        const Features& added_features,
+        const Features& removed_features){
+
+    vec_int16 registers[NUM_AVX_REGISTERS];
+    constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;
+
+    for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
+        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+            registers[i] = load_epi16(&prev_acc[j + i*INT16_PER_REG]); 
+        }
+
+        for (const int &a: added_features){
+            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                // a*acc size is the index of the a-th row. We then accumulate the weights.
+                registers[i] = add_epi16(
+                    registers[i],
+                    load_epi16(&ft_weights[a*ACC_SIZE + j + i*INT16_PER_REG])
+                    );
+            }
+        }
+
+        for (const int &r: removed_features){
+            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+                // r*acc size is the index of the r-th row. We then accumulate the weights.
+                registers[i] = sub_epi16(
+                    registers[i],
+                    load_epi16(&ft_weights[r*ACC_SIZE + j + i*INT16_PER_REG])
+                    );
+            }
+        }
+
+        // store the result in the accumulator
+        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
+            store_epi16(&new_acc[j + i*INT16_PER_REG], registers[i]);
         }
     }
-    // store the result in the accumulator
-    for (int i = 0; i < num_avx_registers; i++){
-        _mm256_storeu_si256((__m256i*)&accumulator[color][i*int16_per_reg], avx_regs[i]); // store int16
+}
+
+int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
+    int16_t* stm_data = accumulators[stm].data();
+    int16_t* nstm_data = accumulators[!stm].data();
+
+    const vec_int16 zero = setzero_epi16();
+    const vec_int16 qscale = set1_epi16(255);
+    vec_int32 result = set1_epi32(0);
+
+    for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
+        vec_int16 in = load_epi16(&stm_data[i]);
+        in = min_epi16(qscale, max_epi16(in, zero));
+
+        vec_int16 weight_chunk = load_epi16(&l1_weights[bucket * L1_WEIGHTS_SIZE + i]);
+        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
+
+        // madd pairs to int32 to avoid overflows in int16
+        result = add_epi32(result, prod);
     }
+
+    for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
+        vec_int16 in = load_epi16(&nstm_data[i]);
+        in = min_epi16(qscale, max_epi16(in, zero));
+
+        vec_int16 weight_chunk = load_epi16(&l1_weights[bucket * L1_WEIGHTS_SIZE + ACC_SIZE + i]);
+        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
+
+        // madd pairs to int32 to avoid overflows in int16
+        result = add_epi32(result, prod);
+    }
+
+    return reduce1_epi32(result) / 255 + l1_bias[bucket];
 };
 
-void NNUE::update_accumulator(const modified_features m_features, bool color){
+int run(Accumulators& accumulators, Color stm, int piece_count){
+    constexpr int pieces_per_bucket = 32 / NUM_OUTPUT_BUCKETS;
+    int bucket = (piece_count - 2) / pieces_per_bucket;
+    assert(bucket >= 0 && bucket <= NUM_OUTPUT_BUCKETS);
 
-    __m256i avx_regs[num_avx_registers];
-
-    // load the accumulator
-    for (int i = 0; i < num_avx_registers; i++){
-        avx_regs[i] = _mm256_loadu_si256((const __m256i*)&accumulator[color][i*int16_per_reg]); // load int16
-    }
-
-    // added feature
-    for (int i = 0; i < num_avx_registers; i++){
-        // m_features.added*acc_size is the index of the added featured row. We then accumulate the weights.
-        avx_regs[i] = _mm256_add_epi16(
-            avx_regs[i],
-            _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.added*ACC_SIZE + i*int16_per_reg]) // load int16
-            );
-    }
-    // removed feature
-    for (int i = 0; i < num_avx_registers; i++){
-        // m_features.removed*acc_size is to get the right column.
-        avx_regs[i] = _mm256_sub_epi16(
-            avx_regs[i],
-            _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.removed*ACC_SIZE + i*int16_per_reg]) // load int16
-            );
-    }
-
-    if (m_features.captured != -1){
-        for (int i = 0; i < num_avx_registers; i++){
-            avx_regs[i] = _mm256_sub_epi16(
-                avx_regs[i],
-                _mm256_loadu_si256((const __m256i*)&ft_weights[m_features.captured*ACC_SIZE + i*int16_per_reg]) // load int16
-                );
-        }
-    }
-
-    //store the result in the accumulator
-    for (int i = 0; i < num_avx_registers; i++){
-        _mm256_storeu_si256((__m256i*)&accumulator[color][i*int16_per_reg], avx_regs[i]); // store int16
-    }
+    int output = run_L1(accumulators, stm, bucket);
+    return (output * 600) / (64 * 255); // scale is 600
 };
 
-
-int32_t NNUE::run_output_layer(int8_t* input, int8_t* weights, int32_t* bias){
-    constexpr int input_size = 2*ACC_SIZE;
-    constexpr int num_input_chunks = input_size/int8_per_reg;
-
-    const __m256i one = _mm256_set1_epi16(1);
-
-    __m256i result = _mm256_set1_epi32(0);
-    for (int i = 0; i < num_input_chunks; i++){
-        __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i*int8_per_reg]); // load int8
-        __m256i prod = _mm256_maddubs_epi16(
-            input_chunk,
-            _mm256_loadu_si256((const __m256i*)&weights[i*int8_per_reg]) //load int8
-        ); // outputs int16
-        prod = _mm256_madd_epi16(prod, one); // hadd pairs to int32 to avoid overflows in int16
-        result = _mm256_add_epi32(result, prod);
-    }
-
-    // accumulate together
-    result = _mm256_hadd_epi32(result, result);
-
-    int32_t out_ptr[8];
-    _mm256_storeu_si256((__m256i*)out_ptr, result);
-
-    return out_ptr[0] + out_ptr[1] + out_ptr[4] + out_ptr[5] + bias[0];
-};
-
-// input size must be a multiple of 32
-// there is no max size.
-void NNUE::crelu16(int16_t *input, int8_t *output, int size){
-
-    assert(size % int8_per_reg == 0);
-
-    const int num_regs = size / int8_per_reg;
-    const __m256i zero = _mm256_setzero_si256();
-
-    for (int i = 0; i < num_regs; i++){
-        __m256i in_1 = _mm256_loadu_si256((const __m256i*)&input[(2*i)*int16_per_reg]); // load int16
-        __m256i in_2 = _mm256_loadu_si256((const __m256i*)&input[(2*i+1)*int16_per_reg]); // load int16
-        // packs sets negative values to 0 and saturates at 255, which effectively applies relu
-        __m256i out = _mm256_packus_epi16(in_1, in_2);
-        out = _mm256_permute4x64_epi64(out, 0b11011000); // undo the packus shuffle
-        _mm256_storeu_si256((__m256i*)&output[i*int8_per_reg], out); // store int8
-    }
-};
-
-int NNUE::run_cropped_nn(bool color){
-    crelu16(accumulator[color], &ft_clipped_output[0], ACC_SIZE);
-    crelu16(accumulator[!color], &ft_clipped_output[ACC_SIZE], ACC_SIZE);
-
-    int output = run_output_layer(ft_clipped_output, l1_weights, l1_bias);
-    return output / 32; // 64 * 255 * true_output / 32 = 510 * true_output so roughly scale which is 600
-};
+}; // namespace NNUE

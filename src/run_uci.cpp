@@ -6,10 +6,11 @@
 int main(int argc, char* argv[]){
     if (argc >= 2){
         if (std::string(argv[1]) == "bench"){
-            Benchmark::benchmark_engine(BENCHMARK_DEPTH);
+            Engine engine = Engine();
+            Benchmark::benchmark_engine(engine, BENCHMARK_DEPTH);
             return 0;
         }
-            
+
         std::vector<std::string> parsed = UCIAgent::split_string(std::string(argv[1]));
         if (parsed.size() >= 4 && parsed[0] == "genfens"){
             int seed = std::stoi(parsed[3]);
@@ -21,9 +22,9 @@ int main(int argc, char* argv[]){
             for (int i = 0; i < std::stoi(parsed[1]); i++){
                 do {
                     board.setFen(constants::STARTPOS);
-                    for (int i = 0; i < 10; i++){
+                    for (int j = 0; j < NUM_GENFENS_RANDOM_MOVES; j++){
                         movegen::legalmoves(move_list, board);
-                        board.makeMove(move_list[rng()%move_list.size()]);
+                        board.makeMove(move_list[rng() % move_list.size()]);
                         if (std::get<1>(board.isGameOver()) != GameResult::NONE)
                             break;
                     }

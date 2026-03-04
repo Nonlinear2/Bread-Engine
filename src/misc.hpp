@@ -2,14 +2,15 @@
 
 #include <array>
 #include <fstream>
+#include <vector>
 #include "constants.hpp"
 #include "chess.hpp"
 
 using namespace chess;
 
-const std::vector<int> piece_value = {
+constexpr std::array<int, 7> piece_value = {
     150, // pawn
-    450, // knight
+    440, // knight
     450, // bishop
     750, // rook
     1350, // queen
@@ -19,7 +20,8 @@ const std::vector<int> piece_value = {
 
 struct Stack {
     Move excluded_move = Move::NO_MOVE;
-    Move current_move = Move::NO_MOVE;
+    Move curr_move = Move::NO_MOVE;
+    bool curr_move_capture = false;
     Piece moved_piece = Piece::NONE;
     int static_eval = NO_VALUE;
 };
@@ -50,5 +52,13 @@ class SearchLimit {
     LimitType type;
     int value;
 };
+
+int root_to_pos_mate_value(int value, int ply);
+
+int pos_to_root_mate_value(int value, int ply);
+
+int to_tt(int value, int ply);
+
+int get_mate_in_moves(int value);
 
 bool is_number_string(const std::string& s);

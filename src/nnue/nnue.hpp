@@ -9,95 +9,125 @@
 #include <stdio.h>
 #include <chess.hpp>
 #include <immintrin.h>
+#include "constants.hpp"
+#include "nnue_misc.hpp"
 
-constexpr int num_avx_registers = 16;
-constexpr int int32_per_reg = 8;
-constexpr int int16_per_reg = 16;
-constexpr int int8_per_reg = 32;
+using namespace chess;
 
-constexpr int INPUT_SIZE = 768;
-constexpr int ACC_SIZE = 256;
+struct Features {
+    int size;
+    int features[32];
 
-struct modified_features {
-    int added;
-    int removed;
-    int captured;
+    Features() = default;
+    Features(int size): size(size) {}
 
-    modified_features(int added, int removed, int captured):
-        added(added),
-        removed(removed),
-        captured(captured) {};
+    int* begin() { return features; }
+    int* end() { return features + size; }
+
+    const int* begin() const { return features; }
+    const int* end() const { return features + size; }
+
+    int& operator[](int index){
+        return features[index];
+    }
 };
 
-class Accumulator {
-    public:
-    int16_t* operator[](bool color);
+struct ModifiedFeatures {
+    int added_1 = -1;
+    int added_2 = -1;
+    int removed_1 = -1;
+    int removed_2 = -1;
 
-    int16_t accumulator[2*ACC_SIZE]; 
+    enum {
+        NORMAL, CAPTURE, CASTLING
+    } type;
+
+    ModifiedFeatures() = default;
+
+    ModifiedFeatures(int added, int removed):
+        added_1(added),
+        removed_1(removed) {
+            type = NORMAL;
+        };
+
+    ModifiedFeatures(int added, int removed, int captured):
+        added_1(added),
+        removed_1(removed),
+        removed_2(captured) {
+            type = CAPTURE;
+        };
+
+    ModifiedFeatures(int added, int added_2, int removed, int removed_2):
+        added_1(added),
+        added_2(added_2),
+        removed_1(removed),
+        removed_2(removed_2) {
+            type = CASTLING;
+        };
+
+    bool valid() const;
 };
 
-class NNUE {
-    public:
-    Accumulator accumulator; // array stored on the stack, as it will change often
-    
-    /*****************
-    Feature transformer
-    ******************/
+namespace NNUE {
 
-    // 2*input_size -> 2*acc_size 
+inline int input_bucket(Square sq, Color color){
+    return INPUT_BUCKETS[sq.index() ^ (color ? 56 : 0)];
+}
 
-    // weights are flattened 2d array, to be contiguous in memory.
-    // otherways it would be an array of pointers pointing to scattered memory locations, 
-    // which would be slower and unpractical.
-    // weights are stored in row major
-    int16_t* ft_weights;
-    int16_t* ft_bias;
+inline int feature(Color persp, Color c, PieceType pt, Square sq, Square king_sq){
+    int flip = persp ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4
+    int mirror = king_sq.file() >= File::FILE_E ? 7 : 0; // mirror horizontally by flipping last 3 bits
 
-    // all computations happen in int16. Scale is 127
-    // to make sure that even after accumulation no overflows happen : there can be a maximum of 30 active input features,
-    // so we need (sum of 30 weights) + bias < 32767
-    // we need to make sure this limit is not reached before converting the model.
+    return 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
+         + 384 * (c ^ persp)
+         + 64 * pt
+         + (sq.index() ^ flip ^ mirror);
+}
 
-    // unclipped output is in accumulator
+inline int feature(Color persp, Piece p, Square sq, Square king_sq){
+    int flip = persp ? 56 : 0; // mirror vertically by flipping bits 6, 5 and 4
+    int mirror = king_sq.file() >= File::FILE_E ? 7 : 0; // mirror horizontally by flipping last 3 bits
 
-    // apply crelu16 and store
-    int8_t ft_clipped_output[ACC_SIZE*2];
+    return 768 * INPUT_BUCKETS[king_sq.index() ^ flip]
+         + 384 * (p.color() ^ persp)
+         + 64 * p.type()
+         + (sq.index() ^ flip ^ mirror);
+}
 
-    /******
-    Layer 1
-    *******/
+/*****************
+Feature transformer
+******************/
 
-    // 2*acc_size -> 1
+// 2*input_size -> 2*acc_size 
 
-    // int8 weights with scale 64. Multiplication outputs in int16, so no overflows,
-    // and sum is computed in int32. Maximum weights times maximum input with accumulation is 127*127*512 = 8258048
-    // maximum bias is therefore (2,147,483,647-8,258,048)/32 = 66850799 which is totally fine.
-    
-    static constexpr int l1_input_size = 2*ACC_SIZE;
-    static constexpr int l1_output_size = 1;
+// weights are flattened 2d array, to be contiguous in memory.
+// weights are stored in row major
+extern int16_t* ft_weights;
+extern int16_t* ft_bias;
 
-    int8_t* l1_weights;
-    int32_t* l1_bias;
+/******
+Layer 1
+*******/
 
-    // also, output is scaled back by 64, so total scale is still only 127. as we only do integer division,
-    // error caused by the division is max 1/127.
-    
-    // max output value is 1*(127*127) + bias, the max possible output with the max possible weight.
-    // this is 16129+bias which is less than the max int16 if bias is less than (int16_max - 16129)/(127*64) = 2.04
+// 2*acc_size -> 1
 
-    // output is not scaled back by 64, so scale is 64*127 times true output.
-    int32_t run_output_layer(int8_t* input, int8_t* weights, int32_t* bias);
+extern int16_t* l1_weights;
+extern int32_t* l1_bias;
 
-    void crelu16(int16_t *input, int8_t *output, int size);
+int32_t run_L1(Accumulators& accumulators, Color stm, int bucket);
 
-    NNUE();
-    ~NNUE();
+void init();
+void cleanup();
 
-    void load_model();
+void load_model();
 
-    void compute_accumulator(const std::vector<int> active_features, bool color);
+void compute_accumulator(Accumulator& new_acc, const Features active_features);
 
-    void update_accumulator(const modified_features m_features, bool color);
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures& m_features);
+void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
+        const Features& added_features,
+        const Features& removed_features);
 
-    int run_cropped_nn(bool color);
-};
+int run(Accumulators& accumulators, Color stm, int piece_count);
+
+}; // namespace NNUE
