@@ -305,11 +305,11 @@ void SortedMoveGen<GenType::NORMAL>::update_capture_history(Move best_move, int 
         pos.at(best_move.from()), best_move.to(), 
         pos.at(best_move.to()), std::min(depth*depth*chis_1 + chis_2, chis_3));
 
-    for (auto& move: seen_captures){
-        if (move != best_move)
+    for (int i = moves.num_left; i < moves.size(); i++){
+        if (moves[i] != best_move && pos.isCapture(moves[i]))
             capture_history.apply_bonus(
-                pos.at(move.from()), move.to(),
-                pos.at(move.to()), -std::min(depth*depth*chis_4 + chis_5, chis_6)
+                pos.at(moves[i].from()), moves[i].to(),
+                pos.at(moves[i].to()), -std::min(depth*depth*chis_4 + chis_5, chis_6)
             );
     }
 }
