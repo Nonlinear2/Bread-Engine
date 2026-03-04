@@ -400,7 +400,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         movegen::legalmoves(root_moves, pos);
         assert(!root_moves.empty());
 
-        move_gen.prepare_pos_data();
+        move_gen.prepare_capture_sort();
+        move_gen.prepare_quiet_sort();
         for (int i = 0; i < root_moves.size(); i++)
             move_gen.set_score(root_moves[i]);
 

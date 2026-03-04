@@ -39,15 +39,8 @@ SortedMoveGen<GenType::QSEARCH>::SortedMoveGen(
     Piece prev_piece, Square prev_to, NnueBoard& pos): prev_piece(prev_piece), prev_to(prev_to), pos(pos) {};
 
 template<>
-void SortedMoveGen<GenType::NORMAL>::prepare_pos_data(){
+void SortedMoveGen<GenType::NORMAL>::prepare_capture_sort(){
     const Color stm = pos.sideToMove();
-
-    attacked_by_pawn = 0;
-
-    Bitboard pawn_attackers = pos.pieces(PieceType::PAWN, ~stm);
-    while (pawn_attackers)
-        attacked_by_pawn |= attacks::pawn(~stm, pawn_attackers.pop());
-
     const Square opp_king_sq = pos.kingSq(~stm);
     const Bitboard occ = pos.occ();
 
@@ -62,20 +55,21 @@ void SortedMoveGen<GenType::NORMAL>::prepare_pos_data(){
 }
 
 template<>
-void SortedMoveGen<GenType::QSEARCH>::prepare_pos_data(){
+void SortedMoveGen<GenType::NORMAL>::prepare_quiet_sort(){
     const Color stm = pos.sideToMove();
-    const Square opp_king_sq = pos.kingSq(~stm);
-    const Bitboard occ = pos.occ();
 
-    check_squares = {
-        attacks::pawn(~stm, opp_king_sq), // pawn
-        attacks::knight(opp_king_sq), // knight
-        attacks::bishop(opp_king_sq, occ), // bishop
-        attacks::rook(opp_king_sq, occ), // rook
-        attacks::queen(opp_king_sq, occ), // queen
-        0, // king
-    };
+    Bitboard pawn_attackers = pos.pieces(PieceType::PAWN, ~stm);
+
+    attacked_by_pawn = 0;
+    while (pawn_attackers)
+        attacked_by_pawn |= attacks::pawn(~stm, pawn_attackers.pop());
 }
+
+template<>
+void SortedMoveGen<GenType::QSEARCH>::prepare_capture_sort(){}
+
+template<>
+void SortedMoveGen<GenType::QSEARCH>::prepare_quiet_sort(){}
 
 // set move score to be sorted later
 template<>
@@ -145,11 +139,8 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
 
 template<>
 void SortedMoveGen<GenType::QSEARCH>::set_score(Move& move){
-    const PieceType piece_type = pos.at(move.from()).type();
-    const PieceType to_piece_type = pos.at(move.to()).type();
 
-    int score = (to_piece_type == 6 ? -25000 : piece_value[to_piece_type]) - piece_value[piece_type]
-        + chk_2 * bool(check_squares[piece_type] & Bitboard::fromSquare(move.to()));
+    int score = piece_value[pos.at(move.to()).type()];
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -184,7 +175,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
         case GENERATE_CAPTURES:
             movegen::legalmoves<movegen::MoveGenType::CAPTURE>(moves, pos);
 
-            prepare_pos_data();
+            prepare_capture_sort();
             for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);
             ++stage;
@@ -212,6 +203,8 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 
         case GENERATE_QUIETS:
             movegen::legalmoves<movegen::MoveGenType::QUIET>(moves, pos);
+
+            prepare_quiet_sort();
             for (int i = 0; i < moves.size(); i++)
                 set_score(moves[i]);
             ++stage;
