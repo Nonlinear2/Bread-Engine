@@ -591,11 +591,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
 
         } else if (!pv || move_gen.index() > 0){
-            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
+            value = -negamax<false>(new_depth - (reduction > red_th_1), -alpha - 1, -alpha, ss + 1, !cutnode);
         }
 
         if (pv && (move_gen.index() == 0 || value > alpha)){
-            value = -negamax<true>(new_depth, -beta, -alpha, ss + 1, false);
+            value = -negamax<true>(new_depth - (reduction > red_th_1), -beta, -alpha, ss + 1, false);
         }
 
         pos.restore_state(move);
