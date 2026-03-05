@@ -36,6 +36,7 @@ UNACTIVE_TUNEABLE(red_6, int, 746, 0, 10000, 180, 0.002);
 UNACTIVE_TUNEABLE(red_th_1, int, 2135, 0, 10000, 450, 0.002);
 UNACTIVE_TUNEABLE(corr_1, int, 268, 0, 10000, 50, 0.002);
 UNACTIVE_TUNEABLE(corr_2, int, 592, 0, 10000, 130, 0.002);
+UNACTIVE_TUNEABLE(de_1, int, 90, 0, 10000, 18, 0.002);
 
 inline PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 
 
@@ -550,7 +551,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 *ss = saved_ss;
     
                 if (value < singular_beta)
-                    extension = 1;
+                    extension = 1 + (!pv && value < singular_beta - de_1);
                 else if (value >= beta && !is_decisive(value))
                     return value;
             }
