@@ -8,7 +8,7 @@
 
 using namespace chess;
 
-const std::vector<int> piece_value = {
+constexpr std::array<int, 7> piece_value = {
     150, // pawn
     440, // knight
     450, // bishop
@@ -20,7 +20,8 @@ const std::vector<int> piece_value = {
 
 struct Stack {
     Move excluded_move = Move::NO_MOVE;
-    Move current_move = Move::NO_MOVE;
+    Move curr_move = Move::NO_MOVE;
+    bool curr_move_capture = false;
     Piece moved_piece = Piece::NONE;
     int static_eval = NO_VALUE;
 };

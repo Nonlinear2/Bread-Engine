@@ -21,6 +21,8 @@ class Engine {
     public:
 
     int64_t nodes = 0;
+    int64_t tb_hits = 0;
+    int64_t seldepth = 0;
     int current_depth = 0;
     std::atomic<SearchLimit> limit;
     std::atomic<bool> interrupt_flag = false;
