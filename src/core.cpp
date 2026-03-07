@@ -815,11 +815,11 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             if (!is_hit && capture_gen.index() > 10)
                 continue;
 
-            if (stand_pat 
-                + piece_value[captured_piece.type()]
-                - piece_value[moved_piece.type()]
-                + qs_fp_1 < alpha)
+            int margin = piece_value[captured_piece.type()] - piece_value[moved_piece.type()] + qs_fp_1;
+            if (stand_pat + margin < alpha){
+                max_value = std::max(max_value, stand_pat + margin);
                 continue;
+            }
 
             // SEE pruning
             if (move != transposition.move && !SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
