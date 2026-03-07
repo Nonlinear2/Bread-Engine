@@ -14,14 +14,14 @@ enum class TFlag: uint8_t {
 
 // side to move is not stored in the transposition table as it is in the zobrist hash
 struct TEntry {
-    uint32_t zobrist_hash   = 0; // 4 bytes
+    uint16_t zobrist_hash   = 0; // 2 bytes
     int16_t value           = NO_VALUE; // 2 bytes
     int16_t static_eval     = NO_VALUE; // 2 bytes
     uint16_t move           = 0; // 2 bytes
     uint8_t depth_tflag     = 0; // 1 byte  -> contains depth: 6 bits (64 values), flag: 2 bits (4 values)
     uint8_t move_number     = 0; // 1 byte
     // ==============
-    // ----> total = 4 + 8 = 12 bytes
+    // ----> total = 2 + 8 = 10 bytes
 
     int depth(){
         return static_cast<int>(depth_tflag >> 2);
@@ -34,7 +34,7 @@ struct TEntry {
     TEntry(){};
 
     TEntry(uint64_t zobrist, int value, int static_eval, int depth, Move move, TFlag flag, uint8_t move_number):
-            zobrist_hash(uint32_t(zobrist)),
+            zobrist_hash(uint16_t(zobrist)),
             value(value),
             static_eval(static_eval),
             move(move.move()),
