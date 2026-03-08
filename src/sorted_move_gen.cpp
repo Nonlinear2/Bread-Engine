@@ -1,30 +1,30 @@
 #include "sorted_move_gen.hpp"
 
-UNACTIVE_TUNEABLE(q_att_1, int, 50, 0, 500, 10, 0.002);
-UNACTIVE_TUNEABLE(q_att_2, int, 55, 0, 500, 10, 0.002);
-UNACTIVE_TUNEABLE(c_chk_1, int, 164, 0, 1000, 25, 0.002);
-UNACTIVE_TUNEABLE(q_chk_1, int, 139, 0, 1000, 25, 0.002);
-UNACTIVE_TUNEABLE(c_cpt, int, 175, 0, 1000, 25, 0.002);
-UNACTIVE_TUNEABLE(c_prm, int, 103, 0, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(q_prm, int, 101, 0, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(q_kil, int, 132, 0, 1000, 25, 0.002);
-UNACTIVE_TUNEABLE(q_his, int, 164, 0, 1000, 25, 0.002);
-UNACTIVE_TUNEABLE(q_cthis, int, 154, 0, 1000, 25, 0.002);
-UNACTIVE_TUNEABLE(chk_2, int, 363, 0, 2000, 70, 0.002);
-UNACTIVE_TUNEABLE(bst, int, 206, 0, 1500, 40, 0.002);
-UNACTIVE_TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
-UNACTIVE_TUNEABLE(his_2, int, 35, 0, 300, 5, 0.002);
-UNACTIVE_TUNEABLE(his_3, int, 1162, 0, 5000, 200, 0.002);
-UNACTIVE_TUNEABLE(his_4, int, 18, 0, 300, 3, 0.002);
-UNACTIVE_TUNEABLE(his_5, int, 16, 0, 300, 3, 0.002);
-UNACTIVE_TUNEABLE(his_6, int, 512, 0, 5000, 110, 0.002);
-UNACTIVE_TUNEABLE(chis_1, int, 34, 0, 300, 5, 0.002);
-UNACTIVE_TUNEABLE(chis_2, int, 35, 0, 300, 5, 0.002);
-UNACTIVE_TUNEABLE(chis_3, int, 1162, 0, 5000, 200, 0.002);
-UNACTIVE_TUNEABLE(chis_4, int, 18, 0, 300, 3, 0.002);
-UNACTIVE_TUNEABLE(chis_5, int, 16, 0, 300, 3, 0.002);
-UNACTIVE_TUNEABLE(chis_6, int, 512, 0, 5000, 110, 0.002);
-UNACTIVE_TUNEABLE(cphis, int, 300, 0, 5000, 60, 0.002);
+TUNEABLE(q_att_1, int, 50, 0, 500, 10, 0.002);
+TUNEABLE(q_att_2, int, 55, 0, 500, 10, 0.002);
+TUNEABLE(c_chk_1, int, 164, 0, 1000, 25, 0.002);
+TUNEABLE(q_chk_1, int, 139, 0, 1000, 25, 0.002);
+TUNEABLE(c_cpt, int, 175, 0, 1000, 25, 0.002);
+TUNEABLE(c_prm, int, 103, 0, 1000, 20, 0.002);
+TUNEABLE(q_prm, int, 101, 0, 1000, 20, 0.002);
+TUNEABLE(q_kil, int, 132, 0, 1000, 25, 0.002);
+TUNEABLE(q_his, int, 164, 0, 1000, 25, 0.002);
+TUNEABLE(q_cthis, int, 154, 0, 1000, 25, 0.002);
+TUNEABLE(chk_2, int, 363, 0, 2000, 70, 0.002);
+TUNEABLE(bst, int, 206, 0, 1500, 40, 0.002);
+TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
+TUNEABLE(his_2, int, 35, 0, 300, 5, 0.002);
+TUNEABLE(his_3, int, 1162, 0, 5000, 200, 0.002);
+TUNEABLE(his_4, int, 18, 0, 300, 3, 0.002);
+TUNEABLE(his_5, int, 16, 0, 300, 3, 0.002);
+TUNEABLE(his_6, int, 512, 0, 5000, 110, 0.002);
+TUNEABLE(chis_1, int, 34, 0, 300, 5, 0.002);
+TUNEABLE(chis_2, int, 35, 0, 300, 5, 0.002);
+TUNEABLE(chis_3, int, 1162, 0, 5000, 200, 0.002);
+TUNEABLE(chis_4, int, 18, 0, 300, 3, 0.002);
+TUNEABLE(chis_5, int, 16, 0, 300, 3, 0.002);
+TUNEABLE(chis_6, int, 512, 0, 5000, 110, 0.002);
+TUNEABLE(cphis, int, 300, 0, 5000, 60, 0.002);
 
 
 CaptureHistory capture_history = CaptureHistory();
