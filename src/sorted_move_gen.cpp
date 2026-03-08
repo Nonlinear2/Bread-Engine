@@ -10,7 +10,6 @@ TUNEABLE(q_prm, int, 101, 0, 1000, 20, 0.002);
 TUNEABLE(q_kil, int, 132, 0, 1000, 25, 0.002);
 TUNEABLE(q_his, int, 164, 0, 1000, 25, 0.002);
 TUNEABLE(q_cthis, int, 154, 0, 1000, 25, 0.002);
-TUNEABLE(chk_2, int, 363, 0, 2000, 70, 0.002);
 TUNEABLE(bst, int, 206, 0, 1500, 40, 0.002);
 TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
 TUNEABLE(his_2, int, 35, 0, 300, 5, 0.002);
