@@ -1,10 +1,10 @@
 #include "nnue_board.hpp"
 
-UNACTIVE_TUNEABLE(mat_base, int, 8192, 0, 30000, 30, 0.002);
-UNACTIVE_TUNEABLE(k_scale, int, 360, 0, 10000, 30, 0.002);
-UNACTIVE_TUNEABLE(b_scale, int, 360, 0, 10000, 50, 0.002);
-UNACTIVE_TUNEABLE(r_scale, int, 720, 0, 10000, 30, 0.002);
-UNACTIVE_TUNEABLE(q_scale, int, 1440, 0, 10000, 10, 0.002);
+TUNEABLE(mat_base, int, 9188, 0, 30000, 1630, 0.002);
+TUNEABLE(k_scale, int, 364, 0, 10000, 72, 0.002);
+TUNEABLE(b_scale, int, 248, 0, 10000, 72, 0.002);
+TUNEABLE(r_scale, int, 614, 0, 10000, 150, 0.002);
+TUNEABLE(q_scale, int, 803, 0, 10000, 300, 0.002);
 
 AllBitboards::AllBitboards(){
     for (int color = 0; color < 2; ++color)
