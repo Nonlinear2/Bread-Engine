@@ -33,7 +33,8 @@ UNACTIVE_TUNEABLE(red_3, int, 815, 0, 10000, 150, 0.002);
 UNACTIVE_TUNEABLE(red_4, int, 1998, 0, 10000, 300, 0.002);
 UNACTIVE_TUNEABLE(red_5, int, 788, 0, 10000, 200, 0.002);
 UNACTIVE_TUNEABLE(red_6, int, 746, 0, 10000, 180, 0.002);
-UNACTIVE_TUNEABLE(red_th_1, int, 2135, 0, 10000, 450, 0.002);
+UNACTIVE_TUNEABLE(red_th_1, int, 1600, 0, 10000, 320, 0.002);
+UNACTIVE_TUNEABLE(red_th_2, int, 2135, 0, 10000, 450, 0.002);
 UNACTIVE_TUNEABLE(corr_1, int, 268, 0, 10000, 50, 0.002);
 UNACTIVE_TUNEABLE(corr_2, int, 592, 0, 10000, 130, 0.002);
 UNACTIVE_TUNEABLE(de_1, int, 90, 0, 10000, 18, 0.002);
@@ -591,11 +592,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
 
         } else if (!pv || move_gen.index() > 0){
-            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
+            value = -negamax<false>(new_depth - (reduction > red_th_1), -alpha - 1, -alpha, ss + 1, !cutnode);
         }
 
         if (pv && (move_gen.index() == 0 || value > alpha)){
-            value = -negamax<true>(new_depth - (reduction > red_th_1), -beta, -alpha, ss + 1, false);
+            value = -negamax<true>(new_depth - (reduction > red_th_2), -beta, -alpha, ss + 1, false);
         }
 
         pos.restore_state(move);
