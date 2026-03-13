@@ -1,5 +1,6 @@
 #if defined(__AVX512F__)
     #define USE_AVX512
+    #define HAS_VNNI ____AVX512VNNI__
 #elif defined(__AVX2__)
     #define USE_AVX2
 #else
@@ -34,10 +35,6 @@
 
     inline vec_int32 set1_epi32(int i) {
         return _mm512_set1_epi32(i);
-    }
-
-    inline int reduce1_epi32(vec_int32 v) {
-        return _mm512_reduce_add_epi32(v);
     }
 
     inline vec_int8 load_epi8(int8_t* ptr) {
@@ -112,7 +109,14 @@
         return _mm512_mullo_epi16(v1, v2);
     }
 
-#else if defined(__AVX2__)
+    // defined when USE_AVX512 only:
+
+    inline int reduce1_epi32(vec_int32 v) {
+        return _mm512_reduce_add_epi32(v);
+    }
+
+
+#elifdef USE_AVX2
     using vec_int8 = __m256i;
     using vec_uint8 = __m256i;
     using vec_int16 = __m256i;
@@ -180,16 +184,6 @@
         return _mm256_packus_epi32(v1, v2);
     }
 
-    template<int mask>
-    inline vec_int32 permute4x64_epi64(vec_int32 v) {
-        return _mm256_permute4x64_epi64(v, mask);
-    }
-
-    template<int mask>
-    inline vec_int32 permute2x128_si256(vec_int32 v1, vec_int32 v2) {
-        return _mm256_permute2x128_si256(v1, v2, mask);
-    }
-
     inline vec_int8 max_epi8(vec_int8 v1, vec_int8 v2) {
         return _mm256_max_epi8(v1, v2);
     }
@@ -218,11 +212,24 @@
         return _mm256_madd_epi16(v1, v2);
     }
 
+    inline vec_int16 mullo_epi16(vec_int16 v1, vec_int16 v2) {
+        return _mm256_mullo_epi16(v1, v2);
+    }
+
+    // defined when USE_AVX2 only:
+
+    template<int mask>
+    inline vec_int32 permute4x64_epi64(vec_int32 v) {
+        return _mm256_permute4x64_epi64(v, mask);
+    }
+
+    template<int mask>
+    inline vec_int32 permute2x128_si256(vec_int32 v1, vec_int32 v2) {
+        return _mm256_permute2x128_si256(v1, v2, mask);
+    }
+
     inline vec_int32 hadd_epi32(vec_int32 v1, vec_int32 v2) {
         return _mm256_hadd_epi32(v1, v2);
     }
 
-    inline vec_int16 mullo_epi16(vec_int16 v1, vec_int16 v2) {
-        return _mm256_mullo_epi16(v1, v2);
-    }
 #endif
