@@ -1,126 +1,7 @@
 #include <cstdint>
 #include <cmath>
 #include <chess.hpp>
-
-#if defined(__AVX2__)
-    #include <immintrin.h>
-
-    using vec_int8 = __m256i;
-    using vec_uint8 = __m256i;
-    using vec_int16 = __m256i;
-    using vec_uint16 = __m256i;
-    using vec_int32 = __m256i;
-    using vec_uint32 = __m256i;
-
-    inline vec_int8 setzero_epi8() {
-        return _mm256_setzero_si256();
-    }
-
-    inline vec_int16 setzero_epi16() {
-        return _mm256_setzero_si256();
-    }
-
-    inline vec_int32 setzero_epi32() {
-        return _mm256_setzero_si256();
-    }
-
-    inline vec_int16 set1_epi16(int i) {
-        return _mm256_set1_epi16(i);
-    }
-
-    inline vec_int32 set1_epi32(int i) {
-        return _mm256_set1_epi32(i);
-    }
-
-    inline vec_int8 load_epi8(int8_t* ptr) {
-        return _mm256_loadu_si256((const __m256i*)ptr);
-    }
-
-    inline vec_int16 load_epi16(int16_t* ptr) {
-        return _mm256_loadu_si256((const __m256i*)ptr);
-    }
-
-    inline vec_int32 load_epi32(int32_t* ptr) {
-        return _mm256_loadu_si256((const __m256i*)ptr);
-    }
-
-    inline void store_epi8(int8_t* ptr, vec_int8 v) {
-        _mm256_storeu_si256((__m256i*)ptr, v);
-    }
-
-    inline void store_epi16(int16_t* ptr, vec_int16 v) {
-        _mm256_storeu_si256((__m256i*)ptr, v);
-    }
-
-    inline void store_epi32(int32_t* ptr, vec_int32 v) {
-        _mm256_storeu_si256((__m256i*)ptr, v);
-    }
-
-    inline vec_int8 packs_epi16(vec_int16 v1, vec_int16 v2) {
-        return _mm256_packs_epi16(v1, v2);
-    }
-
-    inline vec_int16 packs_epi32(vec_int32 v1, vec_int32 v2) {
-        return _mm256_packs_epi32(v1, v2);
-    }
-
-    inline vec_int8 packus_epi16(vec_int16 v1, vec_int16 v2) {
-        return _mm256_packus_epi16(v1, v2);
-    }
-
-    inline vec_int16 packus_epi32(vec_int32 v1, vec_int32 v2) {
-        return _mm256_packus_epi32(v1, v2);
-    }
-
-    template<int mask>
-    inline vec_int32 permute4x64_epi64(vec_int32 v) {
-        return _mm256_permute4x64_epi64(v, mask);
-    }
-
-    template<int mask>
-    inline vec_int32 permute2x128_si256(vec_int32 v1, vec_int32 v2) {
-        return _mm256_permute2x128_si256(v1, v2, mask);
-    }
-
-    inline vec_int8 max_epi8(vec_int8 v1, vec_int8 v2) {
-        return _mm256_max_epi8(v1, v2);
-    }
-
-    inline vec_int16 max_epi16(vec_int16 v1, vec_int16 v2) {
-        return _mm256_max_epi16(v1, v2);
-    }
-
-    inline vec_int16 min_epi16(vec_int16 v1, vec_int16 v2) {
-        return _mm256_min_epi16(v1, v2);
-    }
-
-    inline vec_int16 add_epi16(vec_int16 v1, vec_int16 v2) {
-        return _mm256_add_epi16(v1, v2);
-    }
-
-    inline vec_int32 add_epi32(vec_int32 v1, vec_int32 v2) {
-        return _mm256_add_epi32(v1, v2);
-    }
-
-    inline vec_int16 sub_epi16(vec_int16 v1, vec_int16 v2) {
-        return _mm256_sub_epi16(v1, v2);
-    }
-
-    inline vec_int32 madd_epi16(vec_int16 v1, vec_int16 v2) {
-        return _mm256_madd_epi16(v1, v2);
-    }
-
-    inline vec_int32 hadd_epi32(vec_int32 v1, vec_int32 v2) {
-        return _mm256_hadd_epi32(v1, v2);
-    }
-
-    inline vec_int16 mullo_epi16(vec_int16 v1, vec_int16 v2) {
-        return _mm256_mullo_epi16(v1, v2);
-    }
-
-#else
-    #error "bread requires the AVX2 instruction set to run."
-#endif
+#include "simd.hpp"
 
 constexpr int NUM_AVX_REGISTERS = 8;
 constexpr int INT32_PER_REG = sizeof(vec_int32) / sizeof(int32_t);
@@ -129,12 +10,90 @@ constexpr int INT8_PER_REG = sizeof(vec_int8) / sizeof(int8_t);
 
 namespace NNUE_UTILS {
 
-void crelu32_to_8(int32_t *input, int8_t *output, int size);
-void crelu16_to_8(int16_t *input, int8_t *output, int size);
+#ifdef USE_AVX2 // these functions use the AVX2 specific instruction permute4x64_epi64
+    [[maybe_unused]]
+    void NNUE_UTILS::crelu32_to_8(int32_t *input, int8_t *output, int size){
 
-void crelu16_to_16(int16_t *input, int16_t *output, int size);
+        assert(size % INT8_PER_REG == 0);
 
-int32_t reduce1_epi32(vec_int32& input); // horizontal add 1 int32 avx register.
-vec_int32 reduce8_epi32(vec_int32* inputs);
+        const int num_regs = size / INT8_PER_REG;
+        const vec_int8 zero = setzero_epi8();
+
+        for (int i = 0; i < num_regs; i++){
+            vec_int32 in_1 = load_epi32(&input[(4*i)*INT32_PER_REG]);
+            vec_int32 in_2 = load_epi32(&input[(4*i+1)*INT32_PER_REG]);
+            vec_int32 in_3 = load_epi32(&input[(4*i+2)*INT32_PER_REG]);
+            vec_int32 in_4 = load_epi32(&input[(4*i+3)*INT32_PER_REG]);
+
+            in_1 = permute4x64_epi64<0b10'00'11'01>(packs_epi32(in_1, in_2));
+            in_3 = permute4x64_epi64<0b10'00'11'01>(packs_epi32(in_3, in_4));
+
+            vec_int8 out = packs_epi16(in_1, in_3);
+            out = max_epi8(out, zero); // packs saturates at 127, so only max is applied
+            out = permute4x64_epi64<0b01'11'00'10>(out);
+            store_epi8(&output[i*INT8_PER_REG], out);
+        }
+    }
+
+    [[maybe_unused]]
+    void NNUE_UTILS::crelu16_to_8(int16_t *input, int8_t *output, int size){
+
+        assert(size % INT8_PER_REG == 0);
+
+        const int num_regs = size / INT8_PER_REG;
+
+        for (int i = 0; i < num_regs; i++){
+            vec_int16 in_1 = load_epi16(&input[(2*i)*INT16_PER_REG]);
+            vec_int16 in_2 = load_epi16(&input[(2*i+1)*INT16_PER_REG]);
+            // packs sets negative values to 0 and saturates at 255, which effectively applies relu
+            vec_int8 out = packus_epi16(in_1, in_2);
+            out = permute4x64_epi64<0b11'01'10'00>(out); // undo the packus shuffle
+            store_epi8(&output[i*INT8_PER_REG], out);
+        }
+    }
+#endif
+
+[[maybe_unused]]
+void NNUE_UTILS::crelu16_to_16(int16_t *input, int16_t *output, int size){
+
+    assert(size % INT16_PER_REG == 0);
+
+    const vec_int16 zero = setzero_epi16();
+    const vec_int16 qscale = set1_epi16(255);
+
+    for (int i = 0; i < size; i += INT16_PER_REG){
+        vec_int16 in = load_epi16(&input[i]);
+        vec_int16 out = min_epi16(qscale, max_epi16(in, zero));
+        store_epi16(&output[i], out);
+    }
+}
+
+#ifdef USE_AVX2 // these functions use the AVX2 specific instructions hadd_epi32 and permute2x128_si256
+    int32_t NNUE_UTILS::reduce1_epi32(vec_int32 input){ // horizontal add 1 int32 avx register.
+        input = hadd_epi32(input, input);
+
+        int32_t out_ptr[8];
+        store_epi32(out_ptr, input);
+
+        return out_ptr[0] + out_ptr[1] + out_ptr[4] + out_ptr[5];
+    }
+
+    [[maybe_unused]]
+    vec_int32 NNUE_UTILS::reduce8_epi32(vec_int32* inputs){ // horizontal add 8 int32 avx registers.
+        inputs[0] = hadd_epi32(inputs[0], inputs[1]);
+        inputs[2] = hadd_epi32(inputs[2], inputs[3]);
+        inputs[4] = hadd_epi32(inputs[4], inputs[5]);
+        inputs[6] = hadd_epi32(inputs[6], inputs[7]);
+
+        inputs[0] = hadd_epi32(inputs[0], inputs[2]);
+        inputs[4] = hadd_epi32(inputs[4], inputs[6]);
+
+        return add_epi32(
+            // swap lanes of the two registers
+            permute2x128_si256<0b00110001>(inputs[0], inputs[4]),
+            permute2x128_si256<0b00100000>(inputs[0], inputs[4])
+        );
+    }
+#endif
 
 }; // namespace NNUE_UTILS
