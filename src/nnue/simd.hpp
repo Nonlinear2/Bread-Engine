@@ -1,3 +1,5 @@
+#pragma once
+
 #if defined(__AVX512F__)
     #define USE_AVX512
     #define HAS_VNNI ____AVX512VNNI__
@@ -114,9 +116,9 @@
     inline int reduce1_epi32(vec_int32 v) {
         return _mm512_reduce_add_epi32(v);
     }
+#endif
 
-
-#elifdef USE_AVX2
+#ifdef USE_AVX2
     using vec_int8 = __m256i;
     using vec_uint8 = __m256i;
     using vec_int16 = __m256i;

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 #include <cmath>
 #include <chess.hpp>
@@ -12,7 +14,7 @@ namespace NNUE_UTILS {
 
 #ifdef USE_AVX2 // these functions use the AVX2 specific instruction permute4x64_epi64
     [[maybe_unused]]
-    void NNUE_UTILS::crelu32_to_8(int32_t *input, int8_t *output, int size){
+    inline void crelu32_to_8(int32_t *input, int8_t *output, int size){
 
         assert(size % INT8_PER_REG == 0);
 
@@ -36,7 +38,7 @@ namespace NNUE_UTILS {
     }
 
     [[maybe_unused]]
-    void NNUE_UTILS::crelu16_to_8(int16_t *input, int8_t *output, int size){
+    inline void crelu16_to_8(int16_t *input, int8_t *output, int size){
 
         assert(size % INT8_PER_REG == 0);
 
@@ -54,7 +56,7 @@ namespace NNUE_UTILS {
 #endif
 
 [[maybe_unused]]
-void NNUE_UTILS::crelu16_to_16(int16_t *input, int16_t *output, int size){
+inline void crelu16_to_16(int16_t *input, int16_t *output, int size){
 
     assert(size % INT16_PER_REG == 0);
 
@@ -69,7 +71,7 @@ void NNUE_UTILS::crelu16_to_16(int16_t *input, int16_t *output, int size){
 }
 
 #ifdef USE_AVX2 // these functions use the AVX2 specific instructions hadd_epi32 and permute2x128_si256
-    int32_t NNUE_UTILS::reduce1_epi32(vec_int32 input){ // horizontal add 1 int32 avx register.
+    inline int32_t reduce1_epi32(vec_int32 input){ // horizontal add 1 int32 avx register.
         input = hadd_epi32(input, input);
 
         int32_t out_ptr[8];
@@ -79,7 +81,7 @@ void NNUE_UTILS::crelu16_to_16(int16_t *input, int16_t *output, int size){
     }
 
     [[maybe_unused]]
-    vec_int32 NNUE_UTILS::reduce8_epi32(vec_int32* inputs){ // horizontal add 8 int32 avx registers.
+    inline vec_int32 reduce8_epi32(vec_int32* inputs){ // horizontal add 8 int32 avx registers.
         inputs[0] = hadd_epi32(inputs[0], inputs[1]);
         inputs[2] = hadd_epi32(inputs[2], inputs[3]);
         inputs[4] = hadd_epi32(inputs[4], inputs[5]);
