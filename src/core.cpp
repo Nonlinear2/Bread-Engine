@@ -442,28 +442,33 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     move_gen.set_tt_move(transposition.move);
 
-    uncorrected_static_eval = transposition.static_eval;
+    bool in_check = pos.inCheck();
 
-    if (uncorrected_static_eval == NO_VALUE)
-        uncorrected_static_eval = evaluate(pos);
+    if (in_check){
+        ss->static_eval = static_eval = eval = (ss - 2)->static_eval;
+        uncorrected_static_eval = NO_VALUE;
+    } else {
+        uncorrected_static_eval = transposition.static_eval;
 
-    static_eval = std::clamp(
-        uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 32768,
-        -BEST_VALUE, BEST_VALUE);
+        if (uncorrected_static_eval == NO_VALUE)
+            uncorrected_static_eval = evaluate(pos);
 
-    ss->static_eval = static_eval;
+        static_eval = std::clamp(
+            uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 32768,
+            -BEST_VALUE, BEST_VALUE);
 
-    if (transposition.value == NO_VALUE)
-        eval = static_eval;
-    else
-        eval = transposition.value;
+        ss->static_eval = static_eval;
 
-    bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval)
-        && ss->static_eval > (ss - 2)->static_eval;
+        if (transposition.value == NO_VALUE)
+            eval = static_eval;
+        else
+            eval = transposition.value;
+    }
+
+    bool improving = is_valid(static_eval) && is_valid((ss - 2)->static_eval)
+        && static_eval > (ss - 2)->static_eval;
 
     bool tt_capture = transposition.move != Move::NO_MOVE && pos.isCapture(transposition.move);
-
-    bool in_check = pos.inCheck();
 
     // pruning
     if (!root_node && !pv && !in_check){
