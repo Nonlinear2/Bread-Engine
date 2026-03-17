@@ -32,14 +32,6 @@ struct TEntry {
     };
 
     TEntry(){};
-
-    TEntry(uint64_t zobrist, int value, int static_eval, int depth, Move move, TFlag flag, int move_number):
-            zobrist_hash(zobrist),
-            value(value),
-            static_eval(static_eval),
-            move(move.move()),
-            depth(depth),
-            move_num_tflag((static_cast<uint8_t>(move_number) << 2) | (static_cast<uint8_t>(flag))) {};
 };
 
 struct TTData {
