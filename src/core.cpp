@@ -792,7 +792,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         if (stand_pat >= beta){
             if (!is_hit)
                 transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), uncorrected_static_eval,
-                    DEPTH_QSEARCH, Move::NO_MOVE, TFlag::LOWER_BOUND, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+                    DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
             return stand_pat;
         }
 
@@ -856,30 +856,30 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     assert(!pos.isInsufficientMaterial());
     if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() 
-        && (in_check || pos.is_stalemate())){
+        && in_check){ // checking for stalemate would be too expensive
 
         if (in_check)
-            stand_pat = pos_to_root_mate_value(-MATE_VALUE, ply);
+            max_value = pos_to_root_mate_value(-MATE_VALUE, ply);
         else
-            stand_pat = 0;
+            max_value = 0;
 
         if (nonsense_stage == Nonsense::TAKE_PIECES
             && pos.them(engine_color).count() != 1
             && pos.sideToMove() != engine_color
-            && is_loss(stand_pat))
-            stand_pat = TB_VALUE;
+            && is_loss(max_value))
+            max_value = TB_VALUE;
 
         // if it should be checkmate, but there are not only bishops and knights, then say the position is winning
         if (nonsense_stage == Nonsense::PROMOTE
             && !Nonsense::only_knight_bishop(pos)
-            && is_loss(stand_pat)){
+            && is_loss(max_value)){
             assert(!Nonsense::is_winning_side(pos));
-            stand_pat = TB_VALUE;
+            max_value = TB_VALUE;
         }
 
-        transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), NO_VALUE, DEPTH_QSEARCH,
+        transposition_table.store(zobrist_hash, to_tt(max_value, ply), NO_VALUE, DEPTH_QSEARCH,
             Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
-        return stand_pat;
+        return max_value;
     }
 
     // assert(pos.isGameOver().second == GameResult::NONE);
