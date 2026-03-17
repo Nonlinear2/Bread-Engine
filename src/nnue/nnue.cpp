@@ -245,9 +245,10 @@ int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
         in = min_epi16(qscale, max_epi16(in, zero));
 
         vec_int16 weight_chunk = load_epi16(&l1_weights[bucket * L1_WEIGHTS_SIZE + i]);
-        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
 
         // madd pairs to int32 to avoid overflows in int16
+        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
+
         result = add_epi32(result, prod);
     }
 
@@ -256,9 +257,10 @@ int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
         in = min_epi16(qscale, max_epi16(in, zero));
 
         vec_int16 weight_chunk = load_epi16(&l1_weights[bucket * L1_WEIGHTS_SIZE + ACC_SIZE + i]);
-        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
 
         // madd pairs to int32 to avoid overflows in int16
+        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
+
         result = add_epi32(result, prod);
     }
 
