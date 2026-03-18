@@ -122,9 +122,13 @@ int NnueBoard::evaluate(){
 }
 
 bool NnueBoard::is_stalemate(){
-    Movelist movelist;
-    movegen::legalmoves(movelist, *this);
-    return movelist.empty();
+    Movelist move_list;
+    movegen::legalmoves(move_list, *this, PieceGenType::KING);
+    if (!move_list.empty())
+        return false;
+
+    movegen::legalmoves(move_list, *this);
+    return move_list.empty();
 }
 
 std::pair<Features, Features> NnueBoard::get_features(){
