@@ -472,6 +472,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         // razoring
         if (eval + r_1*depth*depth + r_2 < alpha){ 
             eval = qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval.
+            if (interrupt_flag)
+                return NO_VALUE;
+
             if (eval <= alpha)
                 return eval;
         }
@@ -555,6 +558,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss, cutnode);
                 *ss = saved_ss;
     
+                if (interrupt_flag)
+                    return NO_VALUE;
+
                 if (value < singular_beta)
                     extension = 1 + (!pv && value < singular_beta - de_1);
                 else if (value >= beta && !is_decisive(value))
@@ -605,7 +611,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         pos.restore_state(move);
 
-        if (interrupt_flag && !is_valid(value))
+        if (interrupt_flag)
             return NO_VALUE;
 
         if (root_node)
@@ -717,6 +723,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
 
     nodes++;
+    if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
+        return NO_VALUE;
+
     if (ply > seldepth)
         seldepth = ply;
 
@@ -814,9 +823,6 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     Square previous_to_square = ((ss - 1)->curr_move).to();
 
     while (capture_gen.next(move)){
-        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
-            return is_valid(max_value) ? max_value : NO_VALUE;
-
         Piece captured_piece = pos.at(move.to());
         Piece moved_piece = pos.at(move.from());
 
@@ -846,7 +852,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
 
-        if (interrupt_flag && !is_valid(value))
+        if (interrupt_flag)
             return NO_VALUE;
 
         if (value > max_value){
