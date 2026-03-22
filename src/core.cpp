@@ -255,8 +255,9 @@ Move Engine::iterative_deepening(SearchLimit limit){
             if (best_move != Move::NO_MOVE && best_move != root_moves[0])
                 best_move_changes++;
 
-            best_move = root_moves[0];
-            
+            if (is_valid(root_moves[0].score()))
+                best_move = root_moves[0];
+
             assert(is_valid(best_move.score()));
 
             if (interrupt_flag)
@@ -507,6 +508,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (move == excluded_move)
             continue;
 
+        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
+            return is_valid(max_value) ? max_value : NO_VALUE;
+
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
 
             if (move_gen.index() >= 6 + 2*depth*depth + 3*improving){
@@ -584,11 +588,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (move_gen.index() > 0 && depth >= 2){
             value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1, true);
 
-            if (value > alpha && reduced_depth < new_depth){
+            if (!interrupt_flag && value > alpha && reduced_depth < new_depth){
                 value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
                 if (!is_capture)
                     move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), cont_1);
-            } else if (value <= alpha && !is_capture)
+            } else if (!interrupt_flag && value <= alpha && !is_capture)
                 move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
 
         } else if (!pv || move_gen.index() > 0){
@@ -601,10 +605,16 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         pos.restore_state(move);
 
+        if (interrupt_flag && !is_valid(value))
+            return NO_VALUE;
+
         if (root_node)
             root_moves[move_gen.index()].setScore(value);
 
         if (value > max_value){
+            if (!is_valid(value))
+                std::cout << "hfewjkh\n";
+            assert(is_valid(value));
             max_value = value;
             if (value > alpha)
                 best_move = move;
@@ -614,11 +624,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 std::rotate(root_moves.begin(), root_moves.begin() + move_gen.index(),
                     root_moves.begin() + move_gen.index() + 1);
             }
-        }
-
-        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag())){
-            assert(is_valid(max_value));
-            return max_value;
         }
 
         alpha = std::max(alpha, value);
@@ -809,6 +814,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     Square previous_to_square = ((ss - 1)->curr_move).to();
 
     while (capture_gen.next(move)){
+        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
+            is_valid(max_value) ? max_value : NO_VALUE;
+
         Piece captured_piece = pos.at(move.to());
         Piece moved_piece = pos.at(move.from());
 
@@ -838,15 +846,14 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
 
+        if (interrupt_flag && !is_valid(value))
+            return NO_VALUE;
+
         if (value > max_value){
+            assert(is_valid(value));
             max_value = value;
             if (value > alpha)
                 best_move = move;
-        }
-
-        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag())){
-            assert(is_valid(max_value));
-            return max_value;
         }
 
         alpha = std::max(alpha, value);
