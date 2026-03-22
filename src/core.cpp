@@ -621,8 +621,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             root_moves[move_gen.index()].setScore(value);
 
         if (value > max_value){
-            if (!is_valid(value))
-                std::cout << "hfewjkh\n";
             assert(is_valid(value));
             max_value = value;
             if (value > alpha)
