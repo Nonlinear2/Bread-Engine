@@ -815,7 +815,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     while (capture_gen.next(move)){
         if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
-            is_valid(max_value) ? max_value : NO_VALUE;
+            return is_valid(max_value) ? max_value : NO_VALUE;
 
         Piece captured_piece = pos.at(move.to());
         Piece moved_piece = pos.at(move.from());
