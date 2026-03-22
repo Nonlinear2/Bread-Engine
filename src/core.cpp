@@ -344,6 +344,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     assert(ply < MAX_PLY); // avoid stack overflow
 
     nodes++;
+    if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
+        return NO_VALUE;
+
     if (ply > seldepth)
         seldepth = ply;
 
@@ -513,9 +516,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         if (move == excluded_move)
             continue;
-
-        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
-            return is_valid(max_value) ? max_value : NO_VALUE;
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
 
