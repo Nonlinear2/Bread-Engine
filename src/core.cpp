@@ -343,7 +343,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     const int ply = ss - root_ss;
     assert(ply < MAX_PLY); // avoid stack overflow
 
-    if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
+    if (interrupt_flag || ((nodes & 4095) == 0 && update_interrupt_flag()))
         return NO_VALUE;
     nodes++;
 
@@ -717,7 +717,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(ply < MAX_PLY); // avoid stack overflow
 
 
-    if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
+    if (interrupt_flag || ((nodes & 4095) == 0 && update_interrupt_flag()))
         return NO_VALUE;
     nodes++;
 
