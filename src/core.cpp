@@ -343,9 +343,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     const int ply = ss - root_ss;
     assert(ply < MAX_PLY); // avoid stack overflow
 
-    nodes++;
     if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
         return NO_VALUE;
+    nodes++;
 
     if (ply > seldepth)
         seldepth = ply;
@@ -475,9 +475,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         // razoring
         if (eval + r_1*depth*depth + r_2 < alpha){ 
             eval = qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval.
-            if (interrupt_flag)
-                return NO_VALUE;
-
             if (eval <= alpha)
                 return eval;
         }
@@ -723,9 +720,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(ply < MAX_PLY); // avoid stack overflow
 
 
-    nodes++;
     if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
         return NO_VALUE;
+    nodes++;
 
     if (ply > seldepth)
         seldepth = ply;
