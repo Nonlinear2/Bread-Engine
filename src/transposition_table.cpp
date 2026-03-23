@@ -23,7 +23,7 @@ void TranspositionTable::info(){
 
             num_move += (entry.move != Move::NO_MOVE);
 
-            num_depth_zero += (entry.depth() == 0);
+            num_depth_zero += (entry.depth == 0);
 
             switch (entry.flag()){
                 case TFlag::EXACT:
@@ -77,7 +77,7 @@ void TranspositionTable::allocateMB(int new_size){
 }
 
 void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int depth,
-                               Move move, TFlag flag, uint8_t move_number, bool pv){
+                               Move move, TFlag flag, int move_number, bool pv){
 
     assert(move != Move::NULL_MOVE);
 
@@ -89,8 +89,8 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
     // - the old entry is more than 4 moves older than the recent entry
     // - the new depth is greater than the old depth
     // - the new depth is nonzero and an exact entry
-    if (move_number > entry->move_number + 4 ||
-        depth > entry->depth() - 1 - 2*pv || // this will be true if the old entry is empty
+    if (move_number / 2 > entry->move_number() + 2 ||
+        depth > entry->depth - 1 - 2*pv || // this will be true if the old entry is empty
         (depth != DEPTH_QSEARCH && flag == TFlag::EXACT))
     {
         // add move if the old entry didn't hold the same position or if the new move is better
@@ -100,8 +100,8 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
         entry->zobrist_hash = zobrist;
         entry->value = value;
         entry->static_eval = static_eval;
-        entry->depth_tflag = (static_cast<uint8_t>(depth) << 2) | (static_cast<uint8_t>(flag));
-        entry->move_number = move_number;
+        entry->depth = depth;
+        entry->move_num_tflag = (static_cast<uint8_t>(move_number / 2) << 2) | (static_cast<uint8_t>(flag));
     };
 }
 
