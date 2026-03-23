@@ -126,7 +126,7 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(){
 
     Board pv_visitor = pos;
 
-    for (int i = 0; i < current_depth; i++){
+    for (int i = 0; i < root_depth; i++){
         bool is_hit;
         TTData transposition = transposition_table.probe(is_hit, pv_visitor.hash());
         if (transposition.move == Move::NO_MOVE || pv_visitor.isRepetition(2)
@@ -181,7 +181,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     nodes = 0;
     tb_hits = 0;
     seldepth = 0;
-    current_depth = 0;
+    root_depth = 0;
 
     root_moves.clear();
 
@@ -236,11 +236,11 @@ Move Engine::iterative_deepening(SearchLimit limit){
     }
     int best_move_changes = 0;
     while (true){
-        current_depth++;
+        root_depth++;
 
         int asp_alpha;
         int asp_beta;
-        if (current_depth <= 6){
+        if (root_depth <= 6){
             asp_alpha = -INFINITE_VALUE;
             asp_beta = INFINITE_VALUE;
         } else {
@@ -250,7 +250,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         }
 
         while (true){
-            negamax<true>(current_depth, asp_alpha, asp_beta, root_ss, false);
+            negamax<true>(root_depth, asp_alpha, asp_beta, root_ss, false);
 
             if (best_move != Move::NO_MOVE && best_move != root_moves[0])
                 best_move_changes++;
@@ -281,7 +281,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         update_run_time();
 
         // do not count interrupted searches in depth
-        std::cout << "info depth " << current_depth - interrupt_flag;
+        std::cout << "info depth " << root_depth - interrupt_flag;
         std::cout << " seldepth " << seldepth;
         if (is_mate(best_move.score()))
             std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
@@ -298,8 +298,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
         // should the search really stop if there is a mate for the oponent?
         if (interrupt_flag
             || is_mate(best_move.score())
-            || current_depth >= ENGINE_MAX_DEPTH
-            || (limit.type == LimitType::Depth && current_depth == limit.value)
+            || root_depth >= ENGINE_MAX_DEPTH
+            || (limit.type == LimitType::Depth && root_depth == limit.value)
             || (limit.type == LimitType::Nodes && nodes >= limit.value)
             || (limit.type == LimitType::Time && best_move_changes < 1 && run_time > 2*limit.value / 3))
             break;
@@ -601,6 +601,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (root_node)
             root_moves[move_gen.index()].setScore(value);
 
+        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
+            if (depth < root_depth / 2 && is_valid(max_value))
+                return max_value;
+
         if (value > max_value){
             max_value = value;
             if (value > alpha)
@@ -613,7 +617,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             }
         }
 
-        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag())){
+        if (interrupt_flag){
             assert(is_valid(max_value));
             return max_value;
         }
