@@ -10,6 +10,7 @@ using namespace chess;
 
 class ContinuationHistory {
     public:
+    ContinuationHistory() { clear(); }
     void clear();
     int& get(Piece prev_piece, Square prev_to, Piece piece, Square to);
     void apply_bonus(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus);
@@ -21,6 +22,7 @@ class ContinuationHistory {
 
 class FromToHistory {
     public:
+    FromToHistory() { clear(); }
     void clear();
     int& get(Color color, Square from, Square to);
     void apply_bonus(Color color, Square from, Square to, int bonus);
@@ -32,6 +34,7 @@ class FromToHistory {
 
 class CaptureHistory {
     public:
+    CaptureHistory() { clear(); }
     void clear();
     int& get(Piece piece, Square to, Piece captured);
     void apply_bonus(Piece piece, Square to, Piece captured, int bonus);
@@ -44,6 +47,7 @@ class CaptureHistory {
 
 class PawnCorrectionHistory {
     public:
+    PawnCorrectionHistory() { clear(); }
     void clear();
     int& get(Color color, uint16_t pawn_key);
     void apply_bonus(Color color, uint16_t pawn_key, int bonus);
