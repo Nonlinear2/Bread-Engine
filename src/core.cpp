@@ -4,7 +4,7 @@ UNACTIVE_TUNEABLE(r_1, int, 180, 0, 1000, 40, 0.002);
 UNACTIVE_TUNEABLE(r_2, int, 272, -100, 1000, 50, 0.002);
 UNACTIVE_TUNEABLE(rfp_1, int, 114, 0, 1000, 25, 0.002);
 UNACTIVE_TUNEABLE(rfp_2, int, 39, 0, 1000, 6, 0.002);
-UNACTIVE_TUNEABLE(rfp_3, int, 59, 0, 1000, 12, 0.002);
+UNACTIVE_TUNEABLE(rfp_3, int, 49, 0, 1000, 12, 0.002);
 UNACTIVE_TUNEABLE(rfp_4, int, 72, -100, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(nmp_1, int, 76, -50, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(nmp_2, int, 25, -300, 1000, 5, 0.002);
@@ -477,8 +477,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         // reverse futility pruning
         if (depth < 6 + 3*(!is_hit)
-            && eval - depth * (rfp_1 - rfp_2*cutnode) - rfp_3 + rfp_4*improving >= beta)
-            return (eval + beta)/2;
+            && eval - depth * (rfp_1 - rfp_2*cutnode) 
+                    - rfp_3
+                    + rfp_4*improving 
+                    - std::abs(uncorrected_static_eval - static_eval)/3 >= beta)
+            return eval;
 
         // null move pruning
         // maybe check for zugzwang?
