@@ -597,13 +597,19 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
 
         pos.restore_state(move);
+        assert(is_valid(value));
 
         if (root_node)
             root_moves[move_gen.index()].setScore(value);
 
-        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag()))
-            if (depth < root_depth / 2 && is_valid(max_value))
+        // if we have already searched some moves, return the max_value among
+        // these moves wihtout the interrupted search value.
+        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag())){
+            if (is_valid(max_value))
                 return max_value;
+            else // if no previous score is available, return the interrupted search value
+                return value;
+        }
 
         if (value > max_value){
             max_value = value;
@@ -615,11 +621,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 std::rotate(root_moves.begin(), root_moves.begin() + move_gen.index(),
                     root_moves.begin() + move_gen.index() + 1);
             }
-        }
-
-        if (interrupt_flag){
-            assert(is_valid(max_value));
-            return max_value;
         }
 
         alpha = std::max(alpha, value);
