@@ -4,7 +4,7 @@ UNACTIVE_TUNEABLE(r_1, int, 180, 0, 1000, 40, 0.002);
 UNACTIVE_TUNEABLE(r_2, int, 272, -100, 1000, 50, 0.002);
 UNACTIVE_TUNEABLE(rfp_1, int, 114, 0, 1000, 25, 0.002);
 UNACTIVE_TUNEABLE(rfp_2, int, 39, 0, 1000, 6, 0.002);
-UNACTIVE_TUNEABLE(rfp_3, int, 59, 0, 1000, 12, 0.002);
+UNACTIVE_TUNEABLE(rfp_3, int, 39, 0, 1000, 12, 0.002);
 UNACTIVE_TUNEABLE(rfp_4, int, 72, -100, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(nmp_1, int, 76, -50, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(nmp_2, int, 25, -300, 1000, 5, 0.002);
@@ -469,15 +469,15 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (!root_node && !pv && !in_check){
 
         // razoring
-        if (eval + r_1*depth*depth + r_2 < alpha){ 
-            eval = qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval.
-            if (eval <= alpha)
-                return eval;
-        }
+        if (eval + r_1*depth*depth + r_2 < alpha)
+            return qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval.
 
         // reverse futility pruning
         if (depth < 6 + 3*(!is_hit)
-            && eval - depth * (rfp_1 - rfp_2*cutnode) - rfp_3 + rfp_4*improving >= beta)
+            && eval - depth * (rfp_1 - rfp_2*cutnode) 
+                    - rfp_3
+                    + rfp_4*improving 
+                    - std::abs(uncorrected_static_eval - static_eval)/3 >= beta)
             return eval;
 
         // null move pruning
@@ -793,7 +793,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         if (stand_pat >= beta){
             if (!is_hit)
                 transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), uncorrected_static_eval,
-                    DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, pos.fullMoveNumber(), pv);
+                    DEPTH_QSEARCH, Move::NO_MOVE, TFlag::LOWER_BOUND, pos.fullMoveNumber(), pv);
             return stand_pat;
         }
 

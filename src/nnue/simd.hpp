@@ -2,7 +2,7 @@
 
 #if defined(__AVX512F__)
     #define USE_AVX512
-    #define HAS_VNNI ____AVX512VNNI__
+    #define HAS_VNNI __AVX512VNNI__
 #elif defined(__AVX2__)
     #define USE_AVX2
 #else
