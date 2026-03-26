@@ -69,6 +69,9 @@ void CaptureHistory::clear(){
 }
 
 int& CaptureHistory::get(Piece piece, Square to, Piece captured){
+    // if the move was en passant, this function may be called with captured == None,
+    // but idx will still be less than the history size
+    assert(piece*64*6 + to.index()*6 + static_cast<int>(captured.type()) < 12*64*6);
     return history[piece*64*6 + to.index()*6 + static_cast<int>(captured.type())];
 }
 
