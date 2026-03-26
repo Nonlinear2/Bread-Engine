@@ -30,13 +30,13 @@ constexpr GenerationStage& operator++(GenerationStage& g) {
 }
 
 extern CaptureHistory capture_history;
+extern FromToHistory history;
 
 template<GenType MoveGenType>
 class SortedMoveGen {
     public:
 
     static inline KillerMoves killer_moves = KillerMoves();
-    static inline FromToHistory history = FromToHistory();
     static inline ContinuationHistory cont_history = ContinuationHistory();
 
     Piece prev_piece;

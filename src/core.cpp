@@ -74,7 +74,7 @@ bool Engine::update_interrupt_flag(){
 void Engine::clear_state(){
     transposition_table.clear();
     capture_history.clear();
-    SortedMoveGen<GenType::NORMAL>::history.clear();
+    history.clear();
     pawn_corrhist.clear();
     SortedMoveGen<GenType::NORMAL>::cont_history.clear();
     SortedMoveGen<GenType::NORMAL>::killer_moves.clear();
@@ -89,7 +89,7 @@ void Engine::save_state(std::string file){
 
     transposition_table.save_to_stream(ofs);
     capture_history.save_to_stream(ofs);
-    SortedMoveGen<GenType::NORMAL>::history.save_to_stream(ofs);
+    history.save_to_stream(ofs);
     pawn_corrhist.save_to_stream(ofs);
     SortedMoveGen<GenType::NORMAL>::cont_history.save_to_stream(ofs);
     SortedMoveGen<GenType::NORMAL>::killer_moves.save_to_stream(ofs);
@@ -106,7 +106,7 @@ void Engine::load_state(std::string file){
 
     transposition_table.load_from_stream(ifs);
     capture_history.load_from_stream(ifs);
-    SortedMoveGen<GenType::NORMAL>::history.load_from_stream(ifs);
+    history.load_from_stream(ifs);
     pawn_corrhist.load_from_stream(ifs);
     SortedMoveGen<GenType::NORMAL>::cont_history.load_from_stream(ifs);
     SortedMoveGen<GenType::NORMAL>::killer_moves.load_from_stream(ifs);
@@ -502,6 +502,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     while (move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
+        Piece from_piece = pos.at(move.from());
+        Piece to_piece = pos.at(move.to());
 
         if (move == excluded_move)
             continue;
@@ -527,7 +529,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             if (!is_capture && !in_check
                 && prev_piece != int(Piece::NONE)
                 && prev_to != int(Square::underlying::NO_SQ)
-                && move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
+                && move_gen.cont_history.get(prev_piece, prev_to, from_piece, move.to()) < -cthis_1 - cthis_2*depth)
                 continue;
         }
 
@@ -577,6 +579,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         reduction += red_4 * (move_gen.index() > lmr_1);
         reduction += red_5 * (cutnode && depth > 7);
         reduction += red_6 * (depth > 3 && !improving);
+
+        int history_value = is_capture
+            ? capture_history.get(from_piece, move.to().index(), to_piece)
+            : history.get(pos.sideToMove(), move.from().index(), move.to().index());
+
+        reduction -= 100 * history_value / 10'000;
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 

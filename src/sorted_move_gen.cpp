@@ -27,6 +27,7 @@ TUNEABLE(cphis, int, 255, 0, 5000, 60, 0.002);
 
 
 CaptureHistory capture_history = CaptureHistory();
+FromToHistory history = FromToHistory();
 
 template<>
 SortedMoveGen<GenType::NORMAL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
