@@ -500,8 +500,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
     }
 
-    depth -= depth > 5 && transposition.move == Move::NO_MOVE && (pv || cutnode); // IIR
-
     while (move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
 
@@ -568,6 +566,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         bool gives_check = pos.inCheck();
 
+        new_depth -= depth > 5 && transposition.move == Move::NO_MOVE && (pv || cutnode);
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
         int reduction = 0;
