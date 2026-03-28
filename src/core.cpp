@@ -6,6 +6,7 @@ UNACTIVE_TUNEABLE(rfp_1, int, 114, 0, 1000, 25, 0.002);
 UNACTIVE_TUNEABLE(rfp_2, int, 39, 0, 1000, 6, 0.002);
 UNACTIVE_TUNEABLE(rfp_3, int, 39, 0, 1000, 12, 0.002);
 UNACTIVE_TUNEABLE(rfp_4, int, 72, -100, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(rfp_5, int, 341, 0, 10000, 70, 0.002);
 UNACTIVE_TUNEABLE(nmp_1, int, 76, -50, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(nmp_2, int, 25, -300, 1000, 5, 0.002);
 UNACTIVE_TUNEABLE(lmp_1, int, 78, -100, 1000, 20, 0.002);
@@ -472,11 +473,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             return qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval.
 
         // reverse futility pruning
-        if (depth < 6 + 3*(!is_hit)
+        if (depth < 9 - 3*is_hit
             && eval - depth * (rfp_1 - rfp_2*cutnode) 
                     - rfp_3
-                    + rfp_4*improving 
-                    - std::abs(uncorrected_static_eval - static_eval)/3 >= beta)
+                    + rfp_4 * improving 
+                    - rfp_5 * std::abs(uncorrected_static_eval - static_eval) / 1024 >= beta)
             return eval;
 
         // null move pruning
