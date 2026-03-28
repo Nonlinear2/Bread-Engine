@@ -22,9 +22,9 @@ int main(int argc, char* argv[]){
             for (int i = 0; i < std::stoi(parsed[1]); i++){
                 do {
                     board.setFen(constants::STARTPOS);
-                    for (int i = 0; i < 10; i++){
+                    for (int j = 0; j < NUM_GENFENS_RANDOM_MOVES; j++){
                         movegen::legalmoves(move_list, board);
-                        board.makeMove(move_list[rng()%move_list.size()]);
+                        board.makeMove(move_list[rng() % move_list.size()]);
                         if (std::get<1>(board.isGameOver()) != GameResult::NONE)
                             break;
                     }

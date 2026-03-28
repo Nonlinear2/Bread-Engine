@@ -1,42 +1,44 @@
 #include "core.hpp"
 
-TUNEABLE(r_1, int, 199, 0, 500, 30, 0.002);
-TUNEABLE(r_2, int, 258, -100, 1000, 50, 0.002);
-TUNEABLE(rfp_1, int, 128, 0, 500, 30, 0.002);
-TUNEABLE(rfp_2, int, 36, 0, 1000, 10, 0.002);
-TUNEABLE(rfp_3, int, 66, 0, 1000, 10, 0.002);
-TUNEABLE(rfp_4, int, 105, -100, 1000, 25, 0.002);
-TUNEABLE(nmp_1, int, 107, -50, 250, 15, 0.002);
-TUNEABLE(nmp_2, int, 28, -300, 300, 5, 0.002);
-TUNEABLE(lmp_1, int, 98, -100, 500, 22, 0.002);
-TUNEABLE(see_1, int, 90, -100, 1000, 15, 0.002);
-TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
-TUNEABLE(se_1, int, 8, -100, 100, 0.5, 0.002);
-TUNEABLE(se_2, int, 0, -100, 100, 0.5, 0.002);
-TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
-TUNEABLE(cont_1, int, 1141, 0, 3000, 150, 0.002);
-TUNEABLE(cont_2, int, 102, 0, 1500, 25, 0.002);
-TUNEABLE(cont_3, int, 30, 0, 1500, 6, 0.002);
-TUNEABLE(cont_4, int, 30, 0, 1500, 6, 0.002);
-TUNEABLE(cont_5, int, 500, 0, 3000, 100, 0.002);
-TUNEABLE(qs_fp_1, int, 1921, 0, 3000, 300, 0.002);
-TUNEABLE(qs_see_1, int, 268, 0, 900, 50, 0.002);
-TUNEABLE(qs_p_1, int, 1149, 0, 5000, 200, 0.002);
-TUNEABLE(cthis_1, int, 8238, 0, 16000, 1000, 0.002);
-TUNEABLE(cthis_2, int, 648, 0, 3000, 100, 0.002);
-TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
-TUNEABLE(asp_1, int, 98, 0, 5000, 20, 0.002);
-TUNEABLE(asp_2, int, 399, 0, 5000, 60, 0.002);
-TUNEABLE(red_1, int, 1326, 0, 10000, 200, 0.002);
-TUNEABLE(red_2, int, 1788, 0, 10000, 250, 0.002);
-TUNEABLE(red_3, int, 593, 0, 10000, 150, 0.002);
-TUNEABLE(red_4, int, 1689, 0, 10000, 200, 0.002);
-TUNEABLE(red_5, int, 1085, 0, 10000, 200, 0.002);
-TUNEABLE(red_6, int, 856, 0, 10000, 180, 0.002);
-TUNEABLE(red_th_1, int, 2262, 0, 10000, 450, 0.002);
-TUNEABLE(corr_1, int, 100, 0, 10000, 20, 0.002);
-TUNEABLE(corr_2, int, 650, 0, 10000, 130, 0.002);
-
+UNACTIVE_TUNEABLE(r_1, int, 180, 0, 1000, 40, 0.002);
+UNACTIVE_TUNEABLE(r_2, int, 272, -100, 1000, 50, 0.002);
+UNACTIVE_TUNEABLE(rfp_1, int, 114, 0, 1000, 25, 0.002);
+UNACTIVE_TUNEABLE(rfp_2, int, 39, 0, 1000, 6, 0.002);
+UNACTIVE_TUNEABLE(rfp_3, int, 39, 0, 1000, 12, 0.002);
+UNACTIVE_TUNEABLE(rfp_4, int, 72, -100, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(rfp_5, int, 341, 0, 10000, 70, 0.002);
+UNACTIVE_TUNEABLE(nmp_1, int, 76, -50, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(nmp_2, int, 25, -300, 1000, 5, 0.002);
+UNACTIVE_TUNEABLE(lmp_1, int, 78, -100, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(see_1, int, 77, -100, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
+UNACTIVE_TUNEABLE(se_1, int, 8, -100, 100, 0.5, 0.002);
+UNACTIVE_TUNEABLE(se_2, int, 1, -100, 100, 0.5, 0.002);
+UNACTIVE_TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
+UNACTIVE_TUNEABLE(cont_1, int, 863, 0, 10000, 200, 0.002);
+UNACTIVE_TUNEABLE(cont_2, int, 97, 0, 1500, 20, 0.002);
+UNACTIVE_TUNEABLE(cont_3, int, 29, 0, 1500, 6, 0.002);
+UNACTIVE_TUNEABLE(cont_4, int, 28, 0, 1500, 6, 0.002);
+UNACTIVE_TUNEABLE(cont_5, int, 298, 0, 3000, 100, 0.002);
+UNACTIVE_TUNEABLE(qs_fp_1, int, 2129, 0, 3000, 400, 0.002);
+UNACTIVE_TUNEABLE(qs_see_1, int, 312, 0, 1000, 50, 0.002);
+UNACTIVE_TUNEABLE(qs_p_1, int, 1246, 0, 5000, 200, 0.002);
+UNACTIVE_TUNEABLE(cthis_1, int, 8248, 0, 30000, 1500, 0.002);
+UNACTIVE_TUNEABLE(cthis_2, int, 629, 0, 3000, 100, 0.002);
+UNACTIVE_TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
+UNACTIVE_TUNEABLE(asp_1, int, 77, 0, 5000, 20, 0.002);
+UNACTIVE_TUNEABLE(asp_2, int, 430, 0, 5000, 80, 0.002);
+UNACTIVE_TUNEABLE(red_1, int, 1002, 0, 10000, 250, 0.002);
+UNACTIVE_TUNEABLE(red_2, int, 1742, 0, 10000, 300, 0.002);
+UNACTIVE_TUNEABLE(red_3, int, 815, 0, 10000, 150, 0.002);
+UNACTIVE_TUNEABLE(red_4, int, 1998, 0, 10000, 300, 0.002);
+UNACTIVE_TUNEABLE(red_5, int, 788, 0, 10000, 200, 0.002);
+UNACTIVE_TUNEABLE(red_6, int, 746, 0, 10000, 180, 0.002);
+UNACTIVE_TUNEABLE(red_th_1, int, 1600, 0, 10000, 320, 0.002);
+UNACTIVE_TUNEABLE(red_th_2, int, 2135, 0, 10000, 450, 0.002);
+UNACTIVE_TUNEABLE(corr_1, int, 268, 0, 10000, 50, 0.002);
+UNACTIVE_TUNEABLE(corr_2, int, 592, 0, 10000, 130, 0.002);
+UNACTIVE_TUNEABLE(de_1, int, 90, 0, 10000, 18, 0.002);
 
 inline PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 
 
@@ -72,10 +74,11 @@ bool Engine::update_interrupt_flag(){
 
 void Engine::clear_state(){
     transposition_table.clear();
-    SortedMoveGen<movegen::MoveGenType::ALL>::history.clear();
+    capture_history.clear();
+    SortedMoveGen<GenType::NORMAL>::history.clear();
     pawn_corrhist.clear();
-    SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.clear();
-    SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
+    SortedMoveGen<GenType::NORMAL>::cont_history.clear();
+    SortedMoveGen<GenType::NORMAL>::killer_moves.clear();
 }
 
 void Engine::save_state(std::string file){
@@ -86,10 +89,11 @@ void Engine::save_state(std::string file){
     }
 
     transposition_table.save_to_stream(ofs);
-    SortedMoveGen<movegen::MoveGenType::ALL>::history.save_to_stream(ofs);
+    capture_history.save_to_stream(ofs);
+    SortedMoveGen<GenType::NORMAL>::history.save_to_stream(ofs);
     pawn_corrhist.save_to_stream(ofs);
-    SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.save_to_stream(ofs);
-    SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.save_to_stream(ofs);
+    SortedMoveGen<GenType::NORMAL>::cont_history.save_to_stream(ofs);
+    SortedMoveGen<GenType::NORMAL>::killer_moves.save_to_stream(ofs);
 
     ofs.close();
 }
@@ -102,10 +106,11 @@ void Engine::load_state(std::string file){
     }
 
     transposition_table.load_from_stream(ifs);
-    SortedMoveGen<movegen::MoveGenType::ALL>::history.load_from_stream(ifs);
+    capture_history.load_from_stream(ifs);
+    SortedMoveGen<GenType::NORMAL>::history.load_from_stream(ifs);
     pawn_corrhist.load_from_stream(ifs);
-    SortedMoveGen<movegen::MoveGenType::ALL>::cont_history.load_from_stream(ifs);
-    SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.load_from_stream(ifs);
+    SortedMoveGen<GenType::NORMAL>::cont_history.load_from_stream(ifs);
+    SortedMoveGen<GenType::NORMAL>::killer_moves.load_from_stream(ifs);
 
     ifs.close();
 }
@@ -122,7 +127,7 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(){
 
     Board pv_visitor = pos;
 
-    for (int i = 0; i < current_depth; i++){
+    for (int i = 0; i < root_depth; i++){
         bool is_hit;
         TTData transposition = transposition_table.probe(is_hit, pv_visitor.hash());
         if (transposition.move == Move::NO_MOVE || pv_visitor.isRepetition(2)
@@ -172,19 +177,18 @@ Move Engine::iterative_deepening(SearchLimit limit){
     Move best_move = Move::NO_MOVE;
     engine_color = pos.sideToMove();
 
-    SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.clear();
+    SortedMoveGen<GenType::NORMAL>::killer_moves.clear();
 
     nodes = 0;
     tb_hits = 0;
     seldepth = 0;
-    current_depth = 0;
+    root_depth = 0;
 
     root_moves.clear();
 
     // initialize stack
-    for (int i = 0; i < MAX_PLY + STACK_PADDING_SIZE; i++){
+    for (int i = 0; i < MAX_PLY + STACK_PADDING_SIZE; i++)
         stack[i] = Stack();
-    }
 
     bool root_tb_hit = tablebase_loaded && TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
     if (root_tb_hit && !(is_nonsense && best_move.score() == TB_VALUE && !Nonsense::only_knight_bishop(pos))){
@@ -232,21 +236,21 @@ Move Engine::iterative_deepening(SearchLimit limit){
     }
     int best_move_changes = 0;
     while (true){
-        current_depth++;
+        root_depth++;
 
         int asp_alpha;
         int asp_beta;
-        if (current_depth <= 6){
+        if (root_depth <= 6){
             asp_alpha = -INFINITE_VALUE;
             asp_beta = INFINITE_VALUE;
         } else {
-            int margin = asp_1 + asp_2*std::abs(best_move.score())/1024;
+            int margin = asp_1 + asp_2 * std::abs(best_move.score()) / 1024;
             asp_alpha = std::clamp(best_move.score() - margin, -INFINITE_VALUE, INFINITE_VALUE);
             asp_beta = std::clamp(best_move.score() + margin, -INFINITE_VALUE, INFINITE_VALUE);
         }
 
         while (true){
-            negamax<true>(current_depth, asp_alpha, asp_beta, root_ss, false);
+            negamax<true>(root_depth, asp_alpha, asp_beta, root_ss, false);
 
             if (best_move != Move::NO_MOVE && best_move != root_moves[0])
                 best_move_changes++;
@@ -277,7 +281,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         update_run_time();
 
         // do not count interrupted searches in depth
-        std::cout << "info depth " << current_depth - interrupt_flag;
+        std::cout << "info depth " << root_depth - interrupt_flag;
         std::cout << " seldepth " << seldepth;
         if (is_mate(best_move.score()))
             std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
@@ -294,8 +298,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
         // should the search really stop if there is a mate for the oponent?
         if (interrupt_flag
             || is_mate(best_move.score())
-            || current_depth >= ENGINE_MAX_DEPTH
-            || (limit.type == LimitType::Depth && current_depth == limit.value)
+            || root_depth >= ENGINE_MAX_DEPTH
+            || (limit.type == LimitType::Depth && root_depth == limit.value)
             || (limit.type == LimitType::Nodes && nodes >= limit.value)
             || (limit.type == LimitType::Time && best_move_changes < 1 && run_time > 2*limit.value / 3))
             break;
@@ -384,13 +388,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     Move move;
     int value;
     Piece prev_piece = (ss - 1)->moved_piece;
-    Square prev_to = ((ss - 1)->current_move == Move::NULL_MOVE 
-                      || (ss - 1)->current_move == Move::NO_MOVE) ? Square::NO_SQ : (ss - 1)->current_move.to();
+    Square prev_to = ((ss - 1)->curr_move == Move::NULL_MOVE || (ss - 1)->curr_move == Move::NO_MOVE)
+                     ? Square::NO_SQ : (ss - 1)->curr_move.to();
 
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
 
-    SortedMoveGen move_gen = SortedMoveGen<movegen::MoveGenType::ALL>(
+    SortedMoveGen move_gen = SortedMoveGen<GenType::NORMAL>(
         root_node ? &root_moves : NULL, prev_piece, prev_to, pos, depth
     );
 
@@ -398,7 +402,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         movegen::legalmoves(root_moves, pos);
         assert(!root_moves.empty());
 
-        move_gen.prepare_pos_data();
+        move_gen.prepare_capture_sort();
+        move_gen.prepare_quiet_sort();
         for (int i = 0; i < root_moves.size(); i++)
             move_gen.set_score(root_moves[i]);
 
@@ -443,7 +448,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         uncorrected_static_eval = evaluate(pos);
 
     static_eval = std::clamp(
-        uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 12000,
+        uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 32768,
         -BEST_VALUE, BEST_VALUE);
 
     ss->static_eval = static_eval;
@@ -464,29 +469,33 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (!root_node && !pv && !in_check){
 
         // razoring
-        if (eval + r_1*depth*depth + r_2 < alpha){ 
-            eval = qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval.
-            if (eval <= alpha)
-                return eval;
-        }
+        if (eval + r_1*depth*depth + r_2 < alpha)
+            return qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval.
 
         // reverse futility pruning
-        if (depth < 6 + 3*(!is_hit)
-            && eval - depth * (rfp_1 - rfp_2*cutnode) - rfp_3 + rfp_4*improving >= beta)
+        if (depth < 9 - 3*is_hit
+            && eval - depth * (rfp_1 - rfp_2*cutnode) 
+                    - rfp_3
+                    + rfp_4 * improving 
+                    - rfp_5 * std::abs(uncorrected_static_eval - static_eval) / 1024 >= beta)
             return eval;
 
         // null move pruning
         // maybe check for zugzwang?
-        if (cutnode && (ss - 1)->current_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
+        if (cutnode && (ss - 1)->curr_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
             && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta)){
 
             int R = 3 + (eval >= beta) + depth / 4 + tt_capture;
             ss->moved_piece = Piece::NONE;
-            ss->current_move = Move::NULL_MOVE;
-            ss->current_move_capture = false;
+            ss->curr_move = Move::NULL_MOVE;
+            ss->curr_move_capture = false;
+
             pos.makeNullMove();
+            __builtin_prefetch(&transposition_table.entries[pos.hash() & (transposition_table.size - 1)]);
+
             int null_move_value = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1, false);
             pos.unmakeNullMove();
+
             if (null_move_value >= beta && !is_win(null_move_value))
                 return null_move_value;
         }
@@ -498,12 +507,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (move == excluded_move)
             continue;
 
-        bool is_killer = SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.in_buffer(depth, move);
-
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
 
-            if (!is_capture && move_gen.index() >= 6 + 2*depth*depth + 3*improving)
+            if (move_gen.index() >= 6 + 2*depth*depth + 3*improving){
+                move_gen.skip_quiets();
                 continue;
+            }
 
             // lmp
             if (!in_check && !is_capture && move_gen.index() > 2 + depth + improving 
@@ -534,7 +543,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             && depth >= 5 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
             && transposition.depth >= depth - 1)
         {
-            int singular_beta = transposition.value - se_1 - se_2*depth;
+            int singular_beta = transposition.value - se_1 - se_2*depth / 16;
 
             if (is_regular_eval(singular_beta)){
                 auto saved_ss = *ss;
@@ -543,7 +552,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 *ss = saved_ss;
     
                 if (value < singular_beta)
-                    extension = 1;
+                    extension = 1 + (!pv && value < singular_beta - de_1);
                 else if (value >= beta && !is_decisive(value))
                     return value;
             }
@@ -552,8 +561,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         new_depth += extension;
 
         ss->moved_piece = pos.at(move.from());
-        ss->current_move = move;
-        ss->current_move_capture = is_capture;
+        ss->curr_move = move;
+        ss->curr_move_capture = is_capture;
         pos.update_state(move, transposition_table);
 
         bool gives_check = pos.inCheck();
@@ -583,11 +592,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
 
         } else if (!pv || move_gen.index() > 0){
-            value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
+            value = -negamax<false>(new_depth - (reduction > red_th_1), -alpha - 1, -alpha, ss + 1, !cutnode);
         }
 
         if (pv && (move_gen.index() == 0 || value > alpha)){
-            value = -negamax<true>(new_depth - (reduction > red_th_1), -beta, -alpha, ss + 1, false);
+            value = -negamax<true>(new_depth - (reduction > red_th_2), -beta, -alpha, ss + 1, false);
         }
 
         pos.restore_state(move);
@@ -614,9 +623,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         alpha = std::max(alpha, value);
         if (beta <= alpha){
-            if (!is_capture)
+            if (is_capture)
+                move_gen.update_capture_history(move, depth);
+            else
                 move_gen.update_history(move, depth);
-            SortedMoveGen<movegen::MoveGenType::ALL>::killer_moves.add_move(depth, move);
+            SortedMoveGen<GenType::NORMAL>::killer_moves.add_move(depth, move);
             break;
         }
     }
@@ -654,9 +665,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         return alpha;
     }
 
-    if (max_value <= initial_alpha && !(ss - 1)->current_move_capture){
+    if (max_value <= initial_alpha && !(ss - 1)->curr_move_capture){
         move_gen.update_cont_history(
-            (ss - 2)->moved_piece, ((ss - 2)->current_move).to(), prev_piece, prev_to, std::min(depth*cont_3 + cont_4, cont_5));
+            (ss - 2)->moved_piece, ((ss - 2)->curr_move).to(), prev_piece, prev_to, std::min(depth*cont_3 + cont_4, cont_5));
     }
 
 
@@ -684,7 +695,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     assert(is_valid(max_value));
 
     transposition_table.store(zobrist_hash, to_tt(max_value, ply), uncorrected_static_eval, depth, best_move,
-        node_type, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+        node_type, pos.fullMoveNumber(), pv);
 
     return max_value;
 }
@@ -728,8 +739,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     // this is recomputed when qsearch is called the first time. Performance loss is probably low. 
     uint64_t zobrist_hash = pos.hash();
 
-    SortedMoveGen capture_gen = SortedMoveGen<movegen::MoveGenType::CAPTURE>(
-        (ss - 1)->moved_piece, (ss - 1)->current_move.to().index(), pos
+    SortedMoveGen capture_gen = SortedMoveGen<GenType::QSEARCH>(
+        (ss - 1)->moved_piece, (ss - 1)->curr_move.to().index(), pos
     );
 
     bool is_hit;
@@ -764,7 +775,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             uncorrected_static_eval = evaluate(pos);
 
         static_eval = std::clamp(
-            uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 12000,
+            uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 32768,
             -BEST_VALUE, BEST_VALUE);
 
         stand_pat = static_eval;
@@ -781,7 +792,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         if (stand_pat >= beta){
             if (!is_hit)
                 transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), uncorrected_static_eval,
-                    DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+                    DEPTH_QSEARCH, Move::NO_MOVE, TFlag::LOWER_BOUND, pos.fullMoveNumber(), pv);
             return stand_pat;
         }
 
@@ -795,7 +806,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     int max_value = in_check ? -INFINITE_VALUE : stand_pat;
 
-    Square previous_to_square = ((ss - 1)->current_move).to();
+    Square previous_to_square = ((ss - 1)->curr_move).to();
 
     while (capture_gen.next(move)){
         Piece captured_piece = pos.at(move.to());
@@ -806,8 +817,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
                 continue;
 
             if (stand_pat 
-                + piece_value[static_cast<int>(captured_piece.type())]
-                - piece_value[static_cast<int>(moved_piece.type())]
+                + piece_value[captured_piece.type()]
+                - piece_value[moved_piece.type()]
                 + qs_fp_1 < alpha)
                 continue;
 
@@ -821,8 +832,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         }
 
         ss->moved_piece = moved_piece;
-        ss->current_move = move;
-        ss->current_move_capture = (captured_piece != Piece::NONE);
+        ss->curr_move = move;
+        ss->curr_move_capture = (captured_piece != Piece::NONE);
         pos.update_state(move, transposition_table);
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
@@ -867,7 +878,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         }
 
         transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), NO_VALUE, DEPTH_QSEARCH,
-            Move::NO_MOVE, TFlag::EXACT, static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+            Move::NO_MOVE, TFlag::EXACT, pos.fullMoveNumber(), pv);
         return stand_pat;
     }
 
@@ -882,7 +893,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         transposition_table.store(zobrist_hash, to_tt(max_value, ply),
             uncorrected_static_eval, DEPTH_QSEARCH, best_move,
             max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
-            static_cast<uint8_t>(pos.fullMoveNumber()), pv);
+            pos.fullMoveNumber(), pv);
 
     return max_value;
 }

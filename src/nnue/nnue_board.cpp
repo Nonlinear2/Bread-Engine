@@ -1,14 +1,20 @@
 #include "nnue_board.hpp"
 
+UNACTIVE_TUNEABLE(mat_base, int, 9188, 0, 30000, 1630, 0.002);
+UNACTIVE_TUNEABLE(k_scale, int, 364, 0, 10000, 72, 0.002);
+UNACTIVE_TUNEABLE(b_scale, int, 248, 0, 10000, 72, 0.002);
+UNACTIVE_TUNEABLE(r_scale, int, 614, 0, 10000, 150, 0.002);
+UNACTIVE_TUNEABLE(q_scale, int, 803, 0, 10000, 300, 0.002);
+
 AllBitboards::AllBitboards(){
     for (int color = 0; color < 2; ++color)
-        for (int pt = 0; pt < PIECETYPE_COUNT; ++pt)
+        for (int pt = 0; pt < NUM_PIECETYPES; ++pt)
             bb[color][pt] = Bitboard(0);
 }
 
 AllBitboards::AllBitboards(const NnueBoard& pos) {
     for (int color = 0; color < 2; color++)
-        for (int pt = 0; pt < PIECETYPE_COUNT; pt++)
+        for (int pt = 0; pt < NUM_PIECETYPES; pt++)
             bb[color][pt] = pos.pieces(
                 PieceType(static_cast<PieceType::underlying>(pt)),
                 static_cast<Color>(color)
@@ -16,12 +22,6 @@ AllBitboards::AllBitboards(const NnueBoard& pos) {
 }
 
 NnueBoard::NnueBoard(){
-    NNUE::init();
-    accumulators_stack.push_empty();
-    synchronize();
-};
-
-NnueBoard::NnueBoard(std::string_view fen){
     NNUE::init();
     accumulators_stack.push_empty();
     synchronize();
@@ -43,7 +43,7 @@ void NnueBoard::synchronize(){
     AllBitboards empty_pos = AllBitboards(); // empty position;
     Accumulator empty_acc;
     NNUE::compute_accumulator(empty_acc, {}); // accumulators for an empty position;
-    for (int bucket = 0; bucket < INPUT_BUCKET_COUNT; bucket++)
+    for (int bucket = 0; bucket < NUM_INPUT_BUCKETS; bucket++)
         for (int color = 0; color < 2; color++)
             for (int mirrored = 0; mirrored < 2; mirrored++)
                 finny_table[bucket][color][mirrored] = std::make_pair(empty_pos, empty_acc);
@@ -92,7 +92,7 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         );
 
     } else {
-        Accumulators& new_accs = accumulators_stack.push_empty();
+        accumulators_stack.push_empty();
         compute_top_update(move, Color::WHITE);
         compute_top_update(move, Color::BLACK);
         makeMove(move);
@@ -110,7 +110,15 @@ void NnueBoard::restore_state(Move move){
 
 int NnueBoard::evaluate(){
     accumulators_stack.apply_lazy_updates();
-    return std::clamp(NNUE::run(accumulators_stack.top(), sideToMove(), occ().count()), -BEST_VALUE, BEST_VALUE);
+
+    const int nnue = NNUE::run(accumulators_stack.top(), sideToMove(), occ().count());
+    const int material_scale = mat_base
+        + k_scale * pieces(PieceType::KNIGHT).count() 
+        + b_scale * pieces(PieceType::BISHOP).count()
+        + r_scale * pieces(PieceType::ROOK).count()
+        + q_scale * pieces(PieceType::QUEEN).count();
+
+    return std::clamp(nnue * material_scale / 16384, -BEST_VALUE, BEST_VALUE);
 }
 
 bool NnueBoard::is_stalemate(){

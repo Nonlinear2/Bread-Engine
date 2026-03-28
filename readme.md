@@ -3,14 +3,14 @@
 
 <p align="center">
   <picture><source srcset="https://img.shields.io/badge/Architectures-x86%2C%20x64-%23f78b04?style=for-the-badge&labelColor=%23013c5a&color=%23013c5a"><img alt="Architectures: x86, x64">
-  </picture><a href="https://github.com/Nonlinear2/Bread-Engine/releases"><img src="https://img.shields.io/github/v/release/Nonlinear2/Bread-Engine?include_prereleases&style=for-the-badge&label=Lastest%20Release&labelColor=%23950502&color=%23013c5a" alt="Latest Release"></a>
+  </picture><a href="https://github.com/Nonlinear2/Bread-Engine/releases"><img src="https://img.shields.io/github/v/release/Nonlinear2/Bread-Engine?style=for-the-badge&label=Latest%20Release&labelColor=%23950502&color=%23013c5a" alt="Latest Release"></a>
   <picture><source srcset="https://img.shields.io/github/license/Nonlinear2/Bread-Engine?style=for-the-badge&labelColor=%23950502&color=%23950502"><img alt="License"></picture>
 </p>
 
 
 
 # Overview
-Bread is a chess engine rated around 3400 elo on the computer chess rating lists.
+Bread is a chess engine rated around 3550 elo on the computer chess rating lists.
 
 It uses minimax search, along with an efficiently updatable neural network trained from zero knowledge using games of self play.
 
@@ -63,8 +63,9 @@ and the engine should return a chess move.
 # Custom commands
 
 Bread engine supports the following commands:
-- `bench`: gives the total number of nodes and nodes per seconds on a series of positions.
-- `bench nn`: gives the speed of the neural network inference
+- `bench`: prints the total number of nodes and nodes per seconds on a series of positions.
+- `bench nn`: prints the speed of the neural network inference
+- `eval`: prints the static evaluation of the position
 
 Bread engine also has a uci option called `nonsense`, which makes it bongcloud, underpromote to bishops and knights, as well as print lyrics from "never gonna give you up" during search.
 

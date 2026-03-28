@@ -236,7 +236,6 @@ int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
     int16_t* stm_data = accumulators[stm].data();
     int16_t* nstm_data = accumulators[!stm].data();
 
-    const vec_int16 one = set1_epi16(1);
     const vec_int16 zero = setzero_epi16();
     const vec_int16 qscale = set1_epi16(255);
     vec_int32 result = set1_epi32(0);
@@ -246,9 +245,10 @@ int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
         in = min_epi16(qscale, max_epi16(in, zero));
 
         vec_int16 weight_chunk = load_epi16(&l1_weights[bucket * L1_WEIGHTS_SIZE + i]);
-        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
 
         // madd pairs to int32 to avoid overflows in int16
+        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
+
         result = add_epi32(result, prod);
     }
 
@@ -257,9 +257,10 @@ int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
         in = min_epi16(qscale, max_epi16(in, zero));
 
         vec_int16 weight_chunk = load_epi16(&l1_weights[bucket * L1_WEIGHTS_SIZE + ACC_SIZE + i]);
-        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
 
         // madd pairs to int32 to avoid overflows in int16
+        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
+
         result = add_epi32(result, prod);
     }
 
@@ -267,9 +268,9 @@ int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
 };
 
 int run(Accumulators& accumulators, Color stm, int piece_count){
-    constexpr int pieces_per_bucket = 32 / OUTPUT_BUCKET_COUNT;
+    constexpr int pieces_per_bucket = 32 / NUM_OUTPUT_BUCKETS;
     int bucket = (piece_count - 2) / pieces_per_bucket;
-    assert(bucket >= 0 && bucket <= OUTPUT_BUCKET_COUNT);
+    assert(bucket >= 0 && bucket <= NUM_OUTPUT_BUCKETS);
 
     int output = run_L1(accumulators, stm, bucket);
     return (output * 600) / (64 * 255); // scale is 600

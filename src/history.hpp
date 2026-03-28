@@ -10,34 +10,49 @@ using namespace chess;
 
 class ContinuationHistory {
     public:
+    ContinuationHistory() { clear(); }
     void clear();
     int& get(Piece prev_piece, Square prev_to, Piece piece, Square to);
     void apply_bonus(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus);
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
-    std::array<int, 64*12*64*12> history = {};
+    std::array<int, NUM_PIECES * NUM_SQUARES * NUM_PIECES * NUM_SQUARES> history = {};
 };
 
 class FromToHistory {
     public:
+    FromToHistory() { clear(); }
     void clear();
-    int& get(bool color, Square from, Square to);
-    void apply_bonus(bool color, Square from, Square to, int bonus);
+    int& get(Color color, Square from, Square to);
+    void apply_bonus(Color color, Square from, Square to, int bonus);
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
-    std::array<int, 2*64*64> history = {};
+    std::array<int, NUM_COLORS * NUM_SQUARES * NUM_SQUARES> history = {};
 };
 
+class CaptureHistory {
+    public:
+    CaptureHistory() { clear(); }
+    void clear();
+    int& get(Piece piece, Square to, Piece captured);
+    void apply_bonus(Piece piece, Square to, Piece captured, int bonus);
+    void save_to_stream(std::ofstream& ofs);
+    void load_from_stream(std::ifstream& ifs);
+
+    // [piece][to square][captured piece type]
+    std::array<int, 12*64*6> history = {};
+};
 
 class PawnCorrectionHistory {
     public:
+    PawnCorrectionHistory() { clear(); }
     void clear();
-    int& get(bool color, uint16_t pawn_key);
-    void apply_bonus(bool color, uint16_t pawn_key, int bonus);
+    int& get(Color color, uint16_t pawn_key);
+    void apply_bonus(Color color, uint16_t pawn_key, int bonus);
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
-    std::array<int, 2*PAWN_CORRHIST_SIZE> history = {};
+    std::array<int, NUM_COLORS * PAWN_CORRHIST_SIZE> history = {};
 };
