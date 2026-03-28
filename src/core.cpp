@@ -29,11 +29,11 @@ UNACTIVE_TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
 UNACTIVE_TUNEABLE(asp_1, int, 77, 0, 5000, 20, 0.002);
 UNACTIVE_TUNEABLE(asp_2, int, 430, 0, 5000, 80, 0.002);
 UNACTIVE_TUNEABLE(red_1, int, 1002, 0, 10000, 250, 0.002);
-UNACTIVE_TUNEABLE(red_2, int, 1742, 0, 10000, 300, 0.002);
-UNACTIVE_TUNEABLE(red_3, int, 815, 0, 10000, 150, 0.002);
-UNACTIVE_TUNEABLE(red_4, int, 1998, 0, 10000, 300, 0.002);
-UNACTIVE_TUNEABLE(red_5, int, 788, 0, 10000, 200, 0.002);
-UNACTIVE_TUNEABLE(red_6, int, 746, 0, 10000, 180, 0.002);
+UNACTIVE_TUNEABLE(red_2, int, 1306, 0, 10000, 300, 0.002);
+UNACTIVE_TUNEABLE(red_3, int, 611, 0, 10000, 150, 0.002);
+UNACTIVE_TUNEABLE(red_4, int, 1498, 0, 10000, 300, 0.002);
+UNACTIVE_TUNEABLE(red_5, int, 591, 0, 10000, 200, 0.002);
+UNACTIVE_TUNEABLE(red_6, int, 559, 0, 10000, 180, 0.002);
 UNACTIVE_TUNEABLE(red_th_1, int, 1600, 0, 10000, 320, 0.002);
 UNACTIVE_TUNEABLE(red_th_2, int, 2135, 0, 10000, 450, 0.002);
 UNACTIVE_TUNEABLE(corr_1, int, 268, 0, 10000, 50, 0.002);
@@ -71,6 +71,29 @@ bool Engine::update_interrupt_flag(){
     }
     return interrupt_flag;
 }
+
+void Engine::fill_lmr_table(){
+    for (int capture = 0; capture < 2; capture++)
+        for (int depth = 0; depth < ENGINE_MAX_DEPTH + 1; depth++)
+            for (int move_count = 0; move_count < 219; move_count++){
+                int& reduction = lmr_table[capture * (ENGINE_MAX_DEPTH+1) * 219 + depth * 219 + move_count];
+                if (depth == 0 || move_count == 0) {
+                    reduction = 0;
+                    continue;
+                }
+
+                if (capture)
+                    reduction = 1024 + 409 * std::log(depth) * std::log(move_count);
+                else
+                    reduction = 1024 + 409 * std::log(depth) * std::log(move_count);
+            }
+}
+
+int Engine::get_base_reduction(bool is_capture, int depth, int move_count){
+    return lmr_table[is_capture * (ENGINE_MAX_DEPTH+1) * 219 + depth * 219 + move_count];
+}
+
+Engine::Engine() { fill_lmr_table(); }
 
 void Engine::clear_state(){
     transposition_table.clear();
@@ -559,6 +582,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
 
         new_depth += extension;
+        new_depth -= depth > 5 && !is_hit; // IIR
+        new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
         ss->moved_piece = pos.at(move.from());
         ss->curr_move = move;
@@ -567,10 +592,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         bool gives_check = pos.inCheck();
 
-        new_depth -= depth > 5 && !is_hit; // IIR
-        new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
-
-        int reduction = 0;
+        int reduction = get_base_reduction(is_capture, depth, move_gen.index());
 
         reduction -= red_1 * (gives_check && !root_node);
         reduction += red_2 * (move_gen.index() > 1 && !is_capture);

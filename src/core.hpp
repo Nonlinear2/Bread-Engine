@@ -20,6 +20,8 @@ int nnue_evaluate(NnueBoard& pos);
 class Engine {
     public:
 
+    Engine();
+
     int64_t nodes = 0;
     int64_t tb_hits = 0;
     int64_t seldepth = 0;
@@ -33,10 +35,14 @@ class Engine {
     std::atomic<int> run_time;
     TranspositionTable transposition_table;
 
+    std::array<int, 2 * (ENGINE_MAX_DEPTH+1) * 219> lmr_table;
+
     NnueBoard pos = NnueBoard();
 
     Movelist root_moves;
-    
+
+    std::atomic<bool> is_nonsense = false;
+
     int get_think_time(float time_left, int num_moves_out_of_book,
         int num_moves_until_time_control, int increment);
 
@@ -52,8 +58,6 @@ class Engine {
     void save_state(std::string file);
     void load_state(std::string file);
 
-    std::atomic<bool> is_nonsense = false;
-
     private:
     friend class UCIAgent;
 
@@ -63,6 +67,9 @@ class Engine {
     Nonsense::Stage nonsense_stage = Nonsense::STANDARD;
     Color engine_color;
     bool tablebase_loaded = false;
+
+    void fill_lmr_table();
+    int get_base_reduction(bool is_capture, int depth, int move_count);
 
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove();
