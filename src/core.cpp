@@ -86,7 +86,7 @@ void Engine::fill_lmr_table(){
                     reduction = 1024 + 409 * std::log(depth) * std::log(move_count);
                 else
                     reduction = 1024 + 409 * std::log(depth) * std::log(move_count);
-                reduction /= 3;
+                reduction /= 4;
             }
 }
 
