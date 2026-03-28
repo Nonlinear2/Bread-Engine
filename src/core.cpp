@@ -572,7 +572,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         new_depth -= depth > 5 && !is_hit; // IIR
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
-        int reduction = 0;
+        int reduction = 75;
 
         reduction -= red_1 * (gives_check && !root_node);
         reduction += red_2 * (move_gen.index() > 1 && !is_capture);
@@ -585,7 +585,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             ? capture_history.get(from_piece, move.to().index(), to_piece)
             : history.get(pos.sideToMove(), move.from().index(), move.to().index());
 
-        reduction -= 100 * history_value / 10'000;
+        reduction -= 200 * history_value / 8192;
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
