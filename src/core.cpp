@@ -501,6 +501,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
     }
 
+    // small probcut
+    int probcut_beta = beta + 350;
+    if (!pv && ss->excluded_move == Move::NO_MOVE
+        && is_valid(transposition.value) && !is_decisive(transposition.value) && !is_decisive(beta)
+        && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
+        && transposition.depth >= depth - 4 && transposition.value >= probcut_beta)
+        return probcut_beta;
+
     while (move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
 
