@@ -28,12 +28,19 @@ UNACTIVE_TUNEABLE(cthis_2, int, 629, 0, 3000, 100, 0.002);
 UNACTIVE_TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
 UNACTIVE_TUNEABLE(asp_1, int, 77, 0, 5000, 20, 0.002);
 UNACTIVE_TUNEABLE(asp_2, int, 430, 0, 5000, 80, 0.002);
-UNACTIVE_TUNEABLE(red_1, int, 1002, 0, 10000, 250, 0.002);
-UNACTIVE_TUNEABLE(red_2, int, 2*1742/3, 0, 10000, 300, 0.002);
-UNACTIVE_TUNEABLE(red_3, int, 2*815/3, 0, 10000, 150, 0.002);
-UNACTIVE_TUNEABLE(red_4, int, 2*1998/3, 0, 10000, 300, 0.002);
-UNACTIVE_TUNEABLE(red_5, int, 2*788/3, 0, 10000, 200, 0.002);
-UNACTIVE_TUNEABLE(red_6, int, 2*746/3, 0, 10000, 180, 0.002);
+
+TUNEABLE(cred_lmr_1, int, 341, 0, 10000, 70, 0.002);
+TUNEABLE(red_lmr_1, int, 341, 0, 10000, 70, 0.002);
+TUNEABLE(cred_lmr_2, int, 136, 0, 10000, 30, 0.002);
+TUNEABLE(red_lmr_2, int, 136, 0, 10000, 30, 0.002);
+
+TUNEABLE(red_1, int, 1002, 0, 10000, 250, 0.002);
+TUNEABLE(red_2, int, 1161, 0, 10000, 300, 0.002);
+TUNEABLE(red_3, int, 543, 0, 10000, 150, 0.002);
+TUNEABLE(red_4, int, 1332, 0, 10000, 300, 0.002);
+TUNEABLE(red_5, int, 525, 0, 10000, 200, 0.002);
+TUNEABLE(red_6, int, 497, 0, 10000, 180, 0.002);
+
 UNACTIVE_TUNEABLE(red_th_1, int, 1600, 0, 10000, 320, 0.002);
 UNACTIVE_TUNEABLE(red_th_2, int, 2135, 0, 10000, 450, 0.002);
 UNACTIVE_TUNEABLE(corr_1, int, 268, 0, 10000, 50, 0.002);
@@ -83,10 +90,9 @@ void Engine::fill_lmr_table(){
                 }
 
                 if (capture)
-                    reduction = 1024 + 409 * std::log(depth) * std::log(move_count);
+                    reduction = cred_lmr_1 + cred_lmr_2 * std::log(depth) * std::log(move_count);
                 else
-                    reduction = 1024 + 409 * std::log(depth) * std::log(move_count);
-                reduction /= 4;
+                    reduction = red_lmr_1 + red_lmr_2 * std::log(depth) * std::log(move_count);
             }
 }
 
