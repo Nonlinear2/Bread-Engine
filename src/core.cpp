@@ -34,12 +34,12 @@ TUNEABLE(red_lmr_1, int, 341, 0, 10000, 70, 0.002);
 TUNEABLE(cred_lmr_2, int, 136, 0, 10000, 30, 0.002);
 TUNEABLE(red_lmr_2, int, 136, 0, 10000, 30, 0.002);
 
-TUNEABLE(red_1, int, 1002, 0, 10000, 250, 0.002);
-TUNEABLE(red_2, int, 1161, 0, 10000, 300, 0.002);
-TUNEABLE(red_3, int, 543, 0, 10000, 150, 0.002);
-TUNEABLE(red_4, int, 1332, 0, 10000, 300, 0.002);
-TUNEABLE(red_5, int, 525, 0, 10000, 200, 0.002);
-TUNEABLE(red_6, int, 497, 0, 10000, 180, 0.002);
+TUNEABLE(red_1, int, 1002, 0, 10000, 200, 0.002);
+TUNEABLE(red_2, int, 1161, 0, 10000, 200, 0.002);
+TUNEABLE(red_3, int, 543, 0, 10000, 110, 0.002);
+TUNEABLE(red_4, int, 1332, 0, 10000, 250, 0.002);
+TUNEABLE(red_5, int, 525, 0, 10000, 100, 0.002);
+TUNEABLE(red_6, int, 497, 0, 10000, 100, 0.002);
 
 UNACTIVE_TUNEABLE(red_th_1, int, 1600, 0, 10000, 320, 0.002);
 UNACTIVE_TUNEABLE(red_th_2, int, 2135, 0, 10000, 450, 0.002);
