@@ -454,10 +454,15 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     ss->static_eval = static_eval;
 
-    if (transposition.value == NO_VALUE)
-        eval = static_eval;
-    else
+    eval = static_eval;
+
+    if (is_valid(transposition.value) && !is_decisive(transposition.value)
+        && (transposition.flag == TFlag::EXACT 
+            || (transposition.flag == TFlag::LOWER_BOUND && transposition.value >= eval)
+            || (transposition.flag == TFlag::UPPER_BOUND && transposition.value <= eval))
+        )
         eval = transposition.value;
+
 
     bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval)
         && ss->static_eval > (ss - 2)->static_eval;
@@ -791,13 +796,12 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         assert(is_regular_eval(stand_pat, false));
 
         if (is_valid(transposition.value) && !is_decisive(transposition.value)
-            && (
-                transposition.flag == TFlag::EXACT 
+            && (transposition.flag == TFlag::EXACT 
                 || (transposition.flag == TFlag::LOWER_BOUND && transposition.value >= stand_pat)
-                || (transposition.flag == TFlag::UPPER_BOUND && transposition.value <= stand_pat)
-                ))
-                stand_pat = transposition.value;
-    
+                || (transposition.flag == TFlag::UPPER_BOUND && transposition.value <= stand_pat))
+            )
+            stand_pat = transposition.value;
+
         if (stand_pat >= beta){
             if (!is_hit)
                 transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), uncorrected_static_eval,
