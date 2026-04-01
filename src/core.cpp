@@ -1,14 +1,15 @@
 #include "core.hpp"
 
-UNACTIVE_TUNEABLE(r_1, int, 180, 0, 1000, 40, 0.002);
-UNACTIVE_TUNEABLE(r_2, int, 272, -100, 1000, 50, 0.002);
-UNACTIVE_TUNEABLE(rfp_1, int, 114, 0, 1000, 25, 0.002);
-UNACTIVE_TUNEABLE(rfp_2, int, 39, 0, 1000, 6, 0.002);
-UNACTIVE_TUNEABLE(rfp_3, int, 39, 0, 1000, 12, 0.002);
-UNACTIVE_TUNEABLE(rfp_4, int, 72, -100, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(r_1, int, 180, 0, 10000, 40, 0.002);
+UNACTIVE_TUNEABLE(r_2, int, 272, 0, 10000, 50, 0.002);
+UNACTIVE_TUNEABLE(rfp_1, int, 114, 0, 10000, 25, 0.002);
+UNACTIVE_TUNEABLE(rfp_2, int, 39, 0, 10000, 6, 0.002);
+UNACTIVE_TUNEABLE(rfp_3, int, 39, 0, 10000, 12, 0.002);
+UNACTIVE_TUNEABLE(rfp_4, int, 72, -100, 10000, 20, 0.002);
 UNACTIVE_TUNEABLE(rfp_5, int, 341, 0, 10000, 70, 0.002);
-UNACTIVE_TUNEABLE(nmp_1, int, 76, -50, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(nmp_2, int, 25, -300, 1000, 5, 0.002);
+UNACTIVE_TUNEABLE(nmp_1, int, 76, -50, 10000, 20, 0.002);
+UNACTIVE_TUNEABLE(nmp_2, int, 25, -300, 10000, 5, 0.002);
+UNACTIVE_TUNEABLE(sprob_1, int, 350, 0, 10000, 70, 0.002);
 UNACTIVE_TUNEABLE(lmp_1, int, 78, -100, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(see_1, int, 77, -100, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
@@ -500,6 +501,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 return null_move_value;
         }
     }
+
+    // small probcut
+    int probcut_beta = beta + sprob_1;
+    if (!pv && ss->excluded_move == Move::NO_MOVE
+        && is_valid(transposition.value) && !is_decisive(transposition.value) && !is_decisive(beta)
+        && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
+        && transposition.depth >= depth - 4 && transposition.value >= probcut_beta)
+        return probcut_beta;
 
     while (move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
