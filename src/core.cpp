@@ -1,13 +1,15 @@
 #include "core.hpp"
 
-UNACTIVE_TUNEABLE(r_1, int, 180, 0, 1000, 40, 0.002);
-UNACTIVE_TUNEABLE(r_2, int, 272, -100, 1000, 50, 0.002);
-UNACTIVE_TUNEABLE(rfp_1, int, 114, 0, 1000, 25, 0.002);
-UNACTIVE_TUNEABLE(rfp_2, int, 39, 0, 1000, 6, 0.002);
-UNACTIVE_TUNEABLE(rfp_3, int, 59, 0, 1000, 12, 0.002);
-UNACTIVE_TUNEABLE(rfp_4, int, 72, -100, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(nmp_1, int, 76, -50, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(nmp_2, int, 25, -300, 1000, 5, 0.002);
+UNACTIVE_TUNEABLE(r_1, int, 180, 0, 10000, 40, 0.002);
+UNACTIVE_TUNEABLE(r_2, int, 272, 0, 10000, 50, 0.002);
+UNACTIVE_TUNEABLE(rfp_1, int, 114, 0, 10000, 25, 0.002);
+UNACTIVE_TUNEABLE(rfp_2, int, 39, 0, 10000, 6, 0.002);
+UNACTIVE_TUNEABLE(rfp_3, int, 39, 0, 10000, 12, 0.002);
+UNACTIVE_TUNEABLE(rfp_4, int, 72, -100, 10000, 20, 0.002);
+UNACTIVE_TUNEABLE(rfp_5, int, 341, 0, 10000, 70, 0.002);
+UNACTIVE_TUNEABLE(nmp_1, int, 76, -50, 10000, 20, 0.002);
+UNACTIVE_TUNEABLE(nmp_2, int, 25, -300, 10000, 5, 0.002);
+UNACTIVE_TUNEABLE(sprob_1, int, 350, 0, 10000, 70, 0.002);
 UNACTIVE_TUNEABLE(lmp_1, int, 78, -100, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(see_1, int, 77, -100, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
@@ -126,7 +128,7 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(){
 
     Board pv_visitor = pos;
 
-    for (int i = 0; i < current_depth; i++){
+    for (int i = 0; i < root_depth; i++){
         bool is_hit;
         TTData transposition = transposition_table.probe(is_hit, pv_visitor.hash());
         if (transposition.move == Move::NO_MOVE || pv_visitor.isRepetition(2)
@@ -181,14 +183,13 @@ Move Engine::iterative_deepening(SearchLimit limit){
     nodes = 0;
     tb_hits = 0;
     seldepth = 0;
-    current_depth = 0;
+    root_depth = 0;
 
     root_moves.clear();
 
     // initialize stack
-    for (int i = 0; i < MAX_PLY + STACK_PADDING_SIZE; i++){
+    for (int i = 0; i < MAX_PLY + STACK_PADDING_SIZE; i++)
         stack[i] = Stack();
-    }
 
     bool root_tb_hit = tablebase_loaded && TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
     if (root_tb_hit && !(is_nonsense && best_move.score() == TB_VALUE && !Nonsense::only_knight_bishop(pos))){
@@ -236,11 +237,11 @@ Move Engine::iterative_deepening(SearchLimit limit){
     }
     int best_move_changes = 0;
     while (true){
-        current_depth++;
+        root_depth++;
 
         int asp_alpha;
         int asp_beta;
-        if (current_depth <= 6){
+        if (root_depth <= 6){
             asp_alpha = -INFINITE_VALUE;
             asp_beta = INFINITE_VALUE;
         } else {
@@ -250,7 +251,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         }
 
         while (true){
-            negamax<true>(current_depth, asp_alpha, asp_beta, root_ss, false);
+            negamax<true>(root_depth, asp_alpha, asp_beta, root_ss, false);
 
             if (best_move != Move::NO_MOVE && best_move != root_moves[0])
                 best_move_changes++;
@@ -282,7 +283,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         update_run_time();
 
         // do not count interrupted searches in depth
-        std::cout << "info depth " << current_depth - interrupt_flag;
+        std::cout << "info depth " << root_depth - interrupt_flag;
         std::cout << " seldepth " << seldepth;
         if (is_mate(best_move.score()))
             std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
@@ -299,8 +300,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
         // should the search really stop if there is a mate for the oponent?
         if (interrupt_flag
             || is_mate(best_move.score())
-            || current_depth >= ENGINE_MAX_DEPTH
-            || (limit.type == LimitType::Depth && current_depth == limit.value)
+            || root_depth >= ENGINE_MAX_DEPTH
+            || (limit.type == LimitType::Depth && root_depth == limit.value)
             || (limit.type == LimitType::Nodes && nodes >= limit.value)
             || (limit.type == LimitType::Time && best_move_changes < 1 && run_time > 2*limit.value / 3))
             break;
@@ -477,8 +478,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             return qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval.
 
         // reverse futility pruning
-        if (depth < 6 + 3*(!is_hit)
-            && eval - depth * (rfp_1 - rfp_2*cutnode) - rfp_3 + rfp_4*improving >= beta)
+        if (depth < 9 - 3*is_hit
+            && eval - depth * (rfp_1 - rfp_2*cutnode) 
+                    - rfp_3
+                    + rfp_4 * improving 
+                    - rfp_5 * std::abs(uncorrected_static_eval - static_eval) / 1024 >= beta)
             return eval;
 
         // null move pruning
@@ -504,6 +508,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 return null_move_value;
         }
     }
+
+    // small probcut
+    int probcut_beta = beta + sprob_1;
+    if (!pv && ss->excluded_move == Move::NO_MOVE
+        && is_valid(transposition.value) && !is_decisive(transposition.value) && !is_decisive(beta)
+        && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
+        && transposition.depth >= depth - 4 && transposition.value >= probcut_beta)
+        return probcut_beta;
 
     while (move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
@@ -801,7 +813,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         if (stand_pat >= beta){
             if (!is_hit)
                 transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), uncorrected_static_eval,
-                    DEPTH_QSEARCH, Move::NO_MOVE, TFlag::EXACT, pos.fullMoveNumber(), pv);
+                    DEPTH_QSEARCH, Move::NO_MOVE, TFlag::LOWER_BOUND, pos.fullMoveNumber(), pv);
             return stand_pat;
         }
 
