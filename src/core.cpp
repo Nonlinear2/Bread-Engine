@@ -501,9 +501,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             int null_move_value = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1, false);
             pos.unmakeNullMove();
 
-            if (interrupt_flag)
-                return NO_VALUE;
-
             if (null_move_value >= beta && !is_win(null_move_value))
                 return null_move_value;
         }
@@ -566,9 +563,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 ss->excluded_move = move;
                 value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss, cutnode);
                 *ss = saved_ss;
-    
-                if (interrupt_flag)
-                    return NO_VALUE;
 
                 if (value < singular_beta)
                     extension = 1 + (!pv && value < singular_beta - de_1);
@@ -603,11 +597,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (move_gen.index() > 0 && depth >= 2){
             value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1, true);
 
-            if (!interrupt_flag && value > alpha && reduced_depth < new_depth){
+            if (value > alpha && reduced_depth < new_depth){
                 value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
                 if (!is_capture)
                     move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), cont_1);
-            } else if (!interrupt_flag && value <= alpha && !is_capture)
+            } else if (value <= alpha && !is_capture)
                 move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
 
         } else if (!pv || move_gen.index() > 0){
