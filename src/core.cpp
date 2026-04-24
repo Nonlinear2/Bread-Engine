@@ -256,8 +256,9 @@ Move Engine::iterative_deepening(SearchLimit limit){
             if (best_move != Move::NO_MOVE && best_move != root_moves[0])
                 best_move_changes++;
 
-            best_move = root_moves[0];
-            
+            if (is_valid(root_moves[0].score()))
+                best_move = root_moves[0];
+
             assert(is_valid(best_move.score()));
 
             if (interrupt_flag)
@@ -343,7 +344,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     const int ply = ss - root_ss;
     assert(ply < MAX_PLY); // avoid stack overflow
 
+    if (interrupt_flag || ((nodes & 2047) == 0 && update_interrupt_flag()))
+        return NO_VALUE;
     nodes++;
+
     if (ply > seldepth)
         seldepth = ply;
 
@@ -559,7 +563,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 ss->excluded_move = move;
                 value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss, cutnode);
                 *ss = saved_ss;
-    
+
                 if (value < singular_beta)
                     extension = 1 + (!pv && value < singular_beta - de_1);
                 else if (value >= beta && !is_decisive(value))
@@ -610,10 +614,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         pos.restore_state(move);
 
+        if (interrupt_flag)
+            return NO_VALUE;
+
         if (root_node)
             root_moves[move_gen.index()].setScore(value);
 
         if (value > max_value){
+            assert(is_valid(value));
             max_value = value;
             if (value > alpha)
                 best_move = move;
@@ -623,11 +631,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 std::rotate(root_moves.begin(), root_moves.begin() + move_gen.index(),
                     root_moves.begin() + move_gen.index() + 1);
             }
-        }
-
-        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag())){
-            assert(is_valid(max_value));
-            return max_value;
         }
 
         alpha = std::max(alpha, value);
@@ -720,7 +723,10 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(ply < MAX_PLY); // avoid stack overflow
 
 
+    if (interrupt_flag || ((nodes & 2047) == 0 && update_interrupt_flag()))
+        return NO_VALUE;
     nodes++;
+
     if (ply > seldepth)
         seldepth = ply;
 
@@ -847,15 +853,14 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
 
+        if (interrupt_flag)
+            return NO_VALUE;
+
         if (value > max_value){
+            assert(is_valid(value));
             max_value = value;
             if (value > alpha)
                 best_move = move;
-        }
-
-        if (interrupt_flag || (nodes % 2048 == 0 && update_interrupt_flag())){
-            assert(is_valid(max_value));
-            return max_value;
         }
 
         alpha = std::max(alpha, value);
