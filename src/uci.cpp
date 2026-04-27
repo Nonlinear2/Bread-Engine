@@ -60,6 +60,17 @@ bool UCIAgent::process_uci_command(std::string command){
     return true;
 }
 
+std::vector<std::string> UCIAgent::split_string(std::string str) {
+    std::stringstream ss(str);
+    std::string curr;
+    std::vector<std::string> split;
+
+    while (ss >> curr)
+        split.push_back(curr);
+
+    return split;
+}
+
 void UCIAgent::process_setoption(std::vector<std::string> command){
     assert(command.size() >= 5); // setoption name ... value ...
     std::string option_name = command[2];
@@ -144,23 +155,36 @@ void UCIAgent::process_eval(std::vector<std::string> command){
 void UCIAgent::process_go(std::vector<std::string> command){
     std::string go_type = command[1];
 
-    SearchLimit limit;
     if (go_type == "ponder"){
         cached_think_time = get_think_time_from_go_command(command);
-        limit = SearchLimit(LimitType::Depth, ENGINE_MAX_DEPTH);
+        if (cached_think_time == -1)
+            return; // error occured
+        main_search_thread = std::thread(&Engine::iterative_deepening,
+            &engine, SearchLimit(LimitType::Depth, ENGINE_MAX_DEPTH));
+        return;
     } else if (go_type == "movetime"){
-        limit = SearchLimit(LimitType::Time, std::stoi(command[2]));
+        main_search_thread = std::thread(&Engine::iterative_deepening,
+            &engine, SearchLimit(LimitType::Time, std::stoi(command[2])));
+        return;
     } else if (go_type == "depth"){
-        limit = SearchLimit(LimitType::Depth, std::stoi(command[2]));
+        main_search_thread = std::thread(&Engine::iterative_deepening,
+            &engine, SearchLimit(LimitType::Depth, std::stoi(command[2])));
+        return;
     } else if (go_type == "nodes"){
-        limit = SearchLimit(LimitType::Nodes, std::stoi(command[2]));
+        main_search_thread = std::thread(&Engine::iterative_deepening,
+            &engine, SearchLimit(LimitType::Nodes, std::stoi(command[2])));
+        return;
     } else if (go_type == "infinite"){
-        limit = SearchLimit(LimitType::Depth, ENGINE_MAX_DEPTH);
+        main_search_thread = std::thread(&Engine::iterative_deepening,
+            &engine, SearchLimit(LimitType::Depth, ENGINE_MAX_DEPTH));
+        return;
     } else {
-        limit = SearchLimit(LimitType::Time, get_think_time_from_go_command(command));
+        int think_time = get_think_time_from_go_command(command);
+        if (think_time == -1)
+            return; // error occured
+        main_search_thread = std::thread(&Engine::iterative_deepening,
+            &engine, SearchLimit(LimitType::Time, think_time));
     }
-
-    main_search_thread = std::thread(&Engine::iterative_deepening, &engine, limit);
 }
 
 int UCIAgent::get_think_time_from_go_command(std::vector<std::string> command){

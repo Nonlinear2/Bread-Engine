@@ -61,14 +61,3 @@ bool is_number_string(const std::string& s){
         ++it;
     return !s.empty() && it == s.end();
 }
-
-std::vector<std::string> split_string(std::string str) {
-    std::stringstream ss(str);
-    std::string curr;
-    std::vector<std::string> split;
-
-    while (ss >> curr)
-        split.push_back(curr);
-
-    return split;
-}
