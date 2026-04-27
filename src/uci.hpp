@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <deque>
 #include <iostream>
 #include <thread>
 #include "tune.hpp"
@@ -33,11 +34,12 @@ class WorkerPool {
     Worker& main();
 
     private:
-    std::vector<Worker> workers;
+    std::deque<Worker> workers;
 };
 
 class UCIAgent {
     public:
+    UCIAgent();
 
     NnueBoard pos;
     TranspositionTable tt;

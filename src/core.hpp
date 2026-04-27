@@ -64,6 +64,13 @@ class Engine {
     Color engine_color;
     bool tablebase_loaded = false;
 
+    CaptureHistory capt_history = CaptureHistory();
+    KillerMoves killer_moves = KillerMoves();
+    FromToHistory history = FromToHistory();
+    ContinuationHistory cont_history = ContinuationHistory();
+    PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 
+
+
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove();
 

@@ -25,17 +25,35 @@ TUNEABLE(chis_5, int, 15, 0, 300, 3, 0.002);
 TUNEABLE(chis_6, int, 431, 0, 5000, 110, 0.002);
 TUNEABLE(cphis, int, 209, 0, 5000, 41, 0.002);
 
-
-CaptureHistory capture_history = CaptureHistory();
-
 template<>
-SortedMoveGen<GenType::NORMAL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
-    Square prev_to, NnueBoard& pos, int depth):
-    to_search(to_search), prev_piece(prev_piece), prev_to(prev_to), pos(pos), depth(depth) {};
+SortedMoveGen<GenType::NORMAL>::SortedMoveGen(
+    Movelist* to_search, Piece prev_piece, Square prev_to, NnueBoard& pos, int depth,
+    KillerMoves killers, FromToHistory hist, ContinuationHistory cont_hist, CaptureHistory capt_hist
+    ):
+    to_search(to_search),
+    prev_piece(prev_piece),
+    prev_to(prev_to),
+    pos(pos),
+    depth(depth),
+    killer_moves(killers),
+    history(hist),
+    cont_history(cont_hist),
+    capt_history(capt_hist)
+    {};
 
 template<>
 SortedMoveGen<GenType::QSEARCH>::SortedMoveGen(
-    Piece prev_piece, Square prev_to, NnueBoard& pos): prev_piece(prev_piece), prev_to(prev_to), pos(pos) {};
+    Piece prev_piece, Square prev_to, NnueBoard& pos,
+    KillerMoves killers, FromToHistory hist, ContinuationHistory cont_hist, CaptureHistory capt_hist
+    ):
+    prev_piece(prev_piece),
+    prev_to(prev_to),
+    pos(pos),
+    killer_moves(killers),
+    history(hist),
+    cont_history(cont_hist),
+    capt_history(capt_hist)
+    {};
 
 template<>
 void SortedMoveGen<GenType::NORMAL>::prepare_capture_sort(){
@@ -90,7 +108,7 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (move.typeOf() == Move::PROMOTION)
             score += c_prm * piece_value[move.promotionType()] / 256;
 
-        score += cphis * capture_history.get(piece, to.index(), to_piece) / 8192;
+        score += cphis * capt_history.get(piece, to.index(), to_piece) / 8192;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -293,13 +311,13 @@ void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth){
 
 template<>
 void SortedMoveGen<GenType::NORMAL>::update_capture_history(Move best_move, int depth){
-    capture_history.apply_bonus(
+    capt_history.apply_bonus(
         pos.at(best_move.from()), best_move.to(), 
         pos.at(best_move.to()), std::min(depth*depth*chis_1 + chis_2, chis_3));
 
     for (int i = moves.num_left; i < moves.size(); i++){
         if (moves[i] != best_move && pos.isCapture(moves[i]))
-            capture_history.apply_bonus(
+            capt_history.apply_bonus(
                 pos.at(moves[i].from()), moves[i].to(),
                 pos.at(moves[i].to()), -std::min(depth*depth*chis_4 + chis_5, chis_6)
             );

@@ -61,6 +61,8 @@ Worker& WorkerPool::main(){
     return workers[0];
 }
 
+UCIAgent::UCIAgent(): workers(1, tt) {};
+
 bool UCIAgent::process_uci_command(std::string command){
     std::vector<std::string> parsed_command = split_string(command);
     std::string first = parsed_command[0];
