@@ -28,8 +28,6 @@ class NnueBoard: public Board {
 
     NnueBoard();
 
-    ~NnueBoard();
-
     void synchronize();
 
     bool legal(Move move);

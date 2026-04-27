@@ -2,7 +2,7 @@
 
 Worker::Worker(bool is_main_thread, TranspositionTable& tt): engine(is_main_thread, tt) {};
 
-WorkerPool::WorkerPool(int size, TranspositionTable& tt) {
+WorkerPool::WorkerPool(int size, TranspositionTable& tt){
     for (int i = 0; i < size; i++) {
         bool is_main = (i == 0);
         workers.emplace_back(is_main, tt);
