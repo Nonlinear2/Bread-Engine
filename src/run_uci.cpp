@@ -11,7 +11,7 @@ int main(int argc, char* argv[]){
             return 0;
         }
 
-        std::vector<std::string> parsed = UCIAgent::split_string(std::string(argv[1]));
+        std::vector<std::string> parsed = split_string(std::string(argv[1]));
         if (parsed.size() >= 4 && parsed[0] == "genfens"){
             int seed = std::stoi(parsed[3]);
             std::mt19937 rng(seed);

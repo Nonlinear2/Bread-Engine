@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include <sstream>
 #include <thread>
 #include "tune.hpp"
 #include "core.hpp"
@@ -15,10 +14,7 @@ class UCIAgent {
     int num_moves_out_of_book = 0;
     Engine engine = Engine();
 
-    
     bool process_uci_command(std::string command);
-
-    static std::vector<std::string> split_string(std::string str);
 
     private:
     int cached_think_time;
