@@ -80,8 +80,8 @@ class TranspositionTable {
     void save_to_stream(std::ofstream& ofs);
     void load_from_stream(std::ifstream& ifs);
 
-    TEntry* entries;
-    size_t size;
+    TEntry* entries = nullptr;
+    size_t size = 0;
     private:
-    int size_mb;
+    int size_mb = 0;
 };
