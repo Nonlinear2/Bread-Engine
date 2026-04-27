@@ -236,7 +236,7 @@ int UCIAgent::get_think_time_from_go_command(std::vector<std::string> command){
     int winc = 0;
     int binc = 0;
     int movestogo = 0;
-    for (int i = 1; i < command.size(); i++){
+    for (int i = 1; i + 1 < command.size(); i++){
         std::string token = command[i];
         std::string next_token = command[i+1];
         if (token == "wtime")
