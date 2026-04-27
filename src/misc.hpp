@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <sstream>
 #include <fstream>
 #include <vector>
 #include "constants.hpp"
@@ -62,3 +63,5 @@ int to_tt(int value, int ply);
 int get_mate_in_moves(int value);
 
 bool is_number_string(const std::string& s);
+
+std::vector<std::string> split_string(std::string str);
