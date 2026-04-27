@@ -195,20 +195,24 @@ int UCIAgent::get_think_time_from_go_command(std::vector<std::string> command){
     int winc = 0;
     int binc = 0;
     int movestogo = 0;
-    for (int i = 1; i < command.size(); i++){
+    for (int i=1; i < command.size(); i++){
         std::string token = command[i];
-        std::string next_token = command[i+1];
         if (token == "wtime")
-            wtime = std::stoi(next_token);
+            wtime = std::stoi(command[i+1]);
         else if (token == "btime")
-            btime = std::stoi(next_token);
+            btime = std::stoi(command[i+1]);
         else if (token == "winc")
-            winc = std::stoi(next_token);
+            winc = std::stoi(command[i+1]);
         else if (token == "binc")
-            binc = std::stoi(next_token);
+            binc = std::stoi(command[i+1]);
         else if (token == "movestogo")
-            movestogo = std::stoi(next_token);
+            movestogo = std::stoi(command[i+1]);
     };
+
+    if (wtime == -1 || btime == -1){
+        std::cout << "no time specified\n";
+        return -1;
+    }
 
     bool engine_white = (engine.pos.sideToMove() == Color::WHITE);
     return engine.get_think_time(engine_white ? wtime: btime, 
