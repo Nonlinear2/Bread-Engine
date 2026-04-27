@@ -28,7 +28,7 @@ TUNEABLE(cphis, int, 209, 0, 5000, 41, 0.002);
 template<>
 SortedMoveGen<GenType::NORMAL>::SortedMoveGen(
     Movelist* to_search, Piece prev_piece, Square prev_to, NnueBoard& pos, int depth,
-    KillerMoves killers, FromToHistory hist, ContinuationHistory cont_hist, CaptureHistory capt_hist
+    KillerMoves& killers, FromToHistory& hist, ContinuationHistory& cont_hist, CaptureHistory& capt_hist
     ):
     to_search(to_search),
     prev_piece(prev_piece),
@@ -44,7 +44,7 @@ SortedMoveGen<GenType::NORMAL>::SortedMoveGen(
 template<>
 SortedMoveGen<GenType::QSEARCH>::SortedMoveGen(
     Piece prev_piece, Square prev_to, NnueBoard& pos,
-    KillerMoves killers, FromToHistory hist, ContinuationHistory cont_hist, CaptureHistory capt_hist
+    KillerMoves& killers, FromToHistory& hist, ContinuationHistory& cont_hist, CaptureHistory& capt_hist
     ):
     prev_piece(prev_piece),
     prev_to(prev_to),

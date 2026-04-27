@@ -38,9 +38,9 @@ class SortedMoveGen {
     NnueBoard& pos;
 
     SortedMoveGen(Movelist* to_search, Piece prev_piece, Square prev_to, NnueBoard& pos, int depth,
-        KillerMoves killers, FromToHistory hist, ContinuationHistory cont_hist, CaptureHistory capt_hist);
+        KillerMoves& killers, FromToHistory& hist, ContinuationHistory& cont_hist, CaptureHistory& capt_hist);
     SortedMoveGen(Piece prev_piece, Square prev_to, NnueBoard& pos,
-        KillerMoves killers, FromToHistory hist, ContinuationHistory cont_hist, CaptureHistory capt_hist);
+        KillerMoves& killers, FromToHistory& hist, ContinuationHistory& cont_hist, CaptureHistory& capt_hist);
 
     void set_tt_move(Move move);
     bool next(Move& move);
@@ -57,10 +57,10 @@ class SortedMoveGen {
     Move tt_move = Move::NO_MOVE;
     private:
 
-    KillerMoves killer_moves;
-    FromToHistory history;
-    ContinuationHistory cont_history;
-    CaptureHistory capt_history;
+    KillerMoves& killer_moves;
+    FromToHistory& history;
+    ContinuationHistory& cont_history;
+    CaptureHistory& capt_history;
 
     bool skip_quiets_ = false;
     Movelist moves;
