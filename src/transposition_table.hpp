@@ -3,6 +3,7 @@
 #include "chess.hpp"
 #include "misc.hpp"
 #include <fstream>
+#include <mutex>
 
 
 enum class TFlag: uint8_t {
@@ -84,4 +85,5 @@ class TranspositionTable {
     size_t size = 0;
     private:
     int size_mb = 0;
+    std::mutex clear_mutex;
 };
