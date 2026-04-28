@@ -29,7 +29,7 @@ class WorkerPool {
     void update_limit(SearchLimit limit);
 
     void start_searching(SearchLimit limit);
-    void interrupt_if_searching();
+    void interrupt_and_join_threads();
 
     Worker& main();
 

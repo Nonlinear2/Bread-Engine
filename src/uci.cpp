@@ -48,7 +48,7 @@ void WorkerPool::start_searching(SearchLimit limit){
         worker.thread = std::thread(&Engine::iterative_deepening, &worker.engine, limit);
 }
 
-void WorkerPool::interrupt_if_searching(){
+void WorkerPool::interrupt_and_join_threads(){
     for (auto& worker: workers)
         if (worker.thread.joinable()){
             worker.engine.interrupt_flag = true;
@@ -90,6 +90,7 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "readyok" << std::endl;
 
     } else if (first == "ucinewgame"){
+        workers.interrupt_and_join_threads();
         pos.setFen(constants::STARTPOS);
         workers.clear_state();
 
@@ -103,17 +104,17 @@ bool UCIAgent::process_uci_command(std::string command){
         process_eval(parsed_command);
 
     } else if (first == "go"){
-        workers.interrupt_if_searching();
+        workers.interrupt_and_join_threads();
         process_go(parsed_command);
 
     } else if (first == "ponderhit"){
         workers.update_limit(SearchLimit(LimitType::Time, cached_think_time));
 
     } else if (first == "stop"){
-        workers.interrupt_if_searching();
+        workers.interrupt_and_join_threads();
 
     } else if (first == "quit"){
-        workers.interrupt_if_searching();
+        workers.interrupt_and_join_threads();
         tb_free();
         return 0;
     } else {
@@ -165,7 +166,7 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
 }
 
 void UCIAgent::process_position(std::vector<std::string> command){
-    workers.interrupt_if_searching();
+    workers.interrupt_and_join_threads();
 
     std::string fen = "";
     if (command[1] == "startpos"){
