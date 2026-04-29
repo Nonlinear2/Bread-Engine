@@ -117,6 +117,7 @@ TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
 }
 
 void TranspositionTable::clear(){
+    std::lock_guard<std::mutex> lock(clear_mutex);
     for (size_t i = 0; i < size; i++) {
         entries[i] = TEntry();
     }

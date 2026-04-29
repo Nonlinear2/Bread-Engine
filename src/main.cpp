@@ -4,10 +4,11 @@
 #include <random>
 
 int main(int argc, char* argv[]){
+    NNUE::init();
+
     if (argc >= 2){
         if (std::string(argv[1]) == "bench"){
-            Engine engine = Engine();
-            Benchmark::benchmark_engine(engine, BENCHMARK_DEPTH);
+            Benchmark::benchmark_engine(BENCHMARK_DEPTH);
             return 0;
         }
 
@@ -45,5 +46,7 @@ int main(int argc, char* argv[]){
         std::getline(std::cin, input);
         running = uci_engine.process_uci_command(input);
     } while (running);
+
+    NNUE::cleanup();
     return 0;
 }

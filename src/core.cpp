@@ -41,20 +41,19 @@ UNACTIVE_TUNEABLE(corr_1, int, 268, 0, 10000, 50, 0.002);
 UNACTIVE_TUNEABLE(corr_2, int, 592, 0, 10000, 130, 0.002);
 UNACTIVE_TUNEABLE(de_1, int, 90, 0, 10000, 18, 0.002);
 
-inline PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 
-
-
 int nnue_evaluate(NnueBoard& pos){
     return pos.evaluate();
 }
 
-int Engine::get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
+int get_think_time(float time_left, int num_moves_out_of_book, int num_moves_until_time_control=0, int increment=0){
     float target = num_moves_until_time_control == 0
         ? time_left / 20
         : time_left / (num_moves_until_time_control+5);
 
     return static_cast<int>(target + 0.9F*increment);
 }
+
+Engine::Engine(bool is_main_thread, TranspositionTable& tt): is_main_thread(is_main_thread), tt(tt) {};
 
 bool Engine::update_interrupt_flag(){
     SearchLimit limit_ = limit.load();
@@ -74,12 +73,12 @@ bool Engine::update_interrupt_flag(){
 }
 
 void Engine::clear_state(){
-    transposition_table.clear();
-    capture_history.clear();
-    SortedMoveGen<GenType::NORMAL>::history.clear();
+    tt.clear();
+    capt_history.clear();
+    history.clear();
     pawn_corrhist.clear();
-    SortedMoveGen<GenType::NORMAL>::cont_history.clear();
-    SortedMoveGen<GenType::NORMAL>::killer_moves.clear();
+    cont_history.clear();
+    killer_moves.clear();
 }
 
 void Engine::save_state(std::string file){
@@ -89,12 +88,12 @@ void Engine::save_state(std::string file){
         return;
     }
 
-    transposition_table.save_to_stream(ofs);
-    capture_history.save_to_stream(ofs);
-    SortedMoveGen<GenType::NORMAL>::history.save_to_stream(ofs);
+    tt.save_to_stream(ofs);
+    capt_history.save_to_stream(ofs);
+    history.save_to_stream(ofs);
     pawn_corrhist.save_to_stream(ofs);
-    SortedMoveGen<GenType::NORMAL>::cont_history.save_to_stream(ofs);
-    SortedMoveGen<GenType::NORMAL>::killer_moves.save_to_stream(ofs);
+    cont_history.save_to_stream(ofs);
+    killer_moves.save_to_stream(ofs);
 
     ofs.close();
 }
@@ -106,12 +105,12 @@ void Engine::load_state(std::string file){
         return;
     }
 
-    transposition_table.load_from_stream(ifs);
-    capture_history.load_from_stream(ifs);
-    SortedMoveGen<GenType::NORMAL>::history.load_from_stream(ifs);
+    tt.load_from_stream(ifs);
+    capt_history.load_from_stream(ifs);
+    history.load_from_stream(ifs);
     pawn_corrhist.load_from_stream(ifs);
-    SortedMoveGen<GenType::NORMAL>::cont_history.load_from_stream(ifs);
-    SortedMoveGen<GenType::NORMAL>::killer_moves.load_from_stream(ifs);
+    cont_history.load_from_stream(ifs);
+    killer_moves.load_from_stream(ifs);
 
     ifs.close();
 }
@@ -130,7 +129,7 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(){
 
     for (int i = 0; i < root_depth; i++){
         bool is_hit;
-        TTData transposition = transposition_table.probe(is_hit, pv_visitor.hash());
+        TTData transposition = tt.probe(is_hit, pv_visitor.hash());
         if (transposition.move == Move::NO_MOVE || pv_visitor.isRepetition(2)
             || pv_visitor.isHalfMoveDraw() || pv_visitor.isInsufficientMaterial())
             break;
@@ -143,15 +142,6 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(){
     }
     return std::pair(pv, ponder_move);
 }
-
-Move Engine::search(std::string fen, SearchLimit limit){
-    pos.setFen(fen);
-    return iterative_deepening(limit);
-};
-
-Move Engine::search(SearchLimit limit){
-    return iterative_deepening(limit);
-};
 
 Move Engine::iterative_deepening(SearchLimit limit){
     assert(is_nonsense || nonsense_stage == Nonsense::STANDARD);
@@ -178,7 +168,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     Move best_move = Move::NO_MOVE;
     engine_color = pos.sideToMove();
 
-    SortedMoveGen<GenType::NORMAL>::killer_moves.clear();
+    killer_moves.clear();
 
     nodes = 0;
     tb_hits = 0;
@@ -193,15 +183,17 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
     bool root_tb_hit = tablebase_loaded && TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
     if (root_tb_hit && !(is_nonsense && best_move.score() == TB_VALUE && !Nonsense::only_knight_bishop(pos))){
-        update_run_time();
-        std::cout << "info depth 0 seldepth 0";
-        std::cout << " score cp " << best_move.score();
-        std::cout << " nodes 0 nps 0";
-        std::cout << " tbhits 0";
-        std::cout << " time " << run_time;
-        std::cout << " hashfull " << transposition_table.hashfull();
-        std::cout << " pv " << uci::moveToUci(best_move) << std::endl;
-        std::cout << "bestmove " << uci::moveToUci(best_move) << std::endl;
+        if (is_main_thread){
+            update_run_time();
+            std::cout << "info depth 0 seldepth 0";
+            std::cout << " score cp " << best_move.score();
+            std::cout << " nodes 0 nps 0";
+            std::cout << " tbhits 0";
+            std::cout << " time " << run_time;
+            std::cout << " hashfull " << tt.hashfull();
+            std::cout << " pv " << uci::moveToUci(best_move) << std::endl;
+            std::cout << "bestmove " << uci::moveToUci(best_move) << std::endl;
+        }
         return best_move;
     };
 
@@ -275,28 +267,30 @@ Move Engine::iterative_deepening(SearchLimit limit){
             asp_beta = std::clamp(asp_beta, -INFINITE_VALUE, INFINITE_VALUE);
         }
 
-        std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
-        pv = pv_pmove.first;
-        if (pv_pmove.second.size() > 0)
-            ponder_move = pv_pmove.second;
+        if (is_main_thread){
+            std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
+            pv = pv_pmove.first;
+            if (pv_pmove.second.size() > 0)
+                ponder_move = pv_pmove.second;
+    
+            update_run_time();
+    
+            // do not count interrupted searches in depth
+            std::cout << "info depth " << root_depth - interrupt_flag;
+            std::cout << " seldepth " << seldepth;
+            if (is_mate(best_move.score()))
+                std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
+            else
+                std::cout << " score cp " << best_move.score();
+    
+            std::cout << " nodes " << nodes;
+            std::cout << " nps " << nodes * 1000 / run_time;
+            std::cout << " tbhits " << tb_hits;
+            std::cout << " time " << run_time;
+            std::cout << " hashfull " << tt.hashfull();
+            std::cout << " pv" << pv << std::endl;
+        }
 
-        update_run_time();
-
-        // do not count interrupted searches in depth
-        std::cout << "info depth " << root_depth - interrupt_flag;
-        std::cout << " seldepth " << seldepth;
-        if (is_mate(best_move.score()))
-            std::cout << " score mate " << get_mate_in_moves(best_move.score()); 
-        else
-            std::cout << " score cp " << best_move.score();
-
-        std::cout << " nodes " << nodes;
-        std::cout << " nps " << nodes * 1000 / run_time;
-        std::cout << " tbhits " << tb_hits;
-        std::cout << " time " << run_time;
-        std::cout << " hashfull " << transposition_table.hashfull();
-        std::cout << " pv" << pv << std::endl;
-        
         // should the search really stop if there is a mate for the oponent?
         if (interrupt_flag
             || is_mate(best_move.score())
@@ -322,10 +316,12 @@ Move Engine::iterative_deepening(SearchLimit limit){
         }
     }
 
-    std::cout << "bestmove " << uci::moveToUci(best_move);
-    if (ponder_move.size() > 0)
-        std::cout << " ponder " << ponder_move;
-    std::cout << std::endl;
+    if (is_main_thread){
+        std::cout << "bestmove " << uci::moveToUci(best_move);
+        if (ponder_move.size() > 0)
+            std::cout << " ponder " << ponder_move;
+        std::cout << std::endl;
+    }
 
     interrupt_flag = false;
     return best_move;
@@ -400,7 +396,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     uint64_t zobrist_hash = pos.hash();
 
     SortedMoveGen move_gen = SortedMoveGen<GenType::NORMAL>(
-        root_node ? &root_moves : NULL, prev_piece, prev_to, pos, depth
+        root_node ? &root_moves : NULL, prev_piece, prev_to, pos, depth,
+        killer_moves, history, cont_history, capt_history
     );
 
     if (root_node && root_moves.empty()){
@@ -420,7 +417,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     }
 
     bool is_hit;
-    TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
+    TTData transposition = tt.probe(is_hit, zobrist_hash);
     if (is_mate(transposition.value))
         transposition.value = pos_to_root_mate_value(transposition.value, ply);
     
@@ -496,7 +493,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             ss->curr_move_capture = false;
 
             pos.makeNullMove();
-            __builtin_prefetch(&transposition_table.entries[pos.hash() & (transposition_table.size - 1)]);
+            __builtin_prefetch(&tt.entries[pos.hash() & (tt.size - 1)]);
 
             int null_move_value = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1, false);
             pos.unmakeNullMove();
@@ -541,7 +538,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             if (!is_capture && !in_check
                 && prev_piece != int(Piece::NONE)
                 && prev_to != int(Square::underlying::NO_SQ)
-                && move_gen.cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
+                && cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
                 continue;
         }
 
@@ -576,7 +573,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         ss->moved_piece = pos.at(move.from());
         ss->curr_move = move;
         ss->curr_move_capture = is_capture;
-        pos.update_state(move, transposition_table);
+        pos.update_state(move, tt);
 
         bool gives_check = pos.inCheck();
 
@@ -639,7 +636,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 move_gen.update_capture_history(move, depth);
             else
                 move_gen.update_history(move, depth);
-            SortedMoveGen<GenType::NORMAL>::killer_moves.add_move(depth, move);
+            killer_moves.add_move(depth, move);
             break;
         }
     }
@@ -706,7 +703,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     assert(is_valid(max_value));
 
-    transposition_table.store(zobrist_hash, to_tt(max_value, ply), uncorrected_static_eval, depth, best_move,
+    tt.store(zobrist_hash, to_tt(max_value, ply), uncorrected_static_eval, depth, best_move,
         node_type, pos.fullMoveNumber(), pv);
 
     return max_value;
@@ -755,11 +752,11 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     uint64_t zobrist_hash = pos.hash();
 
     SortedMoveGen capture_gen = SortedMoveGen<GenType::QSEARCH>(
-        (ss - 1)->moved_piece, (ss - 1)->curr_move.to().index(), pos
+        (ss - 1)->moved_piece, (ss - 1)->curr_move.to().index(), pos, killer_moves, history, cont_history, capt_history
     );
 
     bool is_hit;
-    TTData transposition = transposition_table.probe(is_hit, zobrist_hash);
+    TTData transposition = tt.probe(is_hit, zobrist_hash);
     if (is_mate(transposition.value))
         transposition.value = pos_to_root_mate_value(transposition.value, ply);
 
@@ -806,7 +803,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     
         if (stand_pat >= beta){
             if (!is_hit)
-                transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), uncorrected_static_eval,
+                tt.store(zobrist_hash, to_tt(stand_pat, ply), uncorrected_static_eval,
                     DEPTH_QSEARCH, Move::NO_MOVE, TFlag::LOWER_BOUND, pos.fullMoveNumber(), pv);
             return stand_pat;
         }
@@ -849,7 +846,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         ss->moved_piece = moved_piece;
         ss->curr_move = move;
         ss->curr_move_capture = (captured_piece != Piece::NONE);
-        pos.update_state(move, transposition_table);
+        pos.update_state(move, tt);
         value = -qsearch<pv>(-beta, -alpha, depth-1, ss + 1);
         pos.restore_state(move);
 
@@ -891,7 +888,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             stand_pat = TB_VALUE;
         }
 
-        transposition_table.store(zobrist_hash, to_tt(stand_pat, ply), NO_VALUE, DEPTH_QSEARCH,
+        tt.store(zobrist_hash, to_tt(stand_pat, ply), NO_VALUE, DEPTH_QSEARCH,
             Move::NO_MOVE, TFlag::EXACT, pos.fullMoveNumber(), pv);
         return stand_pat;
     }
@@ -904,7 +901,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         return max_value;
 
     if (depth == 0 || depth == -1)
-        transposition_table.store(zobrist_hash, to_tt(max_value, ply),
+        tt.store(zobrist_hash, to_tt(max_value, ply),
             uncorrected_static_eval, DEPTH_QSEARCH, best_move,
             max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
             pos.fullMoveNumber(), pv);

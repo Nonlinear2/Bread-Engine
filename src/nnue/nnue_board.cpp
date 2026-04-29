@@ -22,13 +22,8 @@ AllBitboards::AllBitboards(const NnueBoard& pos) {
 }
 
 NnueBoard::NnueBoard(){
-    NNUE::init();
     accumulators_stack.push_empty();
     synchronize();
-};
-
-NnueBoard::~NnueBoard(){
-    NNUE::cleanup();
 };
 
 void NnueBoard::synchronize(){
