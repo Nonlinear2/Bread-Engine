@@ -77,7 +77,7 @@ void TranspositionTable::allocateMB(int new_size){
 }
 
 void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int depth,
-                               Move move, TFlag flag, int move_number, bool pv){
+                               Move move, TFlag flag, int move_number, bool ttpv){
 
     assert(move != Move::NULL_MOVE);
 
@@ -90,7 +90,7 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
     // - the new depth is greater than the old depth
     // - the new depth is nonzero and an exact entry
     if (move_number / 2 > entry->move_number() + 2 ||
-        depth > entry->depth - 1 - 2*pv || // this will be true if the old entry is empty
+        depth > entry->depth - 1 - 2*ttpv || // this will be true if the old entry is empty
         (depth != DEPTH_QSEARCH && flag == TFlag::EXACT))
     {
         // add move if the old entry didn't hold the same position or if the new move is better
@@ -101,17 +101,17 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
         entry->value = value;
         entry->static_eval = static_eval;
         entry->depth = depth;
-        entry->move_num_tflag = (static_cast<uint8_t>(move_number / 2) << 2) | (static_cast<uint8_t>(flag));
+        entry->move_num_tflag_ttpv = (static_cast<uint8_t>(move_number / 2) << 3) | (static_cast<uint8_t>(flag) << 1) | ttpv;
     };
 }
 
-TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
+TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist, bool pv){
     assert((size & (size - 1)) == 0);
     TEntry* entry = &entries[zobrist & (size - 1)];
     is_hit = (entry->zobrist_hash == zobrist);
 
     if (is_hit)
-        return TTData(entry);
+        return TTData(entry, pv);
     else
         return TTData();
 }
