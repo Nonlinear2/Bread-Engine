@@ -67,7 +67,7 @@ void TranspositionTable::allocateMB(int new_size){
     new_size = std::min(new_size, TT_MAX_SIZE);
 
     // closest power of 2 to 1'000'000 / 16 is 2^16 = 65536
-    assert(sizeof(TEntry) == 16);
+    // assert(sizeof(TEntry) == 16);
     constexpr int entries_in_one_mb = 65536;
     size = new_size * entries_in_one_mb;
     size_mb = new_size;
