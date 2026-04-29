@@ -17,13 +17,19 @@
 
 int nnue_evaluate(NnueBoard& pos);
 
+int get_think_time(float time_left, int num_moves_out_of_book,
+    int num_moves_until_time_control, int increment);
+
 class Engine {
     public:
 
+    Engine(bool is_main_thread, TranspositionTable& tt);
+
+    bool is_main_thread;
     int64_t nodes = 0;
     int64_t tb_hits = 0;
     int64_t seldepth = 0;
-    int current_depth = 0;
+    int root_depth = 0;
     std::atomic<SearchLimit> limit;
     std::atomic<bool> interrupt_flag = false;
     
@@ -31,19 +37,13 @@ class Engine {
     Stack* root_ss = stack + 2;
 
     std::atomic<int> run_time;
-    TranspositionTable transposition_table;
+    TranspositionTable& tt;
 
     NnueBoard pos = NnueBoard();
 
     Movelist root_moves;
-    
-    int get_think_time(float time_left, int num_moves_out_of_book,
-        int num_moves_until_time_control, int increment);
 
     void update_run_time();
-
-    Move search(std::string fen, SearchLimit limit);
-    Move search(SearchLimit limit);
 
     Move iterative_deepening(SearchLimit limit);
 
@@ -55,7 +55,7 @@ class Engine {
     std::atomic<bool> is_nonsense = false;
 
     private:
-    friend class UCIAgent;
+    friend class WorkerPool;
 
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 
@@ -63,6 +63,13 @@ class Engine {
     Nonsense::Stage nonsense_stage = Nonsense::STANDARD;
     Color engine_color;
     bool tablebase_loaded = false;
+
+    CaptureHistory capt_history = CaptureHistory();
+    KillerMoves killer_moves = KillerMoves();
+    FromToHistory history = FromToHistory();
+    ContinuationHistory cont_history = ContinuationHistory();
+    PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 
+
 
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove();

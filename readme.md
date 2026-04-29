@@ -3,14 +3,14 @@
 
 <p align="center">
   <picture><source srcset="https://img.shields.io/badge/Architectures-x86%2C%20x64-%23f78b04?style=for-the-badge&labelColor=%23013c5a&color=%23013c5a"><img alt="Architectures: x86, x64">
-  </picture><a href="https://github.com/Nonlinear2/Bread-Engine/releases"><img src="https://img.shields.io/github/v/release/Nonlinear2/Bread-Engine?include_prereleases&style=for-the-badge&label=Latest%20Release&labelColor=%23950502&color=%23013c5a" alt="Latest Release"></a>
+  </picture><a href="https://github.com/Nonlinear2/Bread-Engine/releases"><img src="https://img.shields.io/github/v/release/Nonlinear2/Bread-Engine?style=for-the-badge&label=Latest%20Release&labelColor=%23950502&color=%23013c5a" alt="Latest Release"></a>
   <picture><source srcset="https://img.shields.io/github/license/Nonlinear2/Bread-Engine?style=for-the-badge&labelColor=%23950502&color=%23950502"><img alt="License"></picture>
 </p>
 
 
 
 # Overview
-Bread is a chess engine rated around 3400 elo on the computer chess rating lists.
+Bread is a chess engine rated around 3550 elo on the computer chess rating lists.
 
 It uses minimax search, along with an efficiently updatable neural network trained from zero knowledge using games of self play.
 
@@ -30,7 +30,7 @@ You can download precompiled binaries for Windows and Linux in the <a href="http
 
 ## How to build the project yourself
 
-You need Cmake and a C++ compiler installed. The build has been tested using compilers Clang 20.1.7 and GCC 13.1.0.
+You need Cmake and a C++ compiler installed. The build has been tested using Clang 20.1.7.
 
 ### Windows
 
@@ -142,20 +142,20 @@ Many other search improvements exist, but they would be too long to describe in 
 
 ## Neural Network
 ### Neural network types
-In its first prototype, Bread Engine relied on a convolutional neural network as its evaluation function. You can find the network specs [here](./images/CNN%20specs.png?raw=true). Even though convolutional neural networks are suited for pattern recognition, they are too slow for a strong chess engine. A classic multilayer perceptron, on the other hand, may have weaker accuracy, but its speed more than makes up for it. Moreover, recent techniques make use of clever aspects of chess evaluation to speed up these networks even more.
+In its first prototype, Bread Engine relied on a convolutional neural network as its evaluation function. Even though convolutional neural networks are suited for pattern recognition, they are too slow for a strong chess engine. A classic multilayer perceptron, on the other hand, may have weaker accuracy, but its speed more than makes up for it. Moreover, recent techniques make use of clever aspects of chess evaluation to speed up these networks even more.
 
 ### Description of NNUE
 When evaluating leaf nodes during minimax search, one can note that the positions encountered are very similar. Therefore, instead of running the whole neural network from scratch, the first layer output is cached and reused.
 
-Let's consider a simple deep neural network, taking 768 inputs corresponding to each piece type on each possible square (so 12 * 64 in total). Suppose we have already run the neural network on the starting position, and that we cached the first layer output before applying the activation function (this is called the "accumulator"). If we move a pawn from e2 to e4, we turn off the input neuron number n corresponding to "white pawn on e2" and turn on the input neuron m corresponding to "white pawn on e4". Recall that computing a dense layer output before applying bias and activation is just matrix multiplication. Therefore to update the accumulator, we need to subtract the n-th row of weights from the accumulator, and add the m-th row of weights. The effect of changing the two input neurons on further layers is non trivial, and these need to be recomputed. Therefore, it is advantageous to have a large input layer, and small hidden layers.
+Let's consider a simple deep neural network, taking 768 inputs corresponding to each piece type on each possible square (so 12 * 64 in total). Suppose we have already run the neural network on the starting position, and that we cached the first layer output before applying the activation function (this is called the "accumulator"). If we move a pawn from e2 to e4, we need to turn off the input neuron number $n$ corresponding to "white pawn on e2" and turn on the input neuron $m$ corresponding to "white pawn on e4". Recall that computing a dense layer output before applying bias and activation is just matrix multiplication. Therefore to update the accumulator, we need to subtract the $n$-th row of weights from the accumulator, and add the $m$-th row of weights. The effect of changing the two input neurons on further layers is non trivial, and these need to be recomputed. Therefore, it is advantageous to have a large input layer, and small hidden layers.
 
 ### Feature sets
 There are many different choices for the input feature representation, and the choice mainly depends on how much training data is available. 
-For now, Bread uses a 768 input feature set described by (color, square, piece) for the perspective of the side to move, and the other perspective.
+For now, Bread uses a 768x8 feature set described by (color, square, piece, king bucket) for the perspective of the side to move, and the other perspective.
 The two perspectives are each run through the same set of weights and concatenated into a single vector, with the side to move perspective first, and the other second. This effectively encodes the side to move in the network evaluation.
 
 ### Quantization
-An important way to speed up the neural network is to use quantization with SIMD vectorization on the cpu (unfortunately, gpu's aren't usually suited for chess engines as minimax is difficult to paralellize because of alpha beta pruning (for a multithreading approach for chess engines, see [lazy SMP](https://www.chessprogramming.org/Lazy_SMP)). Also, the data transfer latency between cpu and gpu is too high).
+An important way to speed up the neural network is to use quantization with SIMD vectorization on the CPU (unfortunately, GPUs aren't usually suited for chess engines as minimax is difficult to paralellize because of alpha beta pruning (for a multithreaded approach for chess engines, see [lazy SMP](https://www.chessprogramming.org/Lazy_SMP)). Also, the data transfer latency between CPU and GPU is too high).
 
 The first layer weights and biases are multiplied by a scale of 255 and stored in int16. Accumulation also happens in int16.  With a maximum of 30 active input features (all pieces on the board), there won't be any integer overflow unless (sum of 30 weights) + bias > 32767, which is most definitely not the case. We then apply squared clipped relu. Now `L0_quant_output = input @ (255*weights) + 255*bias = 255*(input @ weights + bias) = 255*true_output`.
 For the second layer, weights are multiplied by 64 and stored in int16, and the bias is multiplied by 127 * 64 and stored in int32. After this layer, the output is

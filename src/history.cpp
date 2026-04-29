@@ -1,13 +1,13 @@
 #include "history.hpp"
 
-UNACTIVE_TUNEABLE(CONTHIST_FILL_VALUE, int, 0, -5'000, 5'000, 50, 0.002);
-UNACTIVE_TUNEABLE(HIST_FILL_VALUE, int, 0, -5'000, 5'000, 50, 0.002);
-UNACTIVE_TUNEABLE(CAPTHIST_FILL_VALUE, int, 0, -5'000, 5'000, 50, 0.002);
-UNACTIVE_TUNEABLE(MAX_CAPTHIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
-UNACTIVE_TUNEABLE(PAWN_CORRHIST_FILL_VALUE, int, 0, -5'000, 5'000, 50, 0.002);
-UNACTIVE_TUNEABLE(MAX_CONTHIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
-UNACTIVE_TUNEABLE(MAX_HIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
-UNACTIVE_TUNEABLE(MAX_PAWN_CORRHIST_BONUS, int, 10'000, 0, 10'000, 2000, 0.002);
+UNACTIVE_TUNEABLE(CONTHIST_FILL_VALUE, int, -22, -5'000, 5'000, 50, 0.002);
+UNACTIVE_TUNEABLE(HIST_FILL_VALUE, int, 2, -5'000, 5'000, 50, 0.002);
+UNACTIVE_TUNEABLE(CAPTHIST_FILL_VALUE, int, -11, -5'000, 5'000, 50, 0.002);
+UNACTIVE_TUNEABLE(MAX_CAPTHIST_BONUS, int, 9486, 0, 50'000, 2000, 0.002);
+UNACTIVE_TUNEABLE(PAWN_CORRHIST_FILL_VALUE, int, 8, -5'000, 5'000, 50, 0.002);
+UNACTIVE_TUNEABLE(MAX_CONTHIST_BONUS, int, 10462, 0, 50'000, 2000, 0.002);
+UNACTIVE_TUNEABLE(MAX_HIST_BONUS, int, 9856, 0, 50'000, 2000, 0.002);
+UNACTIVE_TUNEABLE(MAX_PAWN_CORRHIST_BONUS, int, 7955, 0, 50'000, 2000, 0.002);
 
 void ContinuationHistory::clear(){
     std::fill(std::begin(history), std::end(history), CONTHIST_FILL_VALUE);
@@ -69,6 +69,9 @@ void CaptureHistory::clear(){
 }
 
 int& CaptureHistory::get(Piece piece, Square to, Piece captured){
+    // if the move was en passant, this function may be called with captured == None,
+    // but idx will still be less than the history size
+    assert(piece*64*6 + to.index()*6 + static_cast<int>(captured.type()) < 12*64*6);
     return history[piece*64*6 + to.index()*6 + static_cast<int>(captured.type())];
 }
 
