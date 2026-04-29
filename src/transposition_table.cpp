@@ -61,12 +61,13 @@ void TranspositionTable::info(){
 
 void TranspositionTable::allocateMB(int new_size){
     assert(new_size >= 2);
+    assert((new_size & (new_size - 1)) == 0); // make sure the size is a power of 2
 
     new_size = std::max(new_size, TT_MIN_SIZE);
     new_size = std::min(new_size, TT_MAX_SIZE);
 
     // closest power of 2 to 1'000'000 / 16 is 2^16 = 65536
-    // assert(sizeof(TEntry) == 16);
+    assert(sizeof(TEntry) == 16);
     constexpr int entries_in_one_mb = 65536;
     size = new_size * entries_in_one_mb;
     size_mb = new_size;
@@ -81,7 +82,7 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
     assert(move != Move::NULL_MOVE);
 
     // no need to store the side to move, as it is in the zobrist hash.
-    TEntry* entry = &entries[static_cast<std::uint64_t>((static_cast<unsigned __int128>(zobrist) * static_cast<unsigned __int128>(size)) >> 64)];
+    TEntry* entry = &entries[zobrist & (size - 1)];
 
     // we replace the old entry if:
     // - the old entry is empty
@@ -93,10 +94,10 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
         (depth != DEPTH_QSEARCH && flag == TFlag::EXACT))
     {
         // add move if the old entry didn't hold the same position or if the new move is better
-        if (entry->zobrist_hash != uint16_t(zobrist) || move != Move::NO_MOVE)
+        if (entry->zobrist_hash != uint32_t(zobrist) || move != Move::NO_MOVE)
             entry->move = move.move();
 
-        entry->zobrist_hash = uint16_t(zobrist);
+        entry->zobrist_hash = uint32_t(zobrist);
         entry->value = value;
         entry->static_eval = static_eval;
         entry->depth = depth;
@@ -105,8 +106,10 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
 }
 
 TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist){
-    TEntry* entry = &entries[static_cast<std::uint64_t>((static_cast<unsigned __int128>(zobrist) * static_cast<unsigned __int128>(size)) >> 64)];
-    is_hit = (entry->zobrist_hash == uint16_t(zobrist));
+    assert((size & (size - 1)) == 0);
+
+    TEntry* entry = &entries[zobrist & (size - 1)];
+    is_hit = (entry->zobrist_hash == uint32_t(zobrist));
 
     if (is_hit)
         return TTData(entry);

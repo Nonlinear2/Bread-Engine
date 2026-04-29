@@ -15,14 +15,14 @@ enum class TFlag: uint8_t {
 
 // side to move is not stored in the transposition table as it is in the zobrist hash
 struct TEntry {
-    uint16_t zobrist_hash   = 0; // 2 bytes
+    uint32_t zobrist_hash   = 0; // 4 bytes
     int16_t value           = NO_VALUE; // 2 bytes
     int16_t static_eval     = NO_VALUE; // 2 bytes
     uint16_t move           = 0; // 2 bytes
     uint8_t depth           = 0; // 1 byte
     uint8_t move_num_tflag  = 0; // 1 byte -> contains move_num: 6 bits (64 values), flag: 2 bits (4 values)
     // ==============
-    // ----> total = 2 + 8 = 10 bytes
+    // ----> total = 2 + 8 = 12 bytes
 
     int move_number(){
         return static_cast<int>(move_num_tflag >> 2);
