@@ -29,7 +29,7 @@ struct TEntry {
     };
 
     TFlag flag(){
-        return static_cast<TFlag>(move_num_tflag_ttpv & 0b00000110);
+        return static_cast<TFlag>((move_num_tflag_ttpv >> 1) & 0b00000011);
     };
 
     bool ttpv(){
