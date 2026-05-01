@@ -580,10 +580,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         new_depth -= depth > 5 && !is_hit; // IIR
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
-        int reduction = 0;
+        int reduction = 30;
 
         reduction -= red_1 * (gives_check && !root_node);
-        reduction -= 1024 * (transposition.ttpv);
+        reduction -= 850 * (transposition.ttpv);
 
         reduction += red_2 * (move_gen.index() > 1 && !is_capture);
         reduction += red_3 * (tt_capture && !is_capture);
