@@ -30,11 +30,11 @@ UNACTIVE_TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
 UNACTIVE_TUNEABLE(asp_1, int, 77, 0, 5000, 20, 0.002);
 UNACTIVE_TUNEABLE(asp_2, int, 430, 0, 5000, 80, 0.002);
 UNACTIVE_TUNEABLE(red_1, int, 1002, 0, 10000, 250, 0.002);
-UNACTIVE_TUNEABLE(red_2, int, 1762, 0, 10000, 300, 0.002);
-UNACTIVE_TUNEABLE(red_3, int, 835, 0, 10000, 150, 0.002);
-UNACTIVE_TUNEABLE(red_4, int, 2028, 0, 10000, 300, 0.002);
-UNACTIVE_TUNEABLE(red_5, int, 808, 0, 10000, 200, 0.002);
-UNACTIVE_TUNEABLE(red_6, int, 766, 0, 10000, 180, 0.002);
+UNACTIVE_TUNEABLE(red_2, int, 1742, 0, 10000, 300, 0.002);
+UNACTIVE_TUNEABLE(red_3, int, 815, 0, 10000, 150, 0.002);
+UNACTIVE_TUNEABLE(red_4, int, 1998, 0, 10000, 300, 0.002);
+UNACTIVE_TUNEABLE(red_5, int, 788, 0, 10000, 200, 0.002);
+UNACTIVE_TUNEABLE(red_6, int, 746, 0, 10000, 180, 0.002);
 UNACTIVE_TUNEABLE(red_th_1, int, 1600, 0, 10000, 320, 0.002);
 UNACTIVE_TUNEABLE(red_th_2, int, 2135, 0, 10000, 450, 0.002);
 UNACTIVE_TUNEABLE(corr_1, int, 268, 0, 10000, 50, 0.002);
@@ -580,10 +580,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         new_depth -= depth > 5 && !is_hit; // IIR
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
-        int reduction = 50;
+        int reduction = 30;
 
         reduction -= red_1 * (gives_check && !root_node);
-        reduction -= 750 * (transposition.ttpv);
+        reduction -= 850 * (transposition.ttpv);
 
         reduction += red_2 * (move_gen.index() > 1 && !is_capture);
         reduction += red_3 * (tt_capture && !is_capture);
