@@ -30,11 +30,12 @@ UNACTIVE_TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
 UNACTIVE_TUNEABLE(asp_1, int, 77, 0, 5000, 20, 0.002);
 UNACTIVE_TUNEABLE(asp_2, int, 430, 0, 5000, 80, 0.002);
 UNACTIVE_TUNEABLE(red_1, int, 1002, 0, 10000, 250, 0.002);
-UNACTIVE_TUNEABLE(red_2, int, 1742, 0, 10000, 300, 0.002);
-UNACTIVE_TUNEABLE(red_3, int, 815, 0, 10000, 150, 0.002);
-UNACTIVE_TUNEABLE(red_4, int, 1998, 0, 10000, 300, 0.002);
-UNACTIVE_TUNEABLE(red_5, int, 788, 0, 10000, 200, 0.002);
-UNACTIVE_TUNEABLE(red_6, int, 746, 0, 10000, 180, 0.002);
+UNACTIVE_TUNEABLE(red_2, int, 1024, 0, 10000, 250, 0.002);
+UNACTIVE_TUNEABLE(red_3, int, 1742, 0, 10000, 300, 0.002);
+UNACTIVE_TUNEABLE(red_4, int, 815, 0, 10000, 150, 0.002);
+UNACTIVE_TUNEABLE(red_5, int, 1998, 0, 10000, 300, 0.002);
+UNACTIVE_TUNEABLE(red_6, int, 788, 0, 10000, 200, 0.002);
+UNACTIVE_TUNEABLE(red_7, int, 746, 0, 10000, 180, 0.002);
 UNACTIVE_TUNEABLE(red_th_1, int, 1600, 0, 10000, 320, 0.002);
 UNACTIVE_TUNEABLE(red_th_2, int, 2135, 0, 10000, 450, 0.002);
 UNACTIVE_TUNEABLE(corr_1, int, 268, 0, 10000, 50, 0.002);
@@ -583,13 +584,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         int reduction = 0;
 
         reduction -= red_1 * (gives_check && !root_node);
-        reduction -= 1024 * (transposition.ttpv);
-
-        reduction += red_2 * (move_gen.index() > 1 && !is_capture);
-        reduction += red_3 * (tt_capture && !is_capture);
-        reduction += red_4 * (move_gen.index() > lmr_1);
-        reduction += red_5 * (cutnode && depth > 7);
-        reduction += red_6 * (depth > 3 && !improving);
+        reduction -= red_2 * (transposition.ttpv);
+        reduction += red_3 * (move_gen.index() > 1 && !is_capture);
+        reduction += red_4 * (tt_capture && !is_capture);
+        reduction += red_5 * (move_gen.index() > lmr_1);
+        reduction += red_6 * (cutnode && depth > 7);
+        reduction += red_7 * (depth > 3 && !improving);
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
