@@ -607,7 +607,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         bool gives_check = pos.inCheck();
 
-        int reduction = get_base_reduction(is_capture, depth, move_gen.index()) - 500;
+        int reduction = get_base_reduction(is_capture, depth, move_gen.index()) - 600;
 
         reduction -= red_1 * (gives_check && !root_node);
         reduction -= red_2 * (transposition.ttpv);
