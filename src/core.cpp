@@ -551,8 +551,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         int extension = 0;
         if (!root_node && is_regular_eval(transposition.value)
             && move == transposition.move && excluded_move == Move::NO_MOVE
-            && depth >= 5 + transposition.ttpv
-            && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
+            && depth >= 5 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
             && transposition.depth >= depth - 1)
         {
             int singular_beta = transposition.value - se_1 - se_2*depth / 16;
@@ -582,10 +581,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         new_depth -= depth > 5 && !is_hit; // IIR
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
-        int reduction = 0;
+        int reduction = 100;
 
         reduction -= red_1 * (gives_check && !root_node);
         reduction -= red_2 * (transposition.ttpv);
+        reduction -= 450 * (transposition.ttpv && pv);
         reduction += red_3 * (move_gen.index() > 1 && !is_capture);
         reduction += red_4 * (tt_capture && !is_capture);
         reduction += red_5 * (move_gen.index() > lmr_1);
