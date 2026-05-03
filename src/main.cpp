@@ -6,9 +6,11 @@
 int main(int argc, char* argv[]){
     NNUE::init();
 
+    UCIAgent uci_engine = UCIAgent();
+
     if (argc >= 2){
         if (std::string(argv[1]) == "bench"){
-            Benchmark::benchmark_engine(BENCHMARK_DEPTH);
+            Benchmark::benchmark_engine(uci_engine.workers.main().engine, BENCHMARK_DEPTH);
             return 0;
         }
 
@@ -39,7 +41,6 @@ int main(int argc, char* argv[]){
         }
     }
 
-    UCIAgent uci_engine = UCIAgent();
     std::string input;
     bool running;
     do {

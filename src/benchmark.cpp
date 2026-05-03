@@ -52,12 +52,6 @@ void benchmark_nn(){
     std::cout << "============================== \n";
 }
 
-void benchmark_engine(int depth){
-    TranspositionTable tt;
-    Engine engine(true, tt);
-    benchmark_engine(engine, BENCHMARK_DEPTH);
-}
-
 void benchmark_engine(Engine& engine, int depth){
 
     std::vector<int> times;
