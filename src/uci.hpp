@@ -2,25 +2,54 @@
 
 #include <string>
 #include <vector>
+#include <deque>
 #include <iostream>
-#include <sstream>
 #include <thread>
 #include "tune.hpp"
 #include "core.hpp"
 #include "benchmark.hpp"
 
-class UCIAgent {
+struct Worker {
     public:
-    std::thread main_search_thread;
-    int num_moves_out_of_book = 0;
-    Engine engine = Engine();
+    Worker(bool is_main_thread, TranspositionTable& tt);
+    std::thread thread;
+    Engine engine;
+};
 
-    
-    bool process_uci_command(std::string command);
+class WorkerPool {
+    public:
+    WorkerPool(int size, TranspositionTable& tt);
 
-    static std::vector<std::string> split_string(std::string str);
+    int size();
+    void clear_state();
+    void synchronize();
+    void set_tablebase_loaded(bool tablebase_loaded);
+    void set_is_nonsense(bool is_nonsense);
+    void set_position(NnueBoard& pos);
+    void update_limit(SearchLimit limit);
+
+    void start_searching(SearchLimit limit);
+    void interrupt_and_join_threads();
+
+    Worker& main();
 
     private:
+    std::deque<Worker> workers;
+};
+
+class UCIAgent {
+    public:
+    UCIAgent();
+
+    NnueBoard pos;
+    TranspositionTable tt;
+    WorkerPool workers;
+
+    bool process_uci_command(std::string command);
+
+    private:
+    int num_moves_out_of_book = 0;
+
     int cached_think_time;
     
     void process_setoption(std::vector<std::string> command);
@@ -34,6 +63,4 @@ class UCIAgent {
     void process_eval(std::vector<std::string> command);
 
     int get_think_time_from_go_command(std::vector<std::string> command);
-
-    void interrupt_if_searching();
 };
