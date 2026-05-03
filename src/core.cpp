@@ -476,7 +476,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             return qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval.
 
         // reverse futility pruning
-        if (!transposition.ttpv && depth < 9 - 3*is_hit
+        if (depth < 9 - 3*is_hit
             && eval - depth * (rfp_1 - rfp_2*cutnode) 
                     - rfp_3
                     + rfp_4 * improving 
@@ -551,7 +551,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         int extension = 0;
         if (!root_node && is_regular_eval(transposition.value)
             && move == transposition.move && excluded_move == Move::NO_MOVE
-            && depth >= 5 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
+            && depth >= 5 + transposition.ttpv
+            && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
             && transposition.depth >= depth - 1)
         {
             int singular_beta = transposition.value - se_1 - se_2*depth / 16;
