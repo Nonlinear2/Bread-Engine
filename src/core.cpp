@@ -54,7 +54,10 @@ int get_think_time(float time_left, int num_moves_out_of_book, int num_moves_unt
     return static_cast<int>(target + 0.9F*increment);
 }
 
-Engine::Engine(bool is_main_thread, TranspositionTable& tt): is_main_thread(is_main_thread), tt(tt) {};
+Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes)
+    : is_main_thread(is_main_thread),
+      tt(tt),
+      nodes(nodes) {};
 
 bool Engine::update_interrupt_flag(){
     SearchLimit limit_ = limit.load();
@@ -343,7 +346,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     if (interrupt_flag || ((nodes & 2047) == 0 && update_interrupt_flag()))
         return NO_VALUE;
-    nodes++;
+    nodes.fetch_add(1, std::memory_order_relaxed);
 
     if (ply > seldepth)
         seldepth = ply;
@@ -724,7 +727,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     if (interrupt_flag || ((nodes & 2047) == 0 && update_interrupt_flag()))
         return NO_VALUE;
-    nodes++;
+    nodes.fetch_add(1, std::memory_order_relaxed);
 
     if (ply > seldepth)
         seldepth = ply;
