@@ -80,31 +80,18 @@ bool Engine::update_interrupt_flag(){
 }
 
 void Engine::fill_lmr_table(){
-    for (int capture = 0; capture < 2; capture++)
-        for (int depth = 0; depth < LMR_MAX_DEPTH; depth++)
-            for (int move_count = 0; move_count < LMR_MAX_MOVE_COUNT; move_count++){
-                int& reduction = lmr_table[
-                    capture * LMR_MAX_DEPTH * LMR_MAX_MOVE_COUNT 
-                    + depth * LMR_MAX_MOVE_COUNT 
-                    + move_count
-                ];
+    for (int idx = 0; idx < LMR_TABLE_SIZE; idx++){
+        if (idx == 0){
+            lmr_table[idx] = 0;
+            continue;
+        }
 
-                if (depth == 0 || move_count == 0) {
-                    reduction = 0;
-                    continue;
-                }
-
-                if (capture)
-                    reduction = cred_lmr_1 + cred_lmr_2 * std::log(depth) * std::log(move_count);
-                else
-                    reduction = red_lmr_1 + red_lmr_2 * std::log(depth) * std::log(move_count);
-            }
+        lmr_table[idx] = 12 * std::log(idx);
+    }
 }
 
-int Engine::get_base_reduction(bool is_capture, int depth, int move_count){
-    depth = std::min(depth, LMR_MAX_DEPTH);
-    move_count = std::min(move_count, LMR_MAX_MOVE_COUNT);
-    return lmr_table[is_capture * LMR_MAX_DEPTH * LMR_MAX_MOVE_COUNT + depth * LMR_MAX_MOVE_COUNT + move_count];
+int Engine::get_base_reduction(int depth, int move_count){
+    return lmr_table[depth] * lmr_table[move_count];
 }
 
 void Engine::clear_state(){
@@ -614,7 +601,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         bool gives_check = pos.inCheck();
 
-        int reduction = get_base_reduction(is_capture, depth, move_gen.index());
+        int reduction = get_base_reduction(depth, move_gen.index());
 
         reduction -= red_1 * (gives_check && !root_node);
         reduction -= red_2 * (transposition.ttpv);

@@ -39,7 +39,7 @@ class Engine {
     std::atomic<int> run_time;
     TranspositionTable& tt;
 
-    std::array<int, 2 * LMR_MAX_DEPTH * LMR_MAX_MOVE_COUNT> lmr_table;
+    std::array<int, LMR_TABLE_SIZE> lmr_table;
 
     NnueBoard pos = NnueBoard();
 
@@ -67,7 +67,7 @@ class Engine {
     bool tablebase_loaded = false;
 
     void fill_lmr_table();
-    int get_base_reduction(bool is_capture, int depth, int move_count);
+    int get_base_reduction(int depth, int move_count);
 
     CaptureHistory capt_history = CaptureHistory();
     KillerMoves killer_moves = KillerMoves();

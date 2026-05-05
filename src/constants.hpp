@@ -79,8 +79,7 @@ constexpr int DEPTH_QSEARCH = 0;
 constexpr int QSEARCH_SOFT_DEPTH_LIMIT = 6;
 constexpr int QSEARCH_HARD_DEPTH_LIMIT = 15;
 
-constexpr int LMR_MAX_DEPTH = 32;
-constexpr int LMR_MAX_MOVE_COUNT = 64;
+constexpr int LMR_TABLE_SIZE = 256;
 
 /*****
 scores
