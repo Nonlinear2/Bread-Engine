@@ -29,9 +29,9 @@ UNACTIVE_TUNEABLE(cthis_2, int, 629, 0, 3000, 100, 0.002);
 UNACTIVE_TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
 UNACTIVE_TUNEABLE(asp_1, int, 77, 0, 5000, 20, 0.002);
 UNACTIVE_TUNEABLE(asp_2, int, 430, 0, 5000, 80, 0.002);
-UNACTIVE_TUNEABLE(cred_lmr_1, int, 334, 0, 10000, 70, 0.002);
-UNACTIVE_TUNEABLE(red_lmr_1, int, 346, 0, 10000, 70, 0.002);
-UNACTIVE_TUNEABLE(cred_lmr_2, int, 126, 0, 10000, 30, 0.002);
+UNACTIVE_TUNEABLE(cred_lmr_1, int, 0, -10000, 10000, 70, 0.002);
+UNACTIVE_TUNEABLE(red_lmr_1, int, 0, -10000, 10000, 70, 0.002);
+UNACTIVE_TUNEABLE(cred_lmr_2, int, 100, 0, 10000, 30, 0.002);
 UNACTIVE_TUNEABLE(red_lmr_2, int, 121, 0, 10000, 30, 0.002);
 UNACTIVE_TUNEABLE(red_1, int, 1002, 0, 10000, 250, 0.002);
 UNACTIVE_TUNEABLE(red_2, int, 1024, 0, 10000, 250, 0.002);
@@ -607,7 +607,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         bool gives_check = pos.inCheck();
 
-        int reduction = get_base_reduction(is_capture, depth, move_gen.index()) - 600;
+        int reduction = get_base_reduction(is_capture, depth, move_gen.index());
 
         reduction -= red_1 * (gives_check && !root_node);
         reduction -= red_2 * (transposition.ttpv);
