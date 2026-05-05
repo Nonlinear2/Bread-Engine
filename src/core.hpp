@@ -39,7 +39,7 @@ class Engine {
     std::atomic<int> run_time;
     TranspositionTable& tt;
 
-    std::array<int, 2 * (ENGINE_MAX_DEPTH+1) * 219> lmr_table;
+    std::array<int, 2 * LMR_MAX_DEPTH * LMR_MAX_MOVE_COUNT> lmr_table;
 
     NnueBoard pos = NnueBoard();
 
