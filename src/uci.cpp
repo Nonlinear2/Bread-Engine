@@ -155,6 +155,7 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
             std::cout << "info string hash size must be a power of 2" << std::endl;
         }
     } else if (option_name == "Threads"){
+        workers.interrupt_and_join_threads();
         workers = WorkerPool(std::stoi(option_value), tt);
         std::cout << "info string number of threads set to " << workers.size() << std::endl;
     } else if (option_name == "Nonsense"){
