@@ -23,16 +23,16 @@ int get_think_time(float time_left, int num_moves_out_of_book,
 class Engine {
     public:
 
-    Engine(bool is_main_thread, TranspositionTable& tt);
+    Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes);
 
     bool is_main_thread;
-    int64_t nodes = 0;
+    std::atomic<int64_t>& nodes;
     int64_t tb_hits = 0;
     int64_t seldepth = 0;
     int root_depth = 0;
     std::atomic<SearchLimit> limit;
     std::atomic<bool> interrupt_flag = false;
-    
+
     Stack stack[MAX_PLY + STACK_PADDING_SIZE] = {};
     Stack* root_ss = stack + 2;
 
