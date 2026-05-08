@@ -2049,6 +2049,55 @@ class Board {
         }
     }
 
+    void recompute_nonpawn_key(Color color){
+        nonpawn_keys_[color] = 0;
+        Bitboard nonpawn = us(color) & (~pieces(PieceType::PAWN, color));
+        while (nonpawn){
+            Square sq = Square(nonpawn.pop());
+            nonpawn_keys_[color] ^= Zobrist::piece(at(sq), sq);
+        }
+    }
+
+    // should be called before playing the move
+    void update_nonpawn_keys(Move move){
+        switch (move.typeOf()){
+        case Move::PROMOTION:
+            Color color = at(move.from()).color();
+            nonpawn_keys_[color] ^= Zobrist::piece(Piece(move.promotionType(), color), move.to());
+            break;
+
+        case Move::CASTLING:
+            const bool king_side = move.to() > move.from();
+
+            Square rook_from = move.to();
+            Square king_from = move.from();
+
+            Square rook_to = Square::castling_rook_square(king_side, sideToMove());
+            Square king_to = Square::castling_king_square(king_side, sideToMove());
+
+            Color color = at(king_from).color();
+
+            nonpawn_keys_[color] ^= Zobrist::piece(Piece(PieceType::KING, color), king_from);
+            nonpawn_keys_[color] ^= Zobrist::piece(Piece(PieceType::KING, color), king_to);
+
+            nonpawn_keys_[color] ^= Zobrist::piece(Piece(PieceType::ROOK, color), rook_from);
+            nonpawn_keys_[color] ^= Zobrist::piece(Piece(PieceType::ROOK, color), rook_to);
+            break;
+
+        default:
+            if (at(move.from()).type() != PieceType::PAWN){
+                Piece pc = at(move.from());
+                Color color = pc.color();
+                nonpawn_keys_[color] ^= Zobrist::piece(pc, move.from());
+                nonpawn_keys_[color] ^= Zobrist::piece(pc, move.to());
+            }
+
+            if (at(move.to()).type() != PieceType::PAWN)
+                nonpawn_keys_[~color] ^= Zobrist::piece(at(move.to()), move.to());
+            break;
+        }
+    }
+
     /**
      * @brief Check if a move is legal from the current position. Assumes there
      * is some position where the move is legal (e.g., no promotion to a king).
@@ -3093,6 +3142,7 @@ class Board {
 
     U64 key_             = 0ULL;
     uint16_t pawn_key_   = 0;
+    uint16_t nonpawn_keys_[2] = {};
     CastlingRights cr_   = {};
     std::uint16_t plies_ = 0;
     Color stm_           = Color::WHITE;
