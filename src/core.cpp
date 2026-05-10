@@ -59,6 +59,14 @@ Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>
       tt(tt),
       nodes(nodes) {};
 
+      
+int Engine::get_corrhist(chess::Color color){
+    return (pawn_corrhist.get(color, pos.get_pawn_key()) 
+           + nonpawn_corrhist[color].get(color, pos.get_nonpawn_key(color))
+           + nonpawn_corrhist[color].get(~color, pos.get_nonpawn_key(~color))
+        ) / 32768;
+}
+
 bool Engine::update_interrupt_flag(){
     SearchLimit limit_ = limit.load();
     switch (limit_.type){
@@ -81,6 +89,8 @@ void Engine::clear_state(){
     capt_history.clear();
     history.clear();
     pawn_corrhist.clear();
+    nonpawn_corrhist[0].clear();
+    nonpawn_corrhist[1].clear();
     cont_history.clear();
     killer_moves.clear();
 }
@@ -96,6 +106,8 @@ void Engine::save_state(std::string file){
     capt_history.save_to_stream(ofs);
     history.save_to_stream(ofs);
     pawn_corrhist.save_to_stream(ofs);
+    nonpawn_corrhist[0].save_to_stream(ofs);
+    nonpawn_corrhist[1].save_to_stream(ofs);
     cont_history.save_to_stream(ofs);
     killer_moves.save_to_stream(ofs);
 
@@ -113,6 +125,8 @@ void Engine::load_state(std::string file){
     capt_history.load_from_stream(ifs);
     history.load_from_stream(ifs);
     pawn_corrhist.load_from_stream(ifs);
+    nonpawn_corrhist[0].load_from_stream(ifs);
+    nonpawn_corrhist[1].load_from_stream(ifs);
     cont_history.load_from_stream(ifs);
     killer_moves.load_from_stream(ifs);
 
@@ -454,7 +468,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         uncorrected_static_eval = evaluate(pos);
 
     static_eval = std::clamp(
-        uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 32768,
+        uncorrected_static_eval + corr_1 * get_corrhist(pos.sideToMove()),
         -BEST_VALUE, BEST_VALUE);
 
     ss->static_eval = static_eval;
@@ -691,7 +705,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (!in_check && !(best_move != Move::NO_MOVE && pos.isCapture(best_move))
         && (max_value > ss->static_eval) == (best_move != Move::NO_MOVE)){
         int bonus = std::clamp((max_value - static_eval) * depth/7, -corr_2, corr_2);
-        pawn_corrhist.apply_bonus(pos.sideToMove(), pos.get_pawn_key(), bonus);
+        Color stm = pos.sideToMove();
+        pawn_corrhist.apply_bonus(stm, pos.get_pawn_key(), bonus);
+        nonpawn_corrhist[stm].apply_bonus(stm, pos.get_nonpawn_key(stm), bonus/2);
+        nonpawn_corrhist[stm].apply_bonus(~stm, pos.get_nonpawn_key(~stm), bonus/2);
     }
 
     // early return without storing the eval in the TT
@@ -795,7 +812,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             uncorrected_static_eval = evaluate(pos);
 
         static_eval = std::clamp(
-            uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 32768,
+            uncorrected_static_eval + corr_1 * get_corrhist(pos.sideToMove()),
             -BEST_VALUE, BEST_VALUE);
 
         stand_pat = static_eval;
