@@ -1863,19 +1863,24 @@ class Board {
     struct State {
         U64 hash;
         uint16_t pawn_key;
+        uint16_t nonpawn_keys[2];
         CastlingRights castling;
         Square enpassant;
         std::uint8_t half_moves;
         Piece captured_piece;
 
-        State(const U64& hash, const uint16_t& pawn_key, const CastlingRights& castling, const Square& enpassant,
+        State(const U64& hash, const uint16_t& pawn_key, const uint16_t (&nonpawn_key)[2],
+              const CastlingRights& castling, const Square& enpassant,
               const std::uint8_t& half_moves, const Piece& captured_piece)
             : hash(hash),
               pawn_key(pawn_key),
               castling(castling),
               enpassant(enpassant),
               half_moves(half_moves),
-              captured_piece(captured_piece) {}
+              captured_piece(captured_piece) {
+                nonpawn_keys[0] = nonpawn_key[0];
+                nonpawn_keys[1] = nonpawn_key[1];
+              }
     };
 
    protected:
@@ -2049,24 +2054,27 @@ class Board {
         }
     }
 
-    void recompute_nonpawn_key(Color color){
-        nonpawn_keys_[color] = 0;
-        Bitboard nonpawn = us(color) & (~pieces(PieceType::PAWN, color));
-        while (nonpawn){
-            Square sq = Square(nonpawn.pop());
-            nonpawn_keys_[color] ^= Zobrist::piece(at(sq), sq);
+    void recompute_nonpawn_keys(){
+        for (Color color: {Color::BLACK, Color::WHITE}){
+            nonpawn_keys_[color] = 0;
+            Bitboard nonpawn = us(color) & (~pieces(PieceType::PAWN, color));
+            while (nonpawn){
+                Square sq = Square(nonpawn.pop());
+                nonpawn_keys_[color] ^= Zobrist::piece(at(sq), sq);
+            }
         }
     }
 
     // should be called before playing the move
     void update_nonpawn_keys(Move move){
+        Color color = at(move.from()).color();
+
         switch (move.typeOf()){
         case Move::PROMOTION:
-            Color color = at(move.from()).color();
             nonpawn_keys_[color] ^= Zobrist::piece(Piece(move.promotionType(), color), move.to());
             break;
 
-        case Move::CASTLING:
+        case Move::CASTLING: {
             const bool king_side = move.to() > move.from();
 
             Square rook_from = move.to();
@@ -2075,7 +2083,7 @@ class Board {
             Square rook_to = Square::castling_rook_square(king_side, sideToMove());
             Square king_to = Square::castling_king_square(king_side, sideToMove());
 
-            Color color = at(king_from).color();
+            color = at(king_from).color();
 
             nonpawn_keys_[color] ^= Zobrist::piece(Piece(PieceType::KING, color), king_from);
             nonpawn_keys_[color] ^= Zobrist::piece(Piece(PieceType::KING, color), king_to);
@@ -2083,11 +2091,10 @@ class Board {
             nonpawn_keys_[color] ^= Zobrist::piece(Piece(PieceType::ROOK, color), rook_from);
             nonpawn_keys_[color] ^= Zobrist::piece(Piece(PieceType::ROOK, color), rook_to);
             break;
-
+        }
         default:
             if (at(move.from()).type() != PieceType::PAWN){
                 Piece pc = at(move.from());
-                Color color = pc.color();
                 nonpawn_keys_[color] ^= Zobrist::piece(pc, move.from());
                 nonpawn_keys_[color] ^= Zobrist::piece(pc, move.to());
             }
@@ -2123,12 +2130,13 @@ class Board {
         // Validate side to move
         assert((at(move.from()) < Piece::BLACKPAWN) == (stm_ == Color::WHITE));
 
-        prev_states_.emplace_back(key_, pawn_key_, cr_, ep_sq_, hfm_, captured);
+        prev_states_.emplace_back(key_, pawn_key_, nonpawn_keys_, cr_, ep_sq_, hfm_, captured);
 
         hfm_++;
         plies_++;
 
         update_pawn_key(move);
+        update_nonpawn_keys(move);
 
         if (ep_sq_ != Square::NO_SQ) key_ ^= Zobrist::enpassant(ep_sq_.file());
         ep_sq_ = Square::NO_SQ;
@@ -2339,6 +2347,8 @@ class Board {
 
         key_ = prev.hash;
         pawn_key_ = prev.pawn_key;
+        nonpawn_keys_[0] = prev.nonpawn_keys[0];
+        nonpawn_keys_[1] = prev.nonpawn_keys[1];
         prev_states_.pop_back();
     }
 
@@ -2346,7 +2356,7 @@ class Board {
      * @brief Make a null move. (Switches the side to move)
      */
     void makeNullMove() {
-        prev_states_.emplace_back(key_, pawn_key_, cr_, ep_sq_, hfm_, Piece::NONE);
+        prev_states_.emplace_back(key_, pawn_key_, nonpawn_keys_, cr_, ep_sq_, hfm_, Piece::NONE);
 
         key_ ^= Zobrist::sideToMove();
         if (ep_sq_ != Square::NO_SQ) key_ ^= Zobrist::enpassant(ep_sq_.file());
@@ -2487,6 +2497,7 @@ class Board {
      */
     [[nodiscard]] U64 hash() const noexcept { return key_; }
     [[nodiscard]] uint16_t get_pawn_key() const noexcept { return pawn_key_; }
+    [[nodiscard]] uint16_t get_nonpawn_key(Color color) const noexcept { return nonpawn_keys_[color]; }
     [[nodiscard]] Color sideToMove() const noexcept { return stm_; }
     [[nodiscard]] Square enpassantSq() const noexcept { return ep_sq_; }
     [[nodiscard]] CastlingRights castlingRights() const noexcept { return cr_; }
