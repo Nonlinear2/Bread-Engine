@@ -2070,10 +2070,14 @@ class Board {
         Color color = at(move.from()).color();
 
         switch (move.typeOf()){
-        case Move::PROMOTION:
+        case Move::PROMOTION: {
             nonpawn_keys_[color] ^= Zobrist::piece(Piece(move.promotionType(), color), move.to());
-            break;
 
+            Piece captured = at(move.to());
+            if (captured != Piece::NONE && captured.type() != PieceType::PAWN)
+                nonpawn_keys_[~color] ^= Zobrist::piece(captured, move.to());
+            break;
+        }
         case Move::CASTLING: {
             const bool king_side = move.to() > move.from();
 
@@ -2092,16 +2096,18 @@ class Board {
             nonpawn_keys_[color] ^= Zobrist::piece(Piece(PieceType::ROOK, color), rook_to);
             break;
         }
-        default:
-            if (at(move.from()).type() != PieceType::PAWN){
-                Piece pc = at(move.from());
+        default: {
+            Piece pc = at(move.from());
+            if (pc.type() != PieceType::PAWN){
                 nonpawn_keys_[color] ^= Zobrist::piece(pc, move.from());
                 nonpawn_keys_[color] ^= Zobrist::piece(pc, move.to());
             }
 
-            if (at(move.to()).type() != PieceType::PAWN)
-                nonpawn_keys_[~color] ^= Zobrist::piece(at(move.to()), move.to());
+            Piece captured = at(move.to());
+            if (captured != Piece::NONE && captured.type() != PieceType::PAWN)
+                nonpawn_keys_[~color] ^= Zobrist::piece(captured, move.to());
             break;
+        }
         }
     }
 

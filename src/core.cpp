@@ -61,6 +61,10 @@ Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>
 
       
 int Engine::get_corrhist(chess::Color color){
+    uint16_t pk = pos.get_nonpawn_key(color);
+    pos.recompute_nonpawn_keys();
+    assert(pos.get_nonpawn_key(color) == pk);
+
     return (pawn_corrhist.get(color, pos.get_pawn_key()) 
            + nonpawn_corrhist[color].get(color, pos.get_nonpawn_key(color))
            + nonpawn_corrhist[color].get(~color, pos.get_nonpawn_key(~color))
@@ -707,8 +711,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         int bonus = std::clamp((max_value - static_eval) * depth/7, -corr_2, corr_2);
         Color stm = pos.sideToMove();
         pawn_corrhist.apply_bonus(stm, pos.get_pawn_key(), bonus);
-        nonpawn_corrhist[stm].apply_bonus(stm, pos.get_nonpawn_key(stm), bonus/2);
-        nonpawn_corrhist[stm].apply_bonus(~stm, pos.get_nonpawn_key(~stm), bonus/2);
+        nonpawn_corrhist[stm].apply_bonus(stm, pos.get_nonpawn_key(stm), bonus);
+        nonpawn_corrhist[stm].apply_bonus(~stm, pos.get_nonpawn_key(~stm), bonus);
     }
 
     // early return without storing the eval in the TT
