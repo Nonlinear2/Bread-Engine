@@ -61,9 +61,9 @@ Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>
 
       
 int Engine::get_corrhist(chess::Color color){
-    return (pawn_corrhist.get(color, pos.get_pawn_key()) 
-           + nonpawn_corrhist[color].get(color, pos.get_nonpawn_key(color))/2
-           + nonpawn_corrhist[color].get(~color, pos.get_nonpawn_key(~color))/2
+    return (corr_1 * pawn_corrhist.get(color, pos.get_pawn_key()) 
+           + 150 * nonpawn_corrhist[color].get(color, pos.get_nonpawn_key(color))
+           + 150 * nonpawn_corrhist[color].get(~color, pos.get_nonpawn_key(~color))
         ) / 32768;
 }
 
@@ -468,7 +468,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         uncorrected_static_eval = evaluate(pos);
 
     static_eval = std::clamp(
-        uncorrected_static_eval + corr_1 * get_corrhist(pos.sideToMove()),
+        uncorrected_static_eval + get_corrhist(pos.sideToMove()),
         -BEST_VALUE, BEST_VALUE);
 
     ss->static_eval = static_eval;
@@ -812,7 +812,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             uncorrected_static_eval = evaluate(pos);
 
         static_eval = std::clamp(
-            uncorrected_static_eval + corr_1 * get_corrhist(pos.sideToMove()),
+            uncorrected_static_eval + get_corrhist(pos.sideToMove()),
             -BEST_VALUE, BEST_VALUE);
 
         stand_pat = static_eval;
