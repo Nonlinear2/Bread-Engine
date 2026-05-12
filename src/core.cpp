@@ -62,8 +62,8 @@ Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>
       
 int Engine::get_corrhist(chess::Color color){
     return (corr_1 * pawn_corrhist.get(color, pos.get_pawn_key()) 
-           + 150 * nonpawn_corrhist[color].get(color, pos.get_nonpawn_key(color))
-           + 150 * nonpawn_corrhist[color].get(~color, pos.get_nonpawn_key(~color))
+           + 100 * nonpawn_corrhist[color].get(color, pos.get_nonpawn_key(color))
+           + 100 * nonpawn_corrhist[color].get(~color, pos.get_nonpawn_key(~color))
         ) / 32768;
 }
 
