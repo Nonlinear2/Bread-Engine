@@ -69,7 +69,9 @@ class Engine {
     FromToHistory history = FromToHistory();
     ContinuationHistory cont_history = ContinuationHistory();
     PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 
+    std::array<NonPawnCorrectionHistory, 2> nonpawn_corrhist = {}; 
 
+    int get_corrhist(Color color);
 
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove();

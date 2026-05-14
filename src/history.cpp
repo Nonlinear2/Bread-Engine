@@ -5,9 +5,12 @@ UNACTIVE_TUNEABLE(HIST_FILL_VALUE, int, 2, -5'000, 5'000, 50, 0.002);
 UNACTIVE_TUNEABLE(CAPTHIST_FILL_VALUE, int, -11, -5'000, 5'000, 50, 0.002);
 UNACTIVE_TUNEABLE(MAX_CAPTHIST_BONUS, int, 9486, 0, 50'000, 2000, 0.002);
 UNACTIVE_TUNEABLE(PAWN_CORRHIST_FILL_VALUE, int, 8, -5'000, 5'000, 50, 0.002);
+UNACTIVE_TUNEABLE(NONPAWN_CORRHIST_FILL_VALUE, int, 8, -5'000, 5'000, 50, 0.002);
+
 UNACTIVE_TUNEABLE(MAX_CONTHIST_BONUS, int, 10462, 0, 50'000, 2000, 0.002);
 UNACTIVE_TUNEABLE(MAX_HIST_BONUS, int, 9856, 0, 50'000, 2000, 0.002);
 UNACTIVE_TUNEABLE(MAX_PAWN_CORRHIST_BONUS, int, 7955, 0, 50'000, 2000, 0.002);
+UNACTIVE_TUNEABLE(MAX_NONPAWN_CORRHIST_BONUS, int, 7955, 0, 50'000, 2000, 0.002);
 
 void ContinuationHistory::clear(){
     std::fill(std::begin(history), std::end(history), CONTHIST_FILL_VALUE);
@@ -84,6 +87,11 @@ void CaptureHistory::save_to_stream(std::ofstream& ofs){
             ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
 }
 
+void CaptureHistory::load_from_stream(std::ifstream& ifs){
+    for (auto& v : history)
+        ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
+}
+
 void PawnCorrectionHistory::clear(){
     std::fill(std::begin(history), std::end(history), PAWN_CORRHIST_FILL_VALUE);
 }
@@ -101,12 +109,30 @@ void PawnCorrectionHistory::save_to_stream(std::ofstream& ofs){
             ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
 }
 
-void CaptureHistory::load_from_stream(std::ifstream& ifs){
+void PawnCorrectionHistory::load_from_stream(std::ifstream& ifs){
     for (auto& v : history)
-        ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
+            ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
 }
 
-void PawnCorrectionHistory::load_from_stream(std::ifstream& ifs){
+
+void NonPawnCorrectionHistory::clear(){
+    std::fill(std::begin(history), std::end(history), NONPAWN_CORRHIST_FILL_VALUE);
+}
+
+int& NonPawnCorrectionHistory::get(Color color, uint16_t nonpawn_key){
+    return history[NUM_COLORS*(nonpawn_key % NONPAWN_CORRHIST_SIZE) + color];
+}
+
+void NonPawnCorrectionHistory::apply_bonus(Color color, uint16_t nonpawn_key, int bonus){
+    get(color, nonpawn_key) += bonus - get(color, nonpawn_key) * std::abs(bonus) / MAX_NONPAWN_CORRHIST_BONUS;
+}
+
+void NonPawnCorrectionHistory::save_to_stream(std::ofstream& ofs){
+    for (const auto& v : history)
+            ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
+}
+
+void NonPawnCorrectionHistory::load_from_stream(std::ifstream& ifs){
     for (auto& v : history)
             ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
 }

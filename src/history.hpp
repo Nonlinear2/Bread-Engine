@@ -56,3 +56,15 @@ class PawnCorrectionHistory {
 
     std::array<int, NUM_COLORS * PAWN_CORRHIST_SIZE> history = {};
 };
+
+class NonPawnCorrectionHistory {
+    public:
+    NonPawnCorrectionHistory() { clear(); }
+    void clear();
+    int& get(Color color, uint16_t pawn_key);
+    void apply_bonus(Color color, uint16_t pawn_key, int bonus);
+    void save_to_stream(std::ofstream& ofs);
+    void load_from_stream(std::ifstream& ifs);
+
+    std::array<int, NUM_COLORS * NONPAWN_CORRHIST_SIZE> history = {};
+};

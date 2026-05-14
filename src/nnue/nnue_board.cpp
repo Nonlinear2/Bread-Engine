@@ -34,6 +34,7 @@ void NnueBoard::synchronize(){
     accumulators_stack.clear_top_update();
 
     recompute_pawn_key();
+    recompute_nonpawn_keys();
 
     AllBitboards empty_pos = AllBitboards(); // empty position;
     Accumulator empty_acc;
