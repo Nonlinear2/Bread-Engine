@@ -64,6 +64,7 @@ Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>
       
 int Engine::get_corrhist(Color color){
     return (corr_1 * pawn_corrhist.get(color, pos.get_pawn_key()) 
+           + 140 * minor_corrhist.get(color, pos.get_minor_key())
            + corr_2 * nonpawn_corrhist[color].get(color, pos.get_nonpawn_key(color))
            + corr_3 * nonpawn_corrhist[color].get(~color, pos.get_nonpawn_key(~color))
         ) / 32768;
@@ -91,6 +92,7 @@ void Engine::clear_state(){
     capt_history.clear();
     history.clear();
     pawn_corrhist.clear();
+    minor_corrhist.clear();
     nonpawn_corrhist[0].clear();
     nonpawn_corrhist[1].clear();
     cont_history.clear();
@@ -108,6 +110,7 @@ void Engine::save_state(std::string file){
     capt_history.save_to_stream(ofs);
     history.save_to_stream(ofs);
     pawn_corrhist.save_to_stream(ofs);
+    minor_corrhist.save_to_stream(ofs);
     nonpawn_corrhist[0].save_to_stream(ofs);
     nonpawn_corrhist[1].save_to_stream(ofs);
     cont_history.save_to_stream(ofs);
@@ -127,6 +130,7 @@ void Engine::load_state(std::string file){
     capt_history.load_from_stream(ifs);
     history.load_from_stream(ifs);
     pawn_corrhist.load_from_stream(ifs);
+    minor_corrhist.load_from_stream(ifs);
     nonpawn_corrhist[0].load_from_stream(ifs);
     nonpawn_corrhist[1].load_from_stream(ifs);
     cont_history.load_from_stream(ifs);
@@ -711,6 +715,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         int bonus = std::clamp((max_value - static_eval) * depth/7, -corr_4, corr_4);
 
         pawn_corrhist.apply_bonus(stm, pos.get_pawn_key(), bonus);
+        minor_corrhist.apply_bonus(stm, pos.get_minor_key(), bonus);
         nonpawn_corrhist[stm].apply_bonus(stm, pos.get_nonpawn_key(stm), bonus);
         nonpawn_corrhist[stm].apply_bonus(~stm, pos.get_nonpawn_key(~stm), bonus);
     }

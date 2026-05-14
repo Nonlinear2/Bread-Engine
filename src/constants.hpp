@@ -47,6 +47,7 @@ history constants
 ****************/
 
 constexpr int PAWN_CORRHIST_SIZE = 16384;
+constexpr int MINOR_CORRHIST_SIZE = 16384;
 constexpr int NONPAWN_CORRHIST_SIZE = 16384;
 
 

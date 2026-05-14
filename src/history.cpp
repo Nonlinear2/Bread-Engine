@@ -3,13 +3,15 @@
 UNACTIVE_TUNEABLE(CONTHIST_FILL_VALUE, int, -22, -5'000, 5'000, 50, 0.002);
 UNACTIVE_TUNEABLE(HIST_FILL_VALUE, int, 2, -5'000, 5'000, 50, 0.002);
 UNACTIVE_TUNEABLE(CAPTHIST_FILL_VALUE, int, -11, -5'000, 5'000, 50, 0.002);
-UNACTIVE_TUNEABLE(MAX_CAPTHIST_BONUS, int, 9486, 0, 50'000, 2000, 0.002);
 UNACTIVE_TUNEABLE(PAWN_CORRHIST_FILL_VALUE, int, 8, -5'000, 5'000, 50, 0.002);
+UNACTIVE_TUNEABLE(MINOR_CORRHIST_FILL_VALUE, int, 8, -5'000, 5'000, 50, 0.002);
 UNACTIVE_TUNEABLE(NONPAWN_CORRHIST_FILL_VALUE, int, 8, -5'000, 5'000, 50, 0.002);
 
 UNACTIVE_TUNEABLE(MAX_CONTHIST_BONUS, int, 10462, 0, 50'000, 2000, 0.002);
 UNACTIVE_TUNEABLE(MAX_HIST_BONUS, int, 9856, 0, 50'000, 2000, 0.002);
+UNACTIVE_TUNEABLE(MAX_CAPTHIST_BONUS, int, 9486, 0, 50'000, 2000, 0.002);
 UNACTIVE_TUNEABLE(MAX_PAWN_CORRHIST_BONUS, int, 7955, 0, 50'000, 2000, 0.002);
+UNACTIVE_TUNEABLE(MAX_MINOR_CORRHIST_BONUS, int, 7955, 0, 50'000, 2000, 0.002);
 UNACTIVE_TUNEABLE(MAX_NONPAWN_CORRHIST_BONUS, int, 7955, 0, 50'000, 2000, 0.002);
 
 void ContinuationHistory::clear(){
@@ -114,6 +116,27 @@ void PawnCorrectionHistory::load_from_stream(std::ifstream& ifs){
             ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
 }
 
+void MinorCorrectionHistory::clear(){
+    std::fill(std::begin(history), std::end(history), MINOR_CORRHIST_FILL_VALUE);
+}
+
+int& MinorCorrectionHistory::get(Color color, uint16_t pawn_key){
+    return history[NUM_COLORS*(pawn_key % MINOR_CORRHIST_SIZE) + color];
+}
+
+void MinorCorrectionHistory::apply_bonus(Color color, uint16_t pawn_key, int bonus){
+    get(color, pawn_key) += bonus - get(color, pawn_key) * std::abs(bonus) / MAX_MINOR_CORRHIST_BONUS;
+}
+
+void MinorCorrectionHistory::save_to_stream(std::ofstream& ofs){
+    for (const auto& v : history)
+            ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
+}
+
+void MinorCorrectionHistory::load_from_stream(std::ifstream& ifs){
+    for (auto& v : history)
+            ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
+}
 
 void NonPawnCorrectionHistory::clear(){
     std::fill(std::begin(history), std::end(history), NONPAWN_CORRHIST_FILL_VALUE);
