@@ -120,12 +120,12 @@ void MinorCorrectionHistory::clear(){
     std::fill(std::begin(history), std::end(history), MINOR_CORRHIST_FILL_VALUE);
 }
 
-int& MinorCorrectionHistory::get(Color color, uint16_t pawn_key){
-    return history[NUM_COLORS*(pawn_key % MINOR_CORRHIST_SIZE) + color];
+int& MinorCorrectionHistory::get(Color color, uint16_t minor_key){
+    return history[NUM_COLORS*(minor_key % MINOR_CORRHIST_SIZE) + color];
 }
 
-void MinorCorrectionHistory::apply_bonus(Color color, uint16_t pawn_key, int bonus){
-    get(color, pawn_key) += bonus - get(color, pawn_key) * std::abs(bonus) / MAX_MINOR_CORRHIST_BONUS;
+void MinorCorrectionHistory::apply_bonus(Color color, uint16_t minor_key, int bonus){
+    get(color, minor_key) += bonus - get(color, minor_key) * std::abs(bonus) / MAX_MINOR_CORRHIST_BONUS;
 }
 
 void MinorCorrectionHistory::save_to_stream(std::ofstream& ofs){
