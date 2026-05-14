@@ -67,7 +67,7 @@ Bread engine supports the following commands:
 - `bench nn`: prints the speed of the neural network inference
 - `eval`: prints the static evaluation of the position
 
-Bread engine also has a uci option called `nonsense`, which makes it bongcloud, underpromote to bishops and knights, as well as print lyrics from "never gonna give you up" during search.
+Bread engine also has a UCI option called `nonsense`, which makes it bongcloud, underpromote to bishops and knights, as well as print lyrics from "never gonna give you up" during search.
 
 # Technical details
 in this section we provide an overview of the search algorithm, and the main engine features. The explanations are very high level, so feel free to search more details on other resources.
@@ -121,7 +121,7 @@ The reason it is preferable to search at reduced depths before higher depths is 
 Moreover, using iterative deepening means we don't need to know ahead of time at which depth to search for a limited time chess game. One can simply start a search at infinite depth, and interrupt it when the allocated time for the move has elapsed.
 
 ### Quiescence search
-An issue with minimax is the horizon effect. We saw it in action when looking at the depth 1 example: the engine can see queen takes pawn, but not pawn takes queen on the next move. Even at higher depth, this issue persists on leaf nodes which can lead to misevaluations. To mitigate positional misunderstanding by the AI, we can run a "quiescence search" instead of directly evaluating leaf nodes. Quiescence search is similar to minimax, but it only searches through captures (and checks) until the position becomes "quiet". At this point the evaluation function is more likely to give an accurate result.
+An issue with minimax is the horizon effect. We saw it in action when looking at the depth 1 example: the engine can see queen takes pawn, but not pawn takes queen on the next move. Even at higher depth, this issue persists on leaf nodes which can lead to misevaluations. To mitigate positional misunderstanding by the engine, we can run a "quiescence search" instead of directly evaluating leaf nodes. Quiescence search is similar to minimax, but it only searches through captures and checks until the position becomes "quiet". At this point the evaluation function is likely more accurate.
 
 ### Pondering
 When the opponent is thinking, the engine can search the move that it thinks is the best for the opponent. If the opponent does play the move, the engine can play faster as it has already spent time searching for the position. If the opponent plays another move, the engine just searches for the position normally.
@@ -300,7 +300,9 @@ Kd6 86. b7 Kc5 87. b8=Q Kxc6 88. h8=Q Kd5 89. Qb5+ Ke6 90. Qd7+ Kxd7 91. Qf6 Kc7
 
 - [bullet](https://github.com/jw1912/bullet)
 
-- [sebastian lague](https://www.youtube.com/watch?v=U4ogK0MIzqk&t=1174s) for inspiring me to do this project
+- [OpenBench](https://github.com/andygrant/openbench)
+
+- [sebastian lague](https://www.youtube.com/watch?v=U4ogK0MIzqk&t=1174s) for inspiring me to do this project.
 
 - [disservin's chess library](https://github.com/Disservin/chess-library)
 
