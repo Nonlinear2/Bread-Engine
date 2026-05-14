@@ -95,10 +95,6 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         makeMove(move);
     }
 
-    uint16_t minor_key = get_minor_key();
-    recompute_minor_key();
-    assert(minor_key == get_minor_key());
-
     __builtin_prefetch(&tt.entries[hash() & (tt.size - 1)]);
 }
 

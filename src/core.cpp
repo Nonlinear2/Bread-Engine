@@ -63,10 +63,6 @@ Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>
 
       
 int Engine::get_corrhist(Color color){
-    // assert(pos.get_pawn_key() == pos.recompute_pawn_key());
-    // assert(pos.get_minor_key() == pos.recompute_minor_key());
-    // assert(pos.get_nonpawn_key() == pos.recompute_nonpawn_key());
-
     return (corr_1 * pawn_corrhist.get(color, pos.get_pawn_key()) 
            + 140 * minor_corrhist.get(color, pos.get_minor_key())
            + corr_2 * nonpawn_corrhist[color].get(color, pos.get_nonpawn_key(color))
