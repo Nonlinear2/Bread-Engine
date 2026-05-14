@@ -34,6 +34,7 @@ void NnueBoard::synchronize(){
     accumulators_stack.clear_top_update();
 
     recompute_pawn_key();
+    recompute_minor_key();
     recompute_nonpawn_keys();
 
     AllBitboards empty_pos = AllBitboards(); // empty position;
@@ -93,6 +94,10 @@ void NnueBoard::update_state(Move move, TranspositionTable& tt){
         compute_top_update(move, Color::BLACK);
         makeMove(move);
     }
+
+    uint16_t minor_key = get_minor_key();
+    recompute_minor_key();
+    assert(minor_key == get_minor_key());
 
     __builtin_prefetch(&tt.entries[hash() & (tt.size - 1)]);
 }

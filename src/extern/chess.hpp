@@ -2058,8 +2058,8 @@ class Board {
     }
 
     void recompute_minor_key(){
+        minor_key_ = 0;
         for (Color color: {Color::BLACK, Color::WHITE}){
-            minor_key_ = 0;
             Bitboard minor_pieces = pieces(PieceType::KNIGHT, color) | pieces(PieceType::BISHOP, color);
             while (minor_pieces){
                 Square sq = Square(minor_pieces.pop());
