@@ -39,7 +39,9 @@ UNACTIVE_TUNEABLE(red_7, int, 746, 0, 10000, 180, 0.002);
 UNACTIVE_TUNEABLE(red_th_1, int, 1600, 0, 10000, 320, 0.002);
 UNACTIVE_TUNEABLE(red_th_2, int, 2135, 0, 10000, 450, 0.002);
 UNACTIVE_TUNEABLE(corr_1, int, 268, 0, 10000, 50, 0.002);
-UNACTIVE_TUNEABLE(corr_2, int, 592, 0, 10000, 130, 0.002);
+UNACTIVE_TUNEABLE(corr_2, int, 200, 0, 10000, 40, 0.002);
+UNACTIVE_TUNEABLE(corr_3, int, 200, 0, 10000, 40, 0.002);
+UNACTIVE_TUNEABLE(corr_4, int, 592, 0, 10000, 130, 0.002);
 UNACTIVE_TUNEABLE(de_1, int, 90, 0, 10000, 18, 0.002);
 
 int nnue_evaluate(NnueBoard& pos){
@@ -62,8 +64,8 @@ Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>
       
 int Engine::get_corrhist(Color color){
     return (corr_1 * pawn_corrhist.get(color, pos.get_pawn_key()) 
-           + 200 * nonpawn_corrhist[color].get(color, pos.get_nonpawn_key(color))
-           + 200 * nonpawn_corrhist[color].get(~color, pos.get_nonpawn_key(~color))
+           + corr_2 * nonpawn_corrhist[color].get(color, pos.get_nonpawn_key(color))
+           + corr_3 * nonpawn_corrhist[color].get(~color, pos.get_nonpawn_key(~color))
         ) / 32768;
 }
 
@@ -706,7 +708,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         && (max_value > ss->static_eval) == (best_move != Move::NO_MOVE))
     {
         Color stm = pos.sideToMove();
-        int bonus = std::clamp((max_value - static_eval) * depth/7, -corr_2, corr_2);
+        int bonus = std::clamp((max_value - static_eval) * depth/7, -corr_4, corr_4);
 
         pawn_corrhist.apply_bonus(stm, pos.get_pawn_key(), bonus);
         nonpawn_corrhist[stm].apply_bonus(stm, pos.get_nonpawn_key(stm), bonus);
