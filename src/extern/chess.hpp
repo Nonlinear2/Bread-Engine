@@ -2020,13 +2020,11 @@ class Board {
  
     void recompute_pawn_key(){
         pawn_key_ = 0;
-        Bitboard white_pawns = pieces(PieceType::PAWN, Color::WHITE);
-        while (white_pawns)
-            pawn_key_ ^= Zobrist::piece(Piece::WHITEPAWN, Square(white_pawns.pop()));
-        
-        Bitboard black_pawns = pieces(PieceType::PAWN, Color::BLACK);
-        while (black_pawns)
-            pawn_key_ ^= Zobrist::piece(Piece::BLACKPAWN, Square(black_pawns.pop()));
+        for (Color color: {Color::BLACK, Color::WHITE}){
+            Bitboard pawns = pieces(PieceType::PAWN, color);
+            while (pawns)
+                pawn_key_ ^= Zobrist::piece(Piece(PieceType::PAWN, color), Square(pawns.pop()));
+        }
     }
 
     // should be called before playing the move
