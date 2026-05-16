@@ -13,6 +13,7 @@ UNACTIVE_TUNEABLE(HIST_FILL_VALUE, int, 2, -5'000, 5'000, 50, 0.002);
 UNACTIVE_TUNEABLE(CAPTHIST_FILL_VALUE, int, -11, -5'000, 5'000, 50, 0.002);
 UNACTIVE_TUNEABLE(PAWN_CORRHIST_FILL_VALUE, int, 8, -5'000, 5'000, 50, 0.002);
 UNACTIVE_TUNEABLE(MINOR_CORRHIST_FILL_VALUE, int, 8, -5'000, 5'000, 50, 0.002);
+UNACTIVE_TUNEABLE(MAJOR_CORRHIST_FILL_VALUE, int, 8, -5'000, 5'000, 50, 0.002);
 UNACTIVE_TUNEABLE(NONPAWN_CORRHIST_FILL_VALUE, int, 8, -5'000, 5'000, 50, 0.002);
 
 UNACTIVE_TUNEABLE(MAX_CONTHIST_BONUS, int, 10462, 0, 50'000, 2000, 0.002);
@@ -20,6 +21,7 @@ UNACTIVE_TUNEABLE(MAX_HIST_BONUS, int, 9856, 0, 50'000, 2000, 0.002);
 UNACTIVE_TUNEABLE(MAX_CAPTHIST_BONUS, int, 9486, 0, 50'000, 2000, 0.002);
 UNACTIVE_TUNEABLE(MAX_PAWN_CORRHIST_BONUS, int, 7955, 0, 50'000, 2000, 0.002);
 UNACTIVE_TUNEABLE(MAX_MINOR_CORRHIST_BONUS, int, 7955, 0, 50'000, 2000, 0.002);
+UNACTIVE_TUNEABLE(MAX_MAJOR_CORRHIST_BONUS, int, 7955, 0, 50'000, 2000, 0.002);
 UNACTIVE_TUNEABLE(MAX_NONPAWN_CORRHIST_BONUS, int, 7955, 0, 50'000, 2000, 0.002);
 
 template <std::size_t size, int fill_value, int max_bonus>
@@ -81,7 +83,7 @@ class PawnCorrectionHistory: public HistoryBase<
         MAX_PAWN_CORRHIST_BONUS
     > {
     public:
-    int& get(Color color, uint16_t pawn_key);
+    int& get(Color color, uint16_t key);
 };
 
 class MinorCorrectionHistory: public HistoryBase<
@@ -90,7 +92,16 @@ class MinorCorrectionHistory: public HistoryBase<
         MAX_MINOR_CORRHIST_BONUS
     > {
     public:
-    int& get(Color color, uint16_t pawn_key);
+    int& get(Color color, uint16_t key);
+};
+
+class MajorCorrectionHistory: public HistoryBase<
+        NUM_COLORS * MAJOR_CORRHIST_SIZE,
+        MAJOR_CORRHIST_FILL_VALUE,
+        MAX_MAJOR_CORRHIST_BONUS
+    > {
+    public:
+    int& get(Color color, uint16_t key);
 };
 
 class NonPawnCorrectionHistory: public HistoryBase<
@@ -99,5 +110,5 @@ class NonPawnCorrectionHistory: public HistoryBase<
         MAX_NONPAWN_CORRHIST_BONUS
     > {
     public:
-    int& get(Color color, uint16_t pawn_key);
+    int& get(Color color, uint16_t key);
 };

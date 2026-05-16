@@ -24,14 +24,18 @@ int& CaptureHistory::get(Piece piece, Square to, Piece captured){
     return history[piece*64*6 + to.index()*6 + static_cast<int>(captured.type())];
 }
 
-int& PawnCorrectionHistory::get(Color color, uint16_t pawn_key){
-    return this->history[NUM_COLORS*(pawn_key % PAWN_CORRHIST_SIZE) + color];
+int& PawnCorrectionHistory::get(Color color, uint16_t key){
+    return this->history[NUM_COLORS*(key % PAWN_CORRHIST_SIZE) + color];
 }
 
-int& MinorCorrectionHistory::get(Color color, uint16_t minor_key){
-    return this->history[NUM_COLORS*(minor_key % MINOR_CORRHIST_SIZE) + color];
+int& MinorCorrectionHistory::get(Color color, uint16_t key){
+    return this->history[NUM_COLORS*(key % MINOR_CORRHIST_SIZE) + color];
 }
 
-int& NonPawnCorrectionHistory::get(Color color, uint16_t nonpawn_key){
-    return this->history[NUM_COLORS*(nonpawn_key % NONPAWN_CORRHIST_SIZE) + color];
+int& MajorCorrectionHistory::get(Color color, uint16_t key){
+    return this->history[NUM_COLORS*(key % MAJOR_CORRHIST_SIZE) + color];
+}
+
+int& NonPawnCorrectionHistory::get(Color color, uint16_t key){
+    return this->history[NUM_COLORS*(key % NONPAWN_CORRHIST_SIZE) + color];
 }

@@ -70,6 +70,7 @@ class Engine {
     ContinuationHistory cont_history = ContinuationHistory();
     PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 
     MinorCorrectionHistory minor_corrhist = MinorCorrectionHistory();
+    MajorCorrectionHistory major_corrhist = MajorCorrectionHistory();
     std::array<NonPawnCorrectionHistory, 2> nonpawn_corrhist = {}; 
 
     int get_corrhist(Color color);

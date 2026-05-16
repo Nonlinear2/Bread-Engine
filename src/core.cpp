@@ -42,7 +42,8 @@ UNACTIVE_TUNEABLE(corr_1, int, 268, 0, 10000, 50, 0.002);
 UNACTIVE_TUNEABLE(corr_2, int, 200, 0, 10000, 40, 0.002);
 UNACTIVE_TUNEABLE(corr_3, int, 200, 0, 10000, 40, 0.002);
 UNACTIVE_TUNEABLE(corr_4, int, 200, 0, 10000, 40, 0.002);
-UNACTIVE_TUNEABLE(corr_5, int, 592, 0, 10000, 130, 0.002);
+UNACTIVE_TUNEABLE(corr_5, int, 200, 0, 10000, 40, 0.002);
+UNACTIVE_TUNEABLE(corr_6, int, 592, 0, 10000, 130, 0.002);
 UNACTIVE_TUNEABLE(de_1, int, 90, 0, 10000, 18, 0.002);
 
 int nnue_evaluate(NnueBoard& pos){
@@ -66,8 +67,9 @@ Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>
 int Engine::get_corrhist(Color color){
     return (corr_1 * pawn_corrhist.get(color, pos.get_pawn_key()) 
            + corr_2 * minor_corrhist.get(color, pos.get_minor_key())
-           + corr_3 * nonpawn_corrhist[color].get(color, pos.get_nonpawn_key(color))
-           + corr_4 * nonpawn_corrhist[color].get(~color, pos.get_nonpawn_key(~color))
+           + corr_3 * major_corrhist.get(color, pos.get_minor_key())
+           + corr_4 * nonpawn_corrhist[color].get(color, pos.get_nonpawn_key(color))
+           + corr_5 * nonpawn_corrhist[color].get(~color, pos.get_nonpawn_key(~color))
         ) / 32768;
 }
 
@@ -94,6 +96,7 @@ void Engine::clear_state(){
     history.clear();
     pawn_corrhist.clear();
     minor_corrhist.clear();
+    major_corrhist.clear();
     nonpawn_corrhist[0].clear();
     nonpawn_corrhist[1].clear();
     cont_history.clear();
@@ -112,6 +115,7 @@ void Engine::save_state(std::string file){
     history.save_to_stream(ofs);
     pawn_corrhist.save_to_stream(ofs);
     minor_corrhist.save_to_stream(ofs);
+    major_corrhist.save_to_stream(ofs);
     nonpawn_corrhist[0].save_to_stream(ofs);
     nonpawn_corrhist[1].save_to_stream(ofs);
     cont_history.save_to_stream(ofs);
@@ -132,6 +136,7 @@ void Engine::load_state(std::string file){
     history.load_from_stream(ifs);
     pawn_corrhist.load_from_stream(ifs);
     minor_corrhist.load_from_stream(ifs);
+    major_corrhist.load_from_stream(ifs);
     nonpawn_corrhist[0].load_from_stream(ifs);
     nonpawn_corrhist[1].load_from_stream(ifs);
     cont_history.load_from_stream(ifs);
@@ -713,10 +718,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         && (max_value > ss->static_eval) == (best_move != Move::NO_MOVE))
     {
         Color stm = pos.sideToMove();
-        int bonus = std::clamp((max_value - static_eval) * depth/7, -corr_5, corr_5);
+        int bonus = std::clamp((max_value - static_eval) * depth/7, -corr_6, corr_6);
 
         pawn_corrhist.apply_bonus(pawn_corrhist.get(stm, pos.get_pawn_key()), bonus);
         minor_corrhist.apply_bonus(minor_corrhist.get(stm, pos.get_minor_key()), bonus);
+        major_corrhist.apply_bonus(major_corrhist.get(stm, pos.get_minor_key()), bonus);
         nonpawn_corrhist[stm].apply_bonus(nonpawn_corrhist[stm].get(stm, pos.get_nonpawn_key(stm)), bonus);
         nonpawn_corrhist[stm].apply_bonus(nonpawn_corrhist[stm].get(~stm, pos.get_nonpawn_key(~stm)), bonus);
     }
