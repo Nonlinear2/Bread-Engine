@@ -715,10 +715,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         Color stm = pos.sideToMove();
         int bonus = std::clamp((max_value - static_eval) * depth/7, -corr_5, corr_5);
 
-        pawn_corrhist.apply_bonus(stm, pos.get_pawn_key(), bonus);
-        minor_corrhist.apply_bonus(stm, pos.get_minor_key(), bonus);
-        nonpawn_corrhist[stm].apply_bonus(stm, pos.get_nonpawn_key(stm), bonus);
-        nonpawn_corrhist[stm].apply_bonus(~stm, pos.get_nonpawn_key(~stm), bonus);
+        pawn_corrhist.apply_bonus(pawn_corrhist.get(stm, pos.get_pawn_key()), bonus);
+        minor_corrhist.apply_bonus(minor_corrhist.get(stm, pos.get_minor_key()), bonus);
+        nonpawn_corrhist[stm].apply_bonus(nonpawn_corrhist[stm].get(stm, pos.get_nonpawn_key(stm)), bonus);
+        nonpawn_corrhist[stm].apply_bonus(nonpawn_corrhist[stm].get(~stm, pos.get_nonpawn_key(~stm)), bonus);
     }
 
     // early return without storing the eval in the TT
