@@ -67,7 +67,7 @@ Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>
 int Engine::get_corrhist(Color color){
     return (corr_1 * pawn_corrhist.get(color, pos.get_pawn_key()) 
            + corr_2 * minor_corrhist.get(color, pos.get_minor_key())
-           + corr_3 * major_corrhist.get(color, pos.get_minor_key())
+           + corr_3 * major_corrhist.get(color, pos.get_major_key())
            + corr_4 * nonpawn_corrhist[color].get(color, pos.get_nonpawn_key(color))
            + corr_5 * nonpawn_corrhist[color].get(~color, pos.get_nonpawn_key(~color))
         ) / 32768;
@@ -722,7 +722,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         pawn_corrhist.apply_bonus(pawn_corrhist.get(stm, pos.get_pawn_key()), bonus);
         minor_corrhist.apply_bonus(minor_corrhist.get(stm, pos.get_minor_key()), bonus);
-        major_corrhist.apply_bonus(major_corrhist.get(stm, pos.get_minor_key()), bonus);
+        major_corrhist.apply_bonus(major_corrhist.get(stm, pos.get_major_key()), bonus);
         nonpawn_corrhist[stm].apply_bonus(nonpawn_corrhist[stm].get(stm, pos.get_nonpawn_key(stm)), bonus);
         nonpawn_corrhist[stm].apply_bonus(nonpawn_corrhist[stm].get(~stm, pos.get_nonpawn_key(~stm)), bonus);
     }
