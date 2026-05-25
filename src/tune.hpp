@@ -5,7 +5,7 @@
 #include <set>
 #include <stdexcept>
 
-// #define IS_TUNE 1
+#define IS_TUNE 1
 
 namespace SPSA {
 
@@ -53,8 +53,8 @@ inline int get_value(const std::string& name){
 
 #ifdef IS_TUNE
     #define TUNEABLE(name, type, value, min, max, c, r) \
-        type name = value; \
-        static bool name##_init = []() { \
+        inline type name = value; \
+        inline bool name##_init = []() { \
             SPSA::register_tuneable(#name, &name, min, max); \
             std::cout << #name << ", " << #type << ", " << (float)(value) << ", " \
                       << (float)(min) << ", " << (float)(max) << ", " \
