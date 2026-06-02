@@ -4,14 +4,17 @@
 #include <random>
 
 int main(int argc, char* argv[]){
+    NNUE::init();
+
+    UCIAgent uci_engine = UCIAgent();
+
     if (argc >= 2){
         if (std::string(argv[1]) == "bench"){
-            Engine engine = Engine();
-            Benchmark::benchmark_engine(engine, BENCHMARK_DEPTH);
+            Benchmark::benchmark_engine(uci_engine.workers.main().engine, BENCHMARK_DEPTH);
             return 0;
         }
 
-        std::vector<std::string> parsed = UCIAgent::split_string(std::string(argv[1]));
+        std::vector<std::string> parsed = split_string(std::string(argv[1]));
         if (parsed.size() >= 4 && parsed[0] == "genfens"){
             int seed = std::stoi(parsed[3]);
             std::mt19937 rng(seed);
@@ -38,12 +41,13 @@ int main(int argc, char* argv[]){
         }
     }
 
-    UCIAgent uci_engine = UCIAgent();
     std::string input;
     bool running;
     do {
         std::getline(std::cin, input);
         running = uci_engine.process_uci_command(input);
     } while (running);
+
+    NNUE::cleanup();
     return 0;
 }

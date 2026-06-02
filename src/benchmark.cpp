@@ -64,7 +64,8 @@ void benchmark_engine(Engine& engine, int depth){
 
         start_time = high_resolution_clock::now();
 
-        engine.search(fen, SearchLimit(LimitType::Depth, depth));
+        engine.pos.setFen(fen);
+        engine.iterative_deepening(SearchLimit(LimitType::Depth, depth));
 
         times.push_back(duration_cast<milliseconds>(high_resolution_clock::now() - start_time).count());
         nodes.push_back(engine.nodes);
@@ -72,7 +73,7 @@ void benchmark_engine(Engine& engine, int depth){
         std::cout << std::endl;
     }
 
-    engine.transposition_table.info();
+    engine.tt.info();
     std::cout << "=================================" << std::endl;
     std::cout << "total nodes: " << sum(nodes) << std::endl;
     std::cout << "average nodes: " << sum(nodes) / fens.size() << std::endl;

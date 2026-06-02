@@ -22,13 +22,8 @@ AllBitboards::AllBitboards(const NnueBoard& pos) {
 }
 
 NnueBoard::NnueBoard(){
-    NNUE::init();
     accumulators_stack.push_empty();
     synchronize();
-};
-
-NnueBoard::~NnueBoard(){
-    NNUE::cleanup();
 };
 
 void NnueBoard::synchronize(){
@@ -39,6 +34,8 @@ void NnueBoard::synchronize(){
     accumulators_stack.clear_top_update();
 
     recompute_pawn_key();
+    recompute_minor_major_keys();
+    recompute_nonpawn_keys();
 
     AllBitboards empty_pos = AllBitboards(); // empty position;
     Accumulator empty_acc;

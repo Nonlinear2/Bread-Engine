@@ -29,22 +29,19 @@ constexpr GenerationStage& operator++(GenerationStage& g) {
     return g = static_cast<GenerationStage>(static_cast<int>(g) + 1);
 }
 
-extern CaptureHistory capture_history;
-
 template<GenType MoveGenType>
 class SortedMoveGen {
     public:
-
-    static inline KillerMoves killer_moves = KillerMoves();
-    static inline FromToHistory history = FromToHistory();
-    static inline ContinuationHistory cont_history = ContinuationHistory();
 
     Piece prev_piece;
     Square prev_to;
     NnueBoard& pos;
 
-    SortedMoveGen(Movelist* to_search, Piece prev_piece, Square prev_to, NnueBoard& pos, int depth);
-    SortedMoveGen(Piece prev_piece, Square prev_to, NnueBoard& pos);
+    SortedMoveGen(Movelist* to_search, Piece prev_piece, Square prev_to, NnueBoard& pos, int depth,
+        KillerMoves& killers, FromToHistory& hist, ContinuationHistory& cont_hist, CaptureHistory& capt_hist);
+    SortedMoveGen(Piece prev_piece, Square prev_to, NnueBoard& pos,
+        KillerMoves& killers, FromToHistory& hist, ContinuationHistory& cont_hist, CaptureHistory& capt_hist);
+
     void set_tt_move(Move move);
     bool next(Move& move);
     bool empty();
@@ -59,6 +56,12 @@ class SortedMoveGen {
 
     Move tt_move = Move::NO_MOVE;
     private:
+
+    KillerMoves& killer_moves;
+    FromToHistory& history;
+    ContinuationHistory& cont_history;
+    CaptureHistory& capt_history;
+
     bool skip_quiets_ = false;
     Movelist moves;
     Movelist bad_captures;

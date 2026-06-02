@@ -76,7 +76,7 @@ endfunction(bread_configure)
 bread_configure(bread_engine SOURCES
     ${bread_SOURCE}
     ${bread_SRC}/uci.cpp
-    ${bread_SRC}/run_uci.cpp
+    ${bread_SRC}/main.cpp
 )
 
 bread_configure(uci_search SOURCES

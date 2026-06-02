@@ -1863,19 +1863,28 @@ class Board {
     struct State {
         U64 hash;
         uint16_t pawn_key;
+        uint16_t minor_key;
+        uint16_t major_key;
+        uint16_t nonpawn_keys[2];
         CastlingRights castling;
         Square enpassant;
         std::uint8_t half_moves;
         Piece captured_piece;
 
-        State(const U64& hash, const uint16_t& pawn_key, const CastlingRights& castling, const Square& enpassant,
+        State(const U64& hash, const uint16_t& pawn_key, const uint16_t& minor_key, const uint16_t& major_key,
+              const uint16_t (&nonpawn_key)[2], const CastlingRights& castling, const Square& enpassant,
               const std::uint8_t& half_moves, const Piece& captured_piece)
             : hash(hash),
               pawn_key(pawn_key),
+              minor_key(minor_key),
+              major_key(major_key),
               castling(castling),
               enpassant(enpassant),
               half_moves(half_moves),
-              captured_piece(captured_piece) {}
+              captured_piece(captured_piece) {
+                nonpawn_keys[0] = nonpawn_key[0];
+                nonpawn_keys[1] = nonpawn_key[1];
+              }
     };
 
    protected:
@@ -2013,13 +2022,11 @@ class Board {
  
     void recompute_pawn_key(){
         pawn_key_ = 0;
-        Bitboard white_pawns = pieces(PieceType::PAWN, Color::WHITE);
-        while (white_pawns)
-            pawn_key_ ^= Zobrist::piece(Piece::WHITEPAWN, Square(white_pawns.pop()));
-        
-        Bitboard black_pawns = pieces(PieceType::PAWN, Color::BLACK);
-        while (black_pawns)
-            pawn_key_ ^= Zobrist::piece(Piece::BLACKPAWN, Square(black_pawns.pop()));
+        for (Color color: {Color::BLACK, Color::WHITE}){
+            Bitboard pawns = pieces(PieceType::PAWN, color);
+            while (pawns)
+                pawn_key_ ^= Zobrist::piece(Piece(PieceType::PAWN, color), Square(pawns.pop()));
+        }
     }
 
     // should be called before playing the move
@@ -2038,15 +2045,118 @@ class Board {
             break;
 
         default:
-            if (at(move.from()).type() == PieceType::PAWN){
-                pawn_key_ ^= Zobrist::piece(at(move.from()), move.from());
-                pawn_key_ ^= Zobrist::piece(at(move.from()), move.to());
+            Piece pc = at(move.from());
+            if (pc.type() == PieceType::PAWN){
+                pawn_key_ ^= Zobrist::piece(pc, move.from());
+                pawn_key_ ^= Zobrist::piece(pc, move.to());
             }
 
             if (at(move.to()).type() == PieceType::PAWN)
                 pawn_key_ ^= Zobrist::piece(at(move.to()), move.to());
             break;
         }
+    }
+
+    void recompute_minor_major_keys(){
+        minor_key_ = 0;
+        major_key_ = 0;
+        for (Color color: {Color::BLACK, Color::WHITE}){
+            Bitboard minor_pieces = pieces(PieceType::KNIGHT, color) | pieces(PieceType::BISHOP, color);
+            while (minor_pieces){
+                Square sq = Square(minor_pieces.pop());
+                minor_key_ ^= Zobrist::piece(at(sq), sq);
+            }
+
+            Bitboard major_pieces = pieces(PieceType::QUEEN, color) | pieces(PieceType::ROOK, color);
+            while (major_pieces){
+                Square sq = Square(major_pieces.pop());
+                major_key_ ^= Zobrist::piece(at(sq), sq);
+            }
+        }
+    }
+
+    // should be called before playing the move
+    void update_minor_major_keys(Move move){
+        Piece pc = at(move.from());
+        Color color = pc.color();
+
+        switch (move.typeOf()){
+        case Move::PROMOTION: {
+            Piece promotion = Piece(move.promotionType(), color);
+            if (promotion.type() == PieceType::KNIGHT || promotion.type() == PieceType::BISHOP)
+                minor_key_ ^= Zobrist::piece(promotion, move.to());
+            else if (promotion.type() == PieceType::QUEEN || promotion.type() == PieceType::ROOK)
+                major_key_ ^= Zobrist::piece(promotion, move.to());
+            break;
+        }
+        default: {
+            if (pc.type() == PieceType::KNIGHT || pc.type() == PieceType::BISHOP){
+                minor_key_ ^= Zobrist::piece(pc, move.from());
+                minor_key_ ^= Zobrist::piece(pc, move.to());
+            } else if (pc.type() == PieceType::QUEEN || pc.type() == PieceType::ROOK){
+                major_key_ ^= Zobrist::piece(pc, move.from());
+                major_key_ ^= Zobrist::piece(pc, move.to());
+            }
+        }
+        }
+
+        Piece captured = at(move.to());
+        if (captured.type() == PieceType::KNIGHT || captured.type() == PieceType::BISHOP)
+            minor_key_ ^= Zobrist::piece(captured, move.to());
+        else if (captured.type() == PieceType::QUEEN || captured.type() == PieceType::ROOK)
+            major_key_ ^= Zobrist::piece(captured, move.to());
+    }
+
+    void recompute_nonpawn_keys(){
+        for (Color color: {Color::BLACK, Color::WHITE}){
+            nonpawn_keys_[color] = 0;
+            Bitboard nonpawn = us(color) & (~pieces(PieceType::PAWN, color));
+            while (nonpawn){
+                Square sq = Square(nonpawn.pop());
+                nonpawn_keys_[color] ^= Zobrist::piece(at(sq), sq);
+            }
+        }
+    }
+
+    // should be called before playing the move
+    void update_nonpawn_keys(Move move){
+        Piece pc = at(move.from());
+        Color color = pc.color();
+
+        switch (move.typeOf()){
+        case Move::CASTLING: {
+            const bool king_side = move.to() > move.from();
+
+            Square rook_from = move.to();
+            Square king_from = move.from();
+
+            Square rook_to = Square::castling_rook_square(king_side, sideToMove());
+            Square king_to = Square::castling_king_square(king_side, sideToMove());
+
+            color = at(king_from).color();
+
+            nonpawn_keys_[color] ^= Zobrist::piece(Piece(PieceType::KING, color), king_from);
+            nonpawn_keys_[color] ^= Zobrist::piece(Piece(PieceType::KING, color), king_to);
+
+            nonpawn_keys_[color] ^= Zobrist::piece(Piece(PieceType::ROOK, color), rook_from);
+            nonpawn_keys_[color] ^= Zobrist::piece(Piece(PieceType::ROOK, color), rook_to);
+            return;
+        }
+        case Move::PROMOTION:
+            nonpawn_keys_[color] ^= Zobrist::piece(Piece(move.promotionType(), color), move.to());
+            break;
+        default: {
+            if (pc.type() != PieceType::PAWN){
+                nonpawn_keys_[color] ^= Zobrist::piece(pc, move.from());
+                nonpawn_keys_[color] ^= Zobrist::piece(pc, move.to());
+            }
+            break;
+        }
+        }
+
+        Piece captured = at(move.to());
+        if (captured != Piece::NONE && captured.type() != PieceType::PAWN)
+            nonpawn_keys_[~color] ^= Zobrist::piece(captured, move.to());
     }
 
     /**
@@ -2074,12 +2184,14 @@ class Board {
         // Validate side to move
         assert((at(move.from()) < Piece::BLACKPAWN) == (stm_ == Color::WHITE));
 
-        prev_states_.emplace_back(key_, pawn_key_, cr_, ep_sq_, hfm_, captured);
+        prev_states_.emplace_back(key_, pawn_key_, minor_key_, major_key_, nonpawn_keys_, cr_, ep_sq_, hfm_, captured);
 
         hfm_++;
         plies_++;
 
         update_pawn_key(move);
+        update_minor_major_keys(move);
+        update_nonpawn_keys(move);
 
         if (ep_sq_ != Square::NO_SQ) key_ ^= Zobrist::enpassant(ep_sq_.file());
         ep_sq_ = Square::NO_SQ;
@@ -2290,6 +2402,10 @@ class Board {
 
         key_ = prev.hash;
         pawn_key_ = prev.pawn_key;
+        minor_key_ = prev.minor_key;
+        major_key_ = prev.major_key;
+        nonpawn_keys_[0] = prev.nonpawn_keys[0];
+        nonpawn_keys_[1] = prev.nonpawn_keys[1];
         prev_states_.pop_back();
     }
 
@@ -2297,7 +2413,7 @@ class Board {
      * @brief Make a null move. (Switches the side to move)
      */
     void makeNullMove() {
-        prev_states_.emplace_back(key_, pawn_key_, cr_, ep_sq_, hfm_, Piece::NONE);
+        prev_states_.emplace_back(key_, pawn_key_, minor_key_, major_key_, nonpawn_keys_, cr_, ep_sq_, hfm_, Piece::NONE);
 
         key_ ^= Zobrist::sideToMove();
         if (ep_sq_ != Square::NO_SQ) key_ ^= Zobrist::enpassant(ep_sq_.file());
@@ -2438,6 +2554,9 @@ class Board {
      */
     [[nodiscard]] U64 hash() const noexcept { return key_; }
     [[nodiscard]] uint16_t get_pawn_key() const noexcept { return pawn_key_; }
+    [[nodiscard]] uint16_t get_minor_key() const noexcept { return minor_key_; }
+    [[nodiscard]] uint16_t get_major_key() const noexcept { return major_key_; }
+    [[nodiscard]] uint16_t get_nonpawn_key(Color color) const noexcept { return nonpawn_keys_[color]; }
     [[nodiscard]] Color sideToMove() const noexcept { return stm_; }
     [[nodiscard]] Square enpassantSq() const noexcept { return ep_sq_; }
     [[nodiscard]] CastlingRights castlingRights() const noexcept { return cr_; }
@@ -3093,6 +3212,9 @@ class Board {
 
     U64 key_             = 0ULL;
     uint16_t pawn_key_   = 0;
+    uint16_t minor_key_  = 0;
+    uint16_t major_key_  = 0;
+    uint16_t nonpawn_keys_[2] = {};
     CastlingRights cr_   = {};
     std::uint16_t plies_ = 0;
     Color stm_           = Color::WHITE;

@@ -1,41 +1,59 @@
 #include "sorted_move_gen.hpp"
 
-TUNEABLE(q_att_1, int, 92, 0, 500, 20, 0.002);
-TUNEABLE(q_att_2, int, 85, 0, 500, 20, 0.002);
-TUNEABLE(c_chk_1, int, 165, 0, 1000, 25, 0.002);
-TUNEABLE(q_chk_1, int, 125, 0, 1000, 25, 0.002);
-TUNEABLE(c_cpt, int, 288, 0, 1000, 60, 0.002);
-TUNEABLE(c_prm, int, 189, 0, 1000, 40, 0.002);
-TUNEABLE(q_prm, int, 145, 0, 1000, 30, 0.002);
-TUNEABLE(q_kil, int, 136, 0, 1000, 25, 0.002);
-TUNEABLE(q_his, int, 147, 0, 1000, 30, 0.002);
-TUNEABLE(q_cthis, int, 144, 0, 1000, 30, 0.002);
-TUNEABLE(bst, int, 213, 0, 1500, 40, 0.002);
-TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
-TUNEABLE(his_2, int, 33, 0, 300, 5, 0.002);
-TUNEABLE(his_3, int, 1049, 0, 5000, 200, 0.002);
-TUNEABLE(his_4, int, 19, 0, 300, 3, 0.002);
-TUNEABLE(his_5, int, 17, 0, 300, 3, 0.002);
-TUNEABLE(his_6, int, 514, 0, 5000, 110, 0.002);
-TUNEABLE(chis_1, int, 35, 0, 300, 5, 0.002);
-TUNEABLE(chis_2, int, 36, 0, 300, 5, 0.002);
-TUNEABLE(chis_3, int, 1103, 0, 5000, 200, 0.002);
-TUNEABLE(chis_4, int, 17, 0, 300, 3, 0.002);
-TUNEABLE(chis_5, int, 15, 0, 300, 3, 0.002);
-TUNEABLE(chis_6, int, 431, 0, 5000, 110, 0.002);
-TUNEABLE(cphis, int, 209, 0, 5000, 41, 0.002);
-
-
-CaptureHistory capture_history = CaptureHistory();
+UNACTIVE_TUNEABLE(q_att_1, int, 92, 0, 500, 20, 0.002);
+UNACTIVE_TUNEABLE(q_att_2, int, 85, 0, 500, 20, 0.002);
+UNACTIVE_TUNEABLE(c_chk_1, int, 165, 0, 1000, 25, 0.002);
+UNACTIVE_TUNEABLE(q_chk_1, int, 125, 0, 1000, 25, 0.002);
+UNACTIVE_TUNEABLE(c_cpt, int, 288, 0, 1000, 60, 0.002);
+UNACTIVE_TUNEABLE(c_prm, int, 189, 0, 1000, 40, 0.002);
+UNACTIVE_TUNEABLE(q_prm, int, 145, 0, 1000, 30, 0.002);
+UNACTIVE_TUNEABLE(q_kil, int, 136, 0, 1000, 25, 0.002);
+UNACTIVE_TUNEABLE(q_his, int, 147, 0, 1000, 30, 0.002);
+UNACTIVE_TUNEABLE(q_cthis, int, 144, 0, 1000, 30, 0.002);
+UNACTIVE_TUNEABLE(bst, int, 213, 0, 1500, 40, 0.002);
+UNACTIVE_TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
+UNACTIVE_TUNEABLE(his_2, int, 33, 0, 300, 5, 0.002);
+UNACTIVE_TUNEABLE(his_3, int, 1049, 0, 5000, 200, 0.002);
+UNACTIVE_TUNEABLE(his_4, int, 19, 0, 300, 3, 0.002);
+UNACTIVE_TUNEABLE(his_5, int, 17, 0, 300, 3, 0.002);
+UNACTIVE_TUNEABLE(his_6, int, 514, 0, 5000, 110, 0.002);
+UNACTIVE_TUNEABLE(chis_1, int, 35, 0, 300, 5, 0.002);
+UNACTIVE_TUNEABLE(chis_2, int, 36, 0, 300, 5, 0.002);
+UNACTIVE_TUNEABLE(chis_3, int, 1103, 0, 5000, 200, 0.002);
+UNACTIVE_TUNEABLE(chis_4, int, 17, 0, 300, 3, 0.002);
+UNACTIVE_TUNEABLE(chis_5, int, 15, 0, 300, 3, 0.002);
+UNACTIVE_TUNEABLE(chis_6, int, 431, 0, 5000, 110, 0.002);
+UNACTIVE_TUNEABLE(cphis, int, 209, 0, 5000, 41, 0.002);
 
 template<>
-SortedMoveGen<GenType::NORMAL>::SortedMoveGen(Movelist* to_search, Piece prev_piece, 
-    Square prev_to, NnueBoard& pos, int depth):
-    to_search(to_search), prev_piece(prev_piece), prev_to(prev_to), pos(pos), depth(depth) {};
+SortedMoveGen<GenType::NORMAL>::SortedMoveGen(
+    Movelist* to_search, Piece prev_piece, Square prev_to, NnueBoard& pos, int depth,
+    KillerMoves& killers, FromToHistory& hist, ContinuationHistory& cont_hist, CaptureHistory& capt_hist
+    ):
+    to_search(to_search),
+    prev_piece(prev_piece),
+    prev_to(prev_to),
+    pos(pos),
+    depth(depth),
+    killer_moves(killers),
+    history(hist),
+    cont_history(cont_hist),
+    capt_history(capt_hist)
+    {};
 
 template<>
 SortedMoveGen<GenType::QSEARCH>::SortedMoveGen(
-    Piece prev_piece, Square prev_to, NnueBoard& pos): prev_piece(prev_piece), prev_to(prev_to), pos(pos) {};
+    Piece prev_piece, Square prev_to, NnueBoard& pos,
+    KillerMoves& killers, FromToHistory& hist, ContinuationHistory& cont_hist, CaptureHistory& capt_hist
+    ):
+    prev_piece(prev_piece),
+    prev_to(prev_to),
+    pos(pos),
+    killer_moves(killers),
+    history(hist),
+    cont_history(cont_hist),
+    capt_history(capt_hist)
+    {};
 
 template<>
 void SortedMoveGen<GenType::NORMAL>::prepare_capture_sort(){
@@ -90,7 +108,7 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (move.typeOf() == Move::PROMOTION)
             score += c_prm * piece_value[move.promotionType()] / 256;
 
-        score += cphis * capture_history.get(piece, to.index(), to_piece) / 8192;
+        score += cphis * capt_history.get(piece, to.index(), to_piece) / 8192;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -278,14 +296,14 @@ inline int SortedMoveGen<MoveGenType>::index(){ return move_idx; }
 template<>
 void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth){
     history.apply_bonus(
-        pos.sideToMove(), best_move.from(), 
-        best_move.to(), std::min(depth*depth*his_1 + his_2, his_3)
+        history.get(pos.sideToMove(), best_move.from(), best_move.to()),
+        std::min(depth*depth*his_1 + his_2, his_3)
     );
 
     for (int i = moves.num_left; i < moves.size(); i++){
         if (moves[i] != best_move && !pos.isCapture(moves[i]))
             history.apply_bonus(
-                pos.sideToMove(), moves[i].from(), moves[i].to(), 
+                history.get(pos.sideToMove(), moves[i].from(), moves[i].to()), 
                 -std::min(depth*depth*his_4 + his_5, his_6)
             );
     }
@@ -293,15 +311,16 @@ void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth){
 
 template<>
 void SortedMoveGen<GenType::NORMAL>::update_capture_history(Move best_move, int depth){
-    capture_history.apply_bonus(
-        pos.at(best_move.from()), best_move.to(), 
-        pos.at(best_move.to()), std::min(depth*depth*chis_1 + chis_2, chis_3));
+    capt_history.apply_bonus(
+        capt_history.get(pos.at(best_move.from()), best_move.to(), pos.at(best_move.to())),
+        std::min(depth*depth*chis_1 + chis_2, chis_3)
+    );
 
     for (int i = moves.num_left; i < moves.size(); i++){
         if (moves[i] != best_move && pos.isCapture(moves[i]))
-            capture_history.apply_bonus(
-                pos.at(moves[i].from()), moves[i].to(),
-                pos.at(moves[i].to()), -std::min(depth*depth*chis_4 + chis_5, chis_6)
+            capt_history.apply_bonus(
+                capt_history.get(pos.at(moves[i].from()), moves[i].to(), pos.at(moves[i].to())),
+                -std::min(depth*depth*chis_4 + chis_5, chis_6)
             );
     }
 }
@@ -310,7 +329,7 @@ template<>
 void SortedMoveGen<GenType::NORMAL>::update_cont_history(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus){
     if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ)
         && piece != int(Piece::NONE) && to != int(Square::underlying::NO_SQ))
-        cont_history.apply_bonus(prev_piece, prev_to, piece, to, bonus);
+        cont_history.apply_bonus(cont_history.get(prev_piece, prev_to, piece, to), bonus);
 }
 
 template class SortedMoveGen<GenType::QSEARCH>;
