@@ -288,15 +288,15 @@ Move Engine::iterative_deepening(SearchLimit limit){
             if (interrupt_flag)
                 break;
 
-            if (best_move.score() <= asp_alpha)
+            if (best_move.score() <= asp_alpha){
+                asp_beta = (asp_alpha + asp_beta) / 2;
                 asp_alpha -= 2*margin;
-
-            else if (best_move.score() >= asp_beta)
+            } else if (best_move.score() >= asp_beta)
                 asp_beta += 2*margin;
             else
                 break;
 
-            margin += margin / 2;
+            margin += margin / 3;
 
             asp_alpha = std::clamp(asp_alpha, -INFINITE_VALUE, INFINITE_VALUE);
             asp_beta = std::clamp(asp_beta, -INFINITE_VALUE, INFINITE_VALUE);
