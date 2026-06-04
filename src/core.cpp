@@ -296,7 +296,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
             else
                 break;
 
-            margin += margin / 4;
+            margin += margin / 2;
 
             asp_alpha = std::clamp(asp_alpha, -INFINITE_VALUE, INFINITE_VALUE);
             asp_beta = std::clamp(asp_beta, -INFINITE_VALUE, INFINITE_VALUE);
