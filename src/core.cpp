@@ -501,7 +501,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     bool in_check = pos.inCheck();
 
     // increase depth if previous reduction was too large
-    if ((ss - 1)->reduction >= 4 && !opponent_worsening)
+    if ((ss - 1)->reduction >= 3 && !opponent_worsening)
         depth++;
 
     // pruning
