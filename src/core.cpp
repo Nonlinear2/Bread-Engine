@@ -493,9 +493,16 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval)
         && ss->static_eval > (ss - 2)->static_eval;
 
+    bool opponent_worsening = is_valid(ss->static_eval) && is_valid((ss - 1)->static_eval)
+        && ss->static_eval > -(ss - 1)->static_eval;
+
     bool tt_capture = transposition.move != Move::NO_MOVE && pos.isCapture(transposition.move);
 
     bool in_check = pos.inCheck();
+
+    // increase depth if previous reduction was too large
+    if ((ss - 1)->reduction >= 3 && !opponent_worsening)
+        depth++;
 
     // pruning
     if (!root_node && !pv && !in_check){
@@ -623,7 +630,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
         if (move_gen.index() > 0 && depth >= 2){
+
+            ss->reduction = new_depth - reduced_depth;
             value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1, true);
+            ss->reduction = 0;
 
             if (value > alpha && reduced_depth < new_depth){
                 new_depth += value > max_value + 25 + 5 * new_depth;
