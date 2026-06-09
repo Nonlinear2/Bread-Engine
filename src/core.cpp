@@ -515,8 +515,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (depth < 9 - 3*is_hit
             && eval - depth * (rfp_1 - rfp_2*cutnode) 
                     - rfp_3
-                    + rfp_4 * improving
-                    + 30 * opponent_worsening 
+                    + rfp_4 * improving 
                     - rfp_5 * std::abs(uncorrected_static_eval - static_eval) / 1024 >= beta)
             return eval;
 
