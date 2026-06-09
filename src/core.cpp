@@ -540,6 +540,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
     }
 
+    depth -= depth > 7 && transposition.move == Move::NO_MOVE && cutnode && ss->excluded_move == Move::NO_MOVE;
+
     // small probcut
     int probcut_beta = beta + sprob_1;
     if (!pv && ss->excluded_move == Move::NO_MOVE
