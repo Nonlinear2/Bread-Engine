@@ -525,7 +525,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (cutnode && (ss - 1)->curr_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
             && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta)){
 
-            int R = 4 + (eval >= beta) + depth / 4;
+            int R = 4 + (eval >= beta) + (eval >= beta + 150) + depth / 4;
+
             ss->moved_piece = Piece::NONE;
             ss->curr_move = Move::NULL_MOVE;
             ss->curr_move_capture = false;
