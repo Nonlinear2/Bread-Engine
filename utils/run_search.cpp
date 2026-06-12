@@ -19,11 +19,9 @@ int main(){
     // engine.transpositsion_table.info();
 
     for (int i = 0; i < fens.size(); i++){
-        NnueBoard cb;
-        cb.setFen(fens[i]);
-        cb.synchronize();
-
-        chess::Move best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Depth, 15));
+        engine.pos.setFen(fens[i]);
+        chess::Move best_move = engine.iterative_deepening(SearchLimit(LimitType::Depth, 15));
+    
         // std::cout << "score: " << best_move.score() << std::endl;
 
         // std::cout << fens[i] << "\n";

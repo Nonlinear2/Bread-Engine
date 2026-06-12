@@ -100,33 +100,15 @@ void cleanup(){
 };
 
 void compute_accumulator(Accumulator& new_acc, const Features active_features){
-    vec_int16 registers[NUM_AVX_REGISTERS];
+    for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
+        auto r = load_epi16(&ft_bias[i]);
 
-    constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS*INT16_PER_REG;
+        for (const int &a: active_features)
+            r = add_epi16(r, load_epi16(&ft_weights[a * ACC_SIZE + i]));
 
-    for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
-        // load the bias from memory
-        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-            registers[i] = load_epi16(&ft_bias[j + i*INT16_PER_REG]);
-        }
-
-        for (const int &a: active_features){
-            for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-                // a*acc size is the index of the a-th row. We then accumulate the weights.
-                registers[i] = add_epi16(
-                    registers[i],
-                    load_epi16(&ft_weights[a*ACC_SIZE + j + i*INT16_PER_REG])
-                    );
-            }
-        }
-
-        // store the result in the accumulator
-        for (int i = 0; i < NUM_AVX_REGISTERS; i++){
-            store_epi16(&new_acc[j + i*INT16_PER_REG], registers[i]);
-        }
+        store_epi16(&new_acc[i], r);
     }
 };
-
 
 void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures& m_features){
     assert(m_features.valid());
@@ -138,18 +120,30 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
         for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
             auto* prev = &prev_acc[j];
             auto* out  = &new_acc[j];
-
-            auto* w_add = &ft_weights[m_features.added_1   * ACC_SIZE + j];
+            auto* w_add = &ft_weights[m_features.added_1 * ACC_SIZE + j];
             auto* w_rem = &ft_weights[m_features.removed_1 * ACC_SIZE + j];
 
-            for (int i = 0; i < CHUNK_SIZE; i += INT16_PER_REG){
+            for (int i = 0; i < CHUNK_SIZE; i += INT16_PER_REG * 4){ // process 4 registers at once
+                
+                auto r1 = load_epi16(prev + i);
+                auto r2 = load_epi16(prev + i + INT16_PER_REG);
+                auto r3 = load_epi16(prev + i + INT16_PER_REG*2);
+                auto r4 = load_epi16(prev + i + INT16_PER_REG*3);
 
-                auto r = load_epi16(prev + i);
+                r1 = add_epi16(r1, load_epi16(w_add + i));
+                r2 = add_epi16(r2, load_epi16(w_add + i + INT16_PER_REG));
+                r3 = add_epi16(r3, load_epi16(w_add + i + INT16_PER_REG*2));
+                r4 = add_epi16(r4, load_epi16(w_add + i + INT16_PER_REG*3));
 
-                r = add_epi16(r, load_epi16(w_add + i));
-                r = sub_epi16(r, load_epi16(w_rem + i));
+                r1 = sub_epi16(r1, load_epi16(w_rem + i));
+                r2 = sub_epi16(r2, load_epi16(w_rem + i + INT16_PER_REG));
+                r3 = sub_epi16(r3, load_epi16(w_rem + i + INT16_PER_REG*2));
+                r4 = sub_epi16(r4, load_epi16(w_rem + i + INT16_PER_REG*3));
 
-                store_epi16(out + i, r);
+                store_epi16(out + i, r1);
+                store_epi16(out + i + INT16_PER_REG, r2);
+                store_epi16(out + i + INT16_PER_REG*2, r3);
+                store_epi16(out + i + INT16_PER_REG*3, r4);
             }
         }
         break;
@@ -242,7 +236,6 @@ int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
     int16_t* stm_data = accumulators[stm].data();
     int16_t* nstm_data = accumulators[!stm].data();
 
-    const vec_int16 one = set1_epi16(1);
     const vec_int16 zero = setzero_epi16();
     const vec_int16 qscale = set1_epi16(255);
     vec_int32 result = set1_epi32(0);
@@ -252,9 +245,10 @@ int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
         in = min_epi16(qscale, max_epi16(in, zero));
 
         vec_int16 weight_chunk = load_epi16(&l1_weights[bucket * L1_WEIGHTS_SIZE + i]);
-        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
 
         // madd pairs to int32 to avoid overflows in int16
+        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
+
         result = add_epi32(result, prod);
     }
 
@@ -263,9 +257,10 @@ int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
         in = min_epi16(qscale, max_epi16(in, zero));
 
         vec_int16 weight_chunk = load_epi16(&l1_weights[bucket * L1_WEIGHTS_SIZE + ACC_SIZE + i]);
-        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
 
         // madd pairs to int32 to avoid overflows in int16
+        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
+
         result = add_epi32(result, prod);
     }
 
@@ -273,9 +268,9 @@ int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
 };
 
 int run(Accumulators& accumulators, Color stm, int piece_count){
-    constexpr int pieces_per_bucket = 32 / OUTPUT_BUCKET_COUNT;
+    constexpr int pieces_per_bucket = 32 / NUM_OUTPUT_BUCKETS;
     int bucket = (piece_count - 2) / pieces_per_bucket;
-    assert(bucket >= 0 && bucket <= OUTPUT_BUCKET_COUNT);
+    assert(bucket >= 0 && bucket <= NUM_OUTPUT_BUCKETS);
 
     int output = run_L1(accumulators, stm, bucket);
     return (output * 600) / (64 * 255); // scale is 600
