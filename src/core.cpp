@@ -725,7 +725,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             (ss - 2)->moved_piece, ((ss - 2)->curr_move).to(), prev_piece, prev_to, std::min(depth*cont_3 + cont_4, cont_5));
     }
 
+    if (max_value >= beta && !is_decisive(max_value) && !is_decisive(alpha))
+        max_value = (max_value * depth + beta) / (depth + 1);
 
+    // update correction history
     if (!in_check && !(best_move != Move::NO_MOVE && pos.isCapture(best_move))
         && (max_value > ss->static_eval) == (best_move != Move::NO_MOVE))
     {
