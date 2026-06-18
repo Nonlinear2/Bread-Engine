@@ -493,9 +493,16 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval)
         && ss->static_eval > (ss - 2)->static_eval;
 
+    bool opponent_worsening = is_valid(ss->static_eval) && is_valid((ss - 1)->static_eval)
+        && ss->static_eval > -(ss - 1)->static_eval;
+
     bool tt_capture = transposition.move != Move::NO_MOVE && pos.isCapture(transposition.move);
 
     bool in_check = pos.inCheck();
+
+    // increase depth if previous reduction was too large
+    if ((ss - 1)->reduction >= 3 && !opponent_worsening)
+        depth++;
 
     // pruning
     if (!root_node && !pv && !in_check){
@@ -508,7 +515,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (depth < 9 - 3*is_hit
             && eval - depth * (rfp_1 - rfp_2*cutnode) 
                     - rfp_3
-                    + rfp_4 * improving 
+                    + rfp_4 * improving
+                    + 30 * opponent_worsening 
                     - rfp_5 * std::abs(uncorrected_static_eval - static_eval) / 1024 >= beta)
             return eval;
 
@@ -517,7 +525,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (cutnode && (ss - 1)->curr_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
             && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta)){
 
-            int R = 3 + (eval >= beta) + depth / 4 + tt_capture;
+            int R = 4 + (eval >= beta) + (eval >= beta + 150) + depth / 4;
+
             ss->moved_piece = Piece::NONE;
             ss->curr_move = Move::NULL_MOVE;
             ss->curr_move_capture = false;
@@ -623,7 +632,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
         if (move_gen.index() > 0 && depth >= 2){
+
+            ss->reduction = new_depth - reduced_depth;
             value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1, true);
+            ss->reduction = 0;
 
             if (value > alpha && reduced_depth < new_depth){
                 new_depth += value > max_value + 25 + 5 * new_depth;
