@@ -66,7 +66,8 @@ int32_t* l1_bias    = nullptr;
 int16_t* l2_weights = nullptr;
 int32_t* l2_bias    = nullptr;
 
-ClampedAccumulators ft_clamped_output;
+alignas(32) int8_t ft_clamped_output[L1_INPUT_SIZE];
+
 alignas(32) int32_t l1_output[L1_OUTPUT_SIZE];
 alignas(32) int16_t l1_clamped_output[L1_OUTPUT_SIZE];
 
@@ -263,27 +264,29 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
     }
 }
 
-void run_L1(ClampedAccumulators& accumulators, Color stm, int32_t* output, int bucket){
-    int8_t* stm_data = accumulators[stm].data();
-    int8_t* nstm_data = accumulators[!stm].data();
-
-    vec_int32 result[L1_OUTPUT_SIZE];
+void run_L1(int8_t* input, Color stm, int32_t* output, int bucket){
 
     const vec_int16 one = set1_epi16(1);
 
+    vec_int32 accs[INT32_PER_REG];
+
     for (int i = 0; i < L1_OUTPUT_SIZE; i += INT32_PER_REG){
-        result[i] = load_epi32(&l1_bias[bucket * L1_WEIGHTS_SIZE + i]);
+        for (int j = 0; j < INT32_PER_REG; j++){
+            accs[j] = setzero_epi32();
+            for (int k = 0; k < L1_INPUT_SIZE; k += INT32_PER_REG){
+                accs[j] = dpbusd_epi32(accs[j],
+                    load_epi8(&input[k]),
+                    load_epi8(&l1_weights[bucket * L1_WEIGHTS_SIZE + j * L1_INPUT_SIZE + k])
+                ); // apply screlu
+            }
+        }
 
-        result[i] = dpbusd_epi32(result[i],
-            load_epi8(&stm_data[i]), 
-            load_epi8(&l1_weights[bucket * L1_WEIGHTS_SIZE + i * L1_INPUT_SIZE + i])
-        ); // apply screlu
+        vec_int32 result = add_epi32(
+            load_epi32(&l1_bias[bucket * L1_OUTPUT_SIZE + i]),
+            reduce8_epi32(accs)
+        );
 
-        result[i] = srai_epi32(result[i], 6); // this integer divides the result by 64 which is the scale.
-    }
-
-    for (int i = 0; i < L1_OUTPUT_SIZE; i += 8){
-        store_epi32(&output[i], reduce8_epi32(&result[i]));
+        store_epi32(&output[i], srai_epi32(result, 6));
     }
 };
 
@@ -304,7 +307,7 @@ int32_t run_L2(int16_t* input, int bucket){
         result = add_epi32(result, prod);
     }
 
-    return reduce1_epi32(result) / 255 + l1_bias[bucket];
+    return reduce1_epi32(result) / 255 + l2_bias[bucket];
 };
 
 int run(Accumulators& accumulators, Color stm, int piece_count){
@@ -313,8 +316,8 @@ int run(Accumulators& accumulators, Color stm, int piece_count){
 
     assert(bucket >= 0 && bucket < NUM_OUTPUT_BUCKETS);
 
-    crelu16_to_8(accumulators[0].data(), ft_clamped_output[0].data(), ACC_SIZE);
-    crelu16_to_8(accumulators[1].data(), ft_clamped_output[1].data(), ACC_SIZE);
+    crelu16_to_8(accumulators[stm].data(), ft_clamped_output, ACC_SIZE);
+    crelu16_to_8(accumulators[!stm].data(), &ft_clamped_output[ACC_SIZE], ACC_SIZE);
 
     run_L1(ft_clamped_output, stm, l1_output, bucket);
 
