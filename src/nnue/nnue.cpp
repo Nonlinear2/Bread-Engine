@@ -264,20 +264,18 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
     }
 }
 
-void run_L1(int8_t* input, Color stm, int32_t* output, int bucket){
-
-    const vec_int16 one = set1_epi16(1);
+void run_L1(int8_t* input, int32_t* output, int bucket){
 
     vec_int32 accs[INT32_PER_REG];
 
     for (int i = 0; i < L1_OUTPUT_SIZE; i += INT32_PER_REG){
         for (int j = 0; j < INT32_PER_REG; j++){
             accs[j] = setzero_epi32();
-            for (int k = 0; k < L1_INPUT_SIZE; k += INT32_PER_REG){
+            for (int k = 0; k < L1_INPUT_SIZE; k += INT8_PER_REG){
                 accs[j] = dpbusd_epi32(accs[j],
                     load_epi8(&input[k]),
-                    load_epi8(&l1_weights[bucket * L1_WEIGHTS_SIZE + j * L1_INPUT_SIZE + k])
-                ); // apply screlu
+                    load_epi8(&l1_weights[bucket * L1_WEIGHTS_SIZE + (i + j) * L1_INPUT_SIZE + k])
+                );
             }
         }
 
@@ -319,7 +317,7 @@ int run(Accumulators& accumulators, Color stm, int piece_count){
     crelu16_to_8(accumulators[stm].data(), ft_clamped_output, ACC_SIZE);
     crelu16_to_8(accumulators[!stm].data(), &ft_clamped_output[ACC_SIZE], ACC_SIZE);
 
-    run_L1(ft_clamped_output, stm, l1_output, bucket);
+    run_L1(ft_clamped_output, l1_output, bucket);
 
     crelu32_to_16(l1_output, l1_clamped_output, L1_OUTPUT_SIZE);
 

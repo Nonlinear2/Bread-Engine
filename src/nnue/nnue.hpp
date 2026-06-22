@@ -114,7 +114,7 @@ Layer 1
 extern int8_t* l1_weights;
 extern int32_t* l1_bias;
 
-void run_L1(ClampedAccumulators& accumulators, Color stm, int32_t* output, int bucket);
+void run_L1(int8_t* input, int32_t* output, int bucket);
 
 /******
 Layer 2
