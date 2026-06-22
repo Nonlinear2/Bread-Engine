@@ -33,12 +33,18 @@ INCBIN(ft_bias, bread_NNUE_MODEL_PATH "/feature_transformer/bias.bin");
 INCBIN(l1_weights, bread_NNUE_MODEL_PATH "/layer_1/weights.bin");
 INCBIN(l1_bias, bread_NNUE_MODEL_PATH "/layer_1/bias.bin");
 
+INCBIN(l2_weights, bread_NNUE_MODEL_PATH "/layer_2/weights.bin");
+INCBIN(l2_bias, bread_NNUE_MODEL_PATH "/layer_2/bias.bin");
+
 extern "C" {
     extern const int16_t ft_weights_start[];
     extern const int16_t ft_bias_start[];
 
     extern const int16_t l1_weights_start[];
     extern const int32_t l1_bias_start[];
+
+    extern const int8_t l2_weights_start[];
+    extern const int32_t l2_bias_start[];
 };
 
 bool ModifiedFeatures::valid() const {
@@ -54,8 +60,17 @@ namespace NNUE {
 int16_t* ft_weights = nullptr;
 int16_t* ft_bias    = nullptr;
 
-int16_t* l1_weights = nullptr;
+int8_t* l1_weights = nullptr;
 int32_t* l1_bias    = nullptr;
+
+int16_t* l2_weights = nullptr;
+int32_t* l2_bias    = nullptr;
+
+using ClampedAccumulators = std::array<std::array<int8_t, ACC_SIZE>, 2>;
+
+ClampedAccumulators ft_clamped_output;
+int32_t* l1_output;
+int16_t* l1_clamped_output;
 
 void load_model(){
     // feature transformer
@@ -71,6 +86,14 @@ void load_model(){
 
     for (int i = 0; i < BUCKETED_L1_BIAS_SIZE; i++)
         l1_bias[i] = l1_bias_start[i];
+
+    // layer 2
+    for (int i = 0; i < BUCKETED_L2_WEIGHTS_SIZE; i++){
+        l2_weights[i] = l2_weights_start[i];
+    }
+    for (int i = 0; i < BUCKETED_L2_BIAS_SIZE; i++){
+        l2_bias[i] = l2_bias_start[i];
+    }
 };
 
 void init(){
@@ -81,11 +104,18 @@ void init(){
         operator new[](sizeof(int16_t)*L0_BIAS_SIZE, std::align_val_t{32})
     );
 
-    l1_weights = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*BUCKETED_L1_WEIGHTS_SIZE, std::align_val_t{32})
+    l1_weights = static_cast<int8_t*>(
+        operator new[](sizeof(int8_t)*BUCKETED_L1_WEIGHTS_SIZE, std::align_val_t{32})
     );
     l1_bias = static_cast<int32_t*>(
         operator new[](sizeof(int32_t)*BUCKETED_L1_BIAS_SIZE, std::align_val_t{32})
+    );
+
+    l2_weights = static_cast<int16_t*>(
+        operator new[](sizeof(int16_t)*BUCKETED_L2_WEIGHTS_SIZE, std::align_val_t{32})
+    );
+    l2_bias = static_cast<int32_t*>(
+        operator new[](sizeof(int32_t)*BUCKETED_L2_BIAS_SIZE, std::align_val_t{32})
     );
 
     load_model();
@@ -97,6 +127,9 @@ void cleanup(){
 
     operator delete[](l1_weights, std::align_val_t(32));
     operator delete[](l1_bias, std::align_val_t(32));
+
+    operator delete[](l2_weights, std::align_val_t(32));
+    operator delete[](l2_bias, std::align_val_t(32));
 };
 
 void compute_accumulator(Accumulator& new_acc, const Features active_features){
@@ -232,31 +265,73 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
     }
 }
 
-int32_t run_L1(Accumulators& accumulators, Color stm, int bucket){
-    int16_t* stm_data = accumulators[stm].data();
-    int16_t* nstm_data = accumulators[!stm].data();
+void run_L1(ClampedAccumulators& accumulators, Color stm, int bucket){
+    int8_t* stm_data = accumulators[stm].data();
+    int8_t* nstm_data = accumulators[!stm].data();
 
+    vec_int32 output_chunks[INT32_PER_REG];
+    const vec_int16 one = set1_epi16(1);
+
+    for (int j = 0; j < L1_OUTPUT_SIZE; j += INT32_PER_REG){
+        vec_int32 result = load_epi32(&l1_bias[bucket * L2_WEIGHTS_SIZE + j]);
+        for (int i = 0; i < ACC_SIZE; i += INT8_PER_REG){
+            vec_int8 input_chunk = load_epi8(&stm_data[i]);
+
+            for (int k = 0; k < INT32_PER_REG; k++){
+                output_chunks[k] = mullo_epi16(
+                    input_chunk,
+                    load_epi8(&l1_weights[bucket * L2_WEIGHTS_SIZE + (j+k) * L1_INPUT_SIZE + i])
+                );
+
+                output_chunks[k] = maddubs_epi16(
+                    input_chunk,
+                    output_chunks[k]
+                ); // apply screlu
+
+                output_chunks[k] = madd_epi16(output_chunks[k], one); // hadd pairs to int32
+            }
+            result = add_epi32(result, reduce8_epi32(output_chunks));
+        }
+        result = srai_epi32(result, 6); // this integer divides the result by 64 which is the scale.
+        store_epi32(&l1_output[j], result);
+    }
+
+
+    for (int j = 0; j < L1_OUTPUT_SIZE; j += INT32_PER_REG){
+        vec_int32 result = load_epi32(&l1_bias[bucket * L2_WEIGHTS_SIZE + j]);
+        for (int i = 0; i < ACC_SIZE; i += INT8_PER_REG){
+            vec_int8 input_chunk = load_epi8(&nstm_data[i]);
+
+            for (int k = 0; k < INT32_PER_REG; k++){
+                output_chunks[k] = mullo_epi16(
+                    input_chunk,
+                    load_epi8(&l1_weights[bucket * L2_WEIGHTS_SIZE + (j+k) * L1_INPUT_SIZE + i])
+                );
+
+                output_chunks[k] = maddubs_epi16(
+                    input_chunk,
+                    output_chunks[k]
+                ); // apply screlu
+
+                output_chunks[k] = madd_epi16(output_chunks[k], one); // hadd pairs to int32
+            }
+            result = add_epi32(result, reduce8_epi32(output_chunks));
+        }
+        result = srai_epi32(result, 6); // this integer divides the result by 64 which is the scale.
+        store_epi32(&l1_output[j], result);
+    }
+};
+
+int32_t run_L2(int bucket){
     const vec_int16 zero = setzero_epi16();
     const vec_int16 qscale = set1_epi16(255);
     vec_int32 result = set1_epi32(0);
 
-    for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
-        vec_int16 in = load_epi16(&stm_data[i]);
+    for (int i = 0; i < L2_INPUT_SIZE; i += INT16_PER_REG){
+        vec_int16 in = load_epi16(&l1_clamped_output[i]);
         in = min_epi16(qscale, max_epi16(in, zero));
 
-        vec_int16 weight_chunk = load_epi16(&l1_weights[bucket * L1_WEIGHTS_SIZE + i]);
-
-        // madd pairs to int32 to avoid overflows in int16
-        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
-
-        result = add_epi32(result, prod);
-    }
-
-    for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG){
-        vec_int16 in = load_epi16(&nstm_data[i]);
-        in = min_epi16(qscale, max_epi16(in, zero));
-
-        vec_int16 weight_chunk = load_epi16(&l1_weights[bucket * L1_WEIGHTS_SIZE + ACC_SIZE + i]);
+        vec_int16 weight_chunk = load_epi16(&l2_weights[bucket * L1_WEIGHTS_SIZE + i]);
 
         // madd pairs to int32 to avoid overflows in int16
         vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));

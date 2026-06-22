@@ -47,7 +47,7 @@ namespace NNUE_UTILS {
         for (int i = 0; i < num_regs; i++){
             vec_int16 in_1 = load_epi16(&input[(2*i)*INT16_PER_REG]);
             vec_int16 in_2 = load_epi16(&input[(2*i+1)*INT16_PER_REG]);
-            // packs sets negative values to 0 and saturates at 255, which effectively applies relu
+            // packus sets negative values to 0 and saturates at 255, which effectively applies relu
             vec_int8 out = packus_epi16(in_1, in_2);
             out = permute4x64_epi64<0b11'01'10'00>(out); // undo the packus shuffle
             store_epi8(&output[i*INT8_PER_REG], out);

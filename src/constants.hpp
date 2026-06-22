@@ -27,7 +27,11 @@ constexpr int INPUT_SIZE = 768 * NUM_INPUT_BUCKETS;
 constexpr int ACC_SIZE = 1024;
 
 constexpr int L1_INPUT_SIZE = 2 * ACC_SIZE;
-constexpr int L1_OUTPUT_SIZE = 1;
+constexpr int L1_OUTPUT_SIZE = 16;
+
+constexpr int L2_INPUT_SIZE = L1_OUTPUT_SIZE;
+constexpr int L2_OUTPUT_SIZE = 1;
+
 
 constexpr int L0_WEIGHTS_SIZE = INPUT_SIZE * ACC_SIZE;
 constexpr int L0_BIAS_SIZE = ACC_SIZE;
@@ -35,8 +39,14 @@ constexpr int L0_BIAS_SIZE = ACC_SIZE;
 constexpr int L1_WEIGHTS_SIZE = L1_INPUT_SIZE * L1_OUTPUT_SIZE;
 constexpr int L1_BIAS_SIZE = L1_OUTPUT_SIZE;
 
+constexpr int L2_WEIGHTS_SIZE = L2_INPUT_SIZE * L2_OUTPUT_SIZE;
+constexpr int L2_BIAS_SIZE = L2_OUTPUT_SIZE;
+
 constexpr int BUCKETED_L1_WEIGHTS_SIZE = NUM_OUTPUT_BUCKETS * L1_WEIGHTS_SIZE;
 constexpr int BUCKETED_L1_BIAS_SIZE = NUM_OUTPUT_BUCKETS * L1_BIAS_SIZE;
+
+constexpr int BUCKETED_L2_WEIGHTS_SIZE = NUM_OUTPUT_BUCKETS * L2_WEIGHTS_SIZE;
+constexpr int BUCKETED_L2_BIAS_SIZE = NUM_OUTPUT_BUCKETS * L2_BIAS_SIZE;
 
 using Accumulator = std::array<int16_t, ACC_SIZE>;
 using Accumulators = std::array<Accumulator, 2>;
