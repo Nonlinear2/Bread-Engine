@@ -66,11 +66,9 @@ int32_t* l1_bias    = nullptr;
 int16_t* l2_weights = nullptr;
 int32_t* l2_bias    = nullptr;
 
-using ClampedAccumulators = std::array<std::array<int8_t, ACC_SIZE>, 2>;
-
 ClampedAccumulators ft_clamped_output;
-int32_t* l1_output;
-int16_t* l1_clamped_output;
+alignas(32) int32_t l1_output[L1_OUTPUT_SIZE];
+alignas(32) int16_t l1_clamped_output[L1_OUTPUT_SIZE];
 
 void load_model(){
     // feature transformer
@@ -274,11 +272,11 @@ void run_L1(ClampedAccumulators& accumulators, Color stm, int32_t* output, int b
     const vec_int16 one = set1_epi16(1);
 
     for (int i = 0; i < L1_OUTPUT_SIZE; i += INT32_PER_REG){
-        result[i] = load_epi32(&l1_bias[bucket * L2_WEIGHTS_SIZE + i]);
+        result[i] = load_epi32(&l1_bias[bucket * L1_WEIGHTS_SIZE + i]);
 
         result[i] = dpbusd_epi32(result[i],
             load_epi8(&stm_data[i]), 
-            load_epi8(&l1_weights[bucket * L2_WEIGHTS_SIZE + i * L1_INPUT_SIZE + i])
+            load_epi8(&l1_weights[bucket * L1_WEIGHTS_SIZE + i * L1_INPUT_SIZE + i])
         ); // apply screlu
 
         result[i] = srai_epi32(result[i], 6); // this integer divides the result by 64 which is the scale.
@@ -298,7 +296,7 @@ int32_t run_L2(int16_t* input, int bucket){
         vec_int16 in = load_epi16(&input[i]);
         in = min_epi16(qscale, max_epi16(in, zero));
 
-        vec_int16 weight_chunk = load_epi16(&l2_weights[bucket * L1_WEIGHTS_SIZE + i]);
+        vec_int16 weight_chunk = load_epi16(&l2_weights[bucket * L2_WEIGHTS_SIZE + i]);
 
         // madd pairs to int32 to avoid overflows in int16
         vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
@@ -312,7 +310,8 @@ int32_t run_L2(int16_t* input, int bucket){
 int run(Accumulators& accumulators, Color stm, int piece_count){
     constexpr int pieces_per_bucket = 32 / NUM_OUTPUT_BUCKETS;
     int bucket = (piece_count - 2) / pieces_per_bucket;
-    assert(bucket >= 0 && bucket <= NUM_OUTPUT_BUCKETS);
+
+    assert(bucket >= 0 && bucket < NUM_OUTPUT_BUCKETS);
 
     crelu16_to_8(accumulators[0].data(), ft_clamped_output[0].data(), ACC_SIZE);
     crelu16_to_8(accumulators[1].data(), ft_clamped_output[1].data(), ACC_SIZE);

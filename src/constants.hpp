@@ -50,6 +50,7 @@ constexpr int BUCKETED_L2_BIAS_SIZE = NUM_OUTPUT_BUCKETS * L2_BIAS_SIZE;
 
 using Accumulator = std::array<int16_t, ACC_SIZE>;
 using Accumulators = std::array<Accumulator, 2>;
+using ClampedAccumulators = std::array<std::array<int8_t, ACC_SIZE>, 2>;
 
 
 /****************

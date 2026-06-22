@@ -5,7 +5,7 @@
     #define HAS_VNNI512 __AVX512VNNI__
 #elif defined(__AVX2__)
     #define USE_AVX2
-    #define HAS_VNNI256 __AVXVNNI__
+    // #define HAS_VNNI256 __AVXVNNI__
 #else
     #error "bread requires the AVX2 instruction set to run."
 #endif
@@ -225,10 +225,6 @@
 
     inline vec_int16 maddubs_epi16(vec_int8 v1, vec_int8 v2) {
         return _mm256_maddubs_epi16(v1, v2);
-    }
-
-    inline vec_int32 srai_epi32(vec_int32 v, int i) {
-        return _mm256_srai_epi32(v, i);
     }
 
     inline vec_int32 srai_epi32(vec_int32 v, int i) {

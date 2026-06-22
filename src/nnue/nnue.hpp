@@ -111,10 +111,19 @@ Layer 1
 
 // 2*acc_size -> 1
 
-extern int16_t* l1_weights;
+extern int8_t* l1_weights;
 extern int32_t* l1_bias;
 
-// int32_t run_L1(Accumulators& accumulators, Color stm, int bucket);
+void run_L1(ClampedAccumulators& accumulators, Color stm, int32_t* output, int bucket);
+
+/******
+Layer 2
+*******/
+
+extern int16_t* l2_weights;
+extern int32_t* l2_bias;
+
+int32_t run_L2(int16_t* input, int bucket);
 
 void init();
 void cleanup();
