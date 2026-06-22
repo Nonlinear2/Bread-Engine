@@ -14,7 +14,7 @@ namespace NNUE_UTILS {
 
 #ifdef USE_AVX2 // these functions use the AVX2 specific instruction permute4x64_epi64
     [[maybe_unused]]
-    inline void crelu32_to_8(int32_t *input, int8_t *output, int size){
+    inline void crelu32_to_8_127(int32_t *input, int8_t *output, int size){ // clamp(0, 127)
 
         assert(size % INT8_PER_REG == 0);
 
@@ -38,7 +38,31 @@ namespace NNUE_UTILS {
     }
 
     [[maybe_unused]]
-    inline void crelu16_to_8(int16_t *input, int8_t *output, int size){
+    inline void crelu32_to_16(int32_t *input, int16_t *output, int size){ // clamp(0, 255)
+
+        assert(size % INT16_PER_REG == 0);
+
+        const int num_regs = size / INT16_PER_REG;
+        const vec_int16 zero = setzero_epi16();
+        const vec_int16 qscale  = set1_epi16(255);
+
+        for (int i = 0; i < num_regs; i++){
+
+            vec_int32 in_1 = load_epi32(&input[(2*i)*INT32_PER_REG]);
+            vec_int32 in_2 = load_epi32(&input[(2*i+1)*INT32_PER_REG]);
+
+            vec_int16 out = packs_epi32(in_1, in_2);
+
+            out = min_epi16(qscale, max_epi16(out, zero)); // apply crelu
+
+            out = permute4x64_epi64<0b01'11'00'10>(out);
+
+            store_epi16(&output[i*INT16_PER_REG], out);
+        }
+    }
+
+    [[maybe_unused]]
+    inline void crelu16_to_8(int16_t *input, int8_t *output, int size){ // clamp(0, 255)
 
         assert(size % INT8_PER_REG == 0);
 
@@ -56,7 +80,7 @@ namespace NNUE_UTILS {
 #endif
 
 [[maybe_unused]]
-inline void crelu16_to_16(int16_t *input, int16_t *output, int size){
+inline void crelu16_to_16(int16_t *input, int16_t *output, int size){ // clamp(0, 255)
 
     assert(size % INT16_PER_REG == 0);
 

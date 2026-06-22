@@ -244,7 +244,7 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
                 registers[i] = add_epi16(
                     registers[i],
                     load_epi16(&ft_weights[a*ACC_SIZE + j + i*INT16_PER_REG])
-                    );
+                );
             }
         }
 
@@ -254,7 +254,7 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
                 registers[i] = sub_epi16(
                     registers[i],
                     load_epi16(&ft_weights[r*ACC_SIZE + j + i*INT16_PER_REG])
-                    );
+                );
             }
         }
 
@@ -265,70 +265,37 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
     }
 }
 
-void run_L1(ClampedAccumulators& accumulators, Color stm, int bucket){
+void run_L1(ClampedAccumulators& accumulators, Color stm, int32_t* output, int bucket){
     int8_t* stm_data = accumulators[stm].data();
     int8_t* nstm_data = accumulators[!stm].data();
 
-    vec_int32 output_chunks[INT32_PER_REG];
+    vec_int32 result[L1_OUTPUT_SIZE];
+
     const vec_int16 one = set1_epi16(1);
 
-    for (int j = 0; j < L1_OUTPUT_SIZE; j += INT32_PER_REG){
-        vec_int32 result = load_epi32(&l1_bias[bucket * L2_WEIGHTS_SIZE + j]);
-        for (int i = 0; i < ACC_SIZE; i += INT8_PER_REG){
-            vec_int8 input_chunk = load_epi8(&stm_data[i]);
+    for (int i = 0; i < L1_OUTPUT_SIZE; i += INT32_PER_REG){
+        result[i] = load_epi32(&l1_bias[bucket * L2_WEIGHTS_SIZE + i]);
 
-            for (int k = 0; k < INT32_PER_REG; k++){
-                output_chunks[k] = mullo_epi16(
-                    input_chunk,
-                    load_epi8(&l1_weights[bucket * L2_WEIGHTS_SIZE + (j+k) * L1_INPUT_SIZE + i])
-                );
+        result[i] = dpbusd_epi32(result[i],
+            load_epi8(&stm_data[i]), 
+            load_epi8(&l1_weights[bucket * L2_WEIGHTS_SIZE + i * L1_INPUT_SIZE + i])
+        ); // apply screlu
 
-                output_chunks[k] = maddubs_epi16(
-                    input_chunk,
-                    output_chunks[k]
-                ); // apply screlu
-
-                output_chunks[k] = madd_epi16(output_chunks[k], one); // hadd pairs to int32
-            }
-            result = add_epi32(result, reduce8_epi32(output_chunks));
-        }
-        result = srai_epi32(result, 6); // this integer divides the result by 64 which is the scale.
-        store_epi32(&l1_output[j], result);
+        result[i] = srai_epi32(result[i], 6); // this integer divides the result by 64 which is the scale.
     }
 
-
-    for (int j = 0; j < L1_OUTPUT_SIZE; j += INT32_PER_REG){
-        vec_int32 result = load_epi32(&l1_bias[bucket * L2_WEIGHTS_SIZE + j]);
-        for (int i = 0; i < ACC_SIZE; i += INT8_PER_REG){
-            vec_int8 input_chunk = load_epi8(&nstm_data[i]);
-
-            for (int k = 0; k < INT32_PER_REG; k++){
-                output_chunks[k] = mullo_epi16(
-                    input_chunk,
-                    load_epi8(&l1_weights[bucket * L2_WEIGHTS_SIZE + (j+k) * L1_INPUT_SIZE + i])
-                );
-
-                output_chunks[k] = maddubs_epi16(
-                    input_chunk,
-                    output_chunks[k]
-                ); // apply screlu
-
-                output_chunks[k] = madd_epi16(output_chunks[k], one); // hadd pairs to int32
-            }
-            result = add_epi32(result, reduce8_epi32(output_chunks));
-        }
-        result = srai_epi32(result, 6); // this integer divides the result by 64 which is the scale.
-        store_epi32(&l1_output[j], result);
+    for (int i = 0; i < L1_OUTPUT_SIZE; i += 8){
+        store_epi32(&output[i], reduce8_epi32(&result[i]));
     }
 };
 
-int32_t run_L2(int bucket){
+int32_t run_L2(int16_t* input, int bucket){
     const vec_int16 zero = setzero_epi16();
     const vec_int16 qscale = set1_epi16(255);
     vec_int32 result = set1_epi32(0);
 
     for (int i = 0; i < L2_INPUT_SIZE; i += INT16_PER_REG){
-        vec_int16 in = load_epi16(&l1_clamped_output[i]);
+        vec_int16 in = load_epi16(&input[i]);
         in = min_epi16(qscale, max_epi16(in, zero));
 
         vec_int16 weight_chunk = load_epi16(&l2_weights[bucket * L1_WEIGHTS_SIZE + i]);
@@ -347,7 +314,15 @@ int run(Accumulators& accumulators, Color stm, int piece_count){
     int bucket = (piece_count - 2) / pieces_per_bucket;
     assert(bucket >= 0 && bucket <= NUM_OUTPUT_BUCKETS);
 
-    int output = run_L1(accumulators, stm, bucket);
+    crelu16_to_8(accumulators[0].data(), ft_clamped_output[0].data(), ACC_SIZE);
+    crelu16_to_8(accumulators[1].data(), ft_clamped_output[1].data(), ACC_SIZE);
+
+    run_L1(ft_clamped_output, stm, l1_output, bucket);
+
+    crelu32_to_16(l1_output, l1_clamped_output, L1_OUTPUT_SIZE);
+
+    int output = run_L2(l1_clamped_output, bucket);
+
     return (output * 600) / (64 * 255); // scale is 600
 };
 

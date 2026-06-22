@@ -114,7 +114,7 @@ Layer 1
 extern int16_t* l1_weights;
 extern int32_t* l1_bias;
 
-int32_t run_L1(Accumulators& accumulators, Color stm, int bucket);
+// int32_t run_L1(Accumulators& accumulators, Color stm, int bucket);
 
 void init();
 void cleanup();
