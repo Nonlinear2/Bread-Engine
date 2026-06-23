@@ -55,14 +55,14 @@ namespace NNUE_UTILS {
 
             out = min_epi16(qscale, max_epi16(out, zero)); // apply crelu
 
-            out = permute4x64_epi64<0b01'11'00'10>(out);
+            out = permute4x64_epi64<0b11'01'10'00>(out);
 
             store_epi16(&output[i*INT16_PER_REG], out);
         }
     }
 
     [[maybe_unused]]
-    inline void crelu16_to_8(int16_t *input, int8_t *output, int size){ // clamp(0, 255)
+    inline void crelu16_to_8(int16_t *input, uint8_t *output, int size){ // clamp(0, 255)
 
         assert(size % INT8_PER_REG == 0);
 

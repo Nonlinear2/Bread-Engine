@@ -43,7 +43,7 @@ extern "C" {
     extern const int16_t l1_weights_start[];
     extern const int32_t l1_bias_start[];
 
-    extern const int8_t l2_weights_start[];
+    extern const int16_t l2_weights_start[];
     extern const int32_t l2_bias_start[];
 };
 
@@ -66,7 +66,7 @@ int32_t* l1_bias    = nullptr;
 int16_t* l2_weights = nullptr;
 int32_t* l2_bias    = nullptr;
 
-alignas(32) int8_t ft_clamped_output[L1_INPUT_SIZE];
+alignas(32) uint8_t ft_clamped_output[L1_INPUT_SIZE];
 
 alignas(32) int32_t l1_output[L1_OUTPUT_SIZE];
 alignas(32) int16_t l1_clamped_output[L1_OUTPUT_SIZE];
@@ -264,7 +264,7 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
     }
 }
 
-void run_L1(int8_t* input, int32_t* output, int bucket){
+void run_L1(uint8_t* input, int32_t* output, int bucket){
 
     vec_int32 accs[INT32_PER_REG];
 
@@ -304,6 +304,7 @@ int32_t run_L2(int16_t* input, int bucket){
 
         result = add_epi32(result, prod);
     }
+    // result is (in*255) * (in*255) * (w*64) 
 
     return reduce1_epi32(result) / 255 + l2_bias[bucket];
 };

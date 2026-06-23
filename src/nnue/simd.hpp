@@ -151,7 +151,15 @@
         return _mm256_loadu_si256((const __m256i*)ptr);
     }
 
+    inline vec_int8 load_epi8(uint8_t* ptr) {
+        return _mm256_loadu_si256((const __m256i*)ptr);
+    }
+
     inline vec_int16 load_epi16(int16_t* ptr) {
+        return _mm256_loadu_si256((const __m256i*)ptr);
+    }
+
+    inline vec_int16 load_epi16(uint16_t* ptr) {
         return _mm256_loadu_si256((const __m256i*)ptr);
     }
 
@@ -160,6 +168,10 @@
     }
 
     inline void store_epi8(int8_t* ptr, vec_int8 v) {
+        _mm256_storeu_si256((__m256i*)ptr, v);
+    }
+
+    inline void store_epi8(uint8_t* ptr, vec_int8 v) {
         _mm256_storeu_si256((__m256i*)ptr, v);
     }
 
