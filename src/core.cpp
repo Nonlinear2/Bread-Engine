@@ -523,7 +523,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         // reverse futility pruning
         if (depth < 9 - 3*is_hit
-            && eval - depth * (rfp_1 - rfp_2*cutnode - 30 * !is_hit) 
+            && !is_loss(beta)
+            && eval - depth * (rfp_1 - rfp_2*cutnode) 
                     - rfp_3
                     + rfp_4 * improving
                     + rfp_5 * opponent_worsening 
