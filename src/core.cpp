@@ -509,6 +509,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if ((ss - 1)->reduction >= 3 && !opponent_worsening)
         depth++;
 
+    if ((ss - 1)->reduction >= 2 && depth >= 2 
+        && is_valid(ss->static_eval) && is_valid((ss - 1)->static_eval)
+        && ss->static_eval > 150 - (ss - 1)->static_eval)
+        depth--;
+
     // pruning
     if (!root_node && !pv && !in_check){
 
