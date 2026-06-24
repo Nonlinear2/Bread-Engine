@@ -299,7 +299,7 @@ int32_t run_L2(int16_t* input, int bucket){
 
         vec_int16 weight_chunk = load_epi16(&l2_weights[bucket * L2_WEIGHTS_SIZE + i]);
 
-        // madd pairs to int32 to avoid overflows in int16
+        // madd pairs to int32 to avoid overflows in int16, while applying screlu
         vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
 
         result = add_epi32(result, prod);
