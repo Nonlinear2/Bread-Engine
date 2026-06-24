@@ -26,7 +26,7 @@ constexpr int NUM_OUTPUT_BUCKETS = 8;
 constexpr int INPUT_SIZE = 768 * NUM_INPUT_BUCKETS;
 constexpr int ACC_SIZE = 1024;
 
-constexpr int L1_INPUT_SIZE = 2 * ACC_SIZE;
+constexpr int L1_INPUT_SIZE = ACC_SIZE;
 constexpr int L1_OUTPUT_SIZE = 16;
 
 constexpr int L2_INPUT_SIZE = L1_OUTPUT_SIZE;

@@ -77,7 +77,39 @@ namespace NNUE_UTILS {
             store_epi8(&output[i*INT8_PER_REG], out);
         }
     }
+
+    [[maybe_unused]]
+    inline void pairwise_screlu16_to_8(int16_t *in, int16_t *in_pair, uint8_t *output, int size){ // clamp(in1, 0, 255) * clamp(in2, 0, 255) / 512
+
+        assert(size % (2*INT16_PER_REG) == 0);
+
+        const vec_int16 zero = setzero_epi16();
+        const vec_int16 qscale  = set1_epi16(255);
+
+        for (int i = 0; i < size; i += 2*INT16_PER_REG){
+            vec_int16 in_1 = load_epi16(&in[i]);
+            vec_int16 in_1_pair = load_epi16(&in_pair[i]);
+        
+            vec_int16 in_2 = load_epi16(&in[i + INT16_PER_REG]);
+            vec_int16 in_2_pair = load_epi16(&in_pair[i + INT16_PER_REG]);
+
+            in_1 = min_epi16(qscale, max_epi16(in_1, zero));
+            in_1_pair = min_epi16(qscale, in_1_pair); // max is unnecessary as packus will clamp values
+
+            in_2 = min_epi16(qscale, max_epi16(in_2, zero));
+            in_2_pair = min_epi16(qscale, in_2_pair);
+
+            vec_int8 out = packus_epi16(
+                mulhi_epi16(slli_epi16(in_1, 16 - 9), in_1_pair), // 2**9 = 512
+                mulhi_epi16(slli_epi16(in_2, 16 - 9), in_2_pair)
+            ); // packus sets negative values to 0 and saturates at 255, which clamps negative values 
+
+            out = permute4x64_epi64<0b11'01'10'00>(out); // undo the packus shuffle
+            store_epi8(&output[i], out);
+        }
+    }
 #endif
+
 
 [[maybe_unused]]
 inline void crelu16_to_16(int16_t *input, int16_t *output, int size){ // clamp(0, 255)

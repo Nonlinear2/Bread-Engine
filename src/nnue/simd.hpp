@@ -235,8 +235,16 @@
         return _mm256_mullo_epi16(v1, v2);
     }
 
+    inline vec_int16 mulhi_epi16(vec_int16 v1, vec_int16 v2) {
+        return _mm256_mulhi_epi16(v1, v2);
+    }
+
     inline vec_int16 maddubs_epi16(vec_int8 v1, vec_int8 v2) {
         return _mm256_maddubs_epi16(v1, v2);
+    }
+
+    inline vec_int32 slli_epi16(vec_int32 v, int i) {
+        return _mm256_slli_epi16(v, i);
     }
 
     inline vec_int32 srai_epi32(vec_int32 v, int i) {

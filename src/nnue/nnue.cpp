@@ -280,11 +280,11 @@ void run_L1(uint8_t* input, int32_t* output, int bucket){
         }
 
         vec_int32 result = add_epi32(
-            load_epi32(&l1_bias[bucket * L1_OUTPUT_SIZE + i]),
-            reduce8_epi32(accs)
+            srai_epi32(load_epi32(&l1_bias[bucket * L1_OUTPUT_SIZE + i]), 6),
+            srai_epi32(reduce8_epi32(accs), 5)
         );
 
-        store_epi32(&output[i], srai_epi32(result, 6));
+        store_epi32(&output[i], result);
     }
 };
 
@@ -315,8 +315,17 @@ int run(Accumulators& accumulators, Color stm, int piece_count){
 
     assert(bucket >= 0 && bucket < NUM_OUTPUT_BUCKETS);
 
-    crelu16_to_8(accumulators[stm].data(), ft_clamped_output, ACC_SIZE);
-    crelu16_to_8(accumulators[!stm].data(), &ft_clamped_output[ACC_SIZE], ACC_SIZE);
+    pairwise_screlu16_to_8(
+        &accumulators[stm][0],
+        &accumulators[stm][ACC_SIZE / 2],
+        ft_clamped_output, ACC_SIZE / 2
+    );
+
+    pairwise_screlu16_to_8(
+        &accumulators[!stm][0],
+        &accumulators[!stm][ACC_SIZE / 2],
+        &ft_clamped_output[ACC_SIZE / 2], ACC_SIZE / 2
+    );
 
     run_L1(ft_clamped_output, l1_output, bucket);
 
