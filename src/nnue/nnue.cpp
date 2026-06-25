@@ -95,7 +95,7 @@ void load_model(){
                         ];
 
     for (int i = 0; i < BUCKETED_L1_BIAS_SIZE; i++)
-        l1_bias[i] = l1_bias_start[i];
+        l1_bias[i] = l1_bias_start[i] >> 1;
 
     // layer 2
     for (int i = 0; i < BUCKETED_L2_WEIGHTS_SIZE; i++){
@@ -337,10 +337,10 @@ void run_L1(uint8_t* input, int32_t* output, int bucket){
     for (int k = 0; k < L1_OUTPUT_SIZE; k += INT32_PER_REG){
         store_epi32(
             &output[k],
-            add_epi32(
-                srai_epi32(load_epi32(&l1_bias[bucket * L1_OUTPUT_SIZE + k]), 6),
-                srai_epi32(accs[k / INT32_PER_REG], 5)
-            )
+            srai_epi32(add_epi32(
+                load_epi32(&l1_bias[bucket * L1_OUTPUT_SIZE + k]),
+                accs[k / INT32_PER_REG]
+            ), 5)
         );
     }
 };
