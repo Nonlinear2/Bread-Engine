@@ -80,11 +80,22 @@ void load_model(){
         ft_bias[i] = ft_bias_start[i];
 
     // layer 1
-    for (int i = 0; i < BUCKETED_L1_WEIGHTS_SIZE; i++)
-        l1_weights[i] = l1_weights_start[i];
+
+    // permute weights
+    int idx = 0;
+    for (int bucket = 0; bucket < NUM_OUTPUT_BUCKETS; bucket++)
+        for (int row_block = 0; row_block < L1_OUTPUT_SIZE; row_block += 8)
+            for (int col_block = 0; col_block < L1_INPUT_SIZE; col_block += 4)
+                for (int m = 0; m < 8; m++)                 // row within block
+                    for (int n = 0; n < 4; n++)             // col within block
+                        l1_weights[idx++] = l1_weights_start[
+                            bucket * L1_WEIGHTS_SIZE
+                            + (row_block + m) * L1_INPUT_SIZE
+                            + (col_block + n)
+                        ];
 
     for (int i = 0; i < BUCKETED_L1_BIAS_SIZE; i++)
-        l1_bias[i] = l1_bias_start[i];
+        l1_bias[i] = l1_bias_start[i] >> 1;
 
     // layer 2
     for (int i = 0; i < BUCKETED_L2_WEIGHTS_SIZE; i++){
@@ -264,27 +275,73 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
     }
 }
 
+// non permuted weights (input_size=12, output_size=16):
+//
+// input size (12)
+// --------------->
+//   0   1   2   3    4   5   6   7    8   9  10  11 | output size (16)
+//  12  13  14  15   16  17  18  19   20  21  22  23 V
+//  24  25  26  27   28  29  30  31   32  33  34  35
+//  36  37  38  39   40  41  42  43   44  45  46  47
+//  48  49  50  51   52  53  54  55   56  57  58  59
+//  60  61  62  63   64  65  66  67   68  69  70  71
+//  72  73  74  75   76  77  78  79   80  81  82  83
+//  84  85  86  87   88  89  90  91   92  93  94  95  <- end of row_block 0 (rows 0-7)
+
+//  96  97  98  99  100 101 102 103  104 105 106 107
+// 108 109 110 111  112 113 114 115  116 117 118 119
+// 120 121 122 123  124 125 126 127  128 129 130 131
+// 132 133 134 135  136 137 138 139  140 141 142 143
+// 144 145 146 147  148 149 150 151  152 153 154 155
+// 156 157 158 159  160 161 162 163  164 165 166 167
+// 168 169 170 171  172 173 174 175  176 177 178 179
+// 180 181 182 183  184 185 186 187  188 189 190 191  <- end of row_block 1 (rows 8-15)
+//
+//
+// blocks are 8 rows x 4 cols
+// 3 col_blocks (12/4), 2 row_blocks (16/8)
+//
+//
+// blocks are flattened:
+// [0]  0  1  2  3  12 13 14 15  24 25 26 27  36 37 38 39  48 49 50 51  60 61 62 63  72 73 74 75  84 85 86 87
+// [1]  4  5  6  7  16 17 18 19  28 29 30 31  40 41 42 43  52 53 54 55  64 65 66 67  76 77 78 79  88 89 90 91
+// ...
+//
+// and stored in this order:
+// [0] [1] [2]
+// [3] [4] [5] 
+//
+// out:
+// acc 0:  [in[0..4] @ [0]] + [in[5..7] @ [1]] + [in[8..11] @ [2]]
+// acc 1:  [in[0..4] @ [3]] + [in[5..7] @ [4]] + [in[8..11] @ [5]]
+
 void run_L1(uint8_t* input, int32_t* output, int bucket){
 
-    vec_int32 accs[INT32_PER_REG];
+    vec_int32 accs[L1_OUTPUT_SIZE / 8] = {0};
 
-    for (int i = 0; i < L1_OUTPUT_SIZE; i += INT32_PER_REG){
-        for (int j = 0; j < INT32_PER_REG; j++){
-            accs[j] = setzero_epi32();
-            for (int k = 0; k < L1_INPUT_SIZE; k += INT8_PER_REG){
-                accs[j] = dpbusd_epi32(accs[j],
-                    load_epi8(&input[k]),
-                    load_epi8(&l1_weights[bucket * L1_WEIGHTS_SIZE + (i + j) * L1_INPUT_SIZE + k])
-                );
-            }
-        }
-
-        vec_int32 result = add_epi32(
-            srai_epi32(load_epi32(&l1_bias[bucket * L1_OUTPUT_SIZE + i]), 6),
-            srai_epi32(reduce8_epi32(accs), 5)
+    for (int i = 0; i < L1_INPUT_SIZE / 4; i++) { // horizontal block idx
+        vec_int8 inputs = set1_epi32(*reinterpret_cast<int32_t*>(&input[i*4])); // set1 as epi32 to load 4 int8s at a time
+        for (int j = 0; j < L1_OUTPUT_SIZE / 8; j++) // vertical block idx
+            accs[j] = dpbusd_epi32(
+                accs[j],
+                inputs,
+                load_epi8(&l1_weights[
+                    bucket * L1_WEIGHTS_SIZE 
+                    + j * (L1_INPUT_SIZE / 4) * (8 * 4)  // row_block stride: 256 blocks * 32 bytes
+                    + i * (8 * 4)                         // col_block stride: 32 bytes per block
+                ]
+            )
         );
+    }
 
-        store_epi32(&output[i], result);
+    for (int k = 0; k < L1_OUTPUT_SIZE; k += INT32_PER_REG){
+        store_epi32(
+            &output[k],
+            srai_epi32(add_epi32(
+                load_epi32(&l1_bias[bucket * L1_OUTPUT_SIZE + k]),
+                accs[k / INT32_PER_REG]
+            ), 5)
+        );
     }
 };
 
