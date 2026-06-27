@@ -84,9 +84,9 @@ void load_model(){
     // permute weights
     int idx = 0;
     for (int bucket = 0; bucket < NUM_OUTPUT_BUCKETS; bucket++)
-        for (int row_block = 0; row_block < L1_OUTPUT_SIZE; row_block += 8)
+        for (int row_block = 0; row_block < L1_OUTPUT_SIZE; row_block += INT32_PER_REG)
             for (int col_block = 0; col_block < L1_INPUT_SIZE; col_block += 4)
-                for (int m = 0; m < 8; m++)                 // row within block
+                for (int m = 0; m < INT32_PER_REG; m++)                 // row within block
                     for (int n = 0; n < 4; n++)             // col within block
                         l1_weights[idx++] = l1_weights_start[
                             bucket * L1_WEIGHTS_SIZE
@@ -275,6 +275,7 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
     }
 }
 
+// in the avx2 case:
 // non permuted weights (input_size=12, output_size=16):
 //
 // input size (12)
@@ -317,18 +318,18 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
 
 void run_L1(uint8_t* input, int32_t* output, int bucket){
 
-    vec_int32 accs[L1_OUTPUT_SIZE / 8] = {0};
+    vec_int32 accs[L1_OUTPUT_SIZE / INT32_PER_REG] = {0};
 
     for (int i = 0; i < L1_INPUT_SIZE / 4; i++) { // horizontal block idx
         vec_int8 inputs = set1_epi32(*reinterpret_cast<int32_t*>(&input[i*4])); // set1 as epi32 to load 4 int8s at a time
-        for (int j = 0; j < L1_OUTPUT_SIZE / 8; j++) // vertical block idx
+        for (int j = 0; j < L1_OUTPUT_SIZE / INT32_PER_REG; j++) // vertical block idx
             accs[j] = dpbusd_epi32(
                 accs[j],
                 inputs,
                 load_epi8(&l1_weights[
                     bucket * L1_WEIGHTS_SIZE 
-                    + j * (L1_INPUT_SIZE / 4) * (8 * 4)  // row_block stride: 256 blocks * 32 bytes
-                    + i * (8 * 4)                         // col_block stride: 32 bytes per block
+                    + j * (L1_INPUT_SIZE / 4) * (INT32_PER_REG * 4)  // row_block stride: 256 blocks * 32 bytes
+                    + i * (INT32_PER_REG * 4)                         // col_block stride: 32 bytes per block
                 ]
             )
         );
@@ -345,25 +346,36 @@ void run_L1(uint8_t* input, int32_t* output, int bucket){
     }
 };
 
+// int32_t run_L2(int16_t* input, int bucket){
+//     const vec_int16 zero = setzero_epi16();
+//     const vec_int16 qscale = set1_epi16(255);
+//     vec_int32 result = set1_epi32(0);
+
+//     for (int i = 0; i < L2_INPUT_SIZE; i += INT16_PER_REG){
+//         vec_int16 in = load_epi16(&input[i]);
+//         in = min_epi16(qscale, max_epi16(in, zero));
+
+//         vec_int16 weight_chunk = load_epi16(&l2_weights[bucket * L2_WEIGHTS_SIZE + i]);
+
+//         // madd pairs to int32 to avoid overflows in int16, while applying screlu
+//         vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
+
+//         result = add_epi32(result, prod);
+//     }
+//     // result is (in*255) * (in*255) * (w*64) 
+
+//     return reduce1_epi32(result) / 255 + l2_bias[bucket];
+// };
+
 int32_t run_L2(int16_t* input, int bucket){
-    const vec_int16 zero = setzero_epi16();
-    const vec_int16 qscale = set1_epi16(255);
-    vec_int32 result = set1_epi32(0);
+    int32_t result = 0;
 
-    for (int i = 0; i < L2_INPUT_SIZE; i += INT16_PER_REG){
-        vec_int16 in = load_epi16(&input[i]);
-        in = min_epi16(qscale, max_epi16(in, zero));
-
-        vec_int16 weight_chunk = load_epi16(&l2_weights[bucket * L2_WEIGHTS_SIZE + i]);
-
-        // madd pairs to int32 to avoid overflows in int16, while applying screlu
-        vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
-
-        result = add_epi32(result, prod);
+    for (int i = 0; i < L2_INPUT_SIZE; i++){
+        int16_t in = std::clamp((int16_t)input[i], (int16_t)0, (int16_t)255);
+        result += (int32_t)in * in * l2_weights[bucket * L2_WEIGHTS_SIZE + i];
     }
-    // result is (in*255) * (in*255) * (w*64) 
 
-    return reduce1_epi32(result) / 255 + l2_bias[bucket];
+    return result / 255 + l2_bias[bucket];
 };
 
 int run(Accumulators& accumulators, Color stm, int piece_count){
