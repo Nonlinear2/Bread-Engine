@@ -178,14 +178,14 @@ inline void crelu16_to_16(int16_t *input, int16_t *output, int size){ // clamp(0
             in_2 = min_epi16(qscale, max_epi16(in_2, zero));
             in_2_pair = min_epi16(qscale, in_2_pair);
 
-            vec_int8 out = packus_epi16(
+            vec_uint8 out = packus_epi16(
                 mulhi_epi16(slli_epi16(in_1, 16 - 9), in_1_pair), // 2**9 = 512
                 mulhi_epi16(slli_epi16(in_2, 16 - 9), in_2_pair)
             ); // packus sets negative values to 0 and saturates at 255, which clamps negative values 
 
 
             out = permutexvar_epi32(mask, out); // undo the packus shuffle
-            store_epi8(&output[i], out);
+            storeu_epi8(&output[i], out);
         }
     }
 

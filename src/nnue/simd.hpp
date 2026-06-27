@@ -56,7 +56,7 @@
         _mm512_storeu_si512((__m256i*)ptr, v);
     }
 
-    inline void store_epi8(uint8_t* ptr, vec_int8 v) {
+    inline void storeu_epi8(uint8_t* ptr, vec_uint8 v) {
         _mm512_storeu_si512((__m256i*)ptr, v);
     }
 

@@ -87,7 +87,7 @@ void load_model(){
         for (int row_block = 0; row_block < L1_OUTPUT_SIZE; row_block += INT32_PER_REG)
             for (int col_block = 0; col_block < L1_INPUT_SIZE; col_block += 4)
                 for (int m = 0; m < INT32_PER_REG; m++)                 // row within block
-                    for (int n = 0; n < 4; n++)             // col within block
+                    for (int n = 0; n < 4; n++)                         // col within block
                         l1_weights[idx++] = l1_weights_start[
                             bucket * L1_WEIGHTS_SIZE
                             + (row_block + m) * L1_INPUT_SIZE
@@ -328,8 +328,8 @@ void run_L1(uint8_t* input, int32_t* output, int bucket){
                 inputs,
                 load_epi8(&l1_weights[
                     bucket * L1_WEIGHTS_SIZE 
-                    + j * (L1_INPUT_SIZE / 4) * (INT32_PER_REG * 4)  // row_block stride: 256 blocks * 32 bytes
-                    + i * (INT32_PER_REG * 4)                         // col_block stride: 32 bytes per block
+                    + j * (L1_INPUT_SIZE / 4) * (INT32_PER_REG * 4)  // row stride
+                    + i * (INT32_PER_REG * 4)                        // col stride
                 ]
             )
         );
