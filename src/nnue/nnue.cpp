@@ -40,7 +40,7 @@ extern "C" {
     extern const int16_t ft_weights_start[];
     extern const int16_t ft_bias_start[];
 
-    extern const int16_t l1_weights_start[];
+    extern const int8_t l1_weights_start[];
     extern const int32_t l1_bias_start[];
 
     extern const int16_t l2_weights_start[];
