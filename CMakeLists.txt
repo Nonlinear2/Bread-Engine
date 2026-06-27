@@ -47,6 +47,10 @@ if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL 
     )
 endif()
 
+if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
+    add_compile_options(-march=native)
+endif()
+
 function(bread_configure bread_TARGET)
     cmake_parse_arguments(bread "" "" "SOURCES" ${ARGN})
 
@@ -66,10 +70,6 @@ function(bread_configure bread_TARGET)
 
     if (TARGET bread_engine)
         set_target_properties(bread_engine PROPERTIES OUTPUT_NAME "${bread_DEFAULT_NAME}")
-    endif()
-
-    if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
-        target_compile_options(${bread_TARGET} PRIVATE -march=native)
     endif()
 endfunction(bread_configure)
 
