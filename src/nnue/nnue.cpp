@@ -378,31 +378,114 @@ int32_t run_L2(int16_t* input, int bucket){
     return result / 255 + l2_bias[bucket];
 };
 
-int run(Accumulators& accumulators, Color stm, int piece_count){
+// int run(Accumulators& accumulators, Color stm, int piece_count){
+//     constexpr int pieces_per_bucket = 32 / NUM_OUTPUT_BUCKETS;
+//     int bucket = (piece_count - 2) / pieces_per_bucket;
+
+//     assert(bucket >= 0 && bucket < NUM_OUTPUT_BUCKETS);
+
+//     pairwise_screlu16_to_8(
+//         &accumulators[stm][0],
+//         &accumulators[stm][ACC_SIZE / 2],
+//         ft_clamped_output, ACC_SIZE / 2
+//     );
+
+//     pairwise_screlu16_to_8(
+//         &accumulators[!stm][0],
+//         &accumulators[!stm][ACC_SIZE / 2],
+//         &ft_clamped_output[ACC_SIZE / 2], ACC_SIZE / 2
+//     );
+
+//     run_L1(ft_clamped_output, l1_output, bucket);
+
+//     crelu32_to_16(l1_output, l1_clamped_output, L1_OUTPUT_SIZE);
+
+//     int output = run_L2(l1_clamped_output, bucket);
+
+//     return (output * 600) / (64 * 255); // scale is 600
+// };
+
+int run(Accumulators& accumulators, Color stm, int piece_count) {
     constexpr int pieces_per_bucket = 32 / NUM_OUTPUT_BUCKETS;
     int bucket = (piece_count - 2) / pieces_per_bucket;
-
     assert(bucket >= 0 && bucket < NUM_OUTPUT_BUCKETS);
 
-    pairwise_screlu16_to_8(
-        &accumulators[stm][0],
-        &accumulators[stm][ACC_SIZE / 2],
-        ft_clamped_output, ACC_SIZE / 2
+    const vec_int16 zero   = setzero_epi16();
+    const vec_int16 qscale = set1_epi16(255);
+
+    vec_int32 accs[L1_OUTPUT_SIZE / INT32_PER_REG] = {};
+
+    #ifdef USE_AVX512
+        const vec_int8 mask = _mm512_set_epi32(
+            15,14,11,10,7,6,3,2,
+            13,12,9,8,5,4,1,0
+        );
+    #endif
+
+    auto process_half = [&](int16_t* lo, int16_t* hi, int i_offset) {
+        for (int i = 0; i < ACC_SIZE / 2; i += 2 * INT16_PER_REG) {
+            // exactly pairwise_screlu16_to_8, minus the store
+            vec_int16 lo1 = load_epi16(&lo[i]);
+            vec_int16 hi1 = load_epi16(&hi[i]);
+            vec_int16 lo2 = load_epi16(&lo[i + INT16_PER_REG]);
+            vec_int16 hi2 = load_epi16(&hi[i + INT16_PER_REG]);
+
+            lo1 = min_epi16(qscale, max_epi16(lo1, zero));
+            hi1 = min_epi16(qscale, hi1);
+            lo2 = min_epi16(qscale, max_epi16(lo2, zero));
+            hi2 = min_epi16(qscale, hi2);
+
+            vec_int8 chunk = packus_epi16(
+                mulhi_epi16(slli_epi16(lo1, 16 - 9), hi1),
+                mulhi_epi16(slli_epi16(lo2, 16 - 9), hi2)
+            );
+            #ifdef USE_AVX512
+                chunk = permutexvar_epi32(mask, chunk);
+            #else
+                chunk = permute4x64_epi64<0b11'01'10'00>(chunk);
+            #endif
+
+            for (int k = 0; k < INT8_PER_REG / 4; k++) {
+                vec_int8 inputs = set1_epi32(*reinterpret_cast<int32_t*>(
+                    reinterpret_cast<uint8_t*>(&chunk) + k * 4
+                ));
+                int gi = i_offset + i / 4 + k;
+                for (int j = 0; j < L1_OUTPUT_SIZE / INT32_PER_REG; j++)
+                    accs[j] = dpbusd_epi32(
+                        accs[j],
+                        inputs,
+                        load_epi8(&l1_weights[
+                            bucket * L1_WEIGHTS_SIZE
+                            + j * (L1_INPUT_SIZE / 4) * (INT32_PER_REG * 4)
+                            + gi * (INT32_PER_REG * 4)
+                        ])
+                    );
+            }
+        }
+    };
+
+    process_half(
+        accumulators[stm].data(),
+        accumulators[stm].data() + ACC_SIZE / 2,
+        0
+    );
+    process_half(
+        accumulators[!stm].data(),
+        accumulators[!stm].data() + ACC_SIZE / 2,
+        ACC_SIZE / 2 / 4  // = 128, second half of L1 inputs
     );
 
-    pairwise_screlu16_to_8(
-        &accumulators[!stm][0],
-        &accumulators[!stm][ACC_SIZE / 2],
-        &ft_clamped_output[ACC_SIZE / 2], ACC_SIZE / 2
-    );
-
-    run_L1(ft_clamped_output, l1_output, bucket);
+    for (int k = 0; k < L1_OUTPUT_SIZE; k += INT32_PER_REG)
+        store_epi32(
+            &l1_output[k],
+            srai_epi32(add_epi32(
+                load_epi32(&l1_bias[bucket * L1_OUTPUT_SIZE + k]),
+                accs[k / INT32_PER_REG]
+            ), 5)
+        );
 
     crelu32_to_16(l1_output, l1_clamped_output, L1_OUTPUT_SIZE);
-
-    int output = run_L2(l1_clamped_output, bucket);
-
-    return (output * 600) / (64 * 255); // scale is 600
+    return (run_L2(l1_clamped_output, bucket) * 600) / (64 * 255);
 };
 
 }; // namespace NNUE
