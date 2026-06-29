@@ -334,6 +334,7 @@ void run_L1(uint8_t* input, int32_t* output, int bucket){
             )
         );
     }
+    // result is (in*255) * (in*255) * (w*64) 
 
     for (int k = 0; k < L1_OUTPUT_SIZE; k += INT32_PER_REG){
         store_epi32(
