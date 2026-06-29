@@ -592,7 +592,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         }
 
         int new_depth = depth-1;
-    
+
         // singular extensions
         // we need to be careful regarding stack variables as they can get modified by the singular search
         // as it uses the same stack element
