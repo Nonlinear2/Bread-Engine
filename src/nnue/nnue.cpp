@@ -347,37 +347,54 @@ void run_L1(uint8_t* input, int32_t* output, int bucket){
     }
 };
 
-// int32_t run_L2(int16_t* input, int bucket){
-//     const vec_int16 zero = setzero_epi16();
-//     const vec_int16 qscale = set1_epi16(255);
-//     vec_int32 result = set1_epi32(0);
+#ifdef USE_AVX512
+    int32_t run_L2(int16_t* input, int bucket){
+        const vec_int16_half zero = setzero_epi16_half();
+        const vec_int16_half qscale = set1_epi16_half(255);
+        vec_int16_half result = set1_epi32_half(0);
 
-//     for (int i = 0; i < L2_INPUT_SIZE; i += INT16_PER_REG){
-//         vec_int16 in = load_epi16(&input[i]);
-//         in = min_epi16(qscale, max_epi16(in, zero));
+        assert(L2_INPUT_SIZE % INT16_PER_REG == 0);
 
-//         vec_int16 weight_chunk = load_epi16(&l2_weights[bucket * L2_WEIGHTS_SIZE + i]);
+        for (int i = 0; i < L2_INPUT_SIZE; i += INT16_PER_REG){
+            vec_int16_half in = load_epi16_half(&input[i]);
+            in = min_epi16_half(qscale, max_epi16_half(in, zero));
 
-//         // madd pairs to int32 to avoid overflows in int16, while applying screlu
-//         vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
+            vec_int16_half weight_chunk = load_epi16_half(&l2_weights[bucket * L2_WEIGHTS_SIZE + i]);
 
-//         result = add_epi32(result, prod);
-//     }
-//     // result is (in*255) * (in*255) * (w*64) 
+            // madd pairs to int32 to avoid overflows in int16, while applying screlu
+            vec_int32_half prod = madd_epi16_half(in, mullo_epi16_half(in, weight_chunk));
 
-//     return reduce1_epi32(result) / 255 + l2_bias[bucket];
-// };
+            result = add_epi32_half(result, prod);
+        }
+        // result is (in*255) * (in*255) * (w*64) 
 
-int32_t run_L2(int16_t* input, int bucket){
-    int32_t result = 0;
+        return reduce1_epi32_half(result) / 255 + l2_bias[bucket];
+    };
+#endif
+#ifdef USE_AVX2
+    int32_t run_L2(int16_t* input, int bucket){
+        const vec_int16 zero = setzero_epi16();
+        const vec_int16 qscale = set1_epi16(255);
+        vec_int32 result = set1_epi32(0);
 
-    for (int i = 0; i < L2_INPUT_SIZE; i++){
-        int16_t in = std::clamp((int16_t)input[i], (int16_t)0, (int16_t)255);
-        result += (int32_t)in * in * l2_weights[bucket * L2_WEIGHTS_SIZE + i];
-    }
+        assert(L2_INPUT_SIZE % INT16_PER_REG == 0);
 
-    return result / 255 + l2_bias[bucket];
-};
+        for (int i = 0; i < L2_INPUT_SIZE; i += INT16_PER_REG){
+            vec_int16 in = load_epi16(&input[i]);
+            in = min_epi16(qscale, max_epi16(in, zero));
+
+            vec_int16 weight_chunk = load_epi16(&l2_weights[bucket * L2_WEIGHTS_SIZE + i]);
+
+            // madd pairs to int32 to avoid overflows in int16, while applying screlu
+            vec_int32 prod = madd_epi16(in, mullo_epi16(in, weight_chunk));
+
+            result = add_epi32(result, prod);
+        }
+        // result is (in*255) * (in*255) * (w*64) 
+
+        return reduce1_epi32(result) / 255 + l2_bias[bucket];
+    };
+#endif
 
 int run(Accumulators& accumulators, Color stm, int piece_count){
     constexpr int pieces_per_bucket = 32 / NUM_OUTPUT_BUCKETS;

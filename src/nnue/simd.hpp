@@ -154,7 +154,9 @@
         return _mm512_permutexvar_epi32(mask, v);
     }
 
+    using vec_int8_half = __m256i;
     using vec_int16_half = __m256i;
+    using vec_int32_half = __m256i;
 
     inline vec_int16_half min_epi16_half(vec_int16_half a, vec_int16_half b) {
         return _mm256_min_epi16(a, b);
@@ -172,11 +174,37 @@
         return _mm256_set1_epi16(v);
     }
 
+    inline vec_int16_half load_epi16_half(int16_t* ptr) {
+        return _mm256_loadu_si256((__m256i*)ptr);
+    }
+
     inline void store_epi16_half(int16_t* p, vec_int16_half v) {
         _mm256_storeu_si256((__m256i*)p, v);
     }
 
+    inline vec_int32_half hadd_epi32_half(vec_int32_half a, vec_int32_half b) {
+        return _mm256_hadd_epi32(a, b);
+    }
 
+    inline void store_epi32_half(int32_t* p, vec_int32_half v) {
+        _mm256_storeu_si256((__m256i*)p, v);
+    }
+
+    inline vec_int32_half set1_epi32_half(int i) {
+        return _mm256_set1_epi32(i);
+    }
+
+    inline vec_int16_half mullo_epi16_half(vec_int16_half a, vec_int16_half b) {
+        return _mm256_mullo_epi16(a, b);
+    }
+
+    inline vec_int32_half madd_epi16_half(vec_int16_half a, vec_int16_half b) {
+        return _mm256_madd_epi16(a, b);
+    }
+
+    inline vec_int32_half add_epi32_half(vec_int32_half a, vec_int32_half b) {
+        return _mm256_add_epi32(a, b);
+    }
 #endif
 
 #ifdef USE_AVX2

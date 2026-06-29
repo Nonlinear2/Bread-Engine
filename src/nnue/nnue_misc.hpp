@@ -232,6 +232,15 @@ inline void crelu16_to_16(int16_t *input, int16_t *output, int size){ // clamp(0
             store_epi16_half(&output[i * INT32_PER_REG], out);
         }
     }
+
+    inline int32_t reduce1_epi32_half(vec_int32_half input){ // horizontal add 1 int32 avx register.
+        input = hadd_epi32_half(input, input);
+
+        int32_t out_ptr[8];
+        store_epi32_half(out_ptr, input);
+
+        return out_ptr[0] + out_ptr[1] + out_ptr[4] + out_ptr[5];
+    }
 #endif
 
 }; // namespace NNUE_UTILS
