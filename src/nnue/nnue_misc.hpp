@@ -12,9 +12,24 @@ constexpr int INT8_PER_REG = sizeof(vec_int8) / sizeof(int8_t);
 
 namespace NNUE_UTILS {
 
-#ifdef USE_AVX2 // these functions use the AVX2 specific instruction permute4x64_epi64
+[[maybe_unused]]
+inline void crelu16_to_16(int16_t *input, int16_t *output, int size){ // clamp(0, 255)
+
+    assert(size % INT16_PER_REG == 0);
+
+    const vec_int16 zero = setzero_epi16();
+    const vec_int16 qscale = set1_epi16(255);
+
+    for (int i = 0; i < size; i += INT16_PER_REG){
+        vec_int16 in = load_epi16(&input[i]);
+        vec_int16 out = min_epi16(qscale, max_epi16(in, zero));
+        store_epi16(&output[i], out);
+    }
+}
+
+#ifdef USE_AVX2 // these functions use the AVX2 specific instructions permute4x64_epi64, hadd_epi32 and permute2x128_si256
     [[maybe_unused]]
-    inline void crelu32_to_8(int32_t *input, int8_t *output, int size){
+    inline void crelu32_to_8_127(int32_t *input, int8_t *output, int size){ // clamp(0, 127)
 
         assert(size % INT8_PER_REG == 0);
 
@@ -38,7 +53,31 @@ namespace NNUE_UTILS {
     }
 
     [[maybe_unused]]
-    inline void crelu16_to_8(int16_t *input, int8_t *output, int size){
+    inline void crelu32_to_16(int32_t *input, int16_t *output, int size){ // clamp(0, 255)
+
+        assert(size % INT16_PER_REG == 0);
+
+        const int num_regs = size / INT16_PER_REG;
+        const vec_int16 zero = setzero_epi16();
+        const vec_int16 qscale  = set1_epi16(255);
+
+        for (int i = 0; i < num_regs; i++){
+
+            vec_int32 in_1 = load_epi32(&input[(2*i)*INT32_PER_REG]);
+            vec_int32 in_2 = load_epi32(&input[(2*i+1)*INT32_PER_REG]);
+
+            vec_int16 out = packs_epi32(in_1, in_2);
+
+            out = min_epi16(qscale, max_epi16(out, zero)); // apply crelu
+
+            out = permute4x64_epi64<0b11'01'10'00>(out);
+
+            store_epi16(&output[i*INT16_PER_REG], out);
+        }
+    }
+
+    [[maybe_unused]]
+    inline void crelu16_to_8(int16_t *input, uint8_t *output, int size){ // clamp(0, 255)
 
         assert(size % INT8_PER_REG == 0);
 
@@ -47,30 +86,44 @@ namespace NNUE_UTILS {
         for (int i = 0; i < num_regs; i++){
             vec_int16 in_1 = load_epi16(&input[(2*i)*INT16_PER_REG]);
             vec_int16 in_2 = load_epi16(&input[(2*i+1)*INT16_PER_REG]);
-            // packs sets negative values to 0 and saturates at 255, which effectively applies relu
+            // packus sets negative values to 0 and saturates at 255, which effectively applies relu
             vec_int8 out = packus_epi16(in_1, in_2);
             out = permute4x64_epi64<0b11'01'10'00>(out); // undo the packus shuffle
             store_epi8(&output[i*INT8_PER_REG], out);
         }
     }
-#endif
 
-[[maybe_unused]]
-inline void crelu16_to_16(int16_t *input, int16_t *output, int size){
+    [[maybe_unused]]
+    inline void pairwise_screlu16_to_8(int16_t *in, int16_t *in_pair, uint8_t *output, int size){ // clamp(in1, 0, 255) * clamp(in2, 0, 255) / 512
 
-    assert(size % INT16_PER_REG == 0);
+        assert(size % (2*INT16_PER_REG) == 0);
 
-    const vec_int16 zero = setzero_epi16();
-    const vec_int16 qscale = set1_epi16(255);
+        const vec_int16 zero = setzero_epi16();
+        const vec_int16 qscale  = set1_epi16(255);
 
-    for (int i = 0; i < size; i += INT16_PER_REG){
-        vec_int16 in = load_epi16(&input[i]);
-        vec_int16 out = min_epi16(qscale, max_epi16(in, zero));
-        store_epi16(&output[i], out);
+        for (int i = 0; i < size; i += 2*INT16_PER_REG){
+            vec_int16 in_1 = load_epi16(&in[i]);
+            vec_int16 in_1_pair = load_epi16(&in_pair[i]);
+        
+            vec_int16 in_2 = load_epi16(&in[i + INT16_PER_REG]);
+            vec_int16 in_2_pair = load_epi16(&in_pair[i + INT16_PER_REG]);
+
+            in_1 = min_epi16(qscale, max_epi16(in_1, zero));
+            in_1_pair = min_epi16(qscale, in_1_pair); // max is unnecessary as packus will clamp values
+
+            in_2 = min_epi16(qscale, max_epi16(in_2, zero));
+            in_2_pair = min_epi16(qscale, in_2_pair);
+
+            vec_int8 out = packus_epi16(
+                mulhi_epi16(slli_epi16(in_1, 16 - 9), in_1_pair), // 2**9 = 512
+                mulhi_epi16(slli_epi16(in_2, 16 - 9), in_2_pair)
+            ); // packus sets negative values to 0 and saturates at 255, which clamps negative values 
+
+            out = permute4x64_epi64<0b11'01'10'00>(out); // undo the packus shuffle
+            store_epi8(&output[i], out);
+        }
     }
-}
 
-#ifdef USE_AVX2 // these functions use the AVX2 specific instructions hadd_epi32 and permute2x128_si256
     inline int32_t reduce1_epi32(vec_int32 input){ // horizontal add 1 int32 avx register.
         input = hadd_epi32(input, input);
 
@@ -95,6 +148,89 @@ inline void crelu16_to_16(int16_t *input, int16_t *output, int size){
             permute2x128_si256<0b00110001>(inputs[0], inputs[4]),
             permute2x128_si256<0b00100000>(inputs[0], inputs[4])
         );
+    }
+#endif
+
+#ifdef USE_AVX512
+    [[maybe_unused]]
+    inline void pairwise_screlu16_to_8(int16_t *in, int16_t *in_pair, uint8_t *output, int size){ // clamp(in1, 0, 255) * clamp(in2, 0, 255) / 512
+
+        assert(size % (2*INT16_PER_REG) == 0);
+
+        const vec_int16 zero = setzero_epi16();
+        const vec_int16 qscale  = set1_epi16(255);
+
+        const vec_int8 mask = _mm512_set_epi32(
+            15,14,11,10,7,6,3,2,
+            13,12,9,8,5,4,1,0
+        );
+
+        for (int i = 0; i < size; i += 2*INT16_PER_REG){
+            vec_int16 in_1 = load_epi16(&in[i]);
+            vec_int16 in_1_pair = load_epi16(&in_pair[i]);
+        
+            vec_int16 in_2 = load_epi16(&in[i + INT16_PER_REG]);
+            vec_int16 in_2_pair = load_epi16(&in_pair[i + INT16_PER_REG]);
+
+            in_1 = min_epi16(qscale, max_epi16(in_1, zero));
+            in_1_pair = min_epi16(qscale, in_1_pair); // max is unnecessary as packus will clamp values
+
+            in_2 = min_epi16(qscale, max_epi16(in_2, zero));
+            in_2_pair = min_epi16(qscale, in_2_pair);
+
+            vec_uint8 out = packus_epi16(
+                mulhi_epi16(slli_epi16(in_1, 16 - 9), in_1_pair), // 2**9 = 512
+                mulhi_epi16(slli_epi16(in_2, 16 - 9), in_2_pair)
+            ); // packus sets negative values to 0 and saturates at 255, which clamps negative values 
+
+
+            out = permutexvar_epi32(mask, out); // undo the packus shuffle
+            storeu_epi8(&output[i], out);
+        }
+    }
+
+    // this doesnt work with an L1 of size 16 because it requires 32 entries or more with avx512
+    // [[maybe_unused]]
+    // inline void crelu32_to_16(int32_t *input, int16_t *output, int size){ // clamp(0, 255)
+
+    //     assert(size % INT16_PER_REG == 0);
+
+    //     const int num_regs = size / INT16_PER_REG;
+    //     const vec_int16 zero = setzero_epi16();
+    //     const vec_int16 qscale  = set1_epi16(255);
+
+    //     const vec_int8 mask = _mm512_set_epi32(
+    //         15,14,11,10,7,6,3,2,
+    //         13,12,9,8,5,4,1,0
+    //     );
+
+    //     for (int i = 0; i < num_regs; i++){
+
+    //         vec_int32 in_1 = load_epi32(&input[(2*i)*INT32_PER_REG]);
+    //         vec_int32 in_2 = load_epi32(&input[(2*i+1)*INT32_PER_REG]);
+
+    //         vec_int16 out = packs_epi32(in_1, in_2);
+
+    //         out = min_epi16(qscale, max_epi16(out, zero)); // apply crelu
+
+    //         out = permutexvar_epi32(mask, out); // undo the packs shuffle
+
+    //         store_epi16(&output[i*INT16_PER_REG], out);
+    //     }
+    // }
+
+    inline void crelu32_to_16(int32_t *input, int16_t *output, int size){
+        assert(size % INT32_PER_REG == 0);
+
+        const vec_int16_half zero = setzero_epi16_half();
+        const vec_int16_half qscale = set1_epi16_half(255);
+
+        for (int i = 0; i < size / INT32_PER_REG; i++){
+            vec_int32 in = load_epi32(&input[i * INT32_PER_REG]);
+            vec_int16_half out = _mm512_cvtsepi32_epi16(in);
+            out = min_epi16_half(qscale, max_epi16_half(out, zero));
+            store_epi16_half(&output[i * INT32_PER_REG], out);
+        }
     }
 #endif
 
