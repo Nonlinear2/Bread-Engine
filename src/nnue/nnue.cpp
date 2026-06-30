@@ -337,13 +337,10 @@ void run_L1(uint8_t* input, int32_t* output, int bucket){
     // result is (in*255) * (in*255) * (w*64) 
 
     for (int k = 0; k < L1_OUTPUT_SIZE; k += INT32_PER_REG){
-        store_epi32(
-            &output[k],
-            srai_epi32(add_epi32(
-                load_epi32(&l1_bias[bucket * L1_OUTPUT_SIZE + k]),
-                accs[k / INT32_PER_REG]
-            ), 5)
+        vec_int32 out = srai_epi32(
+            add_epi32(load_epi32(&l1_bias[bucket * L1_OUTPUT_SIZE + k]), accs[k / INT32_PER_REG]), 5
         );
+        store_epi32(&output[k], out);
     }
 };
 
@@ -368,15 +365,18 @@ void run_L1(uint8_t* input, int32_t* output, int bucket){
 //     return reduce1_epi32(result) / 255 + l2_bias[bucket];
 // };
 
-int32_t run_L2(int16_t* input, int bucket){
+int32_t run_L2(int16_t* clamped_input, int32_t* input, int bucket){
     int32_t result = 0;
 
-    for (int i = 0; i < L2_INPUT_SIZE; i++){
-        int16_t in = std::clamp((int16_t)input[i], (int16_t)0, (int16_t)255);
-        result += (int32_t)in * in * l2_weights[bucket * L2_WEIGHTS_SIZE + i];
+    for (int i = 0; i < L1_OUTPUT_SIZE; i++){
+        int16_t c_in = std::clamp(clamped_input[i], (int16_t)0, (int16_t)255);
+        int32_t in = input[i];
+
+        result += c_in * l2_weights[bucket * L2_WEIGHTS_SIZE + i];
+        result += std::clamp(in * in, 0, 255*255) * l2_weights[bucket * L2_WEIGHTS_SIZE + L1_OUTPUT_SIZE + i] / 255;
     }
 
-    return result / 255 + l2_bias[bucket];
+    return result + l2_bias[bucket];
 };
 
 int run(Accumulators& accumulators, Color stm, int piece_count){
@@ -401,7 +401,7 @@ int run(Accumulators& accumulators, Color stm, int piece_count){
 
     crelu32_to_16(l1_output, l1_clamped_output, L1_OUTPUT_SIZE);
 
-    int output = run_L2(l1_clamped_output, bucket);
+    int output = run_L2(l1_clamped_output, l1_output, bucket);
 
     return (output * 600) / (64 * 255); // scale is 600
 };

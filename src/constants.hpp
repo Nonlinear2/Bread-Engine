@@ -29,7 +29,7 @@ constexpr int ACC_SIZE = 1024;
 constexpr int L1_INPUT_SIZE = ACC_SIZE;
 constexpr int L1_OUTPUT_SIZE = 16;
 
-constexpr int L2_INPUT_SIZE = L1_OUTPUT_SIZE;
+constexpr int L2_INPUT_SIZE = L1_OUTPUT_SIZE * 2; // * 2 comes from dual activation
 constexpr int L2_OUTPUT_SIZE = 1;
 
 
