@@ -154,6 +154,10 @@
         return _mm512_permutexvar_epi32(mask, v);
     }
 
+    inline __mmask16 nonzero_mask_epi32(vec_int32 v) {
+        return _mm512_cmpneq_epi32_mask(v, _mm512_setzero_si512());
+    }
+
     using vec_int16_half = __m256i;
 
     inline vec_int16_half min_epi16_half(vec_int16_half a, vec_int16_half b) {
@@ -322,6 +326,13 @@
         }
     #endif
 
+    inline uint8_t nonzero_mask_epi32(vec_int32 v) {
+        uint8_t z_bitmask = _mm256_movemask_ps(
+            (__m256)_mm256_cmpeq_epi32(v, _mm256_setzero_si256())
+        );
+        return ~z_bitmask;
+    }
+
     // defined when USE_AVX2 only:
 
     template<int mask>
@@ -339,3 +350,8 @@
     }
 
 #endif
+
+constexpr int NUM_AVX_REGISTERS = 8;
+constexpr int INT32_PER_REG = sizeof(vec_int32) / sizeof(int32_t);
+constexpr int INT16_PER_REG = sizeof(vec_int16) / sizeof(int16_t);
+constexpr int INT8_PER_REG = sizeof(vec_int8) / sizeof(int8_t);
