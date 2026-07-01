@@ -29,7 +29,7 @@ constexpr int ACC_SIZE = 1024;
 constexpr int L1_INPUT_SIZE = ACC_SIZE;
 constexpr int L1_OUTPUT_SIZE = 16;
 
-constexpr int L2_INPUT_SIZE = L1_OUTPUT_SIZE;
+constexpr int L2_INPUT_SIZE = L1_OUTPUT_SIZE * 2; // * 2 comes from dual activation
 constexpr int L2_OUTPUT_SIZE = 1;
 
 
@@ -85,6 +85,8 @@ constexpr int MAX_PLY = 256;
 constexpr int STACK_PADDING_SIZE = 2;
 
 constexpr int BENCHMARK_DEPTH = 12;
+constexpr int LONG_BENCHMARK_DEPTH = 18;
+
 constexpr int ENGINE_MAX_DEPTH = 255;
 
 constexpr int DEPTH_UNSEARCHED = -1;
