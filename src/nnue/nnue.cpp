@@ -390,7 +390,7 @@ void run_L1_sparse(uint8_t* input, int32_t* output, int bucket){
     const __m256i one = _mm256_set1_epi16(1);
 
     // get nnz indices
-    for (int i = 0; i < L1_INPUT_SIZE; i += INT8_PER_REG){
+    for (int i = 0; i < L1_INPUT_SIZE; i += INT8_PER_REG_AVX2){
         __m256i input_chunk = _mm256_loadu_si256((const __m256i*)&input[i]);
         uint8_t z_bitmask = _mm256_movemask_ps(
             (__m256)_mm256_cmpeq_epi32(input_chunk, _mm256_setzero_si256())

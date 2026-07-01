@@ -9,6 +9,7 @@ constexpr int NUM_AVX_REGISTERS = 8;
 constexpr int INT32_PER_REG = sizeof(vec_int32) / sizeof(int32_t);
 constexpr int INT16_PER_REG = sizeof(vec_int16) / sizeof(int16_t);
 constexpr int INT8_PER_REG = sizeof(vec_int8) / sizeof(int8_t);
+constexpr int INT8_PER_REG_AVX2 = 32;
 
 namespace NNUE_UTILS {
 
