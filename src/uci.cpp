@@ -200,6 +200,10 @@ void UCIAgent::process_bench(std::vector<std::string> command){
         Benchmark::benchmark_engine(workers.main().engine, BENCHMARK_DEPTH);
     else if (command[1] == "nn")
         Benchmark::benchmark_nn();
+    else if (command[1] == "long")
+        Benchmark::benchmark_engine(workers.main().engine, LONG_BENCHMARK_DEPTH);
+    else
+        Benchmark::benchmark_engine(workers.main().engine, std::stoi(command[1]));
 }
 
 void UCIAgent::process_eval(std::vector<std::string> command){

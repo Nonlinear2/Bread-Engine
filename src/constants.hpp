@@ -26,8 +26,12 @@ constexpr int NUM_OUTPUT_BUCKETS = 8;
 constexpr int INPUT_SIZE = 768 * NUM_INPUT_BUCKETS;
 constexpr int ACC_SIZE = 1024;
 
-constexpr int L1_INPUT_SIZE = 2 * ACC_SIZE;
-constexpr int L1_OUTPUT_SIZE = 1;
+constexpr int L1_INPUT_SIZE = ACC_SIZE;
+constexpr int L1_OUTPUT_SIZE = 16;
+
+constexpr int L2_INPUT_SIZE = L1_OUTPUT_SIZE * 2; // * 2 comes from dual activation
+constexpr int L2_OUTPUT_SIZE = 1;
+
 
 constexpr int L0_WEIGHTS_SIZE = INPUT_SIZE * ACC_SIZE;
 constexpr int L0_BIAS_SIZE = ACC_SIZE;
@@ -35,11 +39,18 @@ constexpr int L0_BIAS_SIZE = ACC_SIZE;
 constexpr int L1_WEIGHTS_SIZE = L1_INPUT_SIZE * L1_OUTPUT_SIZE;
 constexpr int L1_BIAS_SIZE = L1_OUTPUT_SIZE;
 
+constexpr int L2_WEIGHTS_SIZE = L2_INPUT_SIZE * L2_OUTPUT_SIZE;
+constexpr int L2_BIAS_SIZE = L2_OUTPUT_SIZE;
+
 constexpr int BUCKETED_L1_WEIGHTS_SIZE = NUM_OUTPUT_BUCKETS * L1_WEIGHTS_SIZE;
 constexpr int BUCKETED_L1_BIAS_SIZE = NUM_OUTPUT_BUCKETS * L1_BIAS_SIZE;
 
+constexpr int BUCKETED_L2_WEIGHTS_SIZE = NUM_OUTPUT_BUCKETS * L2_WEIGHTS_SIZE;
+constexpr int BUCKETED_L2_BIAS_SIZE = NUM_OUTPUT_BUCKETS * L2_BIAS_SIZE;
+
 using Accumulator = std::array<int16_t, ACC_SIZE>;
 using Accumulators = std::array<Accumulator, 2>;
+using ClampedAccumulators = std::array<std::array<int8_t, ACC_SIZE>, 2>;
 
 
 /****************
@@ -74,6 +85,8 @@ constexpr int MAX_PLY = 256;
 constexpr int STACK_PADDING_SIZE = 2;
 
 constexpr int BENCHMARK_DEPTH = 12;
+constexpr int LONG_BENCHMARK_DEPTH = 18;
+
 constexpr int ENGINE_MAX_DEPTH = 255;
 
 constexpr int DEPTH_UNSEARCHED = -1;

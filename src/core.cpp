@@ -6,9 +6,11 @@ UNACTIVE_TUNEABLE(rfp_1, int, 109, 0, 10000, 25, 0.002);
 UNACTIVE_TUNEABLE(rfp_2, int, 36, 0, 10000, 6, 0.002);
 UNACTIVE_TUNEABLE(rfp_3, int, 32, 0, 10000, 12, 0.002);
 UNACTIVE_TUNEABLE(rfp_4, int, 59, -100, 10000, 20, 0.002);
-UNACTIVE_TUNEABLE(rfp_5, int, 335, 0, 10000, 70, 0.002);
+UNACTIVE_TUNEABLE(rfp_5, int, 30, 0, 10000, 6, 0.002);
+UNACTIVE_TUNEABLE(rfp_6, int, 335, 0, 10000, 70, 0.002);
 UNACTIVE_TUNEABLE(nmp_1, int, 81, -50, 10000, 20, 0.002);
 UNACTIVE_TUNEABLE(nmp_2, int, 23, -300, 10000, 5, 0.002);
+UNACTIVE_TUNEABLE(nmp_3, int, 150, 0, 10000, 30, 0.002);
 UNACTIVE_TUNEABLE(sprob_1, int, 422, 0, 10000, 70, 0.002);
 UNACTIVE_TUNEABLE(lmp_1, int, 72, -100, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(see_1, int, 53, -100, 1000, 20, 0.002);
@@ -36,6 +38,9 @@ UNACTIVE_TUNEABLE(red_4, int, 808, 0, 10000, 150, 0.002);
 UNACTIVE_TUNEABLE(red_5, int, 2116, 0, 10000, 300, 0.002);
 UNACTIVE_TUNEABLE(red_6, int, 674, 0, 10000, 200, 0.002);
 UNACTIVE_TUNEABLE(red_7, int, 702, 0, 10000, 180, 0.002);
+UNACTIVE_TUNEABLE(ext_1, int, 25, 0, 10000, 10, 0.002);
+UNACTIVE_TUNEABLE(ext_2, int, 80, 0, 10000, 16, 0.002);
+UNACTIVE_TUNEABLE(ext_3, int, 16, 0, 10000, 3, 0.002);
 UNACTIVE_TUNEABLE(red_th_1, int, 1960, 0, 10000, 320, 0.002);
 UNACTIVE_TUNEABLE(red_th_2, int, 2077, 0, 10000, 450, 0.002);
 UNACTIVE_TUNEABLE(corr_1, int, 310, 0, 10000, 50, 0.002);
@@ -504,6 +509,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if ((ss - 1)->reduction >= 3 && !opponent_worsening)
         depth++;
 
+    if ((ss - 1)->reduction >= 2 && depth >= 2 
+        && is_valid(ss->static_eval) && is_valid((ss - 1)->static_eval)
+        && ss->static_eval > 150 - (ss - 1)->static_eval)
+        depth--;
+
     // pruning
     if (!root_node && !pv && !in_check){
 
@@ -516,8 +526,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             && eval - depth * (rfp_1 - rfp_2*cutnode) 
                     - rfp_3
                     + rfp_4 * improving
-                    + 30 * opponent_worsening 
-                    - rfp_5 * std::abs(uncorrected_static_eval - static_eval) / 1024 >= beta)
+                    + rfp_5 * opponent_worsening 
+                    - rfp_6 * std::abs(uncorrected_static_eval - static_eval) / 1024 >= beta)
             return eval;
 
         // null move pruning
@@ -525,7 +535,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (cutnode && (ss - 1)->curr_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
             && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta)){
 
-            int R = 4 + (eval >= beta) + (eval >= beta + 150) + depth / 4;
+            int R = 4 + (eval >= beta) + (eval >= beta + nmp_3) + depth / 4;
 
             ss->moved_piece = Piece::NONE;
             ss->curr_move = Move::NULL_MOVE;
@@ -640,8 +650,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             ss->reduction = 0;
 
             if (value > alpha && reduced_depth < new_depth){
-                new_depth += value > max_value + 25 + 5 * new_depth;
-                new_depth -= value < max_value + new_depth;
+                new_depth += value > max_value + ext_1 + ext_2 * new_depth / 16;
+                new_depth -= value < max_value + ext_3 * new_depth / 16;
 
                 value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
                 if (!is_capture)

@@ -13,7 +13,7 @@ set(bread_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(bread_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 set(bread_NEURAL_NETWORKS ${CMAKE_CURRENT_SOURCE_DIR}/neural_networks)
 
-set(bread_NNUE_MODEL_PATH "${bread_NEURAL_NETWORKS}/model_NNUE_(768x8_1024)x2_1x8")
+set(bread_NNUE_MODEL_PATH "${bread_NEURAL_NETWORKS}/NNUE_(768x8_1024pw)x2_(16dual_1)x8")
 set(bread_DEBUG_UCI_COMMANDS_PATH "${bread_UTILS}/commands.txt")
 
 set(bread_INCLUDE_DIRS
@@ -47,6 +47,10 @@ if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL 
     )
 endif()
 
+if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
+    add_compile_options(-march=native)
+endif()
+
 function(bread_configure bread_TARGET)
     cmake_parse_arguments(bread "" "" "SOURCES" ${ARGN})
 
@@ -66,10 +70,6 @@ function(bread_configure bread_TARGET)
 
     if (TARGET bread_engine)
         set_target_properties(bread_engine PROPERTIES OUTPUT_NAME "${bread_DEFAULT_NAME}")
-    endif()
-
-    if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
-        target_compile_options(${bread_TARGET} PRIVATE -march=native)
     endif()
 endfunction(bread_configure)
 
