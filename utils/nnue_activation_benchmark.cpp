@@ -1,4 +1,5 @@
 #include "core.hpp"
+#include "nnue.cpp"
 #include <fstream>
 
 std::vector<std::string> load_fens(const std::string& filename) {
@@ -23,7 +24,7 @@ int main(){
     std::cout << "============================== \n";
     std::cout << "accumulator activations benchmark: \n";
 
-    std::array<int, acc_size> zero_count = {0};
+    std::array<int, ACC_SIZE> zero_count = {0};
 
     std::vector<std::string> fens = load_fens(bread_NNUE_FENS_PATH);
 
@@ -33,16 +34,28 @@ int main(){
         board.setFen(fen);
         board.synchronize();
     
-        board.nnue_.run_accumulator_activation(board.sideToMove() == Color::WHITE);
-        for (int i = 0; i < 2; i++){
-            for (int j = 0; j < acc_size; j++){
-                if (board.nnue_.ft_clipped_output[i*acc_size + j] == 0)
-                    zero_count[j]++;
-            }
+        Color stm = board.sideToMove();
+        Accumulators& accumulators = board.accumulators_stack.top();
+        uint8_t ft_clamped_output[L1_INPUT_SIZE];
+    
+        pairwise_screlu16_to_8(
+            &accumulators[stm][0],
+            &accumulators[stm][ACC_SIZE / 2],
+            ft_clamped_output, ACC_SIZE / 2
+        );
+
+        pairwise_screlu16_to_8(
+            &accumulators[!stm][0],
+            &accumulators[!stm][ACC_SIZE / 2],
+            &ft_clamped_output[ACC_SIZE / 2], ACC_SIZE / 2
+        );
+
+        for (int j = 0; j < ACC_SIZE; j++){
+            zero_count[j] += (ft_clamped_output[j] == 0);
         }
     }
 
-    for (int i = 0; i < acc_size; i++){
+    for (int i = 0; i < ACC_SIZE; i++){
         std::cout << zero_count[i] << ", ";
     }
 
