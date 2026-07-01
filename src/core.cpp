@@ -607,7 +607,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             if (is_regular_eval(singular_beta)){
                 auto saved_ss = *ss;
                 ss->excluded_move = move;
-                value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss, cutnode);
+                value = negamax<false>(new_depth / 2 - 2, singular_beta - 1, singular_beta, ss, cutnode);
                 *ss = saved_ss;
 
                 if (value < singular_beta)
