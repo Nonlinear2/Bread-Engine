@@ -15,6 +15,7 @@ set(bread_NEURAL_NETWORKS ${CMAKE_CURRENT_SOURCE_DIR}/neural_networks)
 
 set(bread_NNUE_MODEL_PATH "${bread_NEURAL_NETWORKS}/NNUE_(768x8_1024pw)x2_(16dual_1)x8")
 set(bread_DEBUG_UCI_COMMANDS_PATH "${bread_UTILS}/commands.txt")
+set(bread_NNUE_FENS_PATH "${bread_UTILS}/nnue_activation_benchmark_fens.txt")
 
 set(bread_INCLUDE_DIRS
     ${bread_SRC}
@@ -68,6 +69,8 @@ function(bread_configure bread_TARGET)
 
     target_compile_definitions(${bread_TARGET} PRIVATE bread_DEBUG_UCI_COMMANDS_PATH="${bread_DEBUG_UCI_COMMANDS_PATH}")
 
+    target_compile_definitions(${bread_TARGET} PRIVATE bread_NNUE_FENS_PATH="${bread_NNUE_FENS_PATH}")
+
     if (TARGET bread_engine)
         set_target_properties(bread_engine PROPERTIES OUTPUT_NAME "${bread_DEFAULT_NAME}")
     endif()
@@ -89,6 +92,12 @@ bread_configure(search_position SOURCES
     ${bread_SOURCE}
     ${bread_SRC}/uci.cpp
     ${bread_UTILS}/run_search.cpp
+)
+
+bread_configure(benchmark_nnue_activation SOURCES
+    ${bread_SOURCE}
+    ${bread_SRC}/uci.cpp
+    ${bread_UTILS}/nnue_activation_benchmark.cpp
 )
 
 # if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
