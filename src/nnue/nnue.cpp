@@ -43,7 +43,7 @@ extern "C" {
     extern const int8_t l1_weights_start[];
     extern const int32_t l1_bias_start[];
 
-    extern const int16_t l2_weights_start[];
+    extern const int32_t l2_weights_start[];
     extern const int32_t l2_bias_start[];
 };
 
@@ -63,13 +63,12 @@ int16_t* ft_bias    = nullptr;
 int8_t* l1_weights = nullptr;
 int32_t* l1_bias    = nullptr;
 
-int16_t* l2_weights = nullptr;
+int32_t* l2_weights = nullptr;
 int32_t* l2_bias    = nullptr;
 
 alignas(32) uint8_t ft_clamped_output[L1_INPUT_SIZE];
 
 alignas(32) int32_t l1_output[L1_OUTPUT_SIZE];
-alignas(32) int16_t l1_clamped_output[L1_OUTPUT_SIZE];
 
 void load_model(){
     // feature transformer
@@ -121,8 +120,8 @@ void init(){
         operator new[](sizeof(int32_t)*BUCKETED_L1_BIAS_SIZE, std::align_val_t{32})
     );
 
-    l2_weights = static_cast<int16_t*>(
-        operator new[](sizeof(int16_t)*BUCKETED_L2_WEIGHTS_SIZE, std::align_val_t{32})
+    l2_weights = static_cast<int32_t*>(
+        operator new[](sizeof(int32_t)*BUCKETED_L2_WEIGHTS_SIZE, std::align_val_t{32})
     );
     l2_bias = static_cast<int32_t*>(
         operator new[](sizeof(int32_t)*BUCKETED_L2_BIAS_SIZE, std::align_val_t{32})
@@ -364,11 +363,11 @@ void run_L1(uint8_t* input, int32_t* output, int bucket){
 //     return reduce1_epi32(result) / 255 + l2_bias[bucket];
 // };
 
-int32_t run_L2(int16_t* clamped_input, int32_t* input, int bucket){
+int32_t run_L2(int32_t* input, int bucket){
     int32_t result = 0;
 
     for (int i = 0; i < L1_OUTPUT_SIZE; i++){
-        int16_t c_in = std::clamp(clamped_input[i], (int16_t)0, (int16_t)255);
+        int16_t c_in = std::clamp(input[i], 0, 255);
         int32_t in = input[i];
 
         result += c_in * l2_weights[bucket * L2_WEIGHTS_SIZE + i];
@@ -398,11 +397,9 @@ int run(Accumulators& accumulators, Color stm, int piece_count){
 
     run_L1(ft_clamped_output, l1_output, bucket);
 
-    crelu32_to_16(l1_output, l1_clamped_output, L1_OUTPUT_SIZE);
+    int output = run_L2(l1_output, bucket);
 
-    int output = run_L2(l1_clamped_output, l1_output, bucket);
-
-    return (output * 600) / (64 * 255); // scale is 600
+    return (output * 600) / (255 * 255); // scale is 600
 };
 
 }; // namespace NNUE
