@@ -43,9 +43,6 @@ class NnueBoard: public Board {
     std::pair<Features, Features> get_features();
     Features get_features(Color persp);
 
-    AccumulatorsStack accumulators_stack;
-
-    private:
     class AccumulatorsStack {
         public:
         AccumulatorsStack();
@@ -64,6 +61,10 @@ class NnueBoard: public Board {
 
         friend class NnueBoard;
     };
+
+    AccumulatorsStack accumulators_stack;
+
+    private:
 
     // accessed by [bucket][stm][mirrored]
     std::array<std::array<std::array<std::pair<AllBitboards, Accumulator>, 2>, 2>, NUM_INPUT_BUCKETS> finny_table;
