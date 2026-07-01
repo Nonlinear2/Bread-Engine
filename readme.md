@@ -14,7 +14,7 @@ Bread is a chess engine rated around 3550 elo on the computer chess rating lists
 
 It uses minimax search, along with an efficiently updatable neural network trained from zero knowledge using games of self play.
 
-Bread engine does not have a graphical interface built in. However it supports the UCI protocol, you can therefore run it on any chess graphical interface, such as <a href="https://encroissant.org/"><kbd>En Croissant</kbd></a> or <a href="https://github.com/cutechess/cutechess"><kbd>Cute Chess</kbd></a>.
+Bread Engine does not have a graphical interface built in. However it supports the UCI protocol, you can therefore run it on any chess graphical interface, such as <a href="https://encroissant.org/"><kbd>En Croissant</kbd></a> or <a href="https://github.com/cutechess/cutechess"><kbd>Cute Chess</kbd></a>.
 
 # Installation
 
@@ -62,15 +62,17 @@ and the engine should return a chess move.
 
 # Custom commands
 
-Bread engine supports the following commands:
-- `bench`: prints the total number of nodes and nodes per seconds on a series of positions.
+Bread supports the following commands:
+- `bench`: prints the total number of nodes and nodes per second on a series of positions.
+- `bench long`: runs a higher depth benchmark.
+- `bench <depth>`: runs a custom depth benchmark.
 - `bench nn`: prints the speed of the neural network inference
 - `eval`: prints the static evaluation of the position
 
-Bread engine also has a UCI option called `nonsense`, which makes it bongcloud, underpromote to bishops and knights, as well as print lyrics from "never gonna give you up" during search.
+Bread also has a UCI option called `nonsense`, which makes it bongcloud, underpromote to bishops and knights, as well as print lyrics from "never gonna give you up" during search.
 
 # Technical details
-in this section we provide an overview of the search algorithm, and the main engine features. The explanations are very high level, so feel free to search more details on other resources.
+In this section we provide an overview of the search algorithm, and the main engine features.
 
 - [Search Algorithm](#search-algorithm)
   - [Minimax](#minimax)
@@ -292,18 +294,18 @@ Kd6 86. b7 Kc5 87. b8=Q Kxc6 88. h8=Q Kd5 89. Qb5+ Ke6 90. Qd7+ Kxd7 91. Qf6 Kc7
 
 # Acknowledgements
 
-- [stockfish](https://stockfishchess.org/) for their amazing community.
-
 - In no particular order, special thanks to:
     - [SweedishChef](https://github.com/JonathanHallstrom) for his help and hardware support.
     - Micpilar for his hardware contributions.
 
-- [bullet](https://github.com/jw1912/bullet)
+- [Stockfish](https://stockfishchess.org/) for their amazing community.
+
+- [Bullet](https://github.com/jw1912/bullet)
 
 - [OpenBench](https://github.com/andygrant/openbench)
 
-- [sebastian lague](https://www.youtube.com/watch?v=U4ogK0MIzqk&t=1174s) for inspiring me to do this project.
+- [Disservin's chess library](https://github.com/Disservin/chess-library)
 
-- [disservin's chess library](https://github.com/Disservin/chess-library)
+- [Fathom tablebase probe](https://github.com/jdart1/Fathom)
 
-- [fathom tablebase probe](https://github.com/jdart1/Fathom)
+- [Sebastian Lague](https://www.youtube.com/watch?v=U4ogK0MIzqk&t=1174s) for inspiring me to do this project.

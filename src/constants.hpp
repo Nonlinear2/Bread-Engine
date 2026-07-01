@@ -85,6 +85,8 @@ constexpr int MAX_PLY = 256;
 constexpr int STACK_PADDING_SIZE = 2;
 
 constexpr int BENCHMARK_DEPTH = 12;
+constexpr int LONG_BENCHMARK_DEPTH = 18;
+
 constexpr int ENGINE_MAX_DEPTH = 255;
 
 constexpr int DEPTH_UNSEARCHED = -1;
