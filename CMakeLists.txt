@@ -76,10 +76,6 @@ function(bread_configure bread_TARGET)
     endif()
 
     target_compile_definitions(${bread_TARGET} PRIVATE bread_DEBUG_UCI_COMMANDS_PATH="${bread_DEBUG_UCI_COMMANDS_PATH}")
-
-    if (TARGET bread_engine)
-        set_target_properties(bread_engine PROPERTIES OUTPUT_NAME "${bread_DEFAULT_NAME}")
-    endif()
 endfunction(bread_configure)
 
 bread_configure(bread_engine SOURCES
