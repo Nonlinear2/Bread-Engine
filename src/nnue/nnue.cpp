@@ -92,6 +92,8 @@ alignas(32) uint8_t ft_clamped_output[L1_INPUT_SIZE];
 alignas(32) int32_t l1_output[L1_OUTPUT_SIZE];
 alignas(32) int16_t l1_clamped_output[L1_OUTPUT_SIZE];
 
+alignas(32) int16_t nnz_lookup[256][9]; // [key][0..7: positions, 8: number of set bits]
+
 void load_model(){
     // feature transformer
     for (int a = 0; a < INPUT_SIZE; a++){
@@ -169,6 +171,22 @@ void init(){
     );
 
     load_model();
+
+    for (int i = 0; i < 256; i++){
+        for (int j = 0; j < 8; j++){
+            nnz_lookup[i][j] = 0;
+        }
+    }
+
+    for (int i = 0; i < 256; i++){
+        int j = 0;
+        uint8_t bits = i;
+        while (bits){
+            nnz_lookup[i][j++] = lsb(bits);
+            bits &= bits - 1;
+        }
+        nnz_lookup[i][8] = j;
+    }
 };
 
 void cleanup(){
@@ -403,7 +421,7 @@ void run_L1_sparse(uint8_t* input, int32_t* output, int bucket){
 
     // 4 int8s at a time, as an int32.
     constexpr int MAX_NNZ_INPUTS = L1_INPUT_SIZE / 4;
-    int nnz_indices[MAX_NNZ_INPUTS]; // nonzero block indices
+    int16_t nnz_indices[MAX_NNZ_INPUTS]; // nonzero block indices
     int num_nnz_inputs = 0;
 
     // get nnz indices
@@ -411,11 +429,19 @@ void run_L1_sparse(uint8_t* input, int32_t* output, int bucket){
         vec_int32 input_chunk = load_epi32(reinterpret_cast<int32_t*>(&input[i]));
         auto nnz_bitmask = nonzero_mask_epi32(input_chunk);
 
-        int idx;
+        __m128i offset = _mm_set1_epi16(i / 4);
+
         while (nnz_bitmask){
-            idx = lsb(nnz_bitmask);
-            nnz_bitmask &= nnz_bitmask - 1;
-            nnz_indices[num_nnz_inputs++] = i / 4 + idx;
+            uint8_t lower_8 = nnz_bitmask & 0xFF;
+
+            if constexpr (sizeof(nnz_bitmask) > 1)
+                nnz_bitmask >>= 8;
+            else
+                nnz_bitmask = 0;
+
+            __m128i indexes = _mm_loadu_si128((__m128i*)nnz_lookup[lower_8]);
+            _mm_storeu_si128((__m128i*)(&nnz_indices[num_nnz_inputs]), _mm_add_epi16(offset, indexes));
+            num_nnz_inputs += nnz_lookup[lower_8][8];
         }
     }
 
@@ -435,7 +461,7 @@ void run_L1_sparse(uint8_t* input, int32_t* output, int bucket){
                 load_epi8(&l1_weights[
                     bucket * L1_WEIGHTS_SIZE 
                     + j * (L1_INPUT_SIZE / 4) * (INT32_PER_REG * 4)  // row stride
-                    + block_idx * (INT32_PER_REG * 4)                        // col stride
+                    + block_idx * (INT32_PER_REG * 4)                // col stride
                 ]
             )
         );
