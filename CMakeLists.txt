@@ -94,12 +94,6 @@ bread_configure(search_position SOURCES
     ${bread_UTILS}/run_search.cpp
 )
 
-bread_configure(benchmark_nnue_activation SOURCES
-    ${bread_SOURCE}
-    ${bread_SRC}/uci.cpp
-    ${bread_UTILS}/nnue_activation_benchmark.cpp
-)
-
 # if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 #     target_compile_options(uci_search PRIVATE
 #         $<$<CONFIG:RelWithDebInfo>:
