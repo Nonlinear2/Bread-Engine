@@ -429,8 +429,7 @@ void run_L1_sparse(uint8_t* input, int32_t* output, int bucket){
         vec_int32 input_chunk = load_epi32(reinterpret_cast<int32_t*>(&input[i]));
         auto nnz_bitmask = nonzero_mask_epi32(input_chunk);
 
-        __m128i offset = _mm_set1_epi16(i / 4);
-
+        int byte = 0;
         while (nnz_bitmask){
             uint8_t lower_8 = nnz_bitmask & 0xFF;
 
@@ -439,9 +438,12 @@ void run_L1_sparse(uint8_t* input, int32_t* output, int bucket){
             else
                 nnz_bitmask = 0;
 
+            __m128i offset = _mm_set1_epi16((i / 4) + byte * 8);
+
             __m128i indexes = _mm_loadu_si128((__m128i*)nnz_lookup[lower_8]);
             _mm_storeu_si128((__m128i*)(&nnz_indices[num_nnz_inputs]), _mm_add_epi16(offset, indexes));
             num_nnz_inputs += nnz_lookup[lower_8][8];
+            byte++;
         }
     }
 
