@@ -202,6 +202,8 @@ void UCIAgent::process_bench(std::vector<std::string> command){
         Benchmark::benchmark_nn();
     else if (command[1] == "long")
         Benchmark::benchmark_engine(workers.main().engine, LONG_BENCHMARK_DEPTH);
+    else if (command[1] == "activation")
+        Benchmark::benchmark_ft_activation();
     else
         Benchmark::benchmark_engine(workers.main().engine, std::stoi(command[1]));
 }
