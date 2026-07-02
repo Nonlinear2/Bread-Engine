@@ -94,13 +94,32 @@ alignas(32) int16_t l1_clamped_output[L1_OUTPUT_SIZE];
 
 void load_model(){
     // feature transformer
-    for (int i = 0; i < L0_WEIGHTS_SIZE; i++)
-        ft_weights[i] = ft_weights_start[i];
+    for (int a = 0; a < INPUT_SIZE; a++){
+        for (int j = 0; j < ACC_SIZE / 2; j++){
+            ft_weights[a * ACC_SIZE + j] = ft_weights_start[a * ACC_SIZE + FT_PERMUTATION[j]];
+            ft_weights[a * ACC_SIZE + ACC_SIZE / 2 + j] = ft_weights_start[a * ACC_SIZE + ACC_SIZE / 2 + FT_PERMUTATION[j]];
+        }
+    }
 
-    for (int i = 0; i < L0_BIAS_SIZE; i++)
-        ft_bias[i] = ft_bias_start[i];
+    for (int j = 0; j < ACC_SIZE / 2; j++){
+        ft_bias[j] = ft_bias_start[FT_PERMUTATION[j]];
+        ft_bias[ACC_SIZE / 2 + j] = ft_bias_start[ACC_SIZE / 2 + FT_PERMUTATION[j]];
+    }
 
     // layer 1
+    std::vector<int8_t> permuted_l1(BUCKETED_L1_WEIGHTS_SIZE);
+
+    for (int bucket = 0; bucket < NUM_OUTPUT_BUCKETS; bucket++){
+        for (int row = 0; row < L1_OUTPUT_SIZE; row++){
+            for (int col = 0; col < ACC_SIZE / 2; col++){
+                permuted_l1[bucket * L1_WEIGHTS_SIZE + row * L1_INPUT_SIZE + col] =
+                    l1_weights_start[bucket * L1_WEIGHTS_SIZE + row * L1_INPUT_SIZE + FT_PERMUTATION[col]];
+
+                permuted_l1[bucket * L1_WEIGHTS_SIZE + row * L1_INPUT_SIZE + ACC_SIZE / 2 + col] =
+                    l1_weights_start[bucket * L1_WEIGHTS_SIZE + row * L1_INPUT_SIZE + ACC_SIZE / 2 + FT_PERMUTATION[col]];
+            }
+        }
+    }
 
     // permute weights
     int idx = 0;
@@ -109,7 +128,7 @@ void load_model(){
             for (int col_block = 0; col_block < L1_INPUT_SIZE; col_block += 4)
                 for (int m = 0; m < INT32_PER_REG; m++)                 // row within block
                     for (int n = 0; n < 4; n++)                         // col within block
-                        l1_weights[idx++] = l1_weights_start[
+                        l1_weights[idx++] = permuted_l1[
                             bucket * L1_WEIGHTS_SIZE
                             + (row_block + m) * L1_INPUT_SIZE
                             + (col_block + n)
