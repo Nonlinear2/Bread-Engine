@@ -411,7 +411,7 @@ void run_L1_sparse(uint8_t* input, int32_t* output, int bucket){
 
             __m128i indexes = _mm_loadu_si128((__m128i*)nnz_lookup[lower_8]);
             _mm_storeu_si128((__m128i*)(&nnz_indices[num_nnz_inputs]), _mm_add_epi16(offset, indexes));
-            num_nnz_inputs += nnz_lookup[lower_8][8];
+            num_nnz_inputs += std::popcount(lower_8);
             byte++;
         }
     }
