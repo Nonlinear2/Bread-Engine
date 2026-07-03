@@ -662,8 +662,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             value = -negamax<false>(new_depth - (reduction > red_th_1), -alpha - 1, -alpha, ss + 1, !cutnode);
         }
 
-        if (pv && (move_gen.index() == 0 || value > alpha))
+        if (pv && (move_gen.index() == 0 || value > alpha)){
+            new_depth += (new_depth == 0 && move == transposition.move && transposition.depth > 2);
             value = -negamax<true>(new_depth - (reduction > red_th_2), -beta, -alpha, ss + 1, false);
+        }
 
         pos.restore_state(move);
 
