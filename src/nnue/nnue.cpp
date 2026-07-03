@@ -2,8 +2,26 @@
 
 using namespace NNUE_UTILS;
 
-#define STR2(x) #x
-#define STR(x) STR2(x)
+#if !defined(_MSC_VER)
+    constexpr
+#endif
+    int
+    lsb(uint32_t bits) {
+    assert(bits != 0);
+#if __cplusplus >= 202002L
+    return std::countr_zero(bits);
+#else
+#if defined(__GNUC__)
+    return __builtin_ctzll(bits);
+#elif defined(_MSC_VER)
+    unsigned long idx;
+    _BitScanForward64(&idx, bits);
+    return static_cast<int>(idx);
+#else
+#error "Compiler not supported."
+#endif
+#endif
+}
 
 #if !defined(_MSC_VER)
     constexpr
@@ -33,6 +51,9 @@ using namespace NNUE_UTILS;
 #else
     #define INCBIN_SECTION ".rodata"
 #endif
+
+#define STR2(x) #x
+#define STR(x) STR2(x)
 
 // credit: https://gist.github.com/mmozeiko/ed9655cf50341553d282
 #define INCBIN(name, file) \
@@ -365,28 +386,74 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
 // [1]  4  5  6  7  16 17 18 19  28 29 30 31  40 41 42 43  52 53 54 55  64 65 66 67  76 77 78 79  88 89 90 91
 // ...
 //
-// and stored in this order:
-// [0] [1] [2]
-// [3] [4] [5] 
-//
 // out:
 // acc 0:  [in[0..4] @ [0]] + [in[5..7] @ [1]] + [in[8..11] @ [2]]
 // acc 1:  [in[0..4] @ [3]] + [in[5..7] @ [4]] + [in[8..11] @ [5]]
 
-void run_L1(uint8_t* input, int32_t* output, int bucket){
+// thus:
+// // weight section:
+// [  ] ...
+// [  ] ...
+// [  ] ...
+// [  ] ...
+// ...
+// flattened: [  ][  ][  ][  ]...
+// height = out_size, width = 4
+
+// input:      1234|1234|1234|1234|1234|1234|1234|1234
+// weights:    [  ]|[  ]|[  ]|[  ]|[  ]|[  ]|[  ]|[  ]
+// maddubs:    * * |* * |* * |* * |* * |* * |* * |* *
+// madd:       x   |x   |x   |x   |x   |x   |x   |x   
+
+// -> accumulate for nnz chunks, and get output.
+
+void run_L1_sparse(uint8_t* input, int32_t* output, int bucket){
+
+    // 4 int8s at a time, as an int32.
+    constexpr int MAX_NNZ_INPUTS = L1_INPUT_SIZE / 4;
+    int16_t nnz_indices[MAX_NNZ_INPUTS]; // nonzero block indices
+    int num_nnz_inputs = 0;
+
+    // get nnz indices
+    for (int i = 0; i < L1_INPUT_SIZE; i += INT8_PER_REG){
+        vec_int32 input_chunk = load_epi32(reinterpret_cast<int32_t*>(&input[i]));
+        auto nnz_bitmask = nonzero_mask_epi32(input_chunk);
+
+        int byte = 0;
+        while (nnz_bitmask){
+            uint8_t lower_8 = nnz_bitmask & 0xFF;
+
+            if constexpr (sizeof(nnz_bitmask) > 1)
+                nnz_bitmask >>= 8;
+            else
+                nnz_bitmask = 0;
+
+            __m128i offset = _mm_set1_epi16((i / 4) + byte * 8);
+
+            __m128i indexes = _mm_loadu_si128((__m128i*)nnz_lookup[lower_8]);
+            _mm_storeu_si128((__m128i*)(&nnz_indices[num_nnz_inputs]), _mm_add_epi16(offset, indexes));
+            num_nnz_inputs += nnz_lookup[lower_8][8];
+            byte++;
+        }
+    }
+
+    assert(num_nnz_inputs <= MAX_NNZ_INPUTS);
+    // std::cout << num_nnz_inputs << " ";
 
     vec_int32 accs[L1_OUTPUT_SIZE / INT32_PER_REG] = {0};
 
-    for (int i = 0; i < L1_INPUT_SIZE / 4; i++) { // horizontal block idx
-        vec_int8 inputs = set1_epi32(*reinterpret_cast<int32_t*>(&input[i*4])); // set1 as epi32 to load 4 int8s at a time
+    for (int i = 0; i < num_nnz_inputs; i++){ 
+        // load the nonzero input group
+        int block_idx = nnz_indices[i]; // nonzero horizontal block index
+        vec_int8 input_group = set1_epi32(*reinterpret_cast<int32_t*>(&input[block_idx * 4])); // set1 as epi32 to load 4 int8s at a time
         for (int j = 0; j < L1_OUTPUT_SIZE / INT32_PER_REG; j++) // vertical block idx
             accs[j] = dpbusd_epi32(
                 accs[j],
-                inputs,
+                input_group,
                 load_epi8(&l1_weights[
                     bucket * L1_WEIGHTS_SIZE 
                     + j * (L1_INPUT_SIZE / 4) * (INT32_PER_REG * 4)  // row stride
-                    + i * (INT32_PER_REG * 4)                        // col stride
+                    + block_idx * (INT32_PER_REG * 4)                // col stride
                 ]
             )
         );
@@ -529,7 +596,6 @@ int run(Accumulators& accumulators, Color stm, int piece_count){
         &ft_clamped_output[ACC_SIZE / 2], ACC_SIZE / 2
     );
 
-    // run_L1(ft_clamped_output, l1_output, bucket);
     run_L1_sparse(ft_clamped_output, l1_output, bucket);
 
     crelu32_to_16(l1_output, l1_clamped_output, L1_OUTPUT_SIZE);
