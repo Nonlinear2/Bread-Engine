@@ -2,8 +2,26 @@
 
 using namespace NNUE_UTILS;
 
-#define STR2(x) #x
-#define STR(x) STR2(x)
+#if !defined(_MSC_VER)
+    constexpr
+#endif
+    int
+    lsb(uint32_t bits) {
+    assert(bits != 0);
+#if __cplusplus >= 202002L
+    return std::countr_zero(bits);
+#else
+#if defined(__GNUC__)
+    return __builtin_ctzll(bits);
+#elif defined(_MSC_VER)
+    unsigned long idx;
+    _BitScanForward64(&idx, bits);
+    return static_cast<int>(idx);
+#else
+#error "Compiler not supported."
+#endif
+#endif
+}
 
 #ifdef _WIN32
     #define INCBIN_SECTION ".rdata, \"dr\""
@@ -12,6 +30,9 @@ using namespace NNUE_UTILS;
 #else
     #define INCBIN_SECTION ".rodata"
 #endif
+
+#define STR2(x) #x
+#define STR(x) STR2(x)
 
 // credit: https://gist.github.com/mmozeiko/ed9655cf50341553d282
 #define INCBIN(name, file) \
@@ -71,15 +92,36 @@ alignas(32) uint8_t ft_clamped_output[L1_INPUT_SIZE];
 alignas(32) int32_t l1_output[L1_OUTPUT_SIZE];
 alignas(32) int16_t l1_clamped_output[L1_OUTPUT_SIZE];
 
+alignas(32) int16_t nnz_lookup[256][9]; // [key][0..7: positions, 8: number of set bits]
+
 void load_model(){
     // feature transformer
-    for (int i = 0; i < L0_WEIGHTS_SIZE; i++)
-        ft_weights[i] = ft_weights_start[i];
+    for (int a = 0; a < INPUT_SIZE; a++){
+        for (int j = 0; j < ACC_SIZE / 2; j++){
+            ft_weights[a * ACC_SIZE + j] = ft_weights_start[a * ACC_SIZE + FT_PERMUTATION[j]];
+            ft_weights[a * ACC_SIZE + ACC_SIZE / 2 + j] = ft_weights_start[a * ACC_SIZE + ACC_SIZE / 2 + FT_PERMUTATION[j]];
+        }
+    }
 
-    for (int i = 0; i < L0_BIAS_SIZE; i++)
-        ft_bias[i] = ft_bias_start[i];
+    for (int j = 0; j < ACC_SIZE / 2; j++){
+        ft_bias[j] = ft_bias_start[FT_PERMUTATION[j]];
+        ft_bias[ACC_SIZE / 2 + j] = ft_bias_start[ACC_SIZE / 2 + FT_PERMUTATION[j]];
+    }
 
     // layer 1
+    std::vector<int8_t> permuted_l1(BUCKETED_L1_WEIGHTS_SIZE);
+
+    for (int bucket = 0; bucket < NUM_OUTPUT_BUCKETS; bucket++){
+        for (int row = 0; row < L1_OUTPUT_SIZE; row++){
+            for (int col = 0; col < ACC_SIZE / 2; col++){
+                permuted_l1[bucket * L1_WEIGHTS_SIZE + row * L1_INPUT_SIZE + col] =
+                    l1_weights_start[bucket * L1_WEIGHTS_SIZE + row * L1_INPUT_SIZE + FT_PERMUTATION[col]];
+
+                permuted_l1[bucket * L1_WEIGHTS_SIZE + row * L1_INPUT_SIZE + ACC_SIZE / 2 + col] =
+                    l1_weights_start[bucket * L1_WEIGHTS_SIZE + row * L1_INPUT_SIZE + ACC_SIZE / 2 + FT_PERMUTATION[col]];
+            }
+        }
+    }
 
     // permute weights
     int idx = 0;
@@ -88,7 +130,7 @@ void load_model(){
             for (int col_block = 0; col_block < L1_INPUT_SIZE; col_block += 4)
                 for (int m = 0; m < INT32_PER_REG; m++)                 // row within block
                     for (int n = 0; n < 4; n++)                         // col within block
-                        l1_weights[idx++] = l1_weights_start[
+                        l1_weights[idx++] = permuted_l1[
                             bucket * L1_WEIGHTS_SIZE
                             + (row_block + m) * L1_INPUT_SIZE
                             + (col_block + n)
@@ -129,6 +171,22 @@ void init(){
     );
 
     load_model();
+
+    for (int i = 0; i < 256; i++){
+        for (int j = 0; j < 8; j++){
+            nnz_lookup[i][j] = 0;
+        }
+    }
+
+    for (int i = 0; i < 256; i++){
+        int j = 0;
+        uint8_t bits = i;
+        while (bits){
+            nnz_lookup[i][j++] = lsb(bits);
+            bits &= bits - 1;
+        }
+        nnz_lookup[i][8] = j;
+    }
 };
 
 void cleanup(){
@@ -308,28 +366,74 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
 // [1]  4  5  6  7  16 17 18 19  28 29 30 31  40 41 42 43  52 53 54 55  64 65 66 67  76 77 78 79  88 89 90 91
 // ...
 //
-// and stored in this order:
-// [0] [1] [2]
-// [3] [4] [5] 
-//
 // out:
 // acc 0:  [in[0..4] @ [0]] + [in[5..7] @ [1]] + [in[8..11] @ [2]]
 // acc 1:  [in[0..4] @ [3]] + [in[5..7] @ [4]] + [in[8..11] @ [5]]
 
-void run_L1(uint8_t* input, int32_t* output, int bucket){
+// thus:
+// // weight section:
+// [  ] ...
+// [  ] ...
+// [  ] ...
+// [  ] ...
+// ...
+// flattened: [  ][  ][  ][  ]...
+// height = out_size, width = 4
+
+// input:      1234|1234|1234|1234|1234|1234|1234|1234
+// weights:    [  ]|[  ]|[  ]|[  ]|[  ]|[  ]|[  ]|[  ]
+// maddubs:    * * |* * |* * |* * |* * |* * |* * |* *
+// madd:       x   |x   |x   |x   |x   |x   |x   |x   
+
+// -> accumulate for nnz chunks, and get output.
+
+void run_L1_sparse(uint8_t* input, int32_t* output, int bucket){
+
+    // 4 int8s at a time, as an int32.
+    constexpr int MAX_NNZ_INPUTS = L1_INPUT_SIZE / 4;
+    int16_t nnz_indices[MAX_NNZ_INPUTS]; // nonzero block indices
+    int num_nnz_inputs = 0;
+
+    // get nnz indices
+    for (int i = 0; i < L1_INPUT_SIZE; i += INT8_PER_REG){
+        vec_int32 input_chunk = load_epi32(reinterpret_cast<int32_t*>(&input[i]));
+        auto nnz_bitmask = nonzero_mask_epi32(input_chunk);
+
+        int byte = 0;
+        while (nnz_bitmask){
+            uint8_t lower_8 = nnz_bitmask & 0xFF;
+
+            if constexpr (sizeof(nnz_bitmask) > 1)
+                nnz_bitmask >>= 8;
+            else
+                nnz_bitmask = 0;
+
+            __m128i offset = _mm_set1_epi16((i / 4) + byte * 8);
+
+            __m128i indexes = _mm_loadu_si128((__m128i*)nnz_lookup[lower_8]);
+            _mm_storeu_si128((__m128i*)(&nnz_indices[num_nnz_inputs]), _mm_add_epi16(offset, indexes));
+            num_nnz_inputs += nnz_lookup[lower_8][8];
+            byte++;
+        }
+    }
+
+    assert(num_nnz_inputs <= MAX_NNZ_INPUTS);
+    // std::cout << num_nnz_inputs << " ";
 
     vec_int32 accs[L1_OUTPUT_SIZE / INT32_PER_REG] = {0};
 
-    for (int i = 0; i < L1_INPUT_SIZE / 4; i++) { // horizontal block idx
-        vec_int8 inputs = set1_epi32(*reinterpret_cast<int32_t*>(&input[i*4])); // set1 as epi32 to load 4 int8s at a time
+    for (int i = 0; i < num_nnz_inputs; i++){ 
+        // load the nonzero input group
+        int block_idx = nnz_indices[i]; // nonzero horizontal block index
+        vec_int8 input_group = set1_epi32(*reinterpret_cast<int32_t*>(&input[block_idx * 4])); // set1 as epi32 to load 4 int8s at a time
         for (int j = 0; j < L1_OUTPUT_SIZE / INT32_PER_REG; j++) // vertical block idx
             accs[j] = dpbusd_epi32(
                 accs[j],
-                inputs,
+                input_group,
                 load_epi8(&l1_weights[
                     bucket * L1_WEIGHTS_SIZE 
                     + j * (L1_INPUT_SIZE / 4) * (INT32_PER_REG * 4)  // row stride
-                    + i * (INT32_PER_REG * 4)                        // col stride
+                    + block_idx * (INT32_PER_REG * 4)                // col stride
                 ]
             )
         );
@@ -396,7 +500,7 @@ int run(Accumulators& accumulators, Color stm, int piece_count){
         &ft_clamped_output[ACC_SIZE / 2], ACC_SIZE / 2
     );
 
-    run_L1(ft_clamped_output, l1_output, bucket);
+    run_L1_sparse(ft_clamped_output, l1_output, bucket);
 
     crelu32_to_16(l1_output, l1_clamped_output, L1_OUTPUT_SIZE);
 

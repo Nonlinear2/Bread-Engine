@@ -37,6 +37,38 @@ int64_t sum(std::vector<int> values){
     return total;
 }
 
+// returns indices that would sort x in descending order of value.
+template <typename T, std::size_t N>
+std::vector<int> rank_by_value(const std::array<T, N>& x) {
+    std::vector<int> indices(x.size());
+    for (int i = 0; i < indices.size(); i++)
+        indices[i] = i;
+
+    std::stable_sort(indices.begin(), indices.end(),
+        [&x](int a, int b) {
+            return x[a] > x[b];
+        });
+
+    return indices;
+}
+
+std::vector<std::string> load_fens(const std::string& filename) {
+    std::vector<std::string> fens;
+    std::ifstream file(filename);
+    std::string line;
+    
+    if (!file.is_open()) {
+        std::cerr << "error, could not open file " << filename << std::endl;
+        return fens;
+    }
+    
+    while (std::getline(file, line))
+        fens.push_back(line);
+
+    file.close();
+    return fens;
+}
+
 void benchmark_nn(){
     std::cout << "============================== \n";
     std::cout << "evaluation function benchmark: \n";
@@ -83,6 +115,53 @@ void benchmark_engine(Engine& engine, int depth){
 
     engine.pos.setFen(constants::STARTPOS);
     engine.clear_state();
+}
+
+void benchmark_ft_activation(){
+    std::cout << "============================== \n";
+    std::cout << "accumulator activations benchmark: \n";
+
+    std::array<int, ACC_SIZE / 2> zero_count = {0};
+
+    std::vector<std::string> fens = load_fens(bread_NNUE_FENS_PATH);
+
+    NnueBoard board = NnueBoard();
+    for (auto fen: fens){
+
+        board.setFen(fen);
+        board.synchronize();
+    
+        Color stm = board.sideToMove();
+        Accumulators& accumulators = board.accumulators_stack.top();
+        uint8_t pairwise_output[ACC_SIZE / 2];
+    
+        NNUE_UTILS::pairwise_screlu16_to_8(
+            &accumulators[stm][0],
+            &accumulators[stm][ACC_SIZE / 2],
+            pairwise_output, ACC_SIZE / 2
+        );
+
+        for (int j = 0; j < ACC_SIZE / 2; j++){
+            zero_count[j] += (pairwise_output[j] == 0);
+        }
+    }
+
+    for (int i = 0; i < zero_count.size(); i++){
+        std::cout << zero_count[i] << ", ";
+    }
+    std::cout << zero_count.back() << std::endl;
+
+    std::cout << "============================== \n";
+    std::cout << "weight permutation: \n";
+
+     std::vector<int> permutation = rank_by_value(zero_count);
+
+    for (std::size_t i = 0; i < permutation.size() - 1; i++){
+        std::cout << permutation[i] << ", ";
+    }
+    std::cout << permutation.back() << std::endl;
+
+    std::cout << "============================== \n";
 }
 
 } // namespace Benchmark
