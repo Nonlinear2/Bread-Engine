@@ -393,26 +393,21 @@ void run_L1_sparse(uint8_t* input, int32_t* output, int bucket){
     int16_t nnz_indices[MAX_NNZ_INPUTS]; // nonzero block indices
     int num_nnz_inputs = 0;
 
+    __m128i offset = _mm_set1_epi16(0);
+    __m128i eight = _mm_set1_epi16(8);
+
     // get nnz indices
     for (int i = 0; i < L1_INPUT_SIZE; i += INT8_PER_REG){
         vec_int32 input_chunk = load_epi32(reinterpret_cast<int32_t*>(&input[i]));
         auto nnz_bitmask = nonzero_mask_epi32(input_chunk);
 
-        int byte = 0;
-        while (nnz_bitmask){
-            uint8_t lower_8 = nnz_bitmask & 0xFF;
+        for (int group_idx = 0; group_idx < 8*sizeof(nnz_bitmask); group_idx += 8){
+            uint8_t group = (nnz_bitmask >> group_idx) & 0xFF;
 
-            if constexpr (sizeof(nnz_bitmask) > 1)
-                nnz_bitmask >>= 8;
-            else
-                nnz_bitmask = 0;
-
-            __m128i offset = _mm_set1_epi16((i / 4) + byte * 8);
-
-            __m128i indexes = _mm_loadu_si128((__m128i*)nnz_lookup[lower_8]);
+            __m128i indexes = _mm_loadu_si128((__m128i*)nnz_lookup[group]);
             _mm_storeu_si128((__m128i*)(&nnz_indices[num_nnz_inputs]), _mm_add_epi16(offset, indexes));
-            num_nnz_inputs += std::popcount(lower_8);
-            byte++;
+            num_nnz_inputs += std::popcount(group);
+            offset = _mm_add_epi16(offset, eight);
         }
     }
 
