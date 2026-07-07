@@ -83,6 +83,7 @@ constexpr int NUM_GENFENS_RANDOM_MOVES = 10;
 
 constexpr int TT_MIN_SIZE = 2;
 constexpr int TT_MAX_SIZE = 4096;
+constexpr int TT_ENTRIES_PER_CLUSTER = 3;
 
 constexpr int MAX_PLY = 256;
 constexpr int STACK_PADDING_SIZE = 2;
