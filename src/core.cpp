@@ -164,7 +164,7 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(){
 
     for (int i = 0; i < root_depth; i++){
         bool is_hit;
-        TEntry* _;
+        TEntry* _ = nullptr;
         TTData transposition = tt.probe(is_hit, _, pv_visitor.hash(), false);
         if (transposition.move == Move::NO_MOVE || pv_visitor.isRepetition(2)
             || pv_visitor.isHalfMoveDraw() || pv_visitor.isInsufficientMaterial())
@@ -453,7 +453,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     }
 
     bool is_hit;
-    TEntry* new_entry;
+    TEntry* new_entry = nullptr;
     TTData transposition = tt.probe(is_hit, new_entry, zobrist_hash, pv);
     if (is_mate(transposition.value))
         transposition.value = pos_to_root_mate_value(transposition.value, ply);
@@ -821,7 +821,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     );
 
     bool is_hit;
-    TEntry* new_entry;
+    TEntry* new_entry = nullptr;
     TTData transposition = tt.probe(is_hit, new_entry, zobrist_hash, pv);
     if (is_mate(transposition.value))
         transposition.value = pos_to_root_mate_value(transposition.value, ply);

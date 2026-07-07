@@ -99,7 +99,7 @@ TTData TranspositionTable::probe(bool& is_hit, TEntry*& new_entry, uint64_t zobr
             new_entry = &candidate;
         }
     }
-
+    assert(new_entry != nullptr);
 
     if (is_hit)
         return TTData(new_entry, pv);
