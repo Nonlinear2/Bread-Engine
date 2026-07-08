@@ -1,4 +1,5 @@
 #include "uci.hpp"
+#include "datagen.hpp"
 #include <iostream>
 #include <string>
 #include <random>
@@ -19,22 +20,7 @@ int main(int argc, char* argv[]){
             int seed = std::stoi(parsed[3]);
             std::mt19937 rng(seed);
 
-            Movelist move_list;
-            Board board = Board();
-
-            for (int i = 0; i < std::stoi(parsed[1]); i++){
-                do {
-                    board.setFen(constants::STARTPOS);
-                    for (int j = 0; j < NUM_GENFENS_RANDOM_MOVES; j++){
-                        movegen::legalmoves(move_list, board);
-                        board.makeMove(move_list[rng() % move_list.size()]);
-                        if (std::get<1>(board.isGameOver()) != GameResult::NONE)
-                            break;
-                    }
-                } while (std::get<1>(board.isGameOver()) != GameResult::NONE);
-
-                std::cout << "info string genfens " << board.getFen() << std::endl;
-            }
+            Datagen::genfens(rng, std::stoi(parsed[1]));
 
             if (argc >= 3 && std::string(argv[2]) == "quit")
                 return 0;

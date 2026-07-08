@@ -1,7 +1,5 @@
 #include "nnue.hpp"
-
-using namespace NNUE_UTILS;
-
+ 
 #if !defined(_MSC_VER)
     constexpr
 #endif

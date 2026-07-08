@@ -12,6 +12,7 @@
 #include "constants.hpp"
 #include "nnue_misc.hpp"
 
+using namespace NNUE_UTILS;
 using namespace chess;
 
 struct Features {
