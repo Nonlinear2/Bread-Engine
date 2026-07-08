@@ -3,7 +3,9 @@
 #include <iostream>
 
 int main(){
-    Engine engine = Engine();
+    TranspositionTable tt;
+    std::atomic<int64_t> nodes = 0;
+    Engine engine = Engine(true, tt, nodes);
 
     std::vector<std::string> fens = {
         "r2qkbnr/1pp2ppp/p1p5/4p3/4P1b1/5N1P/PPPP1PP1/RNBQ1RK1 b kq - 0 6",
