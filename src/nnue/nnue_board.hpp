@@ -36,7 +36,7 @@ class NnueBoard: public Board {
 
     void restore_state(Move move);
 
-    int evaluate();
+    int evaluate(bool trace = false);
 
     bool is_stalemate();
 
