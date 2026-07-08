@@ -1,7 +1,5 @@
 #include "nnue.hpp"
-
-using namespace NNUE_UTILS;
-
+ 
 #if !defined(_MSC_VER)
     constexpr
 #endif
@@ -476,9 +474,12 @@ int32_t run_L2(int16_t* clamped_input, int32_t* input, int bucket){
     return result + l2_bias[bucket];
 };
 
-int run(Accumulators& accumulators, Color stm, int piece_count){
+int run(Accumulators& accumulators, Color stm, int piece_count, bool trace){
     constexpr int pieces_per_bucket = 32 / NUM_OUTPUT_BUCKETS;
     int bucket = (piece_count - 2) / pieces_per_bucket;
+
+    if (trace)
+        std::cout << "Output bucket: " << bucket << std::endl;
 
     assert(bucket >= 0 && bucket < NUM_OUTPUT_BUCKETS);
 

@@ -12,6 +12,7 @@
 #include "constants.hpp"
 #include "nnue_misc.hpp"
 
+using namespace NNUE_UTILS;
 using namespace chess;
 
 struct Features {
@@ -137,6 +138,6 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
         const Features& added_features,
         const Features& removed_features);
 
-int run(Accumulators& accumulators, Color stm, int piece_count);
+int run(Accumulators& accumulators, Color stm, int piece_count, bool trace = false);
 
 }; // namespace NNUE
