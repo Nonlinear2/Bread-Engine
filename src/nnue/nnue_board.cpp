@@ -105,15 +105,20 @@ void NnueBoard::restore_state(Move move){
     accumulators_stack.pop();
 }
 
-int NnueBoard::evaluate(){
+int NnueBoard::evaluate(bool trace){
     accumulators_stack.apply_lazy_updates();
 
-    const int nnue = NNUE::run(accumulators_stack.top(), sideToMove(), occ().count());
+    const int nnue = NNUE::run(accumulators_stack.top(), sideToMove(), occ().count(), trace);
     const int material_scale = mat_base
         + k_scale * pieces(PieceType::KNIGHT).count() 
         + b_scale * pieces(PieceType::BISHOP).count()
         + r_scale * pieces(PieceType::ROOK).count()
         + q_scale * pieces(PieceType::QUEEN).count();
+
+    if (trace){
+        std::cout << "NNUE output: " << nnue << std::endl;
+        std::cout << "Material scale: " << material_scale << std::endl;
+    }
 
     return std::clamp(nnue * material_scale / 16384, -BEST_VALUE, BEST_VALUE);
 }
