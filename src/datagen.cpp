@@ -11,7 +11,14 @@ void genfens(Engine& engine, std::mt19937 rng, int count){
             board.setFen(constants::STARTPOS);
             for (int j = 0; j < NUM_GENFENS_RANDOM_MOVES; j++){
                 movegen::legalmoves(move_list, board);
-                board.makeMove(move_list[rng() % move_list.size()]);
+                Move move;
+                do {
+                    move = move_list[rng() % move_list.size()];
+                } while (
+                    PSM::REF_VALUE / 2 + PSM::get_psm(board.at(move.from()), move.to()) <= rng() % (3 * PSM::REF_VALUE / 2)
+                );
+
+                board.makeMove(move);
                 if (board.isGameOver().second != GameResult::NONE)
                     break;
             }

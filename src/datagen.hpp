@@ -5,6 +5,7 @@
 #include "chess.hpp"
 #include "constants.hpp"
 #include "core.hpp"
+#include "piece_square_tables.hpp"
 
 namespace Datagen {
 
