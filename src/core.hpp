@@ -23,9 +23,9 @@ int get_think_time(float time_left, int num_moves_out_of_book,
 class Engine {
     public:
 
-    Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes);
+    Engine(bool display_uci, TranspositionTable& tt, std::atomic<int64_t>& nodes);
 
-    bool is_main_thread;
+    bool display_uci;
     std::atomic<int64_t>& nodes;
     int64_t tb_hits = 0;
     int64_t seldepth = 0;

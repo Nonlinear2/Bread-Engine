@@ -8,10 +8,11 @@ int main(int argc, char* argv[]){
     NNUE::init();
 
     UCIAgent uci_engine = UCIAgent();
+    Engine& engine = uci_engine.workers.main().engine;
 
     if (argc >= 2){
         if (std::string(argv[1]) == "bench"){
-            Benchmark::benchmark_engine(uci_engine.workers.main().engine, BENCHMARK_DEPTH);
+            Benchmark::benchmark_engine(engine, BENCHMARK_DEPTH);
             return 0;
         }
 
@@ -20,7 +21,10 @@ int main(int argc, char* argv[]){
             int seed = std::stoi(parsed[3]);
             std::mt19937 rng(seed);
 
-            Datagen::genfens(rng, std::stoi(parsed[1]));
+            // silence engine
+            engine.display_uci = false;
+            Datagen::genfens(engine, rng, std::stoi(parsed[1]));
+            engine.display_uci = true;
 
             if (argc >= 3 && std::string(argv[2]) == "quit")
                 return 0;

@@ -80,6 +80,8 @@ general constants
 ****************/
 
 constexpr int NUM_GENFENS_RANDOM_MOVES = 10;
+constexpr int GENFENS_FILTER_DEPTH = 9;
+constexpr int GENFENS_MAX_VALUE = 600;
 
 constexpr int TT_MIN_SIZE = 2;
 constexpr int TT_MAX_SIZE = 4096;
