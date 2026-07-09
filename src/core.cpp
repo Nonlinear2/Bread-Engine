@@ -676,8 +676,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (value > max_value){
             assert(is_valid(value));
             max_value = value;
-            if (value > alpha)
+            if (value > alpha){
                 best_move = move;
+                if (depth > 1 && depth < 5 && !is_decisive(value))
+                    depth -= 1;
+            }
             if (root_node){
                 // ! This preserves the order of the array after the current move.
                 // ! Rotate invalidates root_moves[move_gen.index()].
