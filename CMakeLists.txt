@@ -13,7 +13,7 @@ set(bread_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(bread_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 set(bread_NEURAL_NETWORKS ${CMAKE_CURRENT_SOURCE_DIR}/neural_networks)
 
-set(bread_NNUE_MODEL_PATH "${bread_NEURAL_NETWORKS}/NNUE_(768x8_1024pw)x2_(16dual_1)x8")
+set(bread_NNUE_MODEL_PATH "${bread_NEURAL_NETWORKS}/NNUE_(768x8_1536pw)x2_(16dual_1)x8")
 set(bread_DEBUG_UCI_COMMANDS_PATH "${bread_UTILS}/commands.txt")
 set(bread_NNUE_FENS_PATH "${bread_UTILS}/nnue_activation_benchmark_fens.txt")
 
