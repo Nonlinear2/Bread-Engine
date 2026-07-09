@@ -678,7 +678,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             max_value = value;
             if (value > alpha){
                 best_move = move;
-                if (depth > 1 && depth < 5 && !is_decisive(value))
+                if (depth > 1 && depth < 8 && !is_decisive(value))
                     depth -= 1;
             }
             if (root_node){
