@@ -77,6 +77,8 @@ class TranspositionTable {
 
     void allocateMB(int new_size);
 
+    Cluster* index(uint64_t hash);
+
     TTData probe(bool& is_hit, TEntry*& new_entry, uint64_t zobrist, bool pv);
 
     void clear();

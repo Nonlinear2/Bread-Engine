@@ -544,7 +544,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             ss->curr_move_capture = false;
 
             pos.makeNullMove();
-            __builtin_prefetch(&tt.clusters[(pos.hash() >> 16) & (tt.num_clusters - 1)]);
+            __builtin_prefetch(tt.index(pos.hash()));
 
             int null_move_value = -negamax<false>(depth - R, -beta, -beta + 1, ss + 1, false);
             pos.unmakeNullMove();

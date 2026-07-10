@@ -79,6 +79,12 @@ void TranspositionTable::allocateMB(int new_size_mb){
     clusters = new Cluster[num_clusters];
 }
 
+Cluster* TranspositionTable::index(uint64_t hash){
+    return &clusters[
+        static_cast<std::uint64_t>((static_cast<unsigned __int128>(hash) * static_cast<unsigned __int128>(num_clusters)) >> 64)
+    ];
+}
+
 TTData TranspositionTable::probe(bool& is_hit, TEntry*& new_entry, uint64_t zobrist, bool pv){
     assert((num_clusters & (num_clusters - 1)) == 0);
 
@@ -86,7 +92,7 @@ TTData TranspositionTable::probe(bool& is_hit, TEntry*& new_entry, uint64_t zobr
 
     int worst_value = ENGINE_MAX_DEPTH; // 32 is max tt move number 
 
-    Cluster* cluster = &clusters[(zobrist >> 16) & (num_clusters - 1)];
+    Cluster* cluster = index(zobrist);
     for (TEntry& candidate: cluster->entries){
         if (candidate.zobrist_hash == (uint16_t)zobrist){
             new_entry = &candidate;
