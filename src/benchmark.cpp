@@ -2,8 +2,6 @@
 
 namespace Benchmark {
 
-using namespace std::chrono;
-
 inline std::vector<std::string> fens = {
     "1k1r4/pp1b1R2/3q2pp/4p3/2B5/4Q3/PPP2B2/2K5 b - -",
     "3r1k2/4npp1/1ppr3p/p6P/P2PPPP1/1NR5/5K2/2R5 w - -",

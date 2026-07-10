@@ -1,7 +1,5 @@
 #include "nnue.hpp"
-
-using namespace NNUE_UTILS;
-
+ 
 #if !defined(_MSC_VER)
     constexpr
 #endif
@@ -92,7 +90,7 @@ alignas(32) uint8_t ft_clamped_output[L1_INPUT_SIZE];
 alignas(32) int32_t l1_output[L1_OUTPUT_SIZE];
 alignas(32) int16_t l1_clamped_output[L1_OUTPUT_SIZE];
 
-alignas(32) int16_t nnz_lookup[256][9]; // [key][0..7: positions, 8: number of set bits]
+alignas(32) int16_t nnz_lookup[256][8];
 
 void load_model(){
     // feature transformer
@@ -185,7 +183,6 @@ void init(){
             nnz_lookup[i][j++] = lsb(bits);
             bits &= bits - 1;
         }
-        nnz_lookup[i][8] = j;
     }
 };
 
@@ -407,7 +404,7 @@ void run_L1_sparse(uint8_t* input, int32_t* output, int bucket){
 
             __m128i indexes = _mm_loadu_si128((__m128i*)nnz_lookup[group]);
             _mm_storeu_si128((__m128i*)(&nnz_indices[num_nnz_inputs]), _mm_add_epi16(offset, indexes));
-            num_nnz_inputs += nnz_lookup[group][8];
+            num_nnz_inputs += std::popcount(group);
             offset = _mm_add_epi16(offset, eight);
         }
     }
