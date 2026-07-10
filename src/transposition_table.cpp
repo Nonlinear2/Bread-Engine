@@ -90,15 +90,18 @@ TTData TranspositionTable::probe(bool& is_hit, TEntry*& new_entry, uint64_t zobr
 
     is_hit = false;
 
-    int worst_value = ENGINE_MAX_DEPTH; // 32 is max tt move number 
-
     Cluster* cluster = index(zobrist);
     for (TEntry& candidate: cluster->entries){
         if (candidate.zobrist_hash == (uint16_t)zobrist){
             new_entry = &candidate;
             is_hit = true;
-            break;
+            return TTData(new_entry, pv);;
         }
+    }
+
+    int worst_value = ENGINE_MAX_DEPTH; // 32 is max tt move number 
+
+    for (TEntry& candidate: cluster->entries){
         int candidate_value = candidate.depth - candidate.move_number() / 8;
         if (candidate_value < worst_value){
             worst_value = candidate_value;
@@ -107,10 +110,7 @@ TTData TranspositionTable::probe(bool& is_hit, TEntry*& new_entry, uint64_t zobr
     }
     assert(new_entry != nullptr);
 
-    if (is_hit)
-        return TTData(new_entry, pv);
-    else
-        return TTData();
+    return TTData();
 }
 
 void TranspositionTable::clear(){
