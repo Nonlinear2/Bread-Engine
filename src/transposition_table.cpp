@@ -99,7 +99,7 @@ TTData TranspositionTable::probe(bool& is_hit, TEntry*& new_entry, uint64_t zobr
             is_hit = true;
             break;
         }
-        int candidate_value = candidate.depth - candidate.move_number() / 6;
+        int candidate_value = candidate.depth - candidate.move_number() / 14;
         if (candidate_value < worst_value){
             worst_value = candidate_value;
             new_entry = &candidate;
