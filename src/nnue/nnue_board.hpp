@@ -36,14 +36,13 @@ class NnueBoard: public Board {
 
     void restore_state(Move move);
 
-    int evaluate();
+    int evaluate(bool trace = false);
 
     bool is_stalemate();
 
     std::pair<Features, Features> get_features();
     Features get_features(Color persp);
 
-    private:
     class AccumulatorsStack {
         public:
         AccumulatorsStack();
@@ -64,6 +63,8 @@ class NnueBoard: public Board {
     };
 
     AccumulatorsStack accumulators_stack;
+
+    private:
 
     // accessed by [bucket][stm][mirrored]
     std::array<std::array<std::array<std::pair<AllBitboards, Accumulator>, 2>, 2>, NUM_INPUT_BUCKETS> finny_table;
