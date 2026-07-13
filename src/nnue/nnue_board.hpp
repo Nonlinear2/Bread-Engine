@@ -9,6 +9,7 @@
 #include "nnue.hpp"
 #include "misc.hpp"
 #include "constants.hpp"
+#include "tune.hpp"
 
 using BothModifiedFeatures = std::array<ModifiedFeatures, 2>;
 
@@ -26,9 +27,6 @@ class NnueBoard: public Board {
     public:
 
     NnueBoard();
-    NnueBoard(std::string_view fen);
-    
-    ~NnueBoard();
 
     void synchronize();
 
@@ -38,14 +36,13 @@ class NnueBoard: public Board {
 
     void restore_state(Move move);
 
-    int evaluate();
+    int evaluate(bool trace = false);
 
     bool is_stalemate();
 
     std::pair<Features, Features> get_features();
     Features get_features(Color persp);
 
-    private:
     class AccumulatorsStack {
         public:
         AccumulatorsStack();
@@ -61,14 +58,16 @@ class NnueBoard: public Board {
         std::vector<Accumulators> stack = std::vector<Accumulators>(MAX_PLY + 1);
         std::vector<BothModifiedFeatures> queued_updates = std::vector<BothModifiedFeatures>(MAX_PLY + 1);
         int idx;
-        
+
         friend class NnueBoard;
     };
 
     AccumulatorsStack accumulators_stack;
 
+    private:
+
     // accessed by [bucket][stm][mirrored]
-    std::array<std::array<std::array<std::pair<AllBitboards, Accumulator>, 2>, 2>, INPUT_BUCKET_COUNT> finny_table;
+    std::array<std::array<std::array<std::pair<AllBitboards, Accumulator>, 2>, 2>, NUM_INPUT_BUCKETS> finny_table;
 
     void compute_top_update(Move move, Color persp);
     std::pair<Features,Features> get_modified_features(

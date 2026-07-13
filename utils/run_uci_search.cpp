@@ -21,17 +21,17 @@ int main(){
         if (!running)
             break;
 
-        auto tokens = UCIAgent::split_string(input);
+        auto tokens = split_string(input);
         if (!tokens.empty() && tokens[0] == "go") {
-            if (uci_engine.main_search_thread.joinable()) {
-                uci_engine.main_search_thread.join();
+            if (uci_engine.workers.main().thread.joinable()) {
+                uci_engine.workers.main().thread.join();
             }
-            correct_nodes.push_back(std::stoi(tokens[2]) == uci_engine.engine.nodes);
+            correct_nodes.push_back(std::stoi(tokens[2]) == uci_engine.nodes);
         }
     }
 
-    if (uci_engine.main_search_thread.joinable()) {
-        uci_engine.main_search_thread.join();
+    if (uci_engine.workers.main().thread.joinable()) {
+        uci_engine.workers.main().thread.join();
     }
 
     std::cout << "ok\n";

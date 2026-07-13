@@ -10,51 +10,71 @@
 #include "see.hpp"
 #include "tune.hpp"
 
-enum GenerationStage: int{
+enum GenerationStage: int {
     TT_MOVE,
-    GENERATE_MOVES,
-    GET_MOVES,
+    GENERATE_CAPTURES,
+    GOOD_CAPTURES,
+    GENERATE_QUIETS,
+    QUIETS,
+    BAD_CAPTURES,
+};
+
+
+enum GenType: int {
+    NORMAL,
+    QSEARCH,
 };
 
 constexpr GenerationStage& operator++(GenerationStage& g) {
     return g = static_cast<GenerationStage>(static_cast<int>(g) + 1);
 }
 
-template<movegen::MoveGenType MoveGenType>
+template<GenType MoveGenType>
 class SortedMoveGen {
     public:
-
-    static inline KillerMoves killer_moves = KillerMoves();
-    static inline FromToHistory history = FromToHistory();
-    static inline ContinuationHistory cont_history = ContinuationHistory();
 
     Piece prev_piece;
     Square prev_to;
     NnueBoard& pos;
 
-    SortedMoveGen(Movelist* to_search, Piece prev_piece, Square prev_to, NnueBoard& pos, int depth);
-    SortedMoveGen(Piece prev_piece, Square prev_to, NnueBoard& pos);
+    SortedMoveGen(Movelist* to_search, Piece prev_piece, Square prev_to, NnueBoard& pos, int depth,
+        KillerMoves& killers, FromToHistory& hist, ContinuationHistory& cont_hist, CaptureHistory& capt_hist);
+    SortedMoveGen(Piece prev_piece, Square prev_to, NnueBoard& pos,
+        KillerMoves& killers, FromToHistory& hist, ContinuationHistory& cont_hist, CaptureHistory& capt_hist);
+
     void set_tt_move(Move move);
     bool next(Move& move);
     bool empty();
     int index();
-    void update_history(Move best_move, int bonus);
+    void update_history(Move best_move, int depth);
+    void update_capture_history(Move best_move, int depth);
     void update_cont_history(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus);
     void set_score(Move& move);
-    void prepare_pos_data();
+    void prepare_capture_sort();
+    void prepare_quiet_sort();
+    void skip_quiets();
 
     Move tt_move = Move::NO_MOVE;
     private:
+
+    KillerMoves& killer_moves;
+    FromToHistory& history;
+    ContinuationHistory& cont_history;
+    CaptureHistory& capt_history;
+
+    bool skip_quiets_ = false;
     Movelist moves;
-    
+    Movelist bad_captures;
+
     Bitboard attacked_by_pawn;
-    std::vector<Bitboard> check_squares;
+    std::array<Bitboard, 6> check_squares;
     Movelist* to_search = NULL;
 
     int depth = DEPTH_UNSEARCHED;
     int move_idx = -1;
+    int bad_capture_idx = 0;
 
     GenerationStage stage = TT_MOVE;
-    Move pop_move(int move_idx);
-    Move pop_best_score();
+    Move pop_move(Movelist& ml, int idx);
+    Move pop_best_score(Movelist& ml);
 };

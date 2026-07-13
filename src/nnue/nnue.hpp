@@ -12,6 +12,7 @@
 #include "constants.hpp"
 #include "nnue_misc.hpp"
 
+using namespace NNUE_UTILS;
 using namespace chess;
 
 struct Features {
@@ -33,23 +34,37 @@ struct Features {
 };
 
 struct ModifiedFeatures {
-    int added = -1;
+    int added_1 = -1;
     int added_2 = -1;
-    int removed = -1;
-    int captured = -1;
+    int removed_1 = -1;
+    int removed_2 = -1;
+
+    enum {
+        NORMAL, CAPTURE, CASTLING
+    } type;
 
     ModifiedFeatures() = default;
 
+    ModifiedFeatures(int added, int removed):
+        added_1(added),
+        removed_1(removed) {
+            type = NORMAL;
+        };
+
     ModifiedFeatures(int added, int removed, int captured):
-        added(added),
-        removed(removed),
-        captured(captured) {};
+        added_1(added),
+        removed_1(removed),
+        removed_2(captured) {
+            type = CAPTURE;
+        };
 
     ModifiedFeatures(int added, int added_2, int removed, int removed_2):
-        added(added),
+        added_1(added),
         added_2(added_2),
-        removed(removed),
-        captured(removed_2) {};
+        removed_1(removed),
+        removed_2(removed_2) {
+            type = CASTLING;
+        };
 
     bool valid() const;
 };
@@ -97,10 +112,19 @@ Layer 1
 
 // 2*acc_size -> 1
 
-extern int16_t* l1_weights;
+extern int8_t* l1_weights;
 extern int32_t* l1_bias;
 
-int32_t run_L1(Accumulators& accumulators, Color stm, int bucket);
+void run_L1(int8_t* input, int32_t* output, int bucket);
+
+/******
+Layer 2
+*******/
+
+extern int16_t* l2_weights;
+extern int32_t* l2_bias;
+
+int32_t run_L2(int16_t* input, int bucket);
 
 void init();
 void cleanup();
@@ -114,6 +138,6 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc,
         const Features& added_features,
         const Features& removed_features);
 
-int run(Accumulators& accumulators, Color stm, int piece_count);
+int run(Accumulators& accumulators, Color stm, int piece_count, bool trace = false);
 
 }; // namespace NNUE

@@ -6,7 +6,6 @@
 
 using namespace chess;
 
-
 namespace SEE {
 
 bool evaluate(const Board& board, Move move, int threshold);

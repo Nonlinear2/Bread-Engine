@@ -3,7 +3,9 @@
 #include <iostream>
 
 int main(){
-    Engine engine = Engine();
+    TranspositionTable tt;
+    std::atomic<int64_t> nodes = 0;
+    Engine engine = Engine(true, tt, nodes);
 
     std::vector<std::string> fens = {
         "r2qkbnr/1pp2ppp/p1p5/4p3/4P1b1/5N1P/PPPP1PP1/RNBQ1RK1 b kq - 0 6",
@@ -19,11 +21,9 @@ int main(){
     // engine.transpositsion_table.info();
 
     for (int i = 0; i < fens.size(); i++){
-        NnueBoard cb;
-        cb.setFen(fens[i]);
-        cb.synchronize();
-
-        chess::Move best_move = engine.search(cb.getFen(), SearchLimit(LimitType::Depth, 15));
+        engine.pos.setFen(fens[i]);
+        chess::Move best_move = engine.iterative_deepening(SearchLimit(LimitType::Depth, 15));
+    
         // std::cout << "score: " << best_move.score() << std::endl;
 
         // std::cout << fens[i] << "\n";

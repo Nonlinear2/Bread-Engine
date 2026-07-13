@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <sstream>
 #include <fstream>
 #include <vector>
 #include "constants.hpp"
@@ -8,7 +9,7 @@
 
 using namespace chess;
 
-const std::vector<int> piece_value = {
+constexpr std::array<int, 7> piece_value = {
     150, // pawn
     440, // knight
     450, // bishop
@@ -20,10 +21,11 @@ const std::vector<int> piece_value = {
 
 struct Stack {
     Move excluded_move = Move::NO_MOVE;
-    Move current_move = Move::NO_MOVE;
-    bool current_move_capture = false;
+    Move curr_move = Move::NO_MOVE;
+    bool curr_move_capture = false;
     Piece moved_piece = Piece::NONE;
     int static_eval = NO_VALUE;
+    int reduction = 0;
 };
 
 class KillerMoves {
@@ -62,3 +64,5 @@ int to_tt(int value, int ply);
 int get_mate_in_moves(int value);
 
 bool is_number_string(const std::string& s);
+
+std::vector<std::string> split_string(std::string str);
