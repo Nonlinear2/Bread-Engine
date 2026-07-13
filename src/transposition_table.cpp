@@ -1,6 +1,6 @@
 #include "transposition_table.hpp"
 
-TranspositionTable::TranspositionTable(){
+TranspositionTable::TranspositionTable(): age(0) {
     allocateMB(256);
 };
 
@@ -79,6 +79,11 @@ void TranspositionTable::allocateMB(int new_size_mb){
     clusters = new Cluster[num_clusters];
 }
 
+void TranspositionTable::increase_age(){
+    age++;
+    age %= MAX_AGE;
+}
+
 Cluster* TranspositionTable::index(uint64_t hash){
     return &clusters[
         static_cast<std::uint64_t>((static_cast<unsigned __int128>(hash) * static_cast<unsigned __int128>(num_clusters)) >> 64)
@@ -99,7 +104,7 @@ TTData TranspositionTable::probe(bool& is_hit, TEntry*& new_entry, uint64_t zobr
             is_hit = true;
             break;
         }
-        int candidate_value = candidate.depth;
+        int candidate_value = candidate.depth - candidate.age();
         if (candidate_value < worst_value){
             worst_value = candidate_value;
             new_entry = &candidate;
@@ -114,6 +119,7 @@ TTData TranspositionTable::probe(bool& is_hit, TEntry*& new_entry, uint64_t zobr
 }
 
 void TranspositionTable::clear(){
+    age = 0;
     std::lock_guard<std::mutex> lock(clear_mutex);
     for (size_t i = 0; i < num_clusters; i++) {
         for (auto& entry: clusters[i].entries)
@@ -139,7 +145,7 @@ void TranspositionTable::load_from_stream(std::ifstream& ifs){
 }
 
 void TEntry::store(uint64_t zobrist, int value, int static_eval, int depth,
-                               Move move, TFlag flag, int move_number, bool ttpv){
+                               Move move, TFlag flag, int age, bool ttpv){
 
     assert(move != Move::NULL_MOVE);
 
@@ -150,7 +156,7 @@ void TEntry::store(uint64_t zobrist, int value, int static_eval, int depth,
     // - the old entry is more than 4 moves older than the recent entry
     // - the new depth is greater than the old depth
     // - the new depth is nonzero and an exact entry
-    if (move_number / 2 > this->move_number() + 2 ||
+    if (age != this->age() ||
         depth > this->depth - 1 - 2*ttpv || // this will be true if the old entry is empty
         (depth != DEPTH_QSEARCH && flag == TFlag::EXACT))
     {
@@ -162,6 +168,6 @@ void TEntry::store(uint64_t zobrist, int value, int static_eval, int depth,
         this->value = value;
         this->static_eval = static_eval;
         this->depth = depth;
-        this->move_num_tflag_ttpv = (static_cast<uint8_t>(move_number / 2) << 3) | (static_cast<uint8_t>(flag) << 1) | ttpv;
+        this->age_tflag_ttpv = (static_cast<uint8_t>(age) << 3) | (static_cast<uint8_t>(flag) << 1) | ttpv;
     };
 }

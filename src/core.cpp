@@ -205,6 +205,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     engine_color = pos.sideToMove();
 
     killer_moves.clear();
+    tt.increase_age();
 
     nodes = 0;
     tb_hits = 0;
@@ -769,7 +770,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     assert(is_valid(max_value));
 
     new_entry->store(zobrist_hash, to_tt(max_value, ply), uncorrected_static_eval, depth, best_move,
-        node_type, pos.fullMoveNumber(), transposition.ttpv);
+        node_type, tt.age, transposition.ttpv);
 
     return max_value;
 }
@@ -870,7 +871,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         if (stand_pat >= beta){
             if (!is_hit)
                 new_entry->store(zobrist_hash, to_tt(stand_pat, ply), uncorrected_static_eval,
-                    DEPTH_QSEARCH, Move::NO_MOVE, TFlag::LOWER_BOUND, pos.fullMoveNumber(), transposition.ttpv);
+                    DEPTH_QSEARCH, Move::NO_MOVE, TFlag::LOWER_BOUND, tt.age, transposition.ttpv);
             return stand_pat;
         }
 
@@ -955,7 +956,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         }
 
         new_entry->store(zobrist_hash, to_tt(stand_pat, ply), NO_VALUE, DEPTH_QSEARCH,
-            Move::NO_MOVE, TFlag::EXACT, pos.fullMoveNumber(), transposition.ttpv);
+            Move::NO_MOVE, TFlag::EXACT, tt.age, transposition.ttpv);
         return stand_pat;
     }
 
@@ -970,7 +971,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         new_entry->store(zobrist_hash, to_tt(max_value, ply),
             uncorrected_static_eval, DEPTH_QSEARCH, best_move,
             max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
-            pos.fullMoveNumber(), transposition.ttpv);
+            tt.age, transposition.ttpv);
 
     return max_value;
 }
