@@ -210,7 +210,7 @@ void compute_accumulator(Accumulator& new_acc, const Features active_features){
 
 void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const ModifiedFeatures& m_features){
     assert(m_features.valid());
-    constexpr int CHUNK_SIZE = NUM_AVX_REGISTERS * INT16_PER_REG;
+    constexpr int CHUNK_SIZE = 16 * INT16_PER_REG;
 
     switch (m_features.type)
     {
