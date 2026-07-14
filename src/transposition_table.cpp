@@ -106,7 +106,7 @@ TTData TranspositionTable::probe(bool& is_hit, TEntry*& new_entry, uint64_t zobr
         }
 
         int relative_age = (MAX_AGE + age - candidate.age()) % MAX_AGE;
-        int candidate_value = candidate.depth - relative_age;
+        int candidate_value = candidate.depth - 2*relative_age;
 
         if (candidate_value < worst_value){
             worst_value = candidate_value;
