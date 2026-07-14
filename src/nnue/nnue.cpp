@@ -221,7 +221,7 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
         auto* w_add = &ft_weights[m_features.added_1 * ACC_SIZE];
         auto* w_rem = &ft_weights[m_features.removed_1 * ACC_SIZE];
 
-        for (int i = 0; i < CHUNK_SIZE; i += INT16_PER_REG * 4){ // process 4 registers at once
+        for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG * 4){ // process 4 registers at once
             
             auto r1 = load_epi16(prev + i);
             auto r2 = load_epi16(prev + i + INT16_PER_REG);
