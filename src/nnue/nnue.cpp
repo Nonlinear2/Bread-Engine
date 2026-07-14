@@ -215,6 +215,7 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
     switch (m_features.type)
     {
     case ModifiedFeatures::NORMAL:
+    {
         auto* prev = &prev_acc[0];
         auto* out  = &new_acc[0];
         auto* w_add = &ft_weights[m_features.added_1 * ACC_SIZE];
@@ -243,6 +244,7 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
             store_epi16(out + i + INT16_PER_REG*3, r4);
         }
         break;
+    }
     case ModifiedFeatures::CAPTURE:
         for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
             auto* prev = &prev_acc[j];
