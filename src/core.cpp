@@ -1,50 +1,59 @@
 #include "core.hpp"
 
-UNACTIVE_TUNEABLE(r_1, int, 180, 0, 10000, 40, 0.002);
-UNACTIVE_TUNEABLE(r_2, int, 272, 0, 10000, 50, 0.002);
-UNACTIVE_TUNEABLE(rfp_1, int, 114, 0, 10000, 25, 0.002);
-UNACTIVE_TUNEABLE(rfp_2, int, 39, 0, 10000, 6, 0.002);
-UNACTIVE_TUNEABLE(rfp_3, int, 39, 0, 10000, 12, 0.002);
-UNACTIVE_TUNEABLE(rfp_4, int, 72, -100, 10000, 20, 0.002);
-UNACTIVE_TUNEABLE(rfp_5, int, 341, 0, 10000, 70, 0.002);
-UNACTIVE_TUNEABLE(nmp_1, int, 76, -50, 10000, 20, 0.002);
-UNACTIVE_TUNEABLE(nmp_2, int, 25, -300, 10000, 5, 0.002);
-UNACTIVE_TUNEABLE(sprob_1, int, 350, 0, 10000, 70, 0.002);
-UNACTIVE_TUNEABLE(lmp_1, int, 78, -100, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(see_1, int, 77, -100, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(r_1, int, 152, 0, 10000, 40, 0.002);
+UNACTIVE_TUNEABLE(r_2, int, 286, 0, 10000, 50, 0.002);
+UNACTIVE_TUNEABLE(rfp_1, int, 109, 0, 10000, 25, 0.002);
+UNACTIVE_TUNEABLE(rfp_2, int, 36, 0, 10000, 6, 0.002);
+UNACTIVE_TUNEABLE(rfp_3, int, 32, 0, 10000, 12, 0.002);
+UNACTIVE_TUNEABLE(rfp_4, int, 59, -100, 10000, 20, 0.002);
+UNACTIVE_TUNEABLE(rfp_5, int, 30, 0, 10000, 6, 0.002);
+UNACTIVE_TUNEABLE(rfp_6, int, 335, 0, 10000, 70, 0.002);
+UNACTIVE_TUNEABLE(nmp_1, int, 81, -50, 10000, 20, 0.002);
+UNACTIVE_TUNEABLE(nmp_2, int, 23, -300, 10000, 5, 0.002);
+UNACTIVE_TUNEABLE(nmp_3, int, 150, 0, 10000, 30, 0.002);
+UNACTIVE_TUNEABLE(sprob_1, int, 422, 0, 10000, 70, 0.002);
+UNACTIVE_TUNEABLE(lmp_1, int, 72, -100, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(see_1, int, 53, -100, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
 UNACTIVE_TUNEABLE(se_1, int, 8, -100, 100, 0.5, 0.002);
 UNACTIVE_TUNEABLE(se_2, int, 1, -100, 100, 0.5, 0.002);
 UNACTIVE_TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
-UNACTIVE_TUNEABLE(cont_1, int, 863, 0, 10000, 200, 0.002);
-UNACTIVE_TUNEABLE(cont_2, int, 97, 0, 1500, 20, 0.002);
-UNACTIVE_TUNEABLE(cont_3, int, 29, 0, 1500, 6, 0.002);
+UNACTIVE_TUNEABLE(cont_1, int, 999, 0, 10000, 200, 0.002);
+UNACTIVE_TUNEABLE(cont_2, int, 93, 0, 1500, 20, 0.002);
+UNACTIVE_TUNEABLE(cont_3, int, 32, 0, 1500, 6, 0.002);
 UNACTIVE_TUNEABLE(cont_4, int, 28, 0, 1500, 6, 0.002);
-UNACTIVE_TUNEABLE(cont_5, int, 298, 0, 3000, 100, 0.002);
-UNACTIVE_TUNEABLE(qs_fp_1, int, 2129, 0, 3000, 400, 0.002);
-UNACTIVE_TUNEABLE(qs_see_1, int, 312, 0, 1000, 50, 0.002);
-UNACTIVE_TUNEABLE(qs_p_1, int, 1246, 0, 5000, 200, 0.002);
-UNACTIVE_TUNEABLE(cthis_1, int, 8248, 0, 30000, 1500, 0.002);
-UNACTIVE_TUNEABLE(cthis_2, int, 629, 0, 3000, 100, 0.002);
+UNACTIVE_TUNEABLE(cont_5, int, 264, 0, 3000, 100, 0.002);
+UNACTIVE_TUNEABLE(qs_fp_1, int, 2212, 0, 3000, 400, 0.002);
+UNACTIVE_TUNEABLE(qs_see_1, int, 357, 0, 1000, 50, 0.002);
+UNACTIVE_TUNEABLE(qs_p_1, int, 1295, 0, 5000, 200, 0.002);
+UNACTIVE_TUNEABLE(cthis_1, int, 7633, 0, 30000, 1500, 0.002);
+UNACTIVE_TUNEABLE(cthis_2, int, 678, 0, 3000, 100, 0.002);
 UNACTIVE_TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
-UNACTIVE_TUNEABLE(asp_1, int, 77, 0, 5000, 20, 0.002);
-UNACTIVE_TUNEABLE(asp_2, int, 430, 0, 5000, 80, 0.002);
+UNACTIVE_TUNEABLE(asp_1, int, 61, 0, 5000, 20, 0.002);
+UNACTIVE_TUNEABLE(asp_2, int, 443, 0, 5000, 80, 0.002);
 UNACTIVE_TUNEABLE(cred_lmr_1, int, 0, -10000, 10000, 70, 0.002);
 UNACTIVE_TUNEABLE(red_lmr_1, int, 0, -10000, 10000, 70, 0.002);
 UNACTIVE_TUNEABLE(cred_lmr_2, int, 100, 0, 10000, 30, 0.002);
 UNACTIVE_TUNEABLE(red_lmr_2, int, 121, 0, 10000, 30, 0.002);
-UNACTIVE_TUNEABLE(red_1, int, 1002, 0, 10000, 250, 0.002);
-UNACTIVE_TUNEABLE(red_2, int, 1024, 0, 10000, 250, 0.002);
-UNACTIVE_TUNEABLE(red_3, int, 1742, 0, 10000, 300, 0.002);
-UNACTIVE_TUNEABLE(red_4, int, 815, 0, 10000, 150, 0.002);
-UNACTIVE_TUNEABLE(red_5, int, 1998, 0, 10000, 300, 0.002);
-UNACTIVE_TUNEABLE(red_6, int, 788, 0, 10000, 200, 0.002);
-UNACTIVE_TUNEABLE(red_7, int, 746, 0, 10000, 180, 0.002);
-UNACTIVE_TUNEABLE(red_th_1, int, 1600, 0, 10000, 320, 0.002);
-UNACTIVE_TUNEABLE(red_th_2, int, 2135, 0, 10000, 450, 0.002);
-UNACTIVE_TUNEABLE(corr_1, int, 268, 0, 10000, 50, 0.002);
-UNACTIVE_TUNEABLE(corr_2, int, 592, 0, 10000, 130, 0.002);
-UNACTIVE_TUNEABLE(de_1, int, 90, 0, 10000, 18, 0.002);
+UNACTIVE_TUNEABLE(red_1, int, 1023, 0, 10000, 250, 0.002);
+UNACTIVE_TUNEABLE(red_2, int, 1113, 0, 10000, 250, 0.002);
+UNACTIVE_TUNEABLE(red_3, int, 1755, 0, 10000, 300, 0.002);
+UNACTIVE_TUNEABLE(red_4, int, 808, 0, 10000, 150, 0.002);
+UNACTIVE_TUNEABLE(red_5, int, 2116, 0, 10000, 300, 0.002);
+UNACTIVE_TUNEABLE(red_6, int, 674, 0, 10000, 200, 0.002);
+UNACTIVE_TUNEABLE(red_7, int, 702, 0, 10000, 180, 0.002);
+UNACTIVE_TUNEABLE(ext_1, int, 25, 0, 10000, 10, 0.002);
+UNACTIVE_TUNEABLE(ext_2, int, 80, 0, 10000, 16, 0.002);
+UNACTIVE_TUNEABLE(ext_3, int, 16, 0, 10000, 3, 0.002);
+UNACTIVE_TUNEABLE(red_th_1, int, 1960, 0, 10000, 320, 0.002);
+UNACTIVE_TUNEABLE(red_th_2, int, 2077, 0, 10000, 450, 0.002);
+UNACTIVE_TUNEABLE(corr_1, int, 310, 0, 10000, 50, 0.002);
+UNACTIVE_TUNEABLE(corr_2, int, 230, 0, 10000, 40, 0.002);
+UNACTIVE_TUNEABLE(corr_3, int, 194, 0, 10000, 40, 0.002);
+UNACTIVE_TUNEABLE(corr_4, int, 192, 0, 10000, 40, 0.002);
+UNACTIVE_TUNEABLE(corr_5, int, 188, 0, 10000, 40, 0.002);
+UNACTIVE_TUNEABLE(corr_6, int, 554, 0, 10000, 130, 0.002);
+UNACTIVE_TUNEABLE(de_1, int, 66, 0, 10000, 18, 0.002);
 
 int nnue_evaluate(NnueBoard& pos){
     return pos.evaluate();
@@ -58,9 +67,21 @@ int get_think_time(float time_left, int num_moves_out_of_book, int num_moves_unt
     return static_cast<int>(target + 0.9F*increment);
 }
 
-Engine::Engine(bool is_main_thread, TranspositionTable& tt): is_main_thread(is_main_thread), tt(tt) {
+Engine::Engine(bool display_uci, TranspositionTable& tt, std::atomic<int64_t>& nodes)
+    : display_uci(display_uci),
+      tt(tt),
+      nodes(nodes) {
     fill_lmr_table();
-};
+}
+
+int Engine::get_corrhist(Color color){
+    return (corr_1 * pawn_corrhist.get(color, pos.get_pawn_key()) 
+           + corr_2 * minor_corrhist.get(color, pos.get_minor_key())
+           + corr_3 * major_corrhist.get(color, pos.get_major_key())
+           + corr_4 * nonpawn_corrhist[color].get(color, pos.get_nonpawn_key(color))
+           + corr_5 * nonpawn_corrhist[color].get(~color, pos.get_nonpawn_key(~color))
+        ) / 32768;
+}
 
 bool Engine::update_interrupt_flag(){
     SearchLimit limit_ = limit.load();
@@ -99,6 +120,10 @@ void Engine::clear_state(){
     capt_history.clear();
     history.clear();
     pawn_corrhist.clear();
+    minor_corrhist.clear();
+    major_corrhist.clear();
+    nonpawn_corrhist[0].clear();
+    nonpawn_corrhist[1].clear();
     cont_history.clear();
     killer_moves.clear();
 }
@@ -114,6 +139,10 @@ void Engine::save_state(std::string file){
     capt_history.save_to_stream(ofs);
     history.save_to_stream(ofs);
     pawn_corrhist.save_to_stream(ofs);
+    minor_corrhist.save_to_stream(ofs);
+    major_corrhist.save_to_stream(ofs);
+    nonpawn_corrhist[0].save_to_stream(ofs);
+    nonpawn_corrhist[1].save_to_stream(ofs);
     cont_history.save_to_stream(ofs);
     killer_moves.save_to_stream(ofs);
 
@@ -131,6 +160,10 @@ void Engine::load_state(std::string file){
     capt_history.load_from_stream(ifs);
     history.load_from_stream(ifs);
     pawn_corrhist.load_from_stream(ifs);
+    minor_corrhist.load_from_stream(ifs);
+    major_corrhist.load_from_stream(ifs);
+    nonpawn_corrhist[0].load_from_stream(ifs);
+    nonpawn_corrhist[1].load_from_stream(ifs);
     cont_history.load_from_stream(ifs);
     killer_moves.load_from_stream(ifs);
 
@@ -205,7 +238,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
     bool root_tb_hit = tablebase_loaded && TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
     if (root_tb_hit && !(is_nonsense && best_move.score() == TB_VALUE && !Nonsense::only_knight_bishop(pos))){
-        if (is_main_thread){
+        if (display_uci){
             update_run_time();
             std::cout << "info depth 0 seldepth 0";
             std::cout << " score cp " << best_move.score();
@@ -289,7 +322,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
             asp_beta = std::clamp(asp_beta, -INFINITE_VALUE, INFINITE_VALUE);
         }
 
-        if (is_main_thread){
+        if (display_uci){
             std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
             pv = pv_pmove.first;
             if (pv_pmove.second.size() > 0)
@@ -338,7 +371,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         }
     }
 
-    if (is_main_thread){
+    if (display_uci){
         std::cout << "bestmove " << uci::moveToUci(best_move);
         if (ponder_move.size() > 0)
             std::cout << " ponder " << ponder_move;
@@ -364,7 +397,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     if (interrupt_flag || ((nodes & 2047) == 0 && update_interrupt_flag()))
         return NO_VALUE;
-    nodes++;
+    nodes.fetch_add(1, std::memory_order_relaxed);
 
     if (ply > seldepth)
         seldepth = ply;
@@ -472,8 +505,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         uncorrected_static_eval = evaluate(pos);
 
     static_eval = std::clamp(
-        uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 32768,
-        -BEST_VALUE, BEST_VALUE);
+        uncorrected_static_eval + get_corrhist(pos.sideToMove()), -BEST_VALUE, BEST_VALUE
+    );
 
     ss->static_eval = static_eval;
 
@@ -485,9 +518,21 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval)
         && ss->static_eval > (ss - 2)->static_eval;
 
+    bool opponent_worsening = is_valid(ss->static_eval) && is_valid((ss - 1)->static_eval)
+        && ss->static_eval > -(ss - 1)->static_eval;
+
     bool tt_capture = transposition.move != Move::NO_MOVE && pos.isCapture(transposition.move);
 
     bool in_check = pos.inCheck();
+
+    // increase depth if previous reduction was too large
+    if ((ss - 1)->reduction >= 3 && !opponent_worsening)
+        depth++;
+
+    if ((ss - 1)->reduction >= 2 && depth >= 2 
+        && is_valid(ss->static_eval) && is_valid((ss - 1)->static_eval)
+        && ss->static_eval > 150 - (ss - 1)->static_eval)
+        depth--;
 
     // pruning
     if (!root_node && !pv && !in_check){
@@ -500,8 +545,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (depth < 9 - 3*is_hit
             && eval - depth * (rfp_1 - rfp_2*cutnode) 
                     - rfp_3
-                    + rfp_4 * improving 
-                    - rfp_5 * std::abs(uncorrected_static_eval - static_eval) / 1024 >= beta)
+                    + rfp_4 * improving
+                    + rfp_5 * opponent_worsening 
+                    - rfp_6 * std::abs(uncorrected_static_eval - static_eval) / 1024 >= beta)
             return eval;
 
         // null move pruning
@@ -509,7 +555,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (cutnode && (ss - 1)->curr_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
             && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta)){
 
-            int R = 3 + (eval >= beta) + depth / 4 + tt_capture;
+            int R = 4 + (eval >= beta) + (eval >= beta + nmp_3) + depth / 4;
+
             ss->moved_piece = Piece::NONE;
             ss->curr_move = Move::NULL_MOVE;
             ss->curr_move_capture = false;
@@ -608,18 +655,25 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         reduction += red_3 * (move_gen.index() > 1 && !is_capture);
         reduction += red_4 * (tt_capture && !is_capture);
         reduction += red_5 * (move_gen.index() > lmr_1);
-        reduction += red_6 * (cutnode && depth > 7);
+        reduction += red_6 * (cutnode && depth > 5);
         reduction += red_7 * (depth > 3 && !improving);
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
         if (move_gen.index() > 0 && depth >= 2){
+
+            ss->reduction = new_depth - reduced_depth;
             value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1, true);
+            ss->reduction = 0;
 
             if (value > alpha && reduced_depth < new_depth){
+                new_depth += value > max_value + ext_1 + ext_2 * new_depth / 16;
+                new_depth -= value < max_value + ext_3 * new_depth / 16;
+
                 value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
                 if (!is_capture)
                     move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), cont_1);
+
             } else if (value <= alpha && !is_capture)
                 move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
 
@@ -627,9 +681,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             value = -negamax<false>(new_depth - (reduction > red_th_1), -alpha - 1, -alpha, ss + 1, !cutnode);
         }
 
-        if (pv && (move_gen.index() == 0 || value > alpha)){
+        if (pv && (move_gen.index() == 0 || value > alpha))
             value = -negamax<true>(new_depth - (reduction > red_th_2), -beta, -alpha, ss + 1, false);
-        }
 
         pos.restore_state(move);
 
@@ -703,9 +756,16 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
 
     if (!in_check && !(best_move != Move::NO_MOVE && pos.isCapture(best_move))
-        && (max_value > ss->static_eval) == (best_move != Move::NO_MOVE)){
-        int bonus = std::clamp((max_value - static_eval) * depth/7, -corr_2, corr_2);
-        pawn_corrhist.apply_bonus(pos.sideToMove(), pos.get_pawn_key(), bonus);
+        && (max_value > ss->static_eval) == (best_move != Move::NO_MOVE))
+    {
+        Color stm = pos.sideToMove();
+        int bonus = std::clamp((max_value - static_eval) * depth/7, -corr_6, corr_6);
+
+        pawn_corrhist.apply_bonus(pawn_corrhist.get(stm, pos.get_pawn_key()), bonus);
+        minor_corrhist.apply_bonus(minor_corrhist.get(stm, pos.get_minor_key()), bonus);
+        major_corrhist.apply_bonus(major_corrhist.get(stm, pos.get_major_key()), bonus);
+        nonpawn_corrhist[stm].apply_bonus(nonpawn_corrhist[stm].get(stm, pos.get_nonpawn_key(stm)), bonus);
+        nonpawn_corrhist[stm].apply_bonus(nonpawn_corrhist[stm].get(~stm, pos.get_nonpawn_key(~stm)), bonus);
     }
 
     // early return without storing the eval in the TT
@@ -744,7 +804,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
 
     if (interrupt_flag || ((nodes & 2047) == 0 && update_interrupt_flag()))
         return NO_VALUE;
-    nodes++;
+    nodes.fetch_add(1, std::memory_order_relaxed);
 
     if (ply > seldepth)
         seldepth = ply;
@@ -809,8 +869,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             uncorrected_static_eval = evaluate(pos);
 
         static_eval = std::clamp(
-            uncorrected_static_eval + corr_1 * pawn_corrhist.get(pos.sideToMove(), pos.get_pawn_key()) / 32768,
-            -BEST_VALUE, BEST_VALUE);
+            uncorrected_static_eval + get_corrhist(pos.sideToMove()), -BEST_VALUE, BEST_VALUE
+        );
 
         stand_pat = static_eval;
         assert(is_regular_eval(stand_pat, false));

@@ -296,14 +296,14 @@ inline int SortedMoveGen<MoveGenType>::index(){ return move_idx; }
 template<>
 void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth){
     history.apply_bonus(
-        pos.sideToMove(), best_move.from(), 
-        best_move.to(), std::min(depth*depth*his_1 + his_2, his_3)
+        history.get(pos.sideToMove(), best_move.from(), best_move.to()),
+        std::min(depth*depth*his_1 + his_2, his_3)
     );
 
     for (int i = moves.num_left; i < moves.size(); i++){
         if (moves[i] != best_move && !pos.isCapture(moves[i]))
             history.apply_bonus(
-                pos.sideToMove(), moves[i].from(), moves[i].to(), 
+                history.get(pos.sideToMove(), moves[i].from(), moves[i].to()), 
                 -std::min(depth*depth*his_4 + his_5, his_6)
             );
     }
@@ -312,14 +312,15 @@ void SortedMoveGen<GenType::NORMAL>::update_history(Move best_move, int depth){
 template<>
 void SortedMoveGen<GenType::NORMAL>::update_capture_history(Move best_move, int depth){
     capt_history.apply_bonus(
-        pos.at(best_move.from()), best_move.to(), 
-        pos.at(best_move.to()), std::min(depth*depth*chis_1 + chis_2, chis_3));
+        capt_history.get(pos.at(best_move.from()), best_move.to(), pos.at(best_move.to())),
+        std::min(depth*depth*chis_1 + chis_2, chis_3)
+    );
 
     for (int i = moves.num_left; i < moves.size(); i++){
         if (moves[i] != best_move && pos.isCapture(moves[i]))
             capt_history.apply_bonus(
-                pos.at(moves[i].from()), moves[i].to(),
-                pos.at(moves[i].to()), -std::min(depth*depth*chis_4 + chis_5, chis_6)
+                capt_history.get(pos.at(moves[i].from()), moves[i].to(), pos.at(moves[i].to())),
+                -std::min(depth*depth*chis_4 + chis_5, chis_6)
             );
     }
 }
@@ -328,7 +329,7 @@ template<>
 void SortedMoveGen<GenType::NORMAL>::update_cont_history(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus){
     if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ)
         && piece != int(Piece::NONE) && to != int(Square::underlying::NO_SQ))
-        cont_history.apply_bonus(prev_piece, prev_to, piece, to, bonus);
+        cont_history.apply_bonus(cont_history.get(prev_piece, prev_to, piece, to), bonus);
 }
 
 template class SortedMoveGen<GenType::QSEARCH>;

@@ -1,11 +1,12 @@
 #include "uci.hpp"
 
-Worker::Worker(bool is_main_thread, TranspositionTable& tt): engine(is_main_thread, tt) {};
+Worker::Worker(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes)
+    : engine(is_main_thread, tt, nodes) {};
 
-WorkerPool::WorkerPool(int size, TranspositionTable& tt){
+WorkerPool::WorkerPool(int size, TranspositionTable& tt, std::atomic<int64_t>& nodes){
     for (int i = 0; i < size; i++) {
         bool is_main = (i == 0);
-        workers.emplace_back(is_main, tt);
+        workers.emplace_back(is_main, tt, nodes);
     }
 };
 
@@ -61,7 +62,7 @@ Worker& WorkerPool::main(){
     return workers[0];
 }
 
-UCIAgent::UCIAgent(): workers(1, tt) {};
+UCIAgent::UCIAgent(): workers(1, tt, nodes) {};
 
 bool UCIAgent::process_uci_command(std::string command){
     std::vector<std::string> parsed_command = split_string(command);
@@ -155,7 +156,8 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
             std::cout << "info string hash size must be a power of 2" << std::endl;
         }
     } else if (option_name == "Threads"){
-        workers = WorkerPool(std::stoi(option_value), tt);
+        workers.interrupt_and_join_threads();
+        workers = WorkerPool(std::stoi(option_value), tt, nodes);
         std::cout << "info string number of threads set to " << workers.size() << std::endl;
     } else if (option_name == "Nonsense"){
         workers.set_is_nonsense(option_value == "true");
@@ -198,13 +200,19 @@ void UCIAgent::process_bench(std::vector<std::string> command){
         Benchmark::benchmark_engine(workers.main().engine, BENCHMARK_DEPTH);
     else if (command[1] == "nn")
         Benchmark::benchmark_nn();
+    else if (command[1] == "long")
+        Benchmark::benchmark_engine(workers.main().engine, LONG_BENCHMARK_DEPTH);
+    else if (command[1] == "activation")
+        Benchmark::benchmark_ft_activation();
+    else
+        Benchmark::benchmark_engine(workers.main().engine, std::stoi(command[1]));
 }
 
 void UCIAgent::process_eval(std::vector<std::string> command){
     pos.synchronize();
     int score = pos.sideToMove() == Color::BLACK ? -1 : 1;
-    score *= pos.evaluate();
-    std::cout << "static evaluation: " << (score >= 0 ? "+" : "") << score << std::endl;
+    score *= pos.evaluate(true);
+    std::cout << "Final static evaluation: " << (score >= 0 ? "+" : "") << score << std::endl;
 }
 
 void UCIAgent::process_go(std::vector<std::string> command){
