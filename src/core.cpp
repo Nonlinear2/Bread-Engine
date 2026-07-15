@@ -107,7 +107,7 @@ void Engine::fill_lmr_table(){
             continue;
         }
 
-        lmr_table[idx] = 12 * std::log(idx);
+        lmr_table[idx] = 12 * std::log(idx) - 40;
     }
 }
 
