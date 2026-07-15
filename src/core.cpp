@@ -107,12 +107,12 @@ void Engine::fill_lmr_table(){
             continue;
         }
 
-        lmr_table[idx] = 12 * std::log(idx) - 40;
+        lmr_table[idx] = 12 * std::log(idx);
     }
 }
 
 int Engine::get_base_reduction(int depth, int move_count){
-    return lmr_table[depth] * lmr_table[move_count];
+    return lmr_table[depth] * lmr_table[move_count] - 200;
 }
 
 void Engine::clear_state(){
