@@ -154,19 +154,20 @@ void TEntry::store(uint64_t zobrist, int value, int static_eval, int depth,
 
     // no need to store the side to move, as it is in the zobrist hash.
 
+    // add move if the old entry didn't hold the same position or if the new move is better
+    if (this->zobrist_hash != (uint16_t)zobrist || move != Move::NO_MOVE)
+        this->move = move.move();
+
     // we replace the old entry if:
     // - the old entry is empty
     // - the old entry is more than 4 moves older than the recent entry
     // - the new depth is greater than the old depth
     // - the new depth is nonzero and an exact entry
-    if (age != this->age() ||
-        depth > this->depth - 1 - 2*ttpv || // this will be true if the old entry is empty
-        (depth != DEPTH_QSEARCH && flag == TFlag::EXACT))
+    if (flag == TFlag::EXACT 
+        || this->zobrist_hash != (uint16_t)zobrist
+        || age != this->age()
+        || depth > this->depth - 1 - 2*ttpv) // this will be true if the old entry is empty
     {
-        // add move if the old entry didn't hold the same position or if the new move is better
-        if (this->zobrist_hash != (uint16_t)zobrist || move != Move::NO_MOVE)
-            this->move = move.move();
-
         this->zobrist_hash = (uint16_t)zobrist;
         this->value = value;
         this->static_eval = static_eval;
