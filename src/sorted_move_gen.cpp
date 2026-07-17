@@ -204,7 +204,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                 if (move == tt_move)    
                     continue;
 
-                if (SEE::evaluate(pos, move, -bst))
+                if (SEE::evaluate(pos, move, -move.score() / 6 + 10))
                     return true;
                 else
                     bad_captures.add(move);
