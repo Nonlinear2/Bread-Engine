@@ -888,7 +888,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         Piece moved_piece = pos.at(move.from());
 
         if (!in_check && move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-            if (!is_hit && capture_gen.index() > 10)
+            if (!is_hit && capture_gen.index() > 7)
                 continue;
 
             if (stand_pat 
