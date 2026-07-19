@@ -71,7 +71,7 @@ class SortedMoveGen {
     Movelist* to_search = NULL;
 
     int depth = DEPTH_UNSEARCHED;
-    int move_idx = -1;
+    int move_idx = 0;
     int bad_capture_idx = 0;
 
     GenerationStage stage = TT_MOVE;
