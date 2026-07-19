@@ -766,8 +766,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     assert(is_valid(max_value));
 
-    tt.store(zobrist_hash, to_tt(max_value, ply), uncorrected_static_eval, depth, best_move,
-        node_type, pos.fullMoveNumber(), transposition.ttpv);
+    if (excluded_move == Move::NO_MOVE)
+        tt.store(zobrist_hash, to_tt(max_value, ply), uncorrected_static_eval, depth, best_move,
+            node_type, pos.fullMoveNumber(), transposition.ttpv);
 
     return max_value;
 }
