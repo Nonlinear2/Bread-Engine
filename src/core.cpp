@@ -398,7 +398,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     // transpositions will be checked inside of qsearch
     // if isRepetition(1), qsearch will not consider the danger of draw as it searches captures.
     if (depth <= 0)
-        return qsearch<pv>(alpha, beta, 0, ss + 1);
+        return qsearch<pv>(alpha, beta, 0, ss);
 
     int static_eval, uncorrected_static_eval, eval;
 
@@ -519,7 +519,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         // razoring
         if (eval + r_1*depth*depth + r_2 < alpha)
-            return qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval.
+            return qsearch<false>(alpha, beta, 0, ss); // we update static eval to the better qsearch eval.
 
         // reverse futility pruning
         if (depth < 9 - 3*is_hit
