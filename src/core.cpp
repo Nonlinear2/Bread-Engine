@@ -690,9 +690,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         if (beta <= alpha){
             if (is_capture)
                 move_gen.update_capture_history(move, depth);
-            else
+            else {
                 move_gen.update_history(move, depth);
-            killer_moves.add_move(depth, move);
+                killer_moves.add_move(depth, move);
+            }
             break;
         }
     }
