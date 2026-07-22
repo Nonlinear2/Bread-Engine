@@ -400,7 +400,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (depth <= 0)
         return qsearch<pv>(alpha, beta, 0, ss);
 
-    int static_eval, uncorrected_static_eval, eval;
+    int uncorrected_static_eval, eval;
 
     // tablebase probe
     if (!root_node && tablebase_loaded && TB::probe_wdl(pos, eval)){
@@ -484,14 +484,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (uncorrected_static_eval == NO_VALUE)
         uncorrected_static_eval = evaluate(pos);
 
-    static_eval = std::clamp(
+    ss->static_eval = std::clamp(
         uncorrected_static_eval + get_corrhist(pos.sideToMove()), -BEST_VALUE, BEST_VALUE
     );
 
-    ss->static_eval = static_eval;
-
     if (transposition.value == NO_VALUE)
-        eval = static_eval;
+        eval = ss->static_eval;
     else
         eval = transposition.value;
 
@@ -528,7 +526,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     - rfp_3
                     + rfp_4 * improving
                     + rfp_5 * opponent_worsening 
-                    - rfp_6 * std::abs(uncorrected_static_eval - static_eval) / 1024 >= beta)
+                    - rfp_6 * std::abs(uncorrected_static_eval - ss->static_eval) / 1024 >= beta)
             return eval;
 
         // null move pruning
@@ -581,7 +579,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
             // SEE pruning
             if (!in_check && move_gen.index() > 6 + depth / 2
-                && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
+                && depth < 5 && !SEE::evaluate(pos, move, alpha - ss->static_eval - see_1 - see_2*depth))
                 continue;
 
             // continuation history pruning
@@ -741,7 +739,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         && (max_value > ss->static_eval) == (best_move != Move::NO_MOVE))
     {
         Color stm = pos.sideToMove();
-        int bonus = std::clamp((max_value - static_eval) * depth/7, -corr_6, corr_6);
+        int bonus = std::clamp((max_value - ss->static_eval) * depth/7, -corr_6, corr_6);
 
         pawn_corrhist.apply_bonus(pawn_corrhist.get(stm, pos.get_pawn_key()), bonus);
         minor_corrhist.apply_bonus(minor_corrhist.get(stm, pos.get_minor_key()), bonus);
@@ -792,7 +790,6 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         seldepth = ply;
 
     int stand_pat = NO_VALUE;
-    int static_eval = NO_VALUE;
     int uncorrected_static_eval = NO_VALUE;
 
     // tablebase probe
@@ -850,11 +847,11 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         if (!is_valid(uncorrected_static_eval))
             uncorrected_static_eval = evaluate(pos);
 
-        static_eval = std::clamp(
+        ss->static_eval = std::clamp(
             uncorrected_static_eval + get_corrhist(pos.sideToMove()), -BEST_VALUE, BEST_VALUE
         );
 
-        stand_pat = static_eval;
+        stand_pat = ss->static_eval;
         assert(is_regular_eval(stand_pat, false));
 
         if (is_valid(transposition.value) && !is_decisive(transposition.value)
