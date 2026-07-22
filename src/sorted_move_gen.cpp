@@ -171,11 +171,11 @@ void SortedMoveGen<MoveGenType>::set_tt_move(Move move){
 
 template<GenType MoveGenType>
 bool SortedMoveGen<MoveGenType>::next(Move& move){
-    move_idx++;
     if (to_search != NULL){
         if (move_idx == to_search->size())
             return false;
         move = (*to_search)[move_idx];
+        move_idx++;
         return true;
     }
 
@@ -185,6 +185,7 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
 
             if (tt_move != Move::NO_MOVE && pos.legal(tt_move)){
                 move = tt_move;
+                move_idx++;
                 return true;
             }
             [[fallthrough]];
@@ -204,9 +205,10 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                 if (move == tt_move)    
                     continue;
 
-                if (SEE::evaluate(pos, move, -bst))
+                if (SEE::evaluate(pos, move, -bst)){
+                    move_idx++;
                     return true;
-                else
+                } else
                     bad_captures.add(move);
             }
             ++stage;
@@ -233,10 +235,12 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                         break;
 
                     move = pop_best_score(moves);
-                    if (move != tt_move)    
+                    if (move != tt_move){
+                        move_idx++;
                         return true;
+                    }
                 }
-                ++stage;
+                stage++;
             }
             [[fallthrough]];
 
@@ -244,8 +248,10 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
              while (bad_capture_idx < bad_captures.size()){
                 move = bad_captures[bad_capture_idx];
                 bad_capture_idx++;
-                if (move != tt_move)    
+                if (move != tt_move){
+                    move_idx++;
                     return true;
+                }
             }
             break;
     }

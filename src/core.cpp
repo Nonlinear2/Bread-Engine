@@ -17,7 +17,7 @@ UNACTIVE_TUNEABLE(see_1, int, 53, -100, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
 UNACTIVE_TUNEABLE(se_1, int, 8, -100, 100, 0.5, 0.002);
 UNACTIVE_TUNEABLE(se_2, int, 1, -100, 100, 0.5, 0.002);
-UNACTIVE_TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
+UNACTIVE_TUNEABLE(lmr_1, int, 10, 0, 23, 0.5, 0.002);
 UNACTIVE_TUNEABLE(cont_1, int, 999, 0, 10000, 200, 0.002);
 UNACTIVE_TUNEABLE(cont_2, int, 93, 0, 1500, 20, 0.002);
 UNACTIVE_TUNEABLE(cont_3, int, 32, 0, 1500, 6, 0.002);
@@ -28,7 +28,7 @@ UNACTIVE_TUNEABLE(qs_see_1, int, 357, 0, 1000, 50, 0.002);
 UNACTIVE_TUNEABLE(qs_p_1, int, 1295, 0, 5000, 200, 0.002);
 UNACTIVE_TUNEABLE(cthis_1, int, 7633, 0, 30000, 1500, 0.002);
 UNACTIVE_TUNEABLE(cthis_2, int, 678, 0, 3000, 100, 0.002);
-UNACTIVE_TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
+UNACTIVE_TUNEABLE(qs_p_idx, int, 8, 0, 20, 0.5, 0.002);
 UNACTIVE_TUNEABLE(asp_1, int, 61, 0, 5000, 20, 0.002);
 UNACTIVE_TUNEABLE(asp_2, int, 443, 0, 5000, 80, 0.002);
 UNACTIVE_TUNEABLE(red_1, int, 1023, 0, 10000, 250, 0.002);
@@ -523,6 +523,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         // reverse futility pruning
         if (depth < 9 - 3*is_hit
+            && !is_decisive(eval)
             && eval - depth * (rfp_1 - rfp_2*cutnode) 
                     - rfp_3
                     + rfp_4 * improving
@@ -568,18 +569,18 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
 
-            if (move_gen.index() >= 6 + 2*depth*depth + 3*improving){
+            if (move_gen.index() >= 7 + 2*depth*depth + 3*improving){
                 move_gen.skip_quiets();
                 continue;
             }
 
             // lmp
-            if (!in_check && !is_capture && move_gen.index() > 2 + depth + improving 
+            if (!in_check && !is_capture && move_gen.index() > 3 + depth + improving
                 && !is_hit && eval - lmp_1 * !improving < alpha)
                 continue;
 
             // SEE pruning
-            if (!in_check && move_gen.index() > 5 + depth / 2
+            if (!in_check && move_gen.index() > 6 + depth / 2
                 && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
                 continue;
 
@@ -633,7 +634,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         reduction -= red_1 * (gives_check && !root_node);
         reduction -= red_2 * (transposition.ttpv);
-        reduction += red_3 * (move_gen.index() > 1 && !is_capture);
+        reduction += red_3 * (move_gen.index() > 2 && !is_capture);
         reduction += red_4 * (tt_capture && !is_capture);
         reduction += red_5 * (move_gen.index() > lmr_1);
         reduction += red_6 * (cutnode && depth > 5);
@@ -641,7 +642,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
-        if (move_gen.index() > 0 && depth >= 2){
+        if (move_gen.index() > 1 && depth >= 2){
 
             ss->reduction = new_depth - reduced_depth;
             value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1, true);
@@ -658,11 +659,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             } else if (value <= alpha && !is_capture)
                 move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
 
-        } else if (!pv || move_gen.index() > 0){
+        } else if (!pv || move_gen.index() > 1){
             value = -negamax<false>(new_depth - (reduction > red_th_1), -alpha - 1, -alpha, ss + 1, !cutnode);
         }
 
-        if (pv && (move_gen.index() == 0 || value > alpha))
+        if (pv && (move_gen.index() == 1 || value > alpha))
             value = -negamax<true>(new_depth - (reduction > red_th_2), -beta, -alpha, ss + 1, false);
 
         pos.restore_state(move);
@@ -671,7 +672,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             return NO_VALUE;
 
         if (root_node)
-            root_moves[move_gen.index()].setScore(value);
+            root_moves[move_gen.index() - 1].setScore(value);
 
         if (value > max_value){
             assert(is_valid(value));
@@ -680,9 +681,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 best_move = move;
             if (root_node){
                 // ! This preserves the order of the array after the current move.
-                // ! Rotate invalidates root_moves[move_gen.index()].
-                std::rotate(root_moves.begin(), root_moves.begin() + move_gen.index(),
-                    root_moves.begin() + move_gen.index() + 1);
+                // ! Rotate invalidates root_moves[move_gen.index() - 1].
+                std::rotate(root_moves.begin(), root_moves.begin() + move_gen.index() - 1,
+                    root_moves.begin() + move_gen.index());
             }
         }
 
@@ -846,7 +847,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (!in_check || depth <= -QSEARCH_HARD_DEPTH_LIMIT){
         uncorrected_static_eval = transposition.static_eval;
     
-        if (!is_valid(static_eval))
+        if (!is_valid(uncorrected_static_eval))
             uncorrected_static_eval = evaluate(pos);
 
         static_eval = std::clamp(
@@ -888,7 +889,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         Piece moved_piece = pos.at(move.from());
 
         if (!in_check && move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-            if (!is_hit && capture_gen.index() > 10)
+            if (!is_hit && capture_gen.index() > 11)
                 continue;
 
             if (stand_pat 
@@ -929,9 +930,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     }
 
     assert(!pos.isInsufficientMaterial());
-    if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() 
-        && (in_check || pos.is_stalemate())){
-
+    if (capture_gen.index() == 0 && (in_check || pos.is_stalemate())){
         if (in_check)
             stand_pat = pos_to_root_mate_value(-MATE_VALUE, ply);
         else
