@@ -78,9 +78,9 @@ class Engine {
     bool update_interrupt_flag();
     std::pair<std::string, std::string> get_pv_pmove();
 
-    template<bool pv>
-    int negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode);
+    template <bool pv>
+    int negamax(int depth, int alpha, int beta, Stack *ss, bool cutnode);
 
-    template<bool pv>
-    int qsearch(int alpha, int beta, int depth, Stack* ss);
+    template <bool pv>
+    int qsearch(int alpha, int beta, int depth, Stack *ss);
 };

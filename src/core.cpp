@@ -560,7 +560,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         return probcut_beta;
 
     while (move_gen.next(move)){
-        bool is_capture = pos.isCapture(move);
+        const bool is_capture = pos.isCapture(move);
+        const Piece captured_piece = pos.at(move.to());
+        const Color stm = pos.sideToMove();
 
         if (move == excluded_move)
             continue;
@@ -637,6 +639,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         reduction += red_5 * (move_gen.index() > lmr_1);
         reduction += red_6 * (cutnode && depth > 5);
         reduction += red_7 * (depth > 3 && !improving);
+
+        reduction -= is_capture
+            ? 100 * capt_history.get(ss->moved_piece, move.to(), captured_piece) / 8192
+            : 100 * history.get(stm, move.from(), move.to()) / 8192;
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
@@ -813,7 +819,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     uint64_t zobrist_hash = pos.hash();
 
     SortedMoveGen capture_gen = SortedMoveGen<GenType::QSEARCH>(
-        (ss - 1)->moved_piece, (ss - 1)->curr_move.to().index(), pos, killer_moves, history, cont_history, capt_history
+        (ss - 1)->moved_piece, (ss - 1)->curr_move.to(), pos, killer_moves, history, cont_history, capt_history
     );
 
     bool is_hit;
