@@ -641,8 +641,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         reduction += red_7 * (depth > 3 && !improving);
 
         reduction -= is_capture
-            ? 100 * capt_history.get(ss->moved_piece, move.to(), captured_piece) / 8192
-            : 100 * history.get(stm, move.from(), move.to()) / 8192;
+            ? 150 * capt_history.get(ss->moved_piece, move.to(), captured_piece) / 8192
+            : 150 * history.get(stm, move.from(), move.to()) / 8192;
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
