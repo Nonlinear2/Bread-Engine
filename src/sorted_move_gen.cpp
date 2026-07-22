@@ -212,35 +212,36 @@ bool SortedMoveGen<MoveGenType>::next(Move& move){
                     bad_captures.add(move);
             }
             ++stage;
-            if (!pos.inCheck() && MoveGenType == GenType::QSEARCH)
-                stage = BAD_CAPTURES;
-
-            if (skip_quiets_)
+            if (skip_quiets_ || (!pos.inCheck() && MoveGenType == GenType::QSEARCH))
                 stage = BAD_CAPTURES;
 
             [[fallthrough]];
 
         case GENERATE_QUIETS:
-            movegen::legalmoves<movegen::MoveGenType::QUIET>(moves, pos);
-
-            prepare_quiet_sort();
-            for (int i = 0; i < moves.size(); i++)
-                set_score(moves[i]);
-            ++stage;
+            if (stage == GENERATE_QUIETS){
+                movegen::legalmoves<movegen::MoveGenType::QUIET>(moves, pos);
+    
+                prepare_quiet_sort();
+                for (int i = 0; i < moves.size(); i++)
+                    set_score(moves[i]);
+                ++stage;
+            }
             [[fallthrough]];
 
         case QUIETS:
-            while (moves.num_left != 0){
-                if (skip_quiets_)
-                    break;
+            if (stage == QUIETS){
+                while (moves.num_left != 0){
+                    if (skip_quiets_)
+                        break;
 
-                move = pop_best_score(moves);
-                if (move != tt_move){
-                    move_idx++;
-                    return true;
+                    move = pop_best_score(moves);
+                    if (move != tt_move){
+                        move_idx++;
+                        return true;
+                    }
                 }
+                ++stage;
             }
-            ++stage;
             [[fallthrough]];
 
         case BAD_CAPTURES:
