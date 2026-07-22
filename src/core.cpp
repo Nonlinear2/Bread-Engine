@@ -488,12 +488,18 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         uncorrected_static_eval + get_corrhist(pos.sideToMove()), -BEST_VALUE, BEST_VALUE
     );
 
-    ss->static_eval = static_eval;
+    assert(is_regular_eval(static_eval, false));
 
-    if (transposition.value == NO_VALUE)
-        eval = static_eval;
-    else
-        eval = transposition.value;
+    ss->static_eval = static_eval;
+    eval = static_eval;
+
+    if (is_valid(transposition.value) && !is_decisive(transposition.value)
+        && (
+            transposition.flag == TFlag::EXACT 
+            || (transposition.flag == TFlag::LOWER_BOUND && transposition.value >= eval)
+            || (transposition.flag == TFlag::UPPER_BOUND && transposition.value <= eval)
+            ))
+            eval = transposition.value;
 
     bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval)
         && ss->static_eval > (ss - 2)->static_eval;
@@ -847,7 +853,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (!in_check || depth <= -QSEARCH_HARD_DEPTH_LIMIT){
         uncorrected_static_eval = transposition.static_eval;
     
-        if (!is_valid(uncorrected_static_eval))
+        if (uncorrected_static_eval == NO_VALUE)
             uncorrected_static_eval = evaluate(pos);
 
         static_eval = std::clamp(
