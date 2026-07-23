@@ -513,6 +513,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         && ss->static_eval > opp_1 - (ss - 1)->static_eval)
         depth--;
 
+    depth = std::min(depth, ENGINE_MAX_DEPTH);
+
     // pruning
     if (!root_node && !pv && !in_check){
 
