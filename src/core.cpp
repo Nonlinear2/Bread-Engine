@@ -1,5 +1,6 @@
 #include "core.hpp"
 
+UNACTIVE_TUNEABLE(opp_1, int, 150, 0, 10000, 30, 0.002);
 UNACTIVE_TUNEABLE(r_1, int, 152, 0, 10000, 40, 0.002);
 UNACTIVE_TUNEABLE(r_2, int, 286, 0, 10000, 50, 0.002);
 UNACTIVE_TUNEABLE(rfp_1, int, 109, 0, 10000, 25, 0.002);
@@ -509,7 +510,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     if ((ss - 1)->reduction >= 2 && depth >= 2 
         && is_valid(ss->static_eval) && is_valid((ss - 1)->static_eval)
-        && ss->static_eval > 150 - (ss - 1)->static_eval)
+        && ss->static_eval > opp_1 - (ss - 1)->static_eval)
         depth--;
 
     // pruning
