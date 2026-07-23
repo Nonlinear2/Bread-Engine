@@ -577,7 +577,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
             // lmp
             if (!in_check && !is_capture && move_gen.index() > 3 + depth + improving
-                && !is_hit && eval - lmp_1 * !improving < alpha)
+                && eval - lmp_1 * !improving < alpha)
                 continue;
 
             // SEE pruning
