@@ -597,8 +597,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 && prev_to != int(Square::underlying::NO_SQ)){
                 Piece moved_piece = pos.at(move.from());
                 int cont_hist_score = cont_history.get(prev_piece, prev_to, moved_piece, move.to());
-                if (prev_piece2 != int(Piece::NONE) && prev_to2 != int(Square::underlying::NO_SQ))
-                    cont_hist_score += cont_history2.get(prev_piece2, prev_to2, moved_piece, move.to());
                 if (cont_hist_score < -cthis_1 - cthis_2*depth)
                     continue;
             }
