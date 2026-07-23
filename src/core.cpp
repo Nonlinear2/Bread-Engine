@@ -563,7 +563,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         return probcut_beta;
 
     while (move_gen.next(move)){
-        bool is_capture = pos.isCapture(move);
+        const bool is_capture = pos.isCapture(move);
+        const Piece captured_piece = pos.at(move.to());
 
         if (move == excluded_move)
             continue;
@@ -585,6 +586,15 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 && depth < 5 && !SEE::evaluate(pos, move, alpha - ss->static_eval - see_1 - see_2*depth))
                 continue;
 
+            // SEE pruning
+            if (!in_check && is_capture && depth < 6 && 
+                ss->static_eval 
+                    + 300 
+                    + 70 * depth 
+                    + 100 * capt_history.get(pos.at(move.from()), move.to(), captured_piece) / 8192 
+                < alpha)
+                continue;
+            
             // continuation history pruning
             if (!is_capture && !in_check
                 && prev_piece != int(Piece::NONE)
