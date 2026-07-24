@@ -13,11 +13,13 @@ UNACTIVE_TUNEABLE(nmp_1, int, 81, -50, 10000, 20, 0.002);
 UNACTIVE_TUNEABLE(nmp_2, int, 23, -300, 10000, 5, 0.002);
 UNACTIVE_TUNEABLE(nmp_3, int, 150, 0, 10000, 30, 0.002);
 UNACTIVE_TUNEABLE(sprob_1, int, 422, 0, 10000, 70, 0.002);
-UNACTIVE_TUNEABLE(lmp_1, int, 72, -100, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(see_1, int, 53, -100, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(lmp_1, int, 72, 0, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(lmp_2, int, 200, 0, 1000, 40, 0.002);
+UNACTIVE_TUNEABLE(lmp_3, int, 85, 0, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(see_1, int, 53, 0, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
-UNACTIVE_TUNEABLE(se_1, int, 8, -100, 100, 0.5, 0.002);
-UNACTIVE_TUNEABLE(se_2, int, 1, -100, 100, 0.5, 0.002);
+UNACTIVE_TUNEABLE(se_1, int, 8, 0, 100, 0.5, 0.002);
+UNACTIVE_TUNEABLE(se_2, int, 1, 0, 100, 0.5, 0.002);
 UNACTIVE_TUNEABLE(lmr_1, int, 10, 0, 23, 0.5, 0.002);
 UNACTIVE_TUNEABLE(cont_1, int, 999, 0, 10000, 200, 0.002);
 UNACTIVE_TUNEABLE(cont_2, int, 93, 0, 1500, 20, 0.002);
@@ -580,7 +582,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 && !is_hit && eval - lmp_1 * !improving < alpha)
                 continue;
 
-            if (!in_check && move_gen.index() > 3 && depth <= 8 && ss->static_eval + 200 + 85 * depth < alpha)
+            if (!in_check && move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_2 + lmp_3 * depth < alpha)
                 continue;
 
             // SEE pruning
