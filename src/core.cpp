@@ -580,7 +580,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             if (in_check){
                 // no pruning
             } else if (is_capture){
-                if (depth <= 6 && ss->static_eval + 100 + piece_value[captured_piece.type()] + 75 * depth < alpha)
+                if (depth <= 6 && ss->static_eval + lmp_2 + piece_value[captured_piece.type()] + lmp_3 * depth < alpha)
                     continue;
 
                 // SEE pruning
