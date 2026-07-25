@@ -68,7 +68,8 @@ class Engine {
     KillerMoves killer_moves = KillerMoves();
     FromToHistory history = FromToHistory();
     ContinuationHistory cont_history = ContinuationHistory();
-    PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 
+    ContinuationHistory cont_history2 = ContinuationHistory();
+    PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory();
     MinorCorrectionHistory minor_corrhist = MinorCorrectionHistory();
     MajorCorrectionHistory major_corrhist = MajorCorrectionHistory();
     std::array<NonPawnCorrectionHistory, 2> nonpawn_corrhist = {}; 

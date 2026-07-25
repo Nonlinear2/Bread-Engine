@@ -108,6 +108,7 @@ void Engine::clear_state(){
     nonpawn_corrhist[0].clear();
     nonpawn_corrhist[1].clear();
     cont_history.clear();
+    cont_history2.clear();
     killer_moves.clear();
 }
 
@@ -127,6 +128,7 @@ void Engine::save_state(std::string file){
     nonpawn_corrhist[0].save_to_stream(ofs);
     nonpawn_corrhist[1].save_to_stream(ofs);
     cont_history.save_to_stream(ofs);
+    cont_history2.save_to_stream(ofs);
     killer_moves.save_to_stream(ofs);
 
     ofs.close();
@@ -148,6 +150,7 @@ void Engine::load_state(std::string file){
     nonpawn_corrhist[0].load_from_stream(ifs);
     nonpawn_corrhist[1].load_from_stream(ifs);
     cont_history.load_from_stream(ifs);
+    cont_history2.load_from_stream(ifs);
     killer_moves.load_from_stream(ifs);
 
     ifs.close();
@@ -429,13 +432,16 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     Piece prev_piece = (ss - 1)->moved_piece;
     Square prev_to = ((ss - 1)->curr_move == Move::NULL_MOVE || (ss - 1)->curr_move == Move::NO_MOVE)
                      ? Square::NO_SQ : (ss - 1)->curr_move.to();
+    Piece prev_piece2 = (ss - 2)->moved_piece;
+    Square prev_to2 = ((ss - 2)->curr_move == Move::NULL_MOVE || (ss - 2)->curr_move == Move::NO_MOVE)
+                      ? Square::NO_SQ : (ss - 2)->curr_move.to();
 
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
 
     SortedMoveGen move_gen = SortedMoveGen<GenType::NORMAL>(
-        root_node ? &root_moves : NULL, prev_piece, prev_to, pos, depth,
-        killer_moves, history, cont_history, capt_history
+        root_node ? &root_moves : NULL, prev_piece, prev_to, prev_piece2, prev_to2, pos, depth,
+        killer_moves, history, cont_history, cont_history2, capt_history
     );
 
     if (root_node && root_moves.empty()){
@@ -669,11 +675,15 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 new_depth -= value < max_value + ext_3 * new_depth / 16;
 
                 value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
-                if (!is_capture)
+                if (!is_capture){
                     move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), cont_1);
+                    move_gen.update_cont_history2(prev_piece2, prev_to2, ss->moved_piece, move.to(), cont_1);
+                }
 
-            } else if (value <= alpha && !is_capture)
+            } else if (value <= alpha && !is_capture){
                 move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
+                move_gen.update_cont_history2(prev_piece2, prev_to2, ss->moved_piece, move.to(), -cont_2);
+            }
 
         } else if (!pv || move_gen.index() > 1){
             value = -negamax<false>(new_depth - (reduction > red_th_1), -alpha - 1, -alpha, ss + 1, !cutnode);
