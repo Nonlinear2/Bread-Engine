@@ -9,7 +9,8 @@ UNACTIVE_TUNEABLE(c_prm, int, 189, 0, 1000, 40, 0.002);
 UNACTIVE_TUNEABLE(q_prm, int, 145, 0, 1000, 30, 0.002);
 UNACTIVE_TUNEABLE(q_kil, int, 136, 0, 1000, 25, 0.002);
 UNACTIVE_TUNEABLE(q_his, int, 147, 0, 1000, 30, 0.002);
-UNACTIVE_TUNEABLE(q_cthis, int, 144, 0, 1000, 30, 0.002);
+UNACTIVE_TUNEABLE(q_cthis, int, 100, 0, 1000, 30, 0.002);
+UNACTIVE_TUNEABLE(q_cthis2, int, 70, 0, 1000, 30, 0.002);
 UNACTIVE_TUNEABLE(bst, int, 213, 0, 1500, 40, 0.002);
 UNACTIVE_TUNEABLE(his_1, int, 34, 0, 300, 5, 0.002);
 UNACTIVE_TUNEABLE(his_2, int, 33, 0, 300, 5, 0.002);
@@ -27,17 +28,22 @@ UNACTIVE_TUNEABLE(cphis, int, 209, 0, 5000, 41, 0.002);
 
 template<>
 SortedMoveGen<GenType::NORMAL>::SortedMoveGen(
-    Movelist* to_search, Piece prev_piece, Square prev_to, NnueBoard& pos, int depth,
-    KillerMoves& killers, FromToHistory& hist, ContinuationHistory& cont_hist, CaptureHistory& capt_hist
+    Movelist* to_search, Piece prev_piece, Square prev_to,
+    Piece prev_piece2, Square prev_to2, NnueBoard& pos, int depth,
+    KillerMoves& killers, FromToHistory& hist,
+    ContinuationHistory& cont_hist, ContinuationHistory& cont_hist2, CaptureHistory& capt_hist
     ):
     to_search(to_search),
     prev_piece(prev_piece),
     prev_to(prev_to),
+    prev_piece2(prev_piece2),
+    prev_to2(prev_to2),
     pos(pos),
     depth(depth),
     killer_moves(killers),
     history(hist),
     cont_history(cont_hist),
+    cont_history2(cont_hist2),
     capt_history(capt_hist)
     {};
 
@@ -52,6 +58,7 @@ SortedMoveGen<GenType::QSEARCH>::SortedMoveGen(
     killer_moves(killers),
     history(hist),
     cont_history(cont_hist),
+    cont_history2(cont_hist),
     capt_history(capt_hist)
     {};
 
@@ -146,6 +153,9 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
 
         if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
             score += q_cthis * cont_history.get(prev_piece, prev_to, piece, to.index()) / 8192;
+
+        if (prev_piece2 != int(Piece::NONE) && prev_to2 != int(Square::underlying::NO_SQ))
+            score += q_cthis2 * cont_history2.get(prev_piece2, prev_to2, piece, to.index()) / 8192;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -337,6 +347,13 @@ void SortedMoveGen<GenType::NORMAL>::update_cont_history(Piece prev_piece, Squar
     if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ)
         && piece != int(Piece::NONE) && to != int(Square::underlying::NO_SQ))
         cont_history.apply_bonus(cont_history.get(prev_piece, prev_to, piece, to), bonus);
+}
+
+template<>
+void SortedMoveGen<GenType::NORMAL>::update_cont_history2(Piece prev_piece2, Square prev_to2, Piece piece, Square to, int bonus){
+    if (prev_piece2 != int(Piece::NONE) && prev_to2 != int(Square::underlying::NO_SQ)
+        && piece != int(Piece::NONE) && to != int(Square::underlying::NO_SQ))
+        cont_history2.apply_bonus(cont_history2.get(prev_piece2, prev_to2, piece, to), bonus);
 }
 
 template class SortedMoveGen<GenType::QSEARCH>;
