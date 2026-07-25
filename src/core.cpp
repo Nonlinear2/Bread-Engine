@@ -584,7 +584,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             }
 
             if (in_check){
-                if (move_gen.index() > 3 && depth <= 5 && ss->static_eval + 2*lmp_2 + 2*lmp_3 * depth < alpha)
+                if (depth <= 4 && ss->static_eval + 2*lmp_2 + 2*lmp_3 * depth < alpha)
                     continue;
             } else if (is_capture){
                 if (move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_2 + lmp_3 * depth < alpha)
