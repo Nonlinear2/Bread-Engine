@@ -215,36 +215,36 @@ void update_accumulator(Accumulator& prev_acc, Accumulator& new_acc, const Modif
     switch (m_features.type)
     {
     case ModifiedFeatures::NORMAL:
-        for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
-            auto* prev = &prev_acc[j];
-            auto* out  = &new_acc[j];
-            auto* w_add = &ft_weights[m_features.added_1 * ACC_SIZE + j];
-            auto* w_rem = &ft_weights[m_features.removed_1 * ACC_SIZE + j];
+    {
+        auto* prev = &prev_acc[0];
+        auto* out  = &new_acc[0];
+        auto* w_add = &ft_weights[m_features.added_1 * ACC_SIZE];
+        auto* w_rem = &ft_weights[m_features.removed_1 * ACC_SIZE];
 
-            for (int i = 0; i < CHUNK_SIZE; i += INT16_PER_REG * 4){ // process 4 registers at once
-                
-                auto r1 = load_epi16(prev + i);
-                auto r2 = load_epi16(prev + i + INT16_PER_REG);
-                auto r3 = load_epi16(prev + i + INT16_PER_REG*2);
-                auto r4 = load_epi16(prev + i + INT16_PER_REG*3);
+        for (int i = 0; i < ACC_SIZE; i += INT16_PER_REG * 4){ // process 4 registers at once
+            
+            auto r1 = load_epi16(prev + i);
+            auto r2 = load_epi16(prev + i + INT16_PER_REG);
+            auto r3 = load_epi16(prev + i + INT16_PER_REG*2);
+            auto r4 = load_epi16(prev + i + INT16_PER_REG*3);
 
-                r1 = add_epi16(r1, load_epi16(w_add + i));
-                r2 = add_epi16(r2, load_epi16(w_add + i + INT16_PER_REG));
-                r3 = add_epi16(r3, load_epi16(w_add + i + INT16_PER_REG*2));
-                r4 = add_epi16(r4, load_epi16(w_add + i + INT16_PER_REG*3));
+            r1 = add_epi16(r1, load_epi16(w_add + i));
+            r2 = add_epi16(r2, load_epi16(w_add + i + INT16_PER_REG));
+            r3 = add_epi16(r3, load_epi16(w_add + i + INT16_PER_REG*2));
+            r4 = add_epi16(r4, load_epi16(w_add + i + INT16_PER_REG*3));
 
-                r1 = sub_epi16(r1, load_epi16(w_rem + i));
-                r2 = sub_epi16(r2, load_epi16(w_rem + i + INT16_PER_REG));
-                r3 = sub_epi16(r3, load_epi16(w_rem + i + INT16_PER_REG*2));
-                r4 = sub_epi16(r4, load_epi16(w_rem + i + INT16_PER_REG*3));
+            r1 = sub_epi16(r1, load_epi16(w_rem + i));
+            r2 = sub_epi16(r2, load_epi16(w_rem + i + INT16_PER_REG));
+            r3 = sub_epi16(r3, load_epi16(w_rem + i + INT16_PER_REG*2));
+            r4 = sub_epi16(r4, load_epi16(w_rem + i + INT16_PER_REG*3));
 
-                store_epi16(out + i, r1);
-                store_epi16(out + i + INT16_PER_REG, r2);
-                store_epi16(out + i + INT16_PER_REG*2, r3);
-                store_epi16(out + i + INT16_PER_REG*3, r4);
-            }
+            store_epi16(out + i, r1);
+            store_epi16(out + i + INT16_PER_REG, r2);
+            store_epi16(out + i + INT16_PER_REG*2, r3);
+            store_epi16(out + i + INT16_PER_REG*3, r4);
         }
         break;
+    }
     case ModifiedFeatures::CAPTURE:
         for (int j = 0; j < ACC_SIZE; j += CHUNK_SIZE){
             auto* prev = &prev_acc[j];

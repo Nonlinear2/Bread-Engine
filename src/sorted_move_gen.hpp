@@ -35,10 +35,14 @@ class SortedMoveGen {
 
     Piece prev_piece;
     Square prev_to;
+    Piece prev_piece2 = Piece::NONE;
+    Square prev_to2 = Square::NO_SQ;
     NnueBoard& pos;
 
-    SortedMoveGen(Movelist* to_search, Piece prev_piece, Square prev_to, NnueBoard& pos, int depth,
-        KillerMoves& killers, FromToHistory& hist, ContinuationHistory& cont_hist, CaptureHistory& capt_hist);
+    SortedMoveGen(Movelist* to_search, Piece prev_piece, Square prev_to,
+        Piece prev_piece2, Square prev_to2, NnueBoard& pos, int depth,
+        KillerMoves& killers, FromToHistory& hist,
+        ContinuationHistory& cont_hist, ContinuationHistory& cont_hist2, CaptureHistory& capt_hist);
     SortedMoveGen(Piece prev_piece, Square prev_to, NnueBoard& pos,
         KillerMoves& killers, FromToHistory& hist, ContinuationHistory& cont_hist, CaptureHistory& capt_hist);
 
@@ -49,6 +53,7 @@ class SortedMoveGen {
     void update_history(Move best_move, int depth);
     void update_capture_history(Move best_move, int depth);
     void update_cont_history(Piece prev_piece, Square prev_to, Piece piece, Square to, int bonus);
+    void update_cont_history2(Piece prev_piece2, Square prev_to2, Piece piece, Square to, int bonus);
     void set_score(Move& move);
     void prepare_capture_sort();
     void prepare_quiet_sort();
@@ -60,6 +65,7 @@ class SortedMoveGen {
     KillerMoves& killer_moves;
     FromToHistory& history;
     ContinuationHistory& cont_history;
+    ContinuationHistory& cont_history2;
     CaptureHistory& capt_history;
 
     bool skip_quiets_ = false;
@@ -71,7 +77,7 @@ class SortedMoveGen {
     Movelist* to_search = NULL;
 
     int depth = DEPTH_UNSEARCHED;
-    int move_idx = -1;
+    int move_idx = 0;
     int bad_capture_idx = 0;
 
     GenerationStage stage = TT_MOVE;
