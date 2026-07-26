@@ -584,9 +584,15 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             }
 
             if (in_check){
-                // no pruning
+                // continuation history pruning
+                if (depth < 4
+                    && prev_piece != int(Piece::NONE)
+                    && prev_to != int(Square::underlying::NO_SQ)
+                    && cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -9000 - cthis_2*depth)
+                    continue;
+
             } else if (is_capture){
-                if (move_gen.index() > 3 && depth <= 8 && eval + lmp_2 + lmp_3 * depth < alpha)
+                if (move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_2 + lmp_3 * depth < alpha)
                     continue;
 
                 // SEE pruning
