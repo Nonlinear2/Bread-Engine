@@ -583,25 +583,36 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 continue;
             }
 
-            // lmp
-            if (!in_check && !is_capture && move_gen.index() > 3 + depth + improving
-                && !is_hit && eval - lmp_1 * !improving < alpha)
-                continue;
+            if (in_check){
+                // no pruning
+            } else if (is_capture){
+                if (move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_2 + lmp_3 * depth < alpha)
+                    continue;
 
-            if (!in_check && move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_2 + lmp_3 * depth < alpha)
-                continue;
+                // SEE pruning
+                if (move_gen.index() > 6 + depth / 2
+                    && depth < 5 && !SEE::evaluate(pos, move, - see_1 - see_2*depth))
+                    continue;
+            } else {
+                if (move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_2 + lmp_3 * depth < alpha)
+                    continue;
 
-            // SEE pruning
-            if (!in_check && move_gen.index() > 6 + depth / 2
-                && depth < 5 && !SEE::evaluate(pos, move, alpha - ss->static_eval - see_1 - see_2*depth))
-                continue;
+                // lmp
+                if (move_gen.index() > 3 + depth + improving
+                    && !is_hit && eval - lmp_1 * !improving < alpha)
+                    continue;
 
-            // continuation history pruning
-            if (!is_capture && !in_check
-                && prev_piece != int(Piece::NONE)
-                && prev_to != int(Square::underlying::NO_SQ)
-                && cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
-                continue;
+                // continuation history pruning
+                if (prev_piece != int(Piece::NONE)
+                    && prev_to != int(Square::underlying::NO_SQ)
+                    && cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
+                    continue;
+                
+                // SEE pruning
+                if (move_gen.index() > 6 + depth / 2 &&
+                    depth < 5 && !SEE::evaluate(pos, move, alpha - ss->static_eval - see_1 - see_2*depth))
+                    continue;
+            }
         }
 
         int new_depth = depth-1;
@@ -900,8 +911,8 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     Square previous_to_square = ((ss - 1)->curr_move).to();
 
     while (capture_gen.next(move)){
-        Piece captured_piece = pos.at(move.to());
         Piece moved_piece = pos.at(move.from());
+        Piece captured_piece = pos.at(move.to());
 
         if (!in_check && move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
             if (!is_hit && capture_gen.index() > 11)
