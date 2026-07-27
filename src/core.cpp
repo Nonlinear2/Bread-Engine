@@ -16,16 +16,22 @@ UNACTIVE_TUNEABLE(sprob_1, int, 422, 0, 10000, 70, 0.002);
 UNACTIVE_TUNEABLE(lmp_1, int, 72, 0, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(lmp_2, int, 200, 0, 1000, 40, 0.002);
 UNACTIVE_TUNEABLE(lmp_3, int, 85, 0, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(lmp_4, int, 200, 0, 1000, 40, 0.002);
+UNACTIVE_TUNEABLE(lmp_5, int, 85, 0, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(see_1, int, 53, 0, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
+UNACTIVE_TUNEABLE(see_3, int, 53, 0, 1000, 20, 0.002);
+UNACTIVE_TUNEABLE(see_4, int, 11, 0, 100, 0.5, 0.002);
 UNACTIVE_TUNEABLE(se_1, int, 8, 0, 100, 0.5, 0.002);
 UNACTIVE_TUNEABLE(se_2, int, 1, 0, 100, 0.5, 0.002);
 UNACTIVE_TUNEABLE(lmr_1, int, 10, 0, 23, 0.5, 0.002);
 UNACTIVE_TUNEABLE(cont_1, int, 999, 0, 10000, 200, 0.002);
-UNACTIVE_TUNEABLE(cont_2, int, 93, 0, 1500, 20, 0.002);
-UNACTIVE_TUNEABLE(cont_3, int, 32, 0, 1500, 6, 0.002);
-UNACTIVE_TUNEABLE(cont_4, int, 28, 0, 1500, 6, 0.002);
-UNACTIVE_TUNEABLE(cont_5, int, 264, 0, 3000, 100, 0.002);
+UNACTIVE_TUNEABLE(cont_2, int, 999, 0, 10000, 200, 0.002);
+UNACTIVE_TUNEABLE(cont_3, int, 93, 0, 1500, 20, 0.002);
+UNACTIVE_TUNEABLE(cont_4, int, 93, 0, 1500, 20, 0.002);
+UNACTIVE_TUNEABLE(cont_5, int, 32, 0, 1500, 6, 0.002);
+UNACTIVE_TUNEABLE(cont_6, int, 28, 0, 1500, 6, 0.002);
+UNACTIVE_TUNEABLE(cont_7, int, 264, 0, 3000, 100, 0.002);
 UNACTIVE_TUNEABLE(qs_fp_1, int, 2212, 0, 3000, 400, 0.002);
 UNACTIVE_TUNEABLE(qs_see_1, int, 357, 0, 1000, 50, 0.002);
 UNACTIVE_TUNEABLE(qs_p_1, int, 1295, 0, 5000, 200, 0.002);
@@ -591,10 +597,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
                 // SEE pruning
                 if (move_gen.index() > 6 + depth / 2
-                    && depth < 5 && !SEE::evaluate(pos, move, - see_1 - see_2*depth))
+                    && depth < 5 && !SEE::evaluate(pos, move, -see_1 - see_2*depth))
                     continue;
             } else {
-                if (move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_2 + lmp_3 * depth < alpha)
+                if (move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_4 + lmp_5 * depth < alpha)
                     continue;
 
                 // lmp
@@ -610,7 +616,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 
                 // SEE pruning
                 if (move_gen.index() > 6 + depth / 2 &&
-                    depth < 5 && !SEE::evaluate(pos, move, alpha - ss->static_eval - see_1 - see_2*depth))
+                    depth < 5 && !SEE::evaluate(pos, move, alpha - ss->static_eval - see_3 - see_4*depth))
                     continue;
             }
         }
@@ -678,12 +684,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
                 if (!is_capture){
                     move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), cont_1);
-                    move_gen.update_cont_history2(prev_piece2, prev_to2, ss->moved_piece, move.to(), cont_1);
+                    move_gen.update_cont_history2(prev_piece2, prev_to2, ss->moved_piece, move.to(), cont_2);
                 }
 
             } else if (value <= alpha && !is_capture){
-                move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
-                move_gen.update_cont_history2(prev_piece2, prev_to2, ss->moved_piece, move.to(), -cont_2);
+                move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_3);
+                move_gen.update_cont_history2(prev_piece2, prev_to2, ss->moved_piece, move.to(), -cont_4);
             }
 
         } else if (!pv || move_gen.index() > 1){
@@ -760,7 +766,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     if (max_value <= initial_alpha && !(ss - 1)->curr_move_capture){
         move_gen.update_cont_history(
-            (ss - 2)->moved_piece, ((ss - 2)->curr_move).to(), prev_piece, prev_to, std::min(depth*cont_3 + cont_4, cont_5));
+            (ss - 2)->moved_piece, ((ss - 2)->curr_move).to(), prev_piece, prev_to, std::min(depth*cont_5 + cont_6, cont_7));
     }
 
 
