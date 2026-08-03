@@ -600,7 +600,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     && ss->static_eval 
                         + lmp_2
                         + lmp_3 * depth
-                        + 150 * capt_history.get(from_piece, move.to(), to_piece) / 8192 < alpha)
+                        + 200 * capt_history.get(from_piece, move.to(), to_piece) / 8192 < alpha)
                     continue;
 
                 // SEE pruning
