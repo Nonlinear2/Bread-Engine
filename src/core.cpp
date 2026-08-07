@@ -1,58 +1,64 @@
 #include "core.hpp"
 
-UNACTIVE_TUNEABLE(opp_1, int, 150, 0, 10000, 30, 0.002);
-UNACTIVE_TUNEABLE(r_1, int, 152, 0, 10000, 40, 0.002);
-UNACTIVE_TUNEABLE(r_2, int, 286, 0, 10000, 50, 0.002);
-UNACTIVE_TUNEABLE(rfp_1, int, 109, 0, 10000, 25, 0.002);
-UNACTIVE_TUNEABLE(rfp_2, int, 36, 0, 10000, 6, 0.002);
-UNACTIVE_TUNEABLE(rfp_3, int, 32, 0, 10000, 12, 0.002);
-UNACTIVE_TUNEABLE(rfp_4, int, 59, -100, 10000, 20, 0.002);
-UNACTIVE_TUNEABLE(rfp_5, int, 30, 0, 10000, 6, 0.002);
-UNACTIVE_TUNEABLE(rfp_6, int, 335, 0, 10000, 70, 0.002);
-UNACTIVE_TUNEABLE(nmp_1, int, 81, -50, 10000, 20, 0.002);
-UNACTIVE_TUNEABLE(nmp_2, int, 23, -300, 10000, 5, 0.002);
-UNACTIVE_TUNEABLE(nmp_3, int, 150, 0, 10000, 30, 0.002);
-UNACTIVE_TUNEABLE(sprob_1, int, 422, 0, 10000, 70, 0.002);
-UNACTIVE_TUNEABLE(lmp_1, int, 72, 0, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(lmp_2, int, 200, 0, 1000, 40, 0.002);
-UNACTIVE_TUNEABLE(lmp_3, int, 85, 0, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(see_1, int, 53, 0, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
-UNACTIVE_TUNEABLE(se_1, int, 8, 0, 100, 0.5, 0.002);
-UNACTIVE_TUNEABLE(se_2, int, 1, 0, 100, 0.5, 0.002);
-UNACTIVE_TUNEABLE(lmr_1, int, 10, 0, 23, 0.5, 0.002);
-UNACTIVE_TUNEABLE(cont_1, int, 999, 0, 10000, 200, 0.002);
-UNACTIVE_TUNEABLE(cont_2, int, 93, 0, 1500, 20, 0.002);
-UNACTIVE_TUNEABLE(cont_3, int, 32, 0, 1500, 6, 0.002);
-UNACTIVE_TUNEABLE(cont_4, int, 28, 0, 1500, 6, 0.002);
-UNACTIVE_TUNEABLE(cont_5, int, 264, 0, 3000, 100, 0.002);
-UNACTIVE_TUNEABLE(qs_fp_1, int, 2212, 0, 3000, 400, 0.002);
-UNACTIVE_TUNEABLE(qs_see_1, int, 357, 0, 1000, 50, 0.002);
-UNACTIVE_TUNEABLE(qs_p_1, int, 1295, 0, 5000, 200, 0.002);
-UNACTIVE_TUNEABLE(cthis_1, int, 7633, 0, 30000, 1500, 0.002);
-UNACTIVE_TUNEABLE(cthis_2, int, 678, 0, 3000, 100, 0.002);
-UNACTIVE_TUNEABLE(qs_p_idx, int, 8, 0, 20, 0.5, 0.002);
-UNACTIVE_TUNEABLE(asp_1, int, 61, 0, 5000, 20, 0.002);
-UNACTIVE_TUNEABLE(asp_2, int, 443, 0, 5000, 80, 0.002);
-UNACTIVE_TUNEABLE(red_1, int, 1023, 0, 10000, 250, 0.002);
-UNACTIVE_TUNEABLE(red_2, int, 1113, 0, 10000, 250, 0.002);
-UNACTIVE_TUNEABLE(red_3, int, 1755, 0, 10000, 300, 0.002);
-UNACTIVE_TUNEABLE(red_4, int, 808, 0, 10000, 150, 0.002);
-UNACTIVE_TUNEABLE(red_5, int, 2116, 0, 10000, 300, 0.002);
-UNACTIVE_TUNEABLE(red_6, int, 674, 0, 10000, 200, 0.002);
-UNACTIVE_TUNEABLE(red_7, int, 702, 0, 10000, 180, 0.002);
-UNACTIVE_TUNEABLE(ext_1, int, 25, 0, 10000, 10, 0.002);
-UNACTIVE_TUNEABLE(ext_2, int, 80, 0, 10000, 16, 0.002);
-UNACTIVE_TUNEABLE(ext_3, int, 16, 0, 10000, 3, 0.002);
-UNACTIVE_TUNEABLE(red_th_1, int, 1960, 0, 10000, 320, 0.002);
-UNACTIVE_TUNEABLE(red_th_2, int, 2077, 0, 10000, 450, 0.002);
-UNACTIVE_TUNEABLE(corr_1, int, 310, 0, 10000, 50, 0.002);
-UNACTIVE_TUNEABLE(corr_2, int, 230, 0, 10000, 40, 0.002);
-UNACTIVE_TUNEABLE(corr_3, int, 194, 0, 10000, 40, 0.002);
-UNACTIVE_TUNEABLE(corr_4, int, 192, 0, 10000, 40, 0.002);
-UNACTIVE_TUNEABLE(corr_5, int, 188, 0, 10000, 40, 0.002);
-UNACTIVE_TUNEABLE(corr_6, int, 554, 0, 10000, 130, 0.002);
-UNACTIVE_TUNEABLE(de_1, int, 66, 0, 10000, 18, 0.002);
+TUNEABLE(opp_1, int, 127, 0, 10000, 30, 0.002);
+TUNEABLE(r_1, int, 177, 0, 10000, 30, 0.002);
+TUNEABLE(r_2, int, 286, 0, 10000, 55, 0.002);
+TUNEABLE(rfp_1, int, 117, 0, 10000, 20, 0.002);
+TUNEABLE(rfp_2, int, 37, 0, 10000, 7, 0.002);
+TUNEABLE(rfp_3, int, 35, 0, 10000, 7, 0.002);
+TUNEABLE(rfp_4, int, 69, -100, 10000, 10, 0.002);
+TUNEABLE(rfp_5, int, 31, 0, 10000, 6, 0.002);
+TUNEABLE(rfp_6, int, 339, 0, 10000, 70, 0.002);
+TUNEABLE(nmp_1, int, 104, -50, 10000, 15, 0.002);
+TUNEABLE(nmp_2, int, 27, -300, 10000, 5, 0.002);
+TUNEABLE(nmp_3, int, 109, 0, 10000, 30, 0.002);
+TUNEABLE(sprob_1, int, 450, 0, 10000, 80, 0.002);
+TUNEABLE(lmp_1, int, 84, 0, 1000, 15, 0.002);
+TUNEABLE(lmp_2, int, 198, 0, 1000, 40, 0.002);
+TUNEABLE(lmp_3, int, 75, 0, 1000, 17, 0.002);
+TUNEABLE(lmp_4, int, 162, 0, 1000, 40, 0.002);
+TUNEABLE(lmp_5, int, 60, 0, 1000, 20, 0.002);
+TUNEABLE(see_1, int, 55, 0, 1000, 20, 0.002);
+TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
+TUNEABLE(see_3, int, 39, 0, 1000, 20, 0.002);
+TUNEABLE(see_4, int, 10, 0, 100, 0.5, 0.002);
+TUNEABLE(se_1, int, 8, 0, 100, 0.5, 0.002);
+TUNEABLE(se_2, int, 2, 0, 100, 0.5, 0.002);
+TUNEABLE(lmr_1, int, 10, 0, 23, 0.5, 0.002);
+TUNEABLE(cont_1, int, 1299, 0, 10000, 200, 0.002);
+TUNEABLE(cont_2, int, 1241, 0, 10000, 200, 0.002);
+TUNEABLE(cont_3, int, 71, 0, 1500, 20, 0.002);
+TUNEABLE(cont_4, int, 114, 0, 1500, 20, 0.002);
+TUNEABLE(cont_5, int, 41, 0, 1500, 6, 0.002);
+TUNEABLE(cont_6, int, 27, 0, 1500, 6, 0.002);
+TUNEABLE(cont_7, int, 333, 0, 3000, 50, 0.002);
+TUNEABLE(qs_fp_1, int, 2122, 0, 3000, 400, 0.002);
+TUNEABLE(qs_see_1, int, 270, 0, 1000, 70, 0.002);
+TUNEABLE(qs_p_1, int, 1514, 0, 5000, 200, 0.002);
+TUNEABLE(cthis_1, int, 5383, 0, 30000, 1500, 0.002);
+TUNEABLE(cthis_2, int, 970, 0, 3000, 150, 0.002);
+TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
+TUNEABLE(asp_1, int, 37, 0, 5000, 15, 0.002);
+TUNEABLE(asp_2, int, 409, 0, 5000, 80, 0.002);
+TUNEABLE(red_1, int, 875, 0, 10000, 200, 0.002);
+TUNEABLE(red_2, int, 974, 0, 10000, 200, 0.002);
+TUNEABLE(red_3, int, 1849, 0, 10000, 300, 0.002);
+TUNEABLE(red_4, int, 781, 0, 10000, 150, 0.002);
+TUNEABLE(red_5, int, 2520, 0, 10000, 300, 0.002);
+TUNEABLE(red_6, int, 681, 0, 10000, 120, 0.002);
+TUNEABLE(red_7, int, 652, 0, 10000, 180, 0.002);
+TUNEABLE(ext_1, int, 18, 0, 10000, 5, 0.002);
+TUNEABLE(ext_2, int, 119, 0, 10000, 16, 0.002);
+TUNEABLE(ext_3, int, 16, 0, 10000, 3, 0.002);
+TUNEABLE(red_th_1, int, 1906, 0, 10000, 320, 0.002);
+TUNEABLE(red_th_2, int, 1167, 0, 10000, 450, 0.002);
+TUNEABLE(corr_1, int, 334, 0, 10000, 60, 0.002);
+TUNEABLE(corr_2, int, 267, 0, 10000, 45, 0.002);
+TUNEABLE(corr_3, int, 229, 0, 10000, 40, 0.002);
+TUNEABLE(corr_4, int, 176, 0, 10000, 40, 0.002);
+TUNEABLE(corr_5, int, 239, 0, 10000, 40, 0.002);
+TUNEABLE(corr_6, int, 602, 0, 10000, 130, 0.002);
+TUNEABLE(de_1, int, 56, 0, 10000, 15, 0.002);
 
 int nnue_evaluate(NnueBoard& pos){
     return pos.evaluate();
@@ -591,10 +597,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
                 // SEE pruning
                 if (move_gen.index() > 6 + depth / 2
-                    && depth < 5 && !SEE::evaluate(pos, move, - see_1 - see_2*depth))
+                    && depth < 5 && !SEE::evaluate(pos, move, -see_1 - see_2*depth))
                     continue;
             } else {
-                if (move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_2 + lmp_3 * depth < alpha)
+                if (move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_4 + lmp_5 * depth < alpha)
                     continue;
 
                 // lmp
@@ -610,7 +616,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 
                 // SEE pruning
                 if (move_gen.index() > 6 + depth / 2 &&
-                    depth < 5 && !SEE::evaluate(pos, move, alpha - ss->static_eval - see_1 - see_2*depth))
+                    depth < 5 && !SEE::evaluate(pos, move, alpha - ss->static_eval - see_3 - see_4*depth))
                     continue;
             }
         }
@@ -678,12 +684,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
                 if (!is_capture){
                     move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), cont_1);
-                    move_gen.update_cont_history2(prev_piece2, prev_to2, ss->moved_piece, move.to(), cont_1);
+                    move_gen.update_cont_history2(prev_piece2, prev_to2, ss->moved_piece, move.to(), cont_2);
                 }
 
             } else if (value <= alpha && !is_capture){
-                move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
-                move_gen.update_cont_history2(prev_piece2, prev_to2, ss->moved_piece, move.to(), -cont_2);
+                move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_3);
+                move_gen.update_cont_history2(prev_piece2, prev_to2, ss->moved_piece, move.to(), -cont_4);
             }
 
         } else if (!pv || move_gen.index() > 1){
@@ -760,7 +766,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     if (max_value <= initial_alpha && !(ss - 1)->curr_move_capture){
         move_gen.update_cont_history(
-            (ss - 2)->moved_piece, ((ss - 2)->curr_move).to(), prev_piece, prev_to, std::min(depth*cont_3 + cont_4, cont_5));
+            (ss - 2)->moved_piece, ((ss - 2)->curr_move).to(), prev_piece, prev_to, std::min(depth*cont_5 + cont_6, cont_7));
     }
 
 

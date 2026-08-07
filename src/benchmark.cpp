@@ -84,6 +84,8 @@ void benchmark_nn(){
 
 void benchmark_engine(Engine& engine, int depth){
 
+    engine.clear_state();
+
     std::vector<int> times;
     std::vector<int> nodes;
     
@@ -112,7 +114,6 @@ void benchmark_engine(Engine& engine, int depth){
     std::cout << "=================================" << std::endl;
 
     engine.pos.setFen(constants::STARTPOS);
-    engine.clear_state();
 }
 
 void benchmark_ft_activation(){
@@ -132,7 +133,7 @@ void benchmark_ft_activation(){
         Color stm = board.sideToMove();
         Accumulators& accumulators = board.accumulators_stack.top();
         uint8_t pairwise_output[ACC_SIZE / 2];
-    
+
         NNUE_UTILS::pairwise_screlu16_to_8(
             &accumulators[stm][0],
             &accumulators[stm][ACC_SIZE / 2],
@@ -144,20 +145,18 @@ void benchmark_ft_activation(){
         }
     }
 
-    for (int i = 0; i < zero_count.size(); i++){
-        std::cout << zero_count[i] << ", ";
-    }
-    std::cout << zero_count.back() << std::endl;
+    for (int i = 0; i < zero_count.size(); i++)
+        std::cout << (i ? ", " : "") << zero_count[i];
+    std::cout << std::endl;
 
     std::cout << "============================== \n";
     std::cout << "weight permutation: \n";
 
      std::vector<int> permutation = rank_by_value(zero_count);
 
-    for (std::size_t i = 0; i < permutation.size() - 1; i++){
-        std::cout << permutation[i] << ", ";
-    }
-    std::cout << permutation.back() << std::endl;
+    for (std::size_t i = 0; i < permutation.size(); i++)
+        std::cout << (i ? ", " : "") << FT_PERMUTATION[permutation[i]]; // compose with the existing weight permutation
+    std::cout << std::endl;
 
     std::cout << "============================== \n";
 }
