@@ -612,7 +612,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     && ss->static_eval 
                     + lmp_4 
                     + lmp_5 * depth 
-                    + 150 * history.get(pos.sideToMove(), move.from(), move.to()) / 8192 < alpha)
+                    + 200 * history.get(pos.sideToMove(), move.from(), move.to()) / 8192 < alpha)
                     continue;
 
                 // lmp
