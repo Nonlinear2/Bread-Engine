@@ -144,10 +144,6 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (move.typeOf() == Move::PROMOTION)
             score += q_prm * piece_value[move.promotionType()] / 256;
 
-        assert(depth != DEPTH_UNSEARCHED);
-        if (killer_moves.in_buffer(depth, move))
-            score += q_kil;
-
         // cant be less than worst move score
         score += q_his * history.get(stm, from.index(), to) / 8192;
 
