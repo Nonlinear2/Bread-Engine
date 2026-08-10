@@ -148,7 +148,6 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (killer_moves.in_buffer(depth, move))
             score += q_kil;
 
-        // cant be less than worst move score
         score += q_his * history.get(stm, from.index(), to) / 8192;
 
         if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
