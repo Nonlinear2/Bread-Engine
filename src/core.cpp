@@ -608,7 +608,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     && depth < 5 && !SEE::evaluate(pos, move, -see_1 - see_2*depth))
                     continue;
             } else {
-                if (move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_4 + lmp_5 * depth < alpha)
+                if (move_gen.index() > 3 && depth <= 8 
+                    && ss->static_eval 
+                    + lmp_4 
+                    + lmp_5 * depth 
+                    + 150 * history.get(pos.sideToMove(), move.from(), move.to()) / 8192 < alpha)
                     continue;
 
                 // lmp
