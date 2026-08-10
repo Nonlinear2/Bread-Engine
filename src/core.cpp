@@ -671,7 +671,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         reduction -= red_1 * (gives_check && !root_node);
         reduction -= red_2 * (transposition.ttpv);
-        reduction += red_3 * (move_gen.index() > 2 && !is_capture);
+        reduction += red_3 * !is_capture;
         reduction += red_4 * (tt_capture && !is_capture);
         reduction += red_5 * (move_gen.index() > lmr_1);
         reduction += red_6 * (cutnode && depth > 5);
