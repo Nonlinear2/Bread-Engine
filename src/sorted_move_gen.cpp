@@ -115,7 +115,7 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
         if (move.typeOf() == Move::PROMOTION)
             score += c_prm * piece_value[move.promotionType()] / 256;
 
-        score += cphis * capt_history.get(piece, to.index(), to_piece) / 8192;
+        score += cphis * capt_history.get(piece, to, to_piece) / 8192;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
@@ -149,13 +149,13 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
             score += q_kil;
 
         // cant be less than worst move score
-        score += q_his * history.get(stm, from.index(), to.index()) / 8192;
+        score += q_his * history.get(stm, from.index(), to) / 8192;
 
         if (prev_piece != int(Piece::NONE) && prev_to != int(Square::underlying::NO_SQ))
-            score += q_cthis * cont_history.get(prev_piece, prev_to, piece, to.index()) / 8192;
+            score += q_cthis * cont_history.get(prev_piece, prev_to, piece, to) / 8192;
 
         if (prev_piece2 != int(Piece::NONE) && prev_to2 != int(Square::underlying::NO_SQ))
-            score += q_cthis2 * cont_history2.get(prev_piece2, prev_to2, piece, to.index()) / 8192;
+            score += q_cthis2 * cont_history2.get(prev_piece2, prev_to2, piece, to) / 8192;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
