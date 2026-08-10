@@ -578,6 +578,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     while (move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
+        Piece from_piece = pos.at(move.from());
+        Piece to_piece = pos.at(move.to());
 
         if (move == excluded_move)
             continue;
