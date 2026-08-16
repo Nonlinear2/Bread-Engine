@@ -112,9 +112,6 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
 
         score += c_cpt * piece_value[to_piece.type()] / 256;
 
-        if (move.typeOf() == Move::PROMOTION)
-            score += c_prm * piece_value[move.promotionType()] / 256;
-
         score += cphis * capt_history.get(piece, to, to_piece) / 8192;
 
         score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
