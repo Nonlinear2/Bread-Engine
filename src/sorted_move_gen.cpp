@@ -164,10 +164,8 @@ void SortedMoveGen<GenType::QSEARCH>::set_score(Move& move){
     const Piece to_piece = pos.at(move.to());
 
     int score = 0;
-    if (to_piece != Piece::NONE || move.typeOf() == Move::ENPASSANT){
-        score += c_cpt * piece_value[to_piece.type()] / 256;
-        score += 100 * capt_history.get(piece, move.to(), to_piece) / 8192;
-    }
+    score += piece_value[to_piece.type()];
+    score += 100 * capt_history.get(piece, move.to(), to_piece) / 8192;
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 
