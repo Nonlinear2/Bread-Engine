@@ -20,22 +20,26 @@ int& FromToHistory::get(Color color, Square from, Square to){
 int& CaptureHistory::get(Piece piece, Square to, Piece captured){
     // if the move was en passant, this function may be called with captured == None,
     // but idx will still be less than the history size
-    assert(piece*64*6 + to.index()*6 + static_cast<int>(captured.type()) < 12*64*6);
-    return history[piece*64*6 + to.index()*6 + static_cast<int>(captured.type())];
+    int idx = piece * NUM_SQUARES * NUM_PIECETYPES 
+            + to.index() * NUM_PIECETYPES 
+            + static_cast<int>(captured.type());
+
+    assert(idx < NUM_PIECES * NUM_SQUARES * NUM_PIECETYPES);
+    return history[idx];
 }
 
 int& PawnCorrectionHistory::get(Color color, uint16_t key){
-    return this->history[NUM_COLORS*(key % PAWN_CORRHIST_SIZE) + color];
+    return this->history[NUM_COLORS * (key % PAWN_CORRHIST_SIZE) + color];
 }
 
 int& MinorCorrectionHistory::get(Color color, uint16_t key){
-    return this->history[NUM_COLORS*(key % MINOR_CORRHIST_SIZE) + color];
+    return this->history[NUM_COLORS * (key % MINOR_CORRHIST_SIZE) + color];
 }
 
 int& MajorCorrectionHistory::get(Color color, uint16_t key){
-    return this->history[NUM_COLORS*(key % MAJOR_CORRHIST_SIZE) + color];
+    return this->history[NUM_COLORS * (key % MAJOR_CORRHIST_SIZE) + color];
 }
 
 int& NonPawnCorrectionHistory::get(Color color, uint16_t key){
-    return this->history[NUM_COLORS*(key % NONPAWN_CORRHIST_SIZE) + color];
+    return this->history[NUM_COLORS * (key % NONPAWN_CORRHIST_SIZE) + color];
 }
