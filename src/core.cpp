@@ -578,6 +578,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     while (move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
+        Piece from_piece = pos.at(move.from());
+        Piece to_piece = pos.at(move.to());
 
         if (move == excluded_move)
             continue;
@@ -592,7 +594,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             if (in_check){
                 // no pruning
             } else if (is_capture){
-                if (move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_2 + lmp_3 * depth < alpha)
+
+                if (move_gen.index() > 3
+                    && depth <= 8
+                    && ss->static_eval
+                        + lmp_2
+                        + lmp_3 * depth
+                        + 150 * capt_history.get(from_piece, move.to(), to_piece) / 8192 < alpha)
                     continue;
 
                 // SEE pruning
@@ -661,7 +669,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         int reduction = 0;
 
-        reduction -= red_1 * (gives_check && !root_node);
+        reduction -= red_1 * (gives_check);
         reduction -= red_2 * (transposition.ttpv);
         reduction += red_3 * (move_gen.index() > 2 && !is_capture);
         reduction += red_4 * (tt_capture && !is_capture);
