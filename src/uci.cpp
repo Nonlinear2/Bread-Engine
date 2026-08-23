@@ -15,6 +15,7 @@ int WorkerPool::size(){
 }
 
 void WorkerPool::clear_state(){
+    main().engine.tt.clear(size()); // tt is shared between all threads
     for (auto& worker: workers)
         worker.engine.clear_state();
 }

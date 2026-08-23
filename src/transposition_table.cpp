@@ -116,10 +116,18 @@ TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist, bool pv){
         return TTData();
 }
 
-void TranspositionTable::clear(){
-    std::lock_guard<std::mutex> lock(clear_mutex);
-    for (size_t i = 0; i < size; i++) {
-        entries[i] = TEntry();
+void TranspositionTable::clear(int num_threads){
+    std::vector<std::thread> threads;
+    threads.reserve(num_threads);
+    for (size_t i = 0; i < num_threads; i++) {
+        size_t begin = size * i / num_threads;
+        size_t end = size * (i + 1) / num_threads;
+        threads.emplace_back(std::thread(
+            [this, begin, end] { std::fill(entries + begin, entries + end, TEntry{}); }
+        ));
+    }
+    for (size_t i = 0; i < num_threads; i++) {
+        threads[i].join();
     }
 }
 

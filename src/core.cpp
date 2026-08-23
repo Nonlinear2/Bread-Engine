@@ -105,7 +105,6 @@ bool Engine::update_interrupt_flag(){
 }
 
 void Engine::clear_state(){
-    tt.clear();
     capt_history.clear();
     history.clear();
     pawn_corrhist.clear();
@@ -252,6 +251,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
             }
 
             if (root_tb_hit || pos.them(engine_color).count() == 1){
+                tt.clear();
                 clear_state();
                 evaluate = Nonsense::evaluate;
                 nonsense_stage = Nonsense::PROMOTE;
@@ -265,6 +265,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
             }
 
             if (Nonsense::only_knight_bishop(pos)){
+                tt.clear();
                 clear_state();
                 evaluate = nnue_evaluate;
                 nonsense_stage = Nonsense::CHECKMATE;
@@ -357,6 +358,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
                     || (Nonsense::material_evaluate(pos) > queen_value
                         && best_move.score() > 3 * queen_value / 2)))
             {
+                tt.clear();
                 clear_state();
                 nonsense_stage = Nonsense::TAKE_PIECES;
             }

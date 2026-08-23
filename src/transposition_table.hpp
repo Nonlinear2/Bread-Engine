@@ -73,7 +73,7 @@ class TranspositionTable {
 
     TTData probe(bool& is_hit, uint64_t zobrist, bool pv);
 
-    void clear();
+    void clear(int num_threads = 1);
 
     int hashfull();
 
@@ -84,5 +84,4 @@ class TranspositionTable {
     size_t size = 0;
     private:
     int size_mb = 0;
-    std::mutex clear_mutex;
 };
