@@ -61,7 +61,6 @@ void TranspositionTable::info(){
 
 void TranspositionTable::allocateMB(int new_size){
     assert(new_size >= 2);
-    assert((new_size & (new_size - 1)) == 0); // make sure the size is a power of 2
 
     new_size = std::max(new_size, TT_MIN_SIZE);
     new_size = std::min(new_size, TT_MAX_SIZE);
@@ -82,7 +81,9 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
     assert(move != Move::NULL_MOVE);
 
     // no need to store the side to move, as it is in the zobrist hash.
-    TEntry* entry = &entries[zobrist & (size - 1)];
+    TEntry* entry = &entries[
+        static_cast<std::uint64_t>((static_cast<unsigned __int128>(zobrist) * static_cast<unsigned __int128>(size)) >> 64)
+    ];
 
     // we replace the old entry if:
     // - the old entry is empty
@@ -107,7 +108,10 @@ void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int
 
 TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist, bool pv){
     assert((size & (size - 1)) == 0);
-    TEntry* entry = &entries[zobrist & (size - 1)];
+    TEntry* entry = &entries[
+        static_cast<std::uint64_t>((static_cast<unsigned __int128>(zobrist) * static_cast<unsigned __int128>(size)) >> 64)
+    ];
+
     is_hit = (entry->zobrist_hash == zobrist);
 
     if (is_hit)

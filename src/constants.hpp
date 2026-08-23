@@ -84,7 +84,7 @@ constexpr int GENFENS_FILTER_DEPTH = 9;
 constexpr int GENFENS_MAX_VALUE = 600;
 
 constexpr int TT_MIN_SIZE = 2;
-constexpr int TT_MAX_SIZE = 4096;
+constexpr int TT_MAX_SIZE = 1048576;
 
 constexpr int MAX_PLY = 256;
 constexpr int STACK_PADDING_SIZE = 2;
