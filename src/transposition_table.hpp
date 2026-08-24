@@ -3,7 +3,7 @@
 #include "chess.hpp"
 #include "misc.hpp"
 #include <fstream>
-#include <mutex>
+#include <thread>
 
 
 enum class TFlag: uint8_t {
