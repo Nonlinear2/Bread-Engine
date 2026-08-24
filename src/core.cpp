@@ -18,6 +18,7 @@ TUNEABLE(lmp_2, int, 198, 0, 1000, 40, 0.002);
 TUNEABLE(lmp_3, int, 75, 0, 1000, 17, 0.002);
 TUNEABLE(lmp_4, int, 162, 0, 1000, 40, 0.002);
 TUNEABLE(lmp_5, int, 60, 0, 1000, 20, 0.002);
+TUNEABLE(lmp_6, int, 150, 0, 1000, 30, 0.002);
 TUNEABLE(see_1, int, 55, 0, 1000, 20, 0.002);
 TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
 TUNEABLE(see_3, int, 39, 0, 1000, 20, 0.002);
@@ -580,8 +581,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     while (move_gen.next(move)){
         bool is_capture = pos.isCapture(move);
-        Piece from_piece = pos.at(move.from());
-        Piece to_piece = pos.at(move.to());
+        Piece moved_piece = pos.at(move.from());
+        Piece captured_piece = pos.at(move.to());
 
         if (move == excluded_move)
             continue;
@@ -602,7 +603,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     && ss->static_eval
                         + lmp_2
                         + lmp_3 * depth
-                        + 150 * capt_history.get(from_piece, move.to(), to_piece) / 8192 < alpha)
+                        + lmp_6 * capt_history.get(moved_piece, move.to(), captured_piece) / 8192 < alpha)
                     continue;
 
                 // SEE pruning
@@ -659,7 +660,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         new_depth += extension;
 
-        ss->moved_piece = pos.at(move.from());
+        ss->moved_piece = moved_piece;
         ss->curr_move = move;
         ss->curr_move_capture = is_capture;
         pos.update_state(move, tt);
