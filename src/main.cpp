@@ -22,9 +22,9 @@ int main(int argc, char* argv[]){
             std::mt19937 rng(seed);
 
             // silence engine
-            engine.display_uci = false;
+            engine.is_main_thread = false;
             Datagen::genfens(engine, rng, std::stoi(parsed[1]));
-            engine.display_uci = true;
+            engine.is_main_thread = true;
 
             if (argc >= 3 && std::string(argv[2]) == "quit")
                 return 0;
