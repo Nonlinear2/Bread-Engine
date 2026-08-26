@@ -19,6 +19,7 @@ class WorkerPool {
     WorkerPool(int size, TranspositionTable& tt);
 
     int size();
+    void set_size(int size);
     void clear_state();
     void synchronize();
     void set_tablebase_loaded(bool tablebase_loaded);
@@ -34,5 +35,6 @@ class WorkerPool {
     Worker& main();
 
     private:
+    TranspositionTable& tt;
     std::deque<Worker> workers;
 };

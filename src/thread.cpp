@@ -3,7 +3,15 @@
 Worker::Worker(bool is_main_thread, TranspositionTable& tt, WorkerPool& worker_pool)
     : engine(is_main_thread, tt, worker_pool) {};
 
-WorkerPool::WorkerPool(int size, TranspositionTable& tt){
+WorkerPool::WorkerPool(int size, TranspositionTable& tt)
+    : tt(tt) {
+    set_size(size);
+}
+
+void WorkerPool::set_size(int size){
+    interrupt_and_join_threads();
+    workers.clear();
+
     for (int i = 0; i < size; i++) {
         bool is_main = (i == 0);
         workers.emplace_back(is_main, tt, *this);
