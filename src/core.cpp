@@ -542,7 +542,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         // reverse futility pruning
         if (depth < 9 - 3*is_hit
             && !is_decisive(eval)
-            && eval - depth * (rfp_1 - rfp_2*cutnode) 
+            && eval - depth * (rfp_1 - rfp_2*cutnode)
                     - rfp_3
                     + rfp_4 * improving
                     + rfp_5 * opponent_worsening 
@@ -580,9 +580,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         return probcut_beta;
 
     while (move_gen.next(move)){
-        bool is_capture = pos.isCapture(move);
         Piece moved_piece = pos.at(move.from());
         Piece captured_piece = pos.at(move.to());
+
+        bool is_capture = pos.isCapture(move);
+        bool gives_check = !(
+            move_gen.check_squares[moved_piece.type()] & Bitboard::fromSquare(move.to())
+        ).empty(); // only detects direct checks
 
         if (move == excluded_move)
             continue;
@@ -611,7 +615,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     && depth < 5 && !SEE::evaluate(pos, move, -see_1 - see_2*depth))
                     continue;
             } else {
-                if (move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_4 + lmp_5 * depth < alpha)
+                if (!gives_check && move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_4 + lmp_5 * depth < alpha)
                     continue;
 
                 // lmp
@@ -665,7 +669,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         ss->curr_move_capture = is_capture;
         pos.update_state(move, tt);
 
-        bool gives_check = pos.inCheck();
+        gives_check = pos.inCheck(); // more accurate than the approximation computed before
 
         new_depth -= depth > 5 && !is_hit; // IIR
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
