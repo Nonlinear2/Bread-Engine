@@ -39,5 +39,6 @@ int main(int argc, char* argv[]){
     } while (running);
 
     NNUE::cleanup();
+    tb_free();
     return 0;
 }
