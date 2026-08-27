@@ -4,7 +4,8 @@
 
 int main(){
     TranspositionTable tt;
-    WorkerPool workers(1, tt);
+    std::atomic<int64_t> nodes = 0;
+    WorkerPool workers(1, tt, nodes);
     Engine& engine = workers.main().engine;
 
     std::vector<std::string> fens = {
