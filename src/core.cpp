@@ -1,4 +1,5 @@
 #include "core.hpp"
+#include "searcher.hpp"
 
 TUNEABLE(opp_1, int, 127, 0, 10000, 30, 0.002);
 TUNEABLE(r_1, int, 177, 0, 10000, 30, 0.002);
@@ -73,10 +74,10 @@ int get_think_time(float time_left, int num_moves_out_of_book, int num_moves_unt
     return static_cast<int>(target + 0.9F*increment);
 }
 
-Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes)
+Engine::Engine(bool is_main_thread, TranspositionTable& tt, WorkerPool& worker_pool)
     : is_main_thread(is_main_thread),
       tt(tt),
-      nodes(nodes) {};
+      worker_pool(worker_pool) {};
 
       
 int Engine::get_corrhist(Color color){
@@ -89,14 +90,13 @@ int Engine::get_corrhist(Color color){
 }
 
 bool Engine::update_interrupt_flag(){
-    SearchLimit limit_ = limit.load();
-    switch (limit_.type){
+    switch (limit.type){
         case LimitType::Time:
             update_run_time();
-            interrupt_flag = (run_time >= limit_.value);
+            interrupt_flag = (run_time >= limit.value);
             break;
         case LimitType::Nodes:
-            interrupt_flag = (nodes >= limit_.value);
+            interrupt_flag = (nodes >= limit.value);
             break;
         default:
             interrupt_flag = false;
@@ -332,8 +332,10 @@ Move Engine::iterative_deepening(SearchLimit limit){
             else
                 std::cout << " score cp " << best_move.score();
     
-            std::cout << " nodes " << nodes;
-            std::cout << " nps " << nodes * 1000 / run_time;
+            uint64_t total_nodes = worker_pool.total_node_count(); // aggregate across all threads
+
+            std::cout << " nodes " << total_nodes;
+            std::cout << " nps " << total_nodes * 1000 / run_time;
             std::cout << " tbhits " << tb_hits;
             std::cout << " time " << run_time;
             std::cout << " hashfull " << tt.hashfull();
