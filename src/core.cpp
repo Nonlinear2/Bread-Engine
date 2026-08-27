@@ -208,6 +208,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         this->limit = limit;
 
     start_time = std::chrono::high_resolution_clock::now();
+    update_run_time();
 
     std::string pv;
     std::string ponder_move = "";
