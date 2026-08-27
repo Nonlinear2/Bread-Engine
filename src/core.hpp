@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <chrono>
 #include <atomic>
 #include "chess.hpp"
 #include "transposition_table.hpp"
@@ -14,6 +13,7 @@
 #include "sorted_move_gen.hpp"
 #include "tune.hpp"
 #include "tb.hpp"
+#include "timer.hpp"
 
 int nnue_evaluate(NnueBoard& pos);
 
@@ -36,14 +36,13 @@ class Engine {
     Stack stack[MAX_PLY + STACK_PADDING_SIZE] = {};
     Stack* root_ss = stack + 2;
 
-    std::atomic<int> run_time;
+    Timer timer;
+
     TranspositionTable& tt;
 
     NnueBoard pos = NnueBoard();
 
     Movelist root_moves;
-
-    void update_run_time();
 
     Move iterative_deepening(SearchLimit limit);
 
@@ -56,8 +55,6 @@ class Engine {
 
     private:
     friend class WorkerPool;
-
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 
     int (*evaluate)(NnueBoard& pos) = nnue_evaluate;
     Nonsense::Stage nonsense_stage = Nonsense::STANDARD;

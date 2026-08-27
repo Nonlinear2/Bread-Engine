@@ -92,8 +92,7 @@ bool Engine::update_interrupt_flag(){
     SearchLimit limit_ = limit.load();
     switch (limit_.type){
         case LimitType::Time:
-            update_run_time();
-            interrupt_flag = (run_time >= limit_.value);
+            interrupt_flag = (timer.elapsed() >= limit_.value);
             break;
         case LimitType::Nodes:
             interrupt_flag = (nodes >= limit_.value);
@@ -162,12 +161,6 @@ void Engine::load_state(std::string file){
     ifs.close();
 }
 
-void Engine::update_run_time(){
-    run_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::high_resolution_clock::now() - start_time
-    ).count() + 1; // add 1 to avoid divisions by 0
-};
-
 std::pair<std::string, std::string> Engine::get_pv_pmove(){
     std::string pv = "";
     std::string ponder_move = "";
@@ -207,8 +200,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     else
         this->limit = limit;
 
-    start_time = std::chrono::high_resolution_clock::now();
-    update_run_time();
+    timer.reset();
 
     std::string pv;
     std::string ponder_move = "";
@@ -232,12 +224,11 @@ Move Engine::iterative_deepening(SearchLimit limit){
     bool root_tb_hit = tablebase_loaded && TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
     if (root_tb_hit && !(is_nonsense && best_move.score() == TB_VALUE && !Nonsense::only_knight_bishop(pos))){
         if (display_uci){
-            update_run_time();
             std::cout << "info depth 0 seldepth 0";
             std::cout << " score cp " << best_move.score();
             std::cout << " nodes 0 nps 0";
             std::cout << " tbhits 0";
-            std::cout << " time " << run_time;
+            std::cout << " time " << timer.elapsed();
             std::cout << " hashfull " << tt.hashfull();
             std::cout << " pv " << uci::moveToUci(best_move) << std::endl;
             std::cout << "bestmove " << uci::moveToUci(best_move) << std::endl;
@@ -323,7 +314,6 @@ Move Engine::iterative_deepening(SearchLimit limit){
             if (pv_pmove.second.size() > 0)
                 ponder_move = pv_pmove.second;
     
-            update_run_time();
     
             // do not count interrupted searches in depth
             std::cout << "info depth " << root_depth - interrupt_flag;
@@ -334,9 +324,9 @@ Move Engine::iterative_deepening(SearchLimit limit){
                 std::cout << " score cp " << best_move.score();
     
             std::cout << " nodes " << nodes;
-            std::cout << " nps " << nodes * 1000 / run_time;
+            std::cout << " nps " << nodes * 1000 / timer.elapsed();
             std::cout << " tbhits " << tb_hits;
-            std::cout << " time " << run_time;
+            std::cout << " time " << timer.elapsed();
             std::cout << " hashfull " << tt.hashfull();
             std::cout << " pv" << pv << std::endl;
         }
@@ -347,7 +337,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
             || root_depth >= ENGINE_MAX_DEPTH
             || (limit.type == LimitType::Depth && root_depth == limit.value)
             || (limit.type == LimitType::Nodes && nodes >= limit.value)
-            || (limit.type == LimitType::Time && best_move_changes < 1 && run_time > 2*limit.value / 3))
+            || (limit.type == LimitType::Time && best_move_changes < 1 && timer.elapsed() > 2*limit.value / 3))
             break;
     }
 

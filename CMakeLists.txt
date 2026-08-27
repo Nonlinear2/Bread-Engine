@@ -37,6 +37,7 @@ set(bread_SOURCE
     ${bread_SRC}/benchmark.cpp
     ${bread_SRC}/datagen.cpp
     ${bread_SRC}/tb.cpp
+    ${bread_SRC}/timer.cpp
     ${bread_SRC}/extern/Fathom/src/tbprobe.cpp
 )
 
