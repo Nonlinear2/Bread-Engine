@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <chrono>
 #include <atomic>
 #include "chess.hpp"
 #include "transposition_table.hpp"
@@ -14,6 +13,7 @@
 #include "sorted_move_gen.hpp"
 #include "tune.hpp"
 #include "tb.hpp"
+#include "timer.hpp"
 
 class WorkerPool;
 
@@ -35,7 +35,6 @@ class Engine {
 
     TranspositionTable& tt;
 
-    void update_run_time();
     Move iterative_deepening(SearchLimit limit);
     void clear_state();
     void save_state(std::string file);
@@ -44,7 +43,7 @@ class Engine {
     private:
     friend class WorkerPool;
 
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
+    Timer timer;
 
     WorkerPool& worker_pool;
 
