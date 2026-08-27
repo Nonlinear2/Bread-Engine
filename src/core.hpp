@@ -25,9 +25,9 @@ int get_think_time(float time_left, int num_moves_out_of_book,
 class Engine {
     public:
 
-    Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes);
+    Engine(bool is_main_thread, TranspositionTable& tt, WorkerPool& worker_pool);
 
-    std::atomic<int64_t>& nodes;
+    std::atomic<int64_t> nodes;
     std::atomic<bool> is_main_thread;
     std::atomic<bool> interrupt_flag = false;
 
@@ -45,6 +45,8 @@ class Engine {
     friend class WorkerPool;
 
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
+
+    WorkerPool& worker_pool;
 
     int run_time = 0;
     bool tablebase_loaded = false;

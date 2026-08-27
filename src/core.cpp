@@ -74,10 +74,10 @@ int get_think_time(float time_left, int num_moves_out_of_book, int num_moves_unt
     return static_cast<int>(target + 0.9F*increment);
 }
 
-Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes)
-    : nodes(nodes),
-      is_main_thread(is_main_thread),
-      tt(tt) {};
+Engine::Engine(bool is_main_thread, TranspositionTable& tt, WorkerPool& worker_pool)
+    : is_main_thread(is_main_thread),
+      tt(tt),
+      worker_pool(worker_pool) {};
 
       
 int Engine::get_corrhist(Color color){
@@ -332,8 +332,10 @@ Move Engine::iterative_deepening(SearchLimit limit){
             else
                 std::cout << " score cp " << best_move.score();
     
-            std::cout << " nodes " << nodes;
-            std::cout << " nps " << nodes * 1000 / run_time;
+            uint64_t total_nodes = worker_pool.total_node_count(); // aggregate across all threads
+
+            std::cout << " nodes " << total_nodes;
+            std::cout << " nps " << total_nodes * 1000 / run_time;
             std::cout << " tbhits " << tb_hits;
             std::cout << " time " << run_time;
             std::cout << " hashfull " << tt.hashfull();

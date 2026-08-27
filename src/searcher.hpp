@@ -9,14 +9,14 @@
 
 struct Worker {
     public:
-    Worker(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes);
+    Worker(bool is_main_thread, TranspositionTable& tt, WorkerPool& worker_pool);
     std::thread thread;
     Engine engine;
 };
 
 class WorkerPool {
     public:
-    WorkerPool(int size, TranspositionTable& tt, std::atomic<int64_t>& nodes);
+    WorkerPool(int size, TranspositionTable& tt);
 
     int size();
     void set_size(int size);
@@ -36,6 +36,5 @@ class WorkerPool {
 
     private:
     TranspositionTable& tt;
-    std::atomic<int64_t>& nodes;
     std::deque<Worker> workers;
 };
