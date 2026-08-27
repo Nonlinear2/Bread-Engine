@@ -37,6 +37,8 @@ set(bread_SOURCE
     ${bread_SRC}/benchmark.cpp
     ${bread_SRC}/datagen.cpp
     ${bread_SRC}/tb.cpp
+    ${bread_SRC}/searcher.cpp
+    ${bread_SRC}/uci.cpp
     ${bread_SRC}/extern/Fathom/src/tbprobe.cpp
 )
 
@@ -79,19 +81,16 @@ endfunction(bread_configure)
 
 bread_configure(bread_engine SOURCES
     ${bread_SOURCE}
-    ${bread_SRC}/uci.cpp
     ${bread_SRC}/main.cpp
 )
 
 bread_configure(uci_search SOURCES
     ${bread_SOURCE}
-    ${bread_SRC}/uci.cpp
     ${bread_UTILS}/run_uci_search.cpp
 )
 
 bread_configure(search_position SOURCES
     ${bread_SOURCE}
-    ${bread_SRC}/uci.cpp
     ${bread_UTILS}/run_search.cpp
 )
 
