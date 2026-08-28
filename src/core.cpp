@@ -1,4 +1,5 @@
 #include "core.hpp"
+#include "searcher.hpp"
 
 TUNEABLE(opp_1, int, 127, 0, 10000, 30, 0.002);
 TUNEABLE(r_1, int, 177, 0, 10000, 30, 0.002);
@@ -73,10 +74,10 @@ int get_think_time(float time_left, int num_moves_out_of_book, int num_moves_unt
     return static_cast<int>(target + 0.9F*increment);
 }
 
-Engine::Engine(bool display_uci, TranspositionTable& tt, std::atomic<int64_t>& nodes)
-    : display_uci(display_uci),
-      tt(tt),
-      nodes(nodes) {};
+Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes)
+    : nodes(nodes),
+      is_main_thread(is_main_thread),
+      tt(tt) {};
 
       
 int Engine::get_corrhist(Color color){
@@ -89,13 +90,12 @@ int Engine::get_corrhist(Color color){
 }
 
 bool Engine::update_interrupt_flag(){
-    SearchLimit limit_ = limit.load();
-    switch (limit_.type){
+    switch (limit.type){
         case LimitType::Time:
-            interrupt_flag = (timer.elapsed() >= limit_.value);
+            interrupt_flag = (timer.elapsed() >= limit.value);
             break;
         case LimitType::Nodes:
-            interrupt_flag = (nodes >= limit_.value);
+            interrupt_flag = (nodes >= limit.value);
             break;
         default:
             interrupt_flag = false;
@@ -202,7 +202,6 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
     timer.reset();
 
-    std::string pv;
     std::string ponder_move = "";
 
     Move best_move = Move::NO_MOVE;
@@ -223,7 +222,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
     bool root_tb_hit = tablebase_loaded && TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
     if (root_tb_hit && !(is_nonsense && best_move.score() == TB_VALUE && !Nonsense::only_knight_bishop(pos))){
-        if (display_uci){
+        if (is_main_thread){
             std::cout << "info depth 0 seldepth 0";
             std::cout << " score cp " << best_move.score();
             std::cout << " nodes 0 nps 0";
@@ -308,7 +307,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
             asp_beta = std::clamp(asp_beta, -INFINITE_VALUE, INFINITE_VALUE);
         }
 
-        if (display_uci){
+        if (is_main_thread){
+            std::string pv;
             std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
             pv = pv_pmove.first;
             if (pv_pmove.second.size() > 0)
@@ -357,7 +357,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
         }
     }
 
-    if (display_uci){
+    if (is_main_thread){
         std::cout << "bestmove " << uci::moveToUci(best_move);
         if (ponder_move.size() > 0)
             std::cout << " ponder " << ponder_move;

@@ -1,69 +1,6 @@
 #include "uci.hpp"
 
-Worker::Worker(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes)
-    : engine(is_main_thread, tt, nodes) {};
-
-WorkerPool::WorkerPool(int size, TranspositionTable& tt, std::atomic<int64_t>& nodes){
-    for (int i = 0; i < size; i++) {
-        bool is_main = (i == 0);
-        workers.emplace_back(is_main, tt, nodes);
-    }
-};
-
-int WorkerPool::size(){
-    return workers.size();
-}
-
-void WorkerPool::clear_state(){
-    main().engine.tt.clear(size()); // tt is shared between all threads
-    for (auto& worker: workers)
-        worker.engine.clear_state();
-}
-
-void WorkerPool::synchronize(){
-    for (auto& worker: workers)
-        worker.engine.pos.synchronize();
-}
-
-void WorkerPool::set_tablebase_loaded(bool tablebase_loaded){
-    for (auto& worker: workers)
-        worker.engine.tablebase_loaded = tablebase_loaded;
-}
-
-void WorkerPool::set_is_nonsense(bool is_nonsense){
-    for (auto& worker: workers)
-        worker.engine.is_nonsense = is_nonsense;
-}
-
-void WorkerPool::set_position(NnueBoard& pos){
-    for (auto& worker: workers)
-        worker.engine.pos = pos;
-}
-
-void WorkerPool::update_limit(SearchLimit limit){
-    for (auto& worker: workers)
-        worker.engine.limit.store(limit);
-};
-
-void WorkerPool::start_searching(SearchLimit limit){
-    for (auto& worker: workers)
-        worker.thread = std::thread(&Engine::iterative_deepening, &worker.engine, limit);
-}
-
-void WorkerPool::interrupt_and_join_threads(){
-    for (auto& worker: workers)
-        if (worker.thread.joinable()){
-            worker.engine.interrupt_flag = true;
-            worker.thread.join();
-            worker.engine.interrupt_flag = false;
-        }
-}
-
-Worker& WorkerPool::main(){
-    return workers[0];
-}
-
-UCIAgent::UCIAgent(): workers(1, tt, nodes) {};
+UCIAgent::UCIAgent(): nodes(0), workers(1, tt, nodes) {};
 
 bool UCIAgent::process_uci_command(std::string command){
     std::vector<std::string> parsed_command = split_string(command);
@@ -92,7 +29,6 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "readyok" << std::endl;
 
     } else if (first == "ucinewgame"){
-        workers.interrupt_and_join_threads();
         pos.setFen(constants::STARTPOS);
         workers.clear_state();
 
@@ -117,8 +53,7 @@ bool UCIAgent::process_uci_command(std::string command){
 
     } else if (first == "quit"){
         workers.interrupt_and_join_threads();
-        tb_free();
-        return 0;
+        return false;
     } else {
         std::cout << "unrecognized command: " << command << "\n";
     }
@@ -130,6 +65,8 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
     assert(command.size() >= 5); // setoption name ... value ...
     std::string option_name = command[2];
     std::string option_value = command[4];
+
+    workers.interrupt_and_join_threads();
 
     if (option_name == "SyzygyPath"){
         std::string path = option_value;
@@ -157,8 +94,7 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
             std::cout << "info string hash size must be a power of 2" << std::endl;
         }
     } else if (option_name == "Threads"){
-        workers.interrupt_and_join_threads();
-        workers = WorkerPool(std::stoi(option_value), tt, nodes);
+        workers.set_size(std::stoi(option_value));
         std::cout << "info string number of threads set to " << workers.size() << std::endl;
     } else if (option_name == "Nonsense"){
         workers.set_is_nonsense(option_value == "true");
@@ -228,6 +164,10 @@ void UCIAgent::process_go(std::vector<std::string> command){
     } else if (go_type == "depth"){
         limit = SearchLimit(LimitType::Depth, std::stoi(command[2]));
     } else if (go_type == "nodes"){
+        if (workers.size() != 1){
+            std::cout << "info string multithreaded go nodes is not supported" << std::endl;
+            return;
+        }
         limit = SearchLimit(LimitType::Nodes, std::stoi(command[2]));
     } else if (go_type == "infinite"){
         limit = SearchLimit(LimitType::Depth, ENGINE_MAX_DEPTH);

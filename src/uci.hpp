@@ -8,34 +8,7 @@
 #include "tune.hpp"
 #include "core.hpp"
 #include "benchmark.hpp"
-
-struct Worker {
-    public:
-    Worker(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes);
-    std::thread thread;
-    Engine engine;
-};
-
-class WorkerPool {
-    public:
-    WorkerPool(int size, TranspositionTable& tt, std::atomic<int64_t>& nodes);
-
-    int size();
-    void clear_state();
-    void synchronize();
-    void set_tablebase_loaded(bool tablebase_loaded);
-    void set_is_nonsense(bool is_nonsense);
-    void set_position(NnueBoard& pos);
-    void update_limit(SearchLimit limit);
-
-    void start_searching(SearchLimit limit);
-    void interrupt_and_join_threads();
-
-    Worker& main();
-
-    private:
-    std::deque<Worker> workers;
-};
+#include "searcher.hpp"
 
 class UCIAgent {
     public:
