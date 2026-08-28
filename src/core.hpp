@@ -15,6 +15,8 @@
 #include "tune.hpp"
 #include "tb.hpp"
 
+class WorkerPool;
+
 int nnue_evaluate(NnueBoard& pos);
 
 int get_think_time(float time_left, int num_moves_out_of_book,
@@ -25,44 +27,43 @@ class Engine {
 
     Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes);
 
-    bool is_main_thread;
     std::atomic<int64_t>& nodes;
-    int64_t tb_hits = 0;
-    int64_t seldepth = 0;
-    int root_depth = 0;
-    std::atomic<SearchLimit> limit;
+    std::atomic<bool> is_main_thread;
     std::atomic<bool> interrupt_flag = false;
-
-    Stack stack[MAX_PLY + STACK_PADDING_SIZE] = {};
-    Stack* root_ss = stack + 2;
-
-    std::atomic<int> run_time;
-    TranspositionTable& tt;
 
     NnueBoard pos = NnueBoard();
 
-    Movelist root_moves;
+    TranspositionTable& tt;
 
     void update_run_time();
-
     Move iterative_deepening(SearchLimit limit);
-
     void clear_state();
-
     void save_state(std::string file);
     void load_state(std::string file);
-
-    std::atomic<bool> is_nonsense = false;
 
     private:
     friend class WorkerPool;
 
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
 
+    int run_time = 0;
+    bool tablebase_loaded = false;
+
+    int64_t tb_hits = 0;
+    int64_t seldepth = 0;
+    int root_depth = 0;
+
+    SearchLimit limit;
+
+    Stack stack[MAX_PLY + STACK_PADDING_SIZE] = {};
+    Stack* root_ss = stack + 2;
+
+    Movelist root_moves;
+
+    bool is_nonsense = false;
     int (*evaluate)(NnueBoard& pos) = nnue_evaluate;
     Nonsense::Stage nonsense_stage = Nonsense::STANDARD;
     Color engine_color;
-    bool tablebase_loaded = false;
 
     CaptureHistory capt_history = CaptureHistory();
     KillerMoves killer_moves = KillerMoves();

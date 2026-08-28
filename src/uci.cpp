@@ -1,6 +1,6 @@
 #include "uci.hpp"
 
-UCIAgent::UCIAgent(): workers(1, tt, nodes) {};
+UCIAgent::UCIAgent(): nodes(0), workers(1, tt, nodes) {};
 
 bool UCIAgent::process_uci_command(std::string command){
     std::vector<std::string> parsed_command = split_string(command);
@@ -29,7 +29,6 @@ bool UCIAgent::process_uci_command(std::string command){
         std::cout << "readyok" << std::endl;
 
     } else if (first == "ucinewgame"){
-        workers.interrupt_and_join_threads();
         pos.setFen(constants::STARTPOS);
         workers.clear_state();
 
@@ -67,6 +66,8 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
     std::string option_name = command[2];
     std::string option_value = command[4];
 
+    workers.interrupt_and_join_threads();
+
     if (option_name == "SyzygyPath"){
         std::string path = option_value;
         // handle path containing spaces
@@ -93,8 +94,7 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
             std::cout << "info string hash size must be a power of 2" << std::endl;
         }
     } else if (option_name == "Threads"){
-        workers.interrupt_and_join_threads();
-        workers = WorkerPool(std::stoi(option_value), tt, nodes);
+        workers.set_size(std::stoi(option_value));
         std::cout << "info string number of threads set to " << workers.size() << std::endl;
     } else if (option_name == "Nonsense"){
         workers.set_is_nonsense(option_value == "true");
@@ -164,6 +164,10 @@ void UCIAgent::process_go(std::vector<std::string> command){
     } else if (go_type == "depth"){
         limit = SearchLimit(LimitType::Depth, std::stoi(command[2]));
     } else if (go_type == "nodes"){
+        if (workers.size() != 1){
+            std::cout << "info string multithreaded go nodes is not supported" << std::endl;
+            return;
+        }
         limit = SearchLimit(LimitType::Nodes, std::stoi(command[2]));
     } else if (go_type == "infinite"){
         limit = SearchLimit(LimitType::Depth, ENGINE_MAX_DEPTH);
