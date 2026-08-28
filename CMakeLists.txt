@@ -39,6 +39,7 @@ set(bread_SOURCE
     ${bread_SRC}/tb.cpp
     ${bread_SRC}/searcher.cpp
     ${bread_SRC}/uci.cpp
+    ${bread_SRC}/timer.cpp
     ${bread_SRC}/extern/Fathom/src/tbprobe.cpp
 )
 

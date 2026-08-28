@@ -74,10 +74,10 @@ int get_think_time(float time_left, int num_moves_out_of_book, int num_moves_unt
     return static_cast<int>(target + 0.9F*increment);
 }
 
-Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes)
-    : nodes(nodes),
-      is_main_thread(is_main_thread),
-      tt(tt) {};
+Engine::Engine(bool is_main_thread, TranspositionTable& tt, WorkerPool& worker_pool)
+    : is_main_thread(is_main_thread),
+      tt(tt),
+      worker_pool(worker_pool) {};
 
       
 int Engine::get_corrhist(Color color){
@@ -92,8 +92,7 @@ int Engine::get_corrhist(Color color){
 bool Engine::update_interrupt_flag(){
     switch (limit.type){
         case LimitType::Time:
-            update_run_time();
-            interrupt_flag = (run_time >= limit.value);
+            interrupt_flag = (timer.elapsed() >= limit.value);
             break;
         case LimitType::Nodes:
             interrupt_flag = (nodes >= limit.value);
@@ -162,12 +161,6 @@ void Engine::load_state(std::string file){
     ifs.close();
 }
 
-void Engine::update_run_time(){
-    run_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::high_resolution_clock::now() - start_time
-    ).count() + 1; // add 1 to avoid divisions by 0
-};
-
 std::pair<std::string, std::string> Engine::get_pv_pmove(){
     std::string pv = "";
     std::string ponder_move = "";
@@ -207,7 +200,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
     else
         this->limit = limit;
 
-    start_time = std::chrono::high_resolution_clock::now();
+    timer.reset();
 
     std::string ponder_move = "";
 
@@ -230,12 +223,11 @@ Move Engine::iterative_deepening(SearchLimit limit){
     bool root_tb_hit = tablebase_loaded && TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
     if (root_tb_hit && !(is_nonsense && best_move.score() == TB_VALUE && !Nonsense::only_knight_bishop(pos))){
         if (is_main_thread){
-            update_run_time();
             std::cout << "info depth 0 seldepth 0";
             std::cout << " score cp " << best_move.score();
             std::cout << " nodes 0 nps 0";
             std::cout << " tbhits 0";
-            std::cout << " time " << run_time;
+            std::cout << " time " << timer.elapsed();
             std::cout << " hashfull " << tt.hashfull();
             std::cout << " pv " << uci::moveToUci(best_move) << std::endl;
             std::cout << "bestmove " << uci::moveToUci(best_move) << std::endl;
@@ -322,7 +314,6 @@ Move Engine::iterative_deepening(SearchLimit limit){
             if (pv_pmove.second.size() > 0)
                 ponder_move = pv_pmove.second;
     
-            update_run_time();
     
             // do not count interrupted searches in depth
             std::cout << "info depth " << root_depth - interrupt_flag;
@@ -332,10 +323,12 @@ Move Engine::iterative_deepening(SearchLimit limit){
             else
                 std::cout << " score cp " << best_move.score();
     
-            std::cout << " nodes " << nodes;
-            std::cout << " nps " << nodes * 1000 / run_time;
+            uint64_t total_nodes = worker_pool.total_node_count(); // aggregate across all threads
+
+            std::cout << " nodes " << total_nodes;
+            std::cout << " nps " << total_nodes * 1000 / timer.elapsed();
             std::cout << " tbhits " << tb_hits;
-            std::cout << " time " << run_time;
+            std::cout << " time " << timer.elapsed();
             std::cout << " hashfull " << tt.hashfull();
             std::cout << " pv" << pv << std::endl;
         }
@@ -346,7 +339,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
             || root_depth >= ENGINE_MAX_DEPTH
             || (limit.type == LimitType::Depth && root_depth == limit.value)
             || (limit.type == LimitType::Nodes && nodes >= limit.value)
-            || (limit.type == LimitType::Time && best_move_changes < 1 && run_time > 2*limit.value / 3))
+            || (limit.type == LimitType::Time && best_move_changes < 1 && timer.elapsed() > 2*limit.value / 3))
             break;
     }
 
