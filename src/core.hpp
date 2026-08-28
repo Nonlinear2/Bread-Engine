@@ -43,6 +43,8 @@ class Engine {
     private:
     friend class WorkerPool;
 
+    Timer timer;
+
     bool tablebase_loaded = false;
 
     int64_t tb_hits = 0;
