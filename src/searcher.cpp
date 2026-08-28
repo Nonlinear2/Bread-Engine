@@ -72,6 +72,11 @@ void WorkerPool::start_searching(SearchLimit limit){
         worker.thread = std::thread(&Engine::iterative_deepening, &worker.engine, limit);
 }
 
+void WorkerPool::interrupt(){
+    for (auto& worker: workers)
+        worker.engine.interrupt_flag = true;
+}
+
 void WorkerPool::interrupt_and_join_threads(){
     for (auto& worker: workers)
         if (worker.thread.joinable()){

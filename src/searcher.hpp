@@ -28,6 +28,7 @@ class WorkerPool {
     void update_limit(SearchLimit limit);
 
     void start_searching(SearchLimit limit);
+    void interrupt();
     void interrupt_and_join_threads();
 
     uint64_t total_node_count();

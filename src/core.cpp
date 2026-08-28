@@ -92,13 +92,14 @@ int Engine::get_corrhist(Color color){
 bool Engine::update_interrupt_flag(){
     switch (limit.type){
         case LimitType::Time:
-            interrupt_flag = (timer.elapsed() >= limit.value);
+            if (timer.elapsed() >= limit.value)
+                interrupt_flag = true;
             break;
         case LimitType::Nodes:
-            interrupt_flag = (nodes >= limit.value);
+            if (nodes >= limit.value)
+                interrupt_flag = true;
             break;
         default:
-            interrupt_flag = false;
             break;
     }
     return interrupt_flag;
@@ -339,7 +340,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
             || root_depth >= ENGINE_MAX_DEPTH
             || (limit.type == LimitType::Depth && root_depth == limit.value)
             || (limit.type == LimitType::Nodes && nodes >= limit.value)
-            || (limit.type == LimitType::Time && best_move_changes < 1 && timer.elapsed() > 2*limit.value / 3))
+            || (is_main_thread && limit.type == LimitType::Time && best_move_changes < 1 && timer.elapsed() > 2*limit.value / 3))
             break;
     }
 
@@ -360,6 +361,8 @@ Move Engine::iterative_deepening(SearchLimit limit){
     }
 
     if (is_main_thread){
+        worker_pool.interrupt();
+
         std::cout << "bestmove " << uci::moveToUci(best_move);
         if (ponder_move.size() > 0)
             std::cout << " ponder " << ponder_move;
