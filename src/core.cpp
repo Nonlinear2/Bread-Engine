@@ -1,4 +1,5 @@
 #include "core.hpp"
+#include "searcher.hpp"
 
 TUNEABLE(opp_1, int, 127, 0, 10000, 30, 0.002);
 TUNEABLE(r_1, int, 177, 0, 10000, 30, 0.002);
@@ -74,9 +75,9 @@ int get_think_time(float time_left, int num_moves_out_of_book, int num_moves_unt
 }
 
 Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes)
-    : is_main_thread(is_main_thread),
-      tt(tt),
-      nodes(nodes) {};
+    : nodes(nodes),
+      is_main_thread(is_main_thread),
+      tt(tt) {};
 
       
 int Engine::get_corrhist(Color color){
@@ -89,14 +90,13 @@ int Engine::get_corrhist(Color color){
 }
 
 bool Engine::update_interrupt_flag(){
-    SearchLimit limit_ = limit.load();
-    switch (limit_.type){
+    switch (limit.type){
         case LimitType::Time:
             update_run_time();
-            interrupt_flag = (run_time >= limit_.value);
+            interrupt_flag = (run_time >= limit.value);
             break;
         case LimitType::Nodes:
-            interrupt_flag = (nodes >= limit_.value);
+            interrupt_flag = (nodes >= limit.value);
             break;
         default:
             interrupt_flag = false;

@@ -19,6 +19,7 @@ class WorkerPool {
     WorkerPool(int size, TranspositionTable& tt, std::atomic<int64_t>& nodes);
 
     int size();
+    void set_size(int size);
     void clear_state();
     void synchronize();
     void set_tablebase_loaded(bool tablebase_loaded);
@@ -29,8 +30,12 @@ class WorkerPool {
     void start_searching(SearchLimit limit);
     void interrupt_and_join_threads();
 
+    uint64_t total_node_count();
+
     Worker& main();
 
     private:
+    TranspositionTable& tt;
+    std::atomic<int64_t>& nodes;
     std::deque<Worker> workers;
 };
