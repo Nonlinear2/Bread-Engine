@@ -814,9 +814,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     }
 
     assert(is_valid(max_value));
-
-    tt.store(zobrist_hash, to_tt(max_value, ply), uncorrected_static_eval, depth, best_move,
-        node_type, pos.fullMoveNumber(), transposition.ttpv);
+    if (is_main_thread)
+        tt.store(zobrist_hash, to_tt(max_value, ply), uncorrected_static_eval, depth, best_move,
+            node_type, pos.fullMoveNumber(), transposition.ttpv);
 
     return max_value;
 }
@@ -913,7 +913,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
                 stand_pat = transposition.value;
     
         if (stand_pat >= beta){
-            if (!is_hit)
+            if (!is_hit && is_main_thread)
                 tt.store(zobrist_hash, to_tt(stand_pat, ply), uncorrected_static_eval,
                     DEPTH_QSEARCH, Move::NO_MOVE, TFlag::LOWER_BOUND, pos.fullMoveNumber(), transposition.ttpv);
             return stand_pat;
@@ -997,8 +997,9 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
             stand_pat = TB_VALUE;
         }
 
-        tt.store(zobrist_hash, to_tt(stand_pat, ply), NO_VALUE, DEPTH_QSEARCH,
-            Move::NO_MOVE, TFlag::EXACT, pos.fullMoveNumber(), transposition.ttpv);
+        if (is_main_thread)
+            tt.store(zobrist_hash, to_tt(stand_pat, ply), NO_VALUE, DEPTH_QSEARCH,
+                Move::NO_MOVE, TFlag::EXACT, pos.fullMoveNumber(), transposition.ttpv);
         return stand_pat;
     }
 
@@ -1009,7 +1010,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (pos.halfMoveClock() + depth + QSEARCH_SOFT_DEPTH_LIMIT >= 100)
         return max_value;
 
-    if (depth == 0 || depth == -1)
+    if ((depth == 0 || depth == -1) && is_main_thread)
         tt.store(zobrist_hash, to_tt(max_value, ply),
             uncorrected_static_eval, DEPTH_QSEARCH, best_move,
             max_value >= beta ? TFlag::LOWER_BOUND : TFlag::UPPER_BOUND,
