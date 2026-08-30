@@ -27,7 +27,7 @@ class Engine {
 
     Engine(bool is_main_thread, TranspositionTable& tt, WorkerPool& worker_pool);
 
-    std::atomic<int64_t> nodes;
+    std::atomic<int64_t> nodes = 0;
     std::atomic<bool> is_main_thread;
     std::atomic<bool> interrupt_flag = false;
 
@@ -47,7 +47,6 @@ class Engine {
 
     WorkerPool& worker_pool;
 
-    int run_time = 0;
     bool tablebase_loaded = false;
 
     int64_t tb_hits = 0;
