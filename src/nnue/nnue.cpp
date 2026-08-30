@@ -85,11 +85,6 @@ int32_t* l1_bias    = nullptr;
 int16_t* l2_weights = nullptr;
 int32_t* l2_bias    = nullptr;
 
-alignas(32) uint8_t ft_clamped_output[L1_INPUT_SIZE];
-
-alignas(32) int32_t l1_output[L1_OUTPUT_SIZE];
-alignas(32) int16_t l1_clamped_output[L1_OUTPUT_SIZE];
-
 alignas(32) int16_t nnz_lookup[256][8];
 
 void load_model(){
@@ -475,6 +470,11 @@ int32_t run_L2(int16_t* clamped_input, int32_t* input, int bucket){
 };
 
 int run(Accumulators& accumulators, Color stm, int piece_count, bool trace){
+
+    alignas(64) uint8_t ft_clamped_output[L1_INPUT_SIZE];
+    alignas(64) int32_t l1_output[L1_OUTPUT_SIZE];
+    alignas(64) int16_t l1_clamped_output[L1_OUTPUT_SIZE];
+
     constexpr int pieces_per_bucket = 32 / NUM_OUTPUT_BUCKETS;
     int bucket = (piece_count - 2) / pieces_per_bucket;
 
