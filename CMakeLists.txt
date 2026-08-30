@@ -51,8 +51,10 @@ if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL 
     )
 endif()
 
+set(bread_ARCH "native" CACHE STRING "")
+
 if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
-    add_compile_options(-march=native)
+    add_compile_options(-march=${bread_ARCH})
 endif()
 
 function(bread_configure bread_TARGET)
