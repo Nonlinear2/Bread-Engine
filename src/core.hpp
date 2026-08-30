@@ -17,6 +17,8 @@
 
 class WorkerPool;
 
+class WorkerPool;
+
 int nnue_evaluate(NnueBoard& pos);
 
 int get_think_time(float time_left, int num_moves_out_of_book,
