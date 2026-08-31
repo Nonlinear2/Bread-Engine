@@ -1,6 +1,6 @@
 #include "uci.hpp"
 
-UCIAgent::UCIAgent(): nodes(0), workers(1, tt, nodes) {};
+UCIAgent::UCIAgent(): workers(1, tt) {};
 
 bool UCIAgent::process_uci_command(std::string command){
     std::vector<std::string> parsed_command = split_string(command);

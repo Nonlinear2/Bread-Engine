@@ -1,10 +1,10 @@
 #include "searcher.hpp"
 
-Worker::Worker(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes)
-    : engine(is_main_thread, tt, nodes) {};
+Worker::Worker(bool is_main_thread, TranspositionTable& tt, WorkerPool& worker_pool)
+    : engine(is_main_thread, tt, worker_pool) {};
 
-WorkerPool::WorkerPool(int size, TranspositionTable& tt, std::atomic<int64_t>& nodes)
-    : tt(tt), nodes(nodes) {
+WorkerPool::WorkerPool(int size, TranspositionTable& tt)
+    : tt(tt) {
     set_size(size);
 }
 
@@ -14,7 +14,7 @@ void WorkerPool::set_size(int size){
 
     for (int i = 0; i < size; i++) {
         bool is_main = (i == 0);
-        workers.emplace_back(is_main, tt, nodes);
+        workers.emplace_back(is_main, tt, *this);
     }
 };
 
@@ -81,7 +81,11 @@ void WorkerPool::interrupt_and_join_threads(){
 
 
 uint64_t WorkerPool::total_node_count(){
-    return nodes.load(std::memory_order::relaxed);
+    uint64_t nodes = 0;
+    for (auto& worker: workers)
+        nodes += worker.engine.nodes.load(std::memory_order::relaxed);
+
+    return nodes;
 }
 
 Worker& WorkerPool::main(){

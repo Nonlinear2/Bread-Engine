@@ -16,7 +16,6 @@ class UCIAgent {
 
     NnueBoard pos;
     TranspositionTable tt;
-    std::atomic<int64_t> nodes;
     WorkerPool workers;
 
     bool process_uci_command(std::string command);
