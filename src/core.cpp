@@ -386,9 +386,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     const int ply = ss - root_ss;
     assert(ply < MAX_PLY); // avoid stack overflow
 
-    if (interrupt_flag || ((nodes & 2047) == 0 && update_interrupt_flag()))
+    const int64_t node_count = nodes.load(std::memory_order_relaxed);
+    if (interrupt_flag.load(std::memory_order_relaxed)
+        || ((node_count & 2047) == 0 && update_interrupt_flag()))
         return NO_VALUE;
-    nodes.fetch_add(1, std::memory_order_relaxed);
+    nodes.store(node_count + 1, std::memory_order_relaxed);
 
     if (ply > seldepth)
         seldepth = ply;
@@ -828,9 +830,11 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     assert(ply < MAX_PLY); // avoid stack overflow
 
 
-    if (interrupt_flag || ((nodes & 2047) == 0 && update_interrupt_flag()))
+    const int64_t node_count = nodes.load(std::memory_order_relaxed);
+    if (interrupt_flag.load(std::memory_order_relaxed)
+        || ((node_count & 2047) == 0 && update_interrupt_flag()))
         return NO_VALUE;
-    nodes.fetch_add(1, std::memory_order_relaxed);
+    nodes.store(node_count + 1, std::memory_order_relaxed);
 
     if (ply > seldepth)
         seldepth = ply;
