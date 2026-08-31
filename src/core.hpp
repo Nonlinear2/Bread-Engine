@@ -30,6 +30,7 @@ class Engine {
     std::atomic<int64_t> nodes = 0;
     std::atomic<bool> is_main_thread;
     std::atomic<bool> interrupt_flag = false;
+    std::atomic<SearchLimit> limit;
 
     NnueBoard pos = NnueBoard();
 
@@ -52,8 +53,6 @@ class Engine {
     int64_t tb_hits = 0;
     int64_t seldepth = 0;
     int root_depth = 0;
-
-    SearchLimit limit;
 
     Stack stack[MAX_PLY + STACK_PADDING_SIZE] = {};
     Stack* root_ss = stack + 2;

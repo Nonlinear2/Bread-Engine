@@ -55,14 +55,12 @@ void WorkerPool::set_position(NnueBoard& pos){
     interrupt_and_join_threads(); // make sure data races can't happen
 
     for (auto& worker: workers)
-        worker.engine.pos = pos;
+        worker.engine.pos = pos; 
 }
 
 void WorkerPool::update_limit(SearchLimit limit){
-    interrupt_and_join_threads(); // make sure data races can't happen
-
     for (auto& worker: workers)
-        worker.engine.limit = limit;
+        worker.engine.limit.store(limit);
 };
 
 void WorkerPool::start_searching(SearchLimit limit){

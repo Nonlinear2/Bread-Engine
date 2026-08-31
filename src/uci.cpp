@@ -42,7 +42,6 @@ bool UCIAgent::process_uci_command(std::string command){
         process_eval(parsed_command);
 
     } else if (first == "go"){
-        workers.interrupt_and_join_threads();
         process_go(parsed_command);
 
     } else if (first == "ponderhit"){
@@ -153,6 +152,8 @@ void UCIAgent::process_eval(std::vector<std::string> command){
 }
 
 void UCIAgent::process_go(std::vector<std::string> command){
+    workers.interrupt_and_join_threads();
+
     std::string go_type = command[1];
 
     SearchLimit limit;
