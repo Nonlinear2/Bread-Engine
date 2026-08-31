@@ -90,13 +90,13 @@ int Engine::get_corrhist(Color color){
 }
 
 bool Engine::update_interrupt_flag(){
-    switch (limit.type){
+    switch (limit.load().type){
         case LimitType::Time:
             update_run_time();
-            interrupt_flag = (run_time >= limit.value);
+            interrupt_flag = (run_time >= limit.load().value);
             break;
         case LimitType::Nodes:
-            interrupt_flag = (nodes >= limit.value);
+            interrupt_flag = (nodes >= limit.load().value);
             break;
         default:
             interrupt_flag = false;
@@ -190,7 +190,7 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(){
     return std::pair(pv, ponder_move);
 }
 
-Move Engine::iterative_deepening(SearchLimit limit){
+Move Engine::iterative_deepening(SearchLimit limit_){
     assert(is_nonsense || nonsense_stage == Nonsense::STANDARD);
 
     if (is_nonsense){
@@ -202,10 +202,10 @@ Move Engine::iterative_deepening(SearchLimit limit){
         }
     }
 
-    if (nonsense_stage >= Nonsense::PROMOTE && limit.type == LimitType::Time)
-        this->limit = SearchLimit(LimitType::Time, std::min(limit.value, 200)); // move quickly
+    if (nonsense_stage >= Nonsense::PROMOTE && limit_.type == LimitType::Time)
+        limit = SearchLimit(LimitType::Time, std::min(limit_.value, 200)); // move quickly
     else
-        this->limit = limit;
+        limit = limit_;
 
     start_time = std::chrono::high_resolution_clock::now();
 
@@ -344,9 +344,9 @@ Move Engine::iterative_deepening(SearchLimit limit){
         if (interrupt_flag
             || is_mate(best_move.score())
             || root_depth >= ENGINE_MAX_DEPTH
-            || (limit.type == LimitType::Depth && root_depth == limit.value)
-            || (limit.type == LimitType::Nodes && nodes >= limit.value)
-            || (limit.type == LimitType::Time && best_move_changes < 1 && run_time > 2*limit.value / 3))
+            || (limit.load().type == LimitType::Depth && root_depth == limit.load().value)
+            || (limit.load().type == LimitType::Nodes && nodes >= limit.load().value)
+            || (limit.load().type == LimitType::Time && best_move_changes < 1 && run_time > 2*limit.load().value / 3))
             break;
     }
 
