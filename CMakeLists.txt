@@ -37,6 +37,7 @@ set(bread_SOURCE
     ${bread_SRC}/benchmark.cpp
     ${bread_SRC}/datagen.cpp
     ${bread_SRC}/tb.cpp
+    ${bread_SRC}/timer.cpp
     ${bread_SRC}/searcher.cpp
     ${bread_SRC}/uci.cpp
     ${bread_SRC}/extern/Fathom/src/tbprobe.cpp
@@ -51,8 +52,10 @@ if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL 
     )
 endif()
 
+set(bread_ARCH "native" CACHE STRING "")
+
 if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
-    add_compile_options(-march=native)
+    add_compile_options(-march=${bread_ARCH})
 endif()
 
 function(bread_configure bread_TARGET)

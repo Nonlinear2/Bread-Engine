@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <chrono>
 #include <atomic>
 #include "chess.hpp"
 #include "transposition_table.hpp"
@@ -14,6 +13,9 @@
 #include "sorted_move_gen.hpp"
 #include "tune.hpp"
 #include "tb.hpp"
+#include "timer.hpp"
+
+class WorkerPool;
 
 class WorkerPool;
 
@@ -30,12 +32,12 @@ class Engine {
     std::atomic<int64_t>& nodes;
     std::atomic<bool> is_main_thread;
     std::atomic<bool> interrupt_flag = false;
+    std::atomic<SearchLimit> limit;
 
     NnueBoard pos = NnueBoard();
 
     TranspositionTable& tt;
 
-    void update_run_time();
     Move iterative_deepening(SearchLimit limit);
     void clear_state();
     void save_state(std::string file);
@@ -44,16 +46,13 @@ class Engine {
     private:
     friend class WorkerPool;
 
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
+    Timer timer;
 
-    int run_time = 0;
     bool tablebase_loaded = false;
 
     int64_t tb_hits = 0;
     int64_t seldepth = 0;
     int root_depth = 0;
-
-    SearchLimit limit;
 
     Stack stack[MAX_PLY + STACK_PADDING_SIZE] = {};
     Stack* root_ss = stack + 2;
