@@ -17,8 +17,6 @@
 
 class WorkerPool;
 
-class WorkerPool;
-
 int nnue_evaluate(NnueBoard& pos);
 
 int get_think_time(float time_left, int num_moves_out_of_book,
@@ -27,9 +25,9 @@ int get_think_time(float time_left, int num_moves_out_of_book,
 class Engine {
     public:
 
-    Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes);
+    Engine(bool is_main_thread, TranspositionTable& tt, WorkerPool& worker_pool);
 
-    std::atomic<int64_t>& nodes;
+    std::atomic<int64_t> nodes = 0;
     std::atomic<bool> is_main_thread;
     std::atomic<bool> interrupt_flag = false;
     std::atomic<SearchLimit> limit;
@@ -47,6 +45,8 @@ class Engine {
     friend class WorkerPool;
 
     Timer timer;
+
+    WorkerPool& worker_pool;
 
     bool tablebase_loaded = false;
 

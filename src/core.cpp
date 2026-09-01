@@ -74,10 +74,10 @@ int get_think_time(float time_left, int num_moves_out_of_book, int num_moves_unt
     return static_cast<int>(target + 0.9F*increment);
 }
 
-Engine::Engine(bool is_main_thread, TranspositionTable& tt, std::atomic<int64_t>& nodes)
-    : nodes(nodes),
-      is_main_thread(is_main_thread),
-      tt(tt) {};
+Engine::Engine(bool is_main_thread, TranspositionTable& tt, WorkerPool& worker_pool)
+    : is_main_thread(is_main_thread),
+      tt(tt),
+      worker_pool(worker_pool) {};
 
       
 int Engine::get_corrhist(Color color){
@@ -92,13 +92,14 @@ int Engine::get_corrhist(Color color){
 bool Engine::update_interrupt_flag(){
     switch (limit.load().type){
         case LimitType::Time:
-            interrupt_flag = (timer.elapsed() >= limit.load().value);
+            if (timer.elapsed() >= limit.load().value)
+                interrupt_flag = true;
             break;
         case LimitType::Nodes:
-            interrupt_flag = (nodes >= limit.load().value);
+            if (nodes >= limit.load().value)
+                interrupt_flag = true;
             break;
         default:
-            interrupt_flag = false;
             break;
     }
     return interrupt_flag;
@@ -323,8 +324,10 @@ Move Engine::iterative_deepening(SearchLimit limit_){
             else
                 std::cout << " score cp " << best_move.score();
     
-            std::cout << " nodes " << nodes;
-            std::cout << " nps " << nodes * 1000 / timer.elapsed();
+            uint64_t total_nodes = worker_pool.total_node_count(); // aggregate across all threads
+
+            std::cout << " nodes " << total_nodes;
+            std::cout << " nps " << total_nodes * 1000 / timer.elapsed();
             std::cout << " tbhits " << tb_hits;
             std::cout << " time " << timer.elapsed();
             std::cout << " hashfull " << tt.hashfull();
@@ -358,6 +361,8 @@ Move Engine::iterative_deepening(SearchLimit limit_){
     }
 
     if (is_main_thread){
+        worker_pool.interrupt();
+
         std::cout << "bestmove " << uci::moveToUci(best_move);
         if (ponder_move.size() > 0)
             std::cout << " ponder " << ponder_move;
