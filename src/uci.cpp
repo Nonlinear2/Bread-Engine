@@ -87,7 +87,7 @@ void UCIAgent::process_setoption(std::vector<std::string> command){
     } else if (option_name == "Hash"){
         int size = std::stoi(option_value);
         if ((size & (size - 1)) == 0){
-            tt.allocateMB(size);
+            tt.allocateMB(size, workers.size());
             std::cout << "info string hash size set to " << size << std::endl;
         } else {
             std::cout << "info string hash size must be a power of 2" << std::endl;
