@@ -59,7 +59,7 @@ void TranspositionTable::info(){
     std::cout << "=================================" << std::endl;
 }
 
-void TranspositionTable::allocateMB(int new_size){
+void TranspositionTable::allocateMB(int new_size, int num_threads){
     assert(new_size >= 2);
     assert((new_size & (new_size - 1)) == 0); // make sure the size is a power of 2
 
@@ -74,6 +74,7 @@ void TranspositionTable::allocateMB(int new_size){
 
     delete[] entries;
     entries = new TEntry[size];
+    clear(num_threads);
 }
 
 void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int depth,
