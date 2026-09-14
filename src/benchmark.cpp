@@ -83,7 +83,7 @@ void benchmark_nn(){
 }
 
 void benchmark_engine(Engine& engine, int depth){
-
+    engine.tt.clear();
     engine.clear_state();
 
     std::vector<int> times;

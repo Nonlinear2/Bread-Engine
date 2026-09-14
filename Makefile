@@ -8,8 +8,9 @@ endif
 
 DEFAULT_NAME := bread_engine_$(VERSION)$(SUFFIX)
 EXE ?= $(DEFAULT_NAME)
-CXX ?= clang++
+CXX := clang++
 CXXFLAGS ?=
+ARCH ?= native
 
 BUILD_DIR := makefile-build
 
@@ -17,16 +18,20 @@ BUILD_DIR := makefile-build
 
 bread_engine: $(EXE)
 
+native: ARCH := native
+# microarchitecture level corresponding to avx2
+avx2:   ARCH := x86-64-v3
+avx512: ARCH := x86-64-v4
+
+native avx2 avx512: bread_engine
+
 uci_search: $(BUILD_DIR)/Makefile
 	$(MAKE) -C $(BUILD_DIR) CXX=$(CXX) uci_search
 
 search_position: $(BUILD_DIR)/Makefile
 	$(MAKE) -C $(BUILD_DIR) CXX=$(CXX) search_position
 
-data_gen: $(BUILD_DIR)/Makefile
-	$(MAKE) -C $(BUILD_DIR) CXX=$(CXX) data_gen
-
-all: bread_engine uci_search search_position data_gen
+all: bread_engine uci_search search_position
 
 $(EXE): $(BUILD_DIR)/$(DEFAULT_NAME)
 	cp $(BUILD_DIR)/$(DEFAULT_NAME) $(EXE)
@@ -39,7 +44,8 @@ $(BUILD_DIR)/Makefile: CMakeLists.txt
 	cd $(BUILD_DIR) && cmake -G "Unix Makefiles" \
 		-DCMAKE_CXX_COMPILER=$(CXX) \
 		-DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
-		-DCMAKE_BUILD_TYPE=Release ..
+		-DCMAKE_BUILD_TYPE=Release .. \
+		-Dbread_ARCH=${ARCH}
 
 clean:
 	rm -rf $(BUILD_DIR)

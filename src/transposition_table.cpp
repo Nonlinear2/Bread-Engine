@@ -59,7 +59,7 @@ void TranspositionTable::info(){
     std::cout << "=================================" << std::endl;
 }
 
-void TranspositionTable::allocateMB(int new_size){
+void TranspositionTable::allocateMB(int new_size, int num_threads){
     assert(new_size >= 2);
     assert((new_size & (new_size - 1)) == 0); // make sure the size is a power of 2
 
@@ -68,12 +68,13 @@ void TranspositionTable::allocateMB(int new_size){
 
     // closest power of 2 to 1'000'000 / 16 is 2^16 = 65536
     assert(sizeof(TEntry) == 16);
-    constexpr int entries_in_one_mb = 65536;
+    constexpr size_t entries_in_one_mb = 65536;
     size = new_size * entries_in_one_mb;
     size_mb = new_size;
 
     delete[] entries;
     entries = new TEntry[size];
+    clear(num_threads);
 }
 
 void TranspositionTable::store(uint64_t zobrist, int value, int static_eval, int depth,
@@ -116,10 +117,18 @@ TTData TranspositionTable::probe(bool& is_hit, uint64_t zobrist, bool pv){
         return TTData();
 }
 
-void TranspositionTable::clear(){
-    std::lock_guard<std::mutex> lock(clear_mutex);
-    for (size_t i = 0; i < size; i++) {
-        entries[i] = TEntry();
+void TranspositionTable::clear(int num_threads){
+    std::vector<std::thread> threads;
+    threads.reserve(num_threads);
+    for (size_t i = 0; i < num_threads; i++) {
+        size_t begin = size * i / num_threads;
+        size_t end = size * (i + 1) / num_threads;
+        threads.emplace_back(std::thread(
+            [this, begin, end] { std::fill(entries + begin, entries + end, TEntry{}); }
+        ));
+    }
+    for (size_t i = 0; i < num_threads; i++) {
+        threads[i].join();
     }
 }
 

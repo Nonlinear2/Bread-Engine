@@ -2,6 +2,8 @@
 
 #include <fstream>
 #include <array>
+#include <cassert>
+#include <cstdint>
 #include "constants.hpp"
 #include "tune.hpp"
 #include "chess.hpp"
@@ -33,73 +35,74 @@ class HistoryBase {
     }
 
     void clear(){
-        std::fill(std::begin(history), std::end(history), fill_value);
+        std::fill(std::begin(history), std::end(history), static_cast<int16_t>(fill_value));
     }
 
-    void apply_bonus(int& value, int bonus){
-        value += bonus - value * std::abs(bonus) / max_bonus;
+    void apply_bonus(int16_t& value, int bonus){
+        assert(max_bonus < 32767 && std::abs(bonus) <= max_bonus);
+        value = static_cast<int16_t>(value + bonus - value * std::abs(bonus) / max_bonus);
     }
 
     void save_to_stream(std::ofstream& ofs){
         for (const auto& v : history)
-            ofs.write(reinterpret_cast<const char*>(&v), sizeof(int));
+            ofs.write(reinterpret_cast<const char*>(&v), sizeof(v));
     }
 
     void load_from_stream(std::ifstream& ifs){
         for (auto& v : history)
-            ifs.read(reinterpret_cast<char*>(&v), sizeof(int));
+            ifs.read(reinterpret_cast<char*>(&v), sizeof(v));
     }
 
     const int& fill_value;
     const int& max_bonus;
-    std::array<int, size> history = {};
+    std::array<int16_t, size> history = {};
 };
 
 class ContinuationHistory: public HistoryBase<NUM_PIECES * NUM_SQUARES * NUM_PIECES * NUM_SQUARES> {
     public:
     ContinuationHistory(): HistoryBase(CONTHIST_FILL_VALUE, MAX_CONTHIST_BONUS) {}
 
-    int& get(Piece prev_piece, Square prev_to, Piece piece, Square to);
+    int16_t& get(Piece prev_piece, Square prev_to, Piece piece, Square to);
 };
 
 class FromToHistory: public HistoryBase<NUM_COLORS * NUM_SQUARES * NUM_SQUARES> {
     public:
     FromToHistory(): HistoryBase(HIST_FILL_VALUE, MAX_HIST_BONUS) {}
 
-    int& get(Color color, Square from, Square to);
+    int16_t& get(Color color, Square from, Square to);
 };
 
 class CaptureHistory: public HistoryBase<NUM_PIECES * NUM_SQUARES * NUM_PIECETYPES> {
     public:
     CaptureHistory(): HistoryBase(CAPTHIST_FILL_VALUE, MAX_CAPTHIST_BONUS) {}
 
-    int& get(Piece piece, Square to, Piece captured);
+    int16_t& get(Piece piece, Square to, Piece captured);
 };
 
 class PawnCorrectionHistory: public HistoryBase<NUM_COLORS * PAWN_CORRHIST_SIZE> {
     public:
     PawnCorrectionHistory(): HistoryBase(PAWN_CORRHIST_FILL_VALUE, MAX_PAWN_CORRHIST_BONUS) {}
 
-    int& get(Color color, uint16_t key);
+    int16_t& get(Color color, uint16_t key);
 };
 
 class MinorCorrectionHistory: public HistoryBase<NUM_COLORS * MINOR_CORRHIST_SIZE> {
     public:
     MinorCorrectionHistory(): HistoryBase(MINOR_CORRHIST_FILL_VALUE, MAX_MINOR_CORRHIST_BONUS) {}
 
-    int& get(Color color, uint16_t key);
+    int16_t& get(Color color, uint16_t key);
 };
 
 class MajorCorrectionHistory: public HistoryBase<NUM_COLORS * MAJOR_CORRHIST_SIZE> {
     public:
     MajorCorrectionHistory(): HistoryBase(MAJOR_CORRHIST_FILL_VALUE, MAX_MAJOR_CORRHIST_BONUS) {}
 
-    int& get(Color color, uint16_t key);
+    int16_t& get(Color color, uint16_t key);
 };
 
 class NonPawnCorrectionHistory: public HistoryBase<NUM_COLORS * NONPAWN_CORRHIST_SIZE> {
     public:
     NonPawnCorrectionHistory(): HistoryBase(NONPAWN_CORRHIST_FILL_VALUE, MAX_NONPAWN_CORRHIST_BONUS) {}
 
-    int& get(Color color, uint16_t key);
+    int16_t& get(Color color, uint16_t key);
 };

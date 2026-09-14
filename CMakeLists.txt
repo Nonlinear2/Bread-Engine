@@ -37,6 +37,10 @@ set(bread_SOURCE
     ${bread_SRC}/benchmark.cpp
     ${bread_SRC}/datagen.cpp
     ${bread_SRC}/tb.cpp
+    ${bread_SRC}/timer.cpp
+    ${bread_SRC}/searcher.cpp
+    ${bread_SRC}/uci.cpp
+    ${bread_SRC}/timer.cpp
     ${bread_SRC}/extern/Fathom/src/tbprobe.cpp
 )
 
@@ -49,8 +53,16 @@ if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL 
     )
 endif()
 
-if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
-    add_compile_options(-march=native)
+set(bread_ARCH "native" CACHE STRING "")
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(-march=${bread_ARCH})
+    add_compile_options(-flto=thin)
+    add_link_options(-flto=thin -fuse-ld=lld)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(-march=${bread_ARCH})
+    add_compile_options(-flto=auto)
+    add_link_options(-flto=auto)
 endif()
 
 function(bread_configure bread_TARGET)
@@ -79,19 +91,16 @@ endfunction(bread_configure)
 
 bread_configure(bread_engine SOURCES
     ${bread_SOURCE}
-    ${bread_SRC}/uci.cpp
     ${bread_SRC}/main.cpp
 )
 
 bread_configure(uci_search SOURCES
     ${bread_SOURCE}
-    ${bread_SRC}/uci.cpp
     ${bread_UTILS}/run_uci_search.cpp
 )
 
 bread_configure(search_position SOURCES
     ${bread_SOURCE}
-    ${bread_SRC}/uci.cpp
     ${bread_UTILS}/run_search.cpp
 )
 

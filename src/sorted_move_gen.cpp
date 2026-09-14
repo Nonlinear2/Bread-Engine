@@ -5,6 +5,7 @@ UNACTIVE_TUNEABLE(q_att_2, int, 85, 0, 500, 20, 0.002);
 UNACTIVE_TUNEABLE(c_chk_1, int, 165, 0, 1000, 25, 0.002);
 UNACTIVE_TUNEABLE(q_chk_1, int, 125, 0, 1000, 25, 0.002);
 UNACTIVE_TUNEABLE(c_cpt, int, 288, 0, 1000, 60, 0.002);
+UNACTIVE_TUNEABLE(c_chis, int, 100, 0, 1000, 20, 0.002);
 UNACTIVE_TUNEABLE(c_prm, int, 189, 0, 1000, 40, 0.002);
 UNACTIVE_TUNEABLE(q_prm, int, 145, 0, 1000, 30, 0.002);
 UNACTIVE_TUNEABLE(q_his, int, 147, 0, 1000, 30, 0.002);
@@ -160,8 +161,14 @@ void SortedMoveGen<GenType::NORMAL>::set_score(Move& move){
 
 template<>
 void SortedMoveGen<GenType::QSEARCH>::set_score(Move& move){
+    const Piece piece = pos.at(move.from());
+    const Piece to_piece = pos.at(move.to());
 
-    int score = piece_value[pos.at(move.to()).type()];
+    int score = 0;
+    if (to_piece != Piece::NONE || move.typeOf() == Move::ENPASSANT){
+        score += c_cpt * piece_value[to_piece.type()] / 256;
+        score += c_chis * capt_history.get(piece, move.to(), to_piece) / 8192;
+    }
 
     score = std::clamp(score, WORST_MOVE_SCORE + 1, BEST_MOVE_SCORE - 1);
 

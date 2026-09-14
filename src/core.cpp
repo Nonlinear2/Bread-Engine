@@ -1,4 +1,5 @@
 #include "core.hpp"
+#include "searcher.hpp"
 
 TUNEABLE(opp_1, int, 127, 0, 10000, 30, 0.002);
 TUNEABLE(r_1, int, 177, 0, 10000, 30, 0.002);
@@ -18,6 +19,7 @@ TUNEABLE(lmp_2, int, 198, 0, 1000, 40, 0.002);
 TUNEABLE(lmp_3, int, 75, 0, 1000, 17, 0.002);
 TUNEABLE(lmp_4, int, 162, 0, 1000, 40, 0.002);
 TUNEABLE(lmp_5, int, 60, 0, 1000, 20, 0.002);
+TUNEABLE(lmp_6, int, 150, 0, 1000, 30, 0.002);
 TUNEABLE(see_1, int, 55, 0, 1000, 20, 0.002);
 TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
 TUNEABLE(see_3, int, 39, 0, 1000, 20, 0.002);
@@ -72,10 +74,10 @@ int get_think_time(float time_left, int num_moves_out_of_book, int num_moves_unt
     return static_cast<int>(target + 0.9F*increment);
 }
 
-Engine::Engine(bool display_uci, TranspositionTable& tt, std::atomic<int64_t>& nodes)
-    : display_uci(display_uci),
+Engine::Engine(bool is_main_thread, TranspositionTable& tt, WorkerPool& worker_pool)
+    : is_main_thread(is_main_thread),
       tt(tt),
-      nodes(nodes) {};
+      worker_pool(worker_pool) {};
 
       
 int Engine::get_corrhist(Color color){
@@ -88,24 +90,22 @@ int Engine::get_corrhist(Color color){
 }
 
 bool Engine::update_interrupt_flag(){
-    SearchLimit limit_ = limit.load();
-    switch (limit_.type){
+    switch (limit.load().type){
         case LimitType::Time:
-            update_run_time();
-            interrupt_flag = (run_time >= limit_.value);
+            if (timer.elapsed() >= limit.load().value)
+                interrupt_flag = true;
             break;
         case LimitType::Nodes:
-            interrupt_flag = (nodes >= limit_.value);
+            if (nodes >= limit.load().value)
+                interrupt_flag = true;
             break;
         default:
-            interrupt_flag = false;
             break;
     }
     return interrupt_flag;
 }
 
 void Engine::clear_state(){
-    tt.clear();
     capt_history.clear();
     history.clear();
     pawn_corrhist.clear();
@@ -162,12 +162,6 @@ void Engine::load_state(std::string file){
     ifs.close();
 }
 
-void Engine::update_run_time(){
-    run_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::high_resolution_clock::now() - start_time
-    ).count() + 1; // add 1 to avoid divisions by 0
-};
-
 std::pair<std::string, std::string> Engine::get_pv_pmove(){
     std::string pv = "";
     std::string ponder_move = "";
@@ -190,7 +184,7 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(){
     return std::pair(pv, ponder_move);
 }
 
-Move Engine::iterative_deepening(SearchLimit limit){
+Move Engine::iterative_deepening(SearchLimit limit_){
     assert(is_nonsense || nonsense_stage == Nonsense::STANDARD);
 
     if (is_nonsense){
@@ -202,14 +196,13 @@ Move Engine::iterative_deepening(SearchLimit limit){
         }
     }
 
-    if (nonsense_stage >= Nonsense::PROMOTE && limit.type == LimitType::Time)
-        this->limit = SearchLimit(LimitType::Time, std::min(limit.value, 200)); // move quickly
+    if (nonsense_stage >= Nonsense::PROMOTE && limit_.type == LimitType::Time)
+        limit = SearchLimit(LimitType::Time, std::min(limit_.value, 200)); // move quickly
     else
-        this->limit = limit;
+        limit = limit_;
 
-    start_time = std::chrono::high_resolution_clock::now();
+    timer.reset();
 
-    std::string pv;
     std::string ponder_move = "";
 
     Move best_move = Move::NO_MOVE;
@@ -230,13 +223,12 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
     bool root_tb_hit = tablebase_loaded && TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
     if (root_tb_hit && !(is_nonsense && best_move.score() == TB_VALUE && !Nonsense::only_knight_bishop(pos))){
-        if (display_uci){
-            update_run_time();
+        if (is_main_thread){
             std::cout << "info depth 0 seldepth 0";
             std::cout << " score cp " << best_move.score();
             std::cout << " nodes 0 nps 0";
             std::cout << " tbhits 0";
-            std::cout << " time " << run_time;
+            std::cout << " time " << timer.elapsed();
             std::cout << " hashfull " << tt.hashfull();
             std::cout << " pv " << uci::moveToUci(best_move) << std::endl;
             std::cout << "bestmove " << uci::moveToUci(best_move) << std::endl;
@@ -252,6 +244,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
             }
 
             if (root_tb_hit || pos.them(engine_color).count() == 1){
+                tt.clear();
                 clear_state();
                 evaluate = Nonsense::evaluate;
                 nonsense_stage = Nonsense::PROMOTE;
@@ -265,6 +258,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
             }
 
             if (Nonsense::only_knight_bishop(pos)){
+                tt.clear();
                 clear_state();
                 evaluate = nnue_evaluate;
                 nonsense_stage = Nonsense::CHECKMATE;
@@ -314,13 +308,13 @@ Move Engine::iterative_deepening(SearchLimit limit){
             asp_beta = std::clamp(asp_beta, -INFINITE_VALUE, INFINITE_VALUE);
         }
 
-        if (display_uci){
+        if (is_main_thread){
+            std::string pv;
             std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
             pv = pv_pmove.first;
             if (pv_pmove.second.size() > 0)
                 ponder_move = pv_pmove.second;
     
-            update_run_time();
     
             // do not count interrupted searches in depth
             std::cout << "info depth " << root_depth - interrupt_flag;
@@ -330,10 +324,12 @@ Move Engine::iterative_deepening(SearchLimit limit){
             else
                 std::cout << " score cp " << best_move.score();
     
-            std::cout << " nodes " << nodes;
-            std::cout << " nps " << nodes * 1000 / run_time;
+            uint64_t total_nodes = worker_pool.total_node_count(); // aggregate across all threads
+
+            std::cout << " nodes " << total_nodes;
+            std::cout << " nps " << total_nodes * 1000 / timer.elapsed();
             std::cout << " tbhits " << tb_hits;
-            std::cout << " time " << run_time;
+            std::cout << " time " << timer.elapsed();
             std::cout << " hashfull " << tt.hashfull();
             std::cout << " pv" << pv << std::endl;
         }
@@ -342,9 +338,9 @@ Move Engine::iterative_deepening(SearchLimit limit){
         if (interrupt_flag
             || is_mate(best_move.score())
             || root_depth >= ENGINE_MAX_DEPTH
-            || (limit.type == LimitType::Depth && root_depth == limit.value)
-            || (limit.type == LimitType::Nodes && nodes >= limit.value)
-            || (limit.type == LimitType::Time && best_move_changes < 1 && run_time > 2*limit.value / 3))
+            || (limit.load().type == LimitType::Depth && root_depth == limit.load().value)
+            || (limit.load().type == LimitType::Nodes && nodes >= limit.load().value)
+            || (limit.load().type == LimitType::Time && best_move_changes < 1 && timer.elapsed() > 2*limit.load().value / 3))
             break;
     }
 
@@ -357,13 +353,16 @@ Move Engine::iterative_deepening(SearchLimit limit){
                     || (Nonsense::material_evaluate(pos) > queen_value
                         && best_move.score() > 3 * queen_value / 2)))
             {
+                tt.clear();
                 clear_state();
                 nonsense_stage = Nonsense::TAKE_PIECES;
             }
         }
     }
 
-    if (display_uci){
+    if (is_main_thread){
+        worker_pool.interrupt();
+
         std::cout << "bestmove " << uci::moveToUci(best_move);
         if (ponder_move.size() > 0)
             std::cout << " ponder " << ponder_move;
@@ -539,7 +538,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         // reverse futility pruning
         if (depth < 9 - 3*is_hit
             && !is_decisive(eval)
-            && eval - depth * (rfp_1 - rfp_2*cutnode) 
+            && eval - depth * (rfp_1 - rfp_2*cutnode)
                     - rfp_3
                     + rfp_4 * improving
                     + rfp_5 * opponent_worsening 
@@ -577,9 +576,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         return probcut_beta;
 
     while (move_gen.next(move)){
+        Piece moved_piece = pos.at(move.from());
+        Piece captured_piece = pos.at(move.to());
+
         bool is_capture = pos.isCapture(move);
-        Piece from_piece = pos.at(move.from());
-        Piece to_piece = pos.at(move.to());
+        bool gives_check = !(
+            move_gen.check_squares[moved_piece.type()] & Bitboard::fromSquare(move.to())
+        ).empty(); // only detects direct checks
 
         if (move == excluded_move)
             continue;
@@ -600,7 +603,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     && ss->static_eval
                         + lmp_2
                         + lmp_3 * depth
-                        + 150 * capt_history.get(from_piece, move.to(), to_piece) / 8192 < alpha)
+                        + lmp_6 * capt_history.get(moved_piece, move.to(), captured_piece) / 8192 < alpha)
                     continue;
 
                 // SEE pruning
@@ -608,7 +611,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     && depth < 5 && !SEE::evaluate(pos, move, -see_1 - see_2*depth))
                     continue;
             } else {
-                if (move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_4 + lmp_5 * depth < alpha)
+                if (!gives_check && move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_4 + lmp_5 * depth < alpha)
                     continue;
 
                 // lmp
@@ -657,12 +660,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         new_depth += extension;
 
-        ss->moved_piece = pos.at(move.from());
+        ss->moved_piece = moved_piece;
         ss->curr_move = move;
         ss->curr_move_capture = is_capture;
         pos.update_state(move, tt);
 
-        bool gives_check = pos.inCheck();
+        gives_check = pos.inCheck(); // more accurate than the approximation computed before
 
         new_depth -= depth > 5 && !is_hit; // IIR
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
@@ -720,7 +723,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             max_value = value;
             if (value > alpha)
                 best_move = move;
-            if (root_node){
+            if (root_node && value > alpha){
                 // ! This preserves the order of the array after the current move.
                 // ! Rotate invalidates root_moves[move_gen.index() - 1].
                 std::rotate(root_moves.begin(), root_moves.begin() + move_gen.index() - 1,
@@ -808,8 +811,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     assert(is_valid(max_value));
 
-    tt.store(zobrist_hash, to_tt(max_value, ply), uncorrected_static_eval, depth, best_move,
-        node_type, pos.fullMoveNumber(), transposition.ttpv);
+    if (excluded_move == Move::NO_MOVE)
+        tt.store(zobrist_hash, to_tt(max_value, ply), uncorrected_static_eval, depth, best_move,
+            node_type, pos.fullMoveNumber(), transposition.ttpv);
 
     return max_value;
 }

@@ -39,6 +39,9 @@ class SortedMoveGen {
     Square prev_to2 = Square::NO_SQ;
     NnueBoard& pos;
 
+    Move tt_move = Move::NO_MOVE;
+    std::array<Bitboard, 6> check_squares;
+
     SortedMoveGen(Movelist* to_search, Piece prev_piece, Square prev_to,
         Piece prev_piece2, Square prev_to2, NnueBoard& pos, int depth,
         KillerMoves& killers, FromToHistory& hist,
@@ -59,7 +62,6 @@ class SortedMoveGen {
     void prepare_quiet_sort();
     void skip_quiets();
 
-    Move tt_move = Move::NO_MOVE;
     private:
 
     KillerMoves& killer_moves;
@@ -73,7 +75,6 @@ class SortedMoveGen {
     Movelist bad_captures;
 
     Bitboard attacked_by_pawn;
-    std::array<Bitboard, 6> check_squares;
     Movelist* to_search = NULL;
 
     int depth = DEPTH_UNSEARCHED;
@@ -81,6 +82,7 @@ class SortedMoveGen {
     int bad_capture_idx = 0;
 
     GenerationStage stage = TT_MOVE;
+
     Move pop_move(Movelist& ml, int idx);
     Move pop_best_score(Movelist& ml);
 };
