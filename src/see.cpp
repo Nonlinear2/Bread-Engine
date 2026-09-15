@@ -49,13 +49,19 @@ bool SEE::evaluate(const Board& board, Move move, int threshold){ // return true
         // make capture
 
         // add xray pieces to the attackers
-        if (next_piece == PieceType::PAWN || next_piece == PieceType::BISHOP || next_piece == PieceType::QUEEN)
-            attackers[attacker_turn] |= attacks::bishop(to_sq, occupied) & bishops_and_queens;
+        if (next_piece == PieceType::PAWN || next_piece == PieceType::BISHOP || next_piece == PieceType::QUEEN){
+            Bitboard revealed = attacks::bishop(to_sq, occupied) & bishops_and_queens;
+            attackers[0] |= revealed;
+            attackers[1] |= revealed;
+        }
+        if (next_piece == PieceType::ROOK || next_piece == PieceType::QUEEN){
+            Bitboard revealed = attacks::rook(to_sq, occupied) & rooks_and_queens;
+            attackers[0] |= revealed;
+            attackers[1] |= revealed;
+        }
 
-        if (next_piece == PieceType::ROOK || next_piece == PieceType::QUEEN)
-            attackers[attacker_turn] |= attacks::rook(to_sq, occupied) & rooks_and_queens;
-
-        attackers[attacker_turn] &= occupied;
+        attackers[0] &= occupied;
+        attackers[1] &= occupied;
 
         attacker_turn = !attacker_turn;
 
