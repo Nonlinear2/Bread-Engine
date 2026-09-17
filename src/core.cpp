@@ -334,13 +334,17 @@ Move Engine::iterative_deepening(SearchLimit limit_){
             std::cout << " pv" << pv << std::endl;
         }
 
+        int soft_time_limit = (3796 - 1365*(best_move_changes == 0) + 50*best_move_changes)*limit.load().value / 4096;
+
+        soft_time_limit = std::min(soft_time_limit, limit.load().value);
+
         // should the search really stop if there is a mate for the oponent?
         if (interrupt_flag
             || is_mate(best_move.score())
             || root_depth >= ENGINE_MAX_DEPTH
             || (limit.load().type == LimitType::Depth && root_depth == limit.load().value)
             || (limit.load().type == LimitType::Nodes && nodes >= limit.load().value)
-            || (limit.load().type == LimitType::Time && best_move_changes < 1 && timer.elapsed() > 2*limit.load().value / 3))
+            || (limit.load().type == LimitType::Time && timer.elapsed() > soft_time_limit))
             break;
     }
 
