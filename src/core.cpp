@@ -334,7 +334,9 @@ Move Engine::iterative_deepening(SearchLimit limit_){
             std::cout << " pv" << pv << std::endl;
         }
 
-        int soft_time_limit = (3600 - 1265*(best_move_changes == 0) + 100*best_move_changes)*limit.load().value / 4096;
+        int soft_time_limit = (
+            3600 - 1265*(best_move_changes == 0) + 100*best_move_changes + std::abs(pos.evaluate() - best_move.score())/5
+        ) * limit.load().value / 4096;
 
         soft_time_limit = std::min(soft_time_limit, limit.load().value);
 
