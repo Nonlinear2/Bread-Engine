@@ -532,12 +532,11 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (!root_node && !pv && !in_check){
 
         // razoring
-        if (eval + r_1*depth*depth + r_2 < alpha)
+        if (eval + r_1*depth*depth + r_2 < alpha && excluded_move == Move::NO_MOVE)
             return qsearch<false>(alpha, beta, 0, ss); // we update static eval to the better qsearch eval.
 
         // reverse futility pruning
         if (depth < 9 - 3*is_hit
-            && excluded_move == Move::NO_MOVE
             && !is_decisive(eval)
             && eval - depth * (rfp_1 - rfp_2*cutnode)
                     - rfp_3
