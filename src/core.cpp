@@ -529,7 +529,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     depth = std::min(depth, ENGINE_MAX_DEPTH);
 
     // pruning
-    if (!root_node && !pv && !in_check){
+    if (!root_node && !pv && !in_check && excluded_move == Move::NO_MOVE){
 
         // razoring
         if (eval + r_1*depth*depth + r_2 < alpha)
@@ -547,7 +547,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         // null move pruning
         // maybe check for zugzwang?
-        if (cutnode && (ss - 1)->curr_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
+        if (cutnode && (ss - 1)->curr_move != Move::NULL_MOVE
             && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta) && pos.hasNonPawnMaterial(pos.sideToMove())){
 
             int R = 4 + (eval >= beta) + (eval >= beta + nmp_3) + depth / 4;
