@@ -611,7 +611,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 if (move_gen.index() >= 7 + 2*depth*depth + 3*improving)
                     continue;
 
-                if (move_gen.index() >= 7 + depth*depth){
+                if (move_gen.index() >= 7 + depth*depth + improving){
                     move_gen.skip_quiets();
                     continue;
                 }
