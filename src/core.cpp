@@ -588,18 +588,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             continue;
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
-
-            if (move_gen.index() >= 7 + 2*depth*depth + 3*improving)
-                continue;
-
-            if (!is_capture && move_gen.index() >= 7 + depth*depth + 3*improving){
-                move_gen.skip_quiets();
-                continue;
-            }
-
             if (in_check){
-                // no pruning
+                if (move_gen.index() >= 7 + 2*depth*depth + 3*improving)
+                    continue;
             } else if (is_capture){
+                if (move_gen.index() >= 7 + (1 + improving)*depth*depth + 3*improving)
+                    continue;
 
                 if (move_gen.index() > 3
                     && depth <= 8
@@ -614,6 +608,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     && depth < 5 && !SEE::evaluate(pos, move, -see_1 - see_2*depth))
                     continue;
             } else {
+                if (move_gen.index() >= 7 + 2*depth*depth + 3*improving)
+                    continue;
+
+                if (move_gen.index() >= 7 + depth*depth + 3*improving){
+                    move_gen.skip_quiets();
+                    continue;
+                }
+
                 if (!gives_check && move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_4 + lmp_5 * depth < alpha)
                     continue;
 
