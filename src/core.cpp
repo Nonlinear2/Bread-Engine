@@ -589,10 +589,10 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
             if (in_check){
-                if (move_gen.index() >= 7 + 2*depth*depth + 3*improving)
+                if (move_gen.index() >= 8 + 2*depth*depth + 3*improving)
                     continue;
             } else if (is_capture){
-                if (move_gen.index() >= 7 + (1 + improving)*depth*depth + 3*improving)
+                if (move_gen.index() >= 6 + 2*depth*depth + 3*improving)
                     continue;
 
                 if (move_gen.index() > 3
@@ -608,7 +608,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     && depth < 5 && !SEE::evaluate(pos, move, -see_1 - see_2*depth))
                     continue;
             } else {
-                if (move_gen.index() >= 7 + 2*depth*depth + 3*improving)
+                if (move_gen.index() >= 6 + 2*depth*depth + 3*improving)
                     continue;
 
                 if (move_gen.index() >= 7 + depth*depth + 3*improving){
