@@ -610,7 +610,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     continue;
 
                 // SEE pruning
-                if (move_gen.index() > 6
+                if (move_gen.index() > 6 + depth / 2
                     && depth < 5 && !SEE::evaluate(pos, move, -see_1 - see_2*depth))
                     continue;
             } else {
@@ -629,7 +629,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     continue;
                 
                 // SEE pruning
-                if (move_gen.index() > 6 + depth / 2 &&
+                if (move_gen.index() > 6 &&
                     depth < 5 && !SEE::evaluate(pos, move, alpha - ss->static_eval - see_3 - see_4*depth))
                     continue;
             }
