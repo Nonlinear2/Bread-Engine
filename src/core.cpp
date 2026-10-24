@@ -603,6 +603,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
                 if (move_gen.index() > 3
                     && depth <= 8
+                    && !gives_check
                     && ss->static_eval
                         + lmp_2
                         + lmp_3 * depth
