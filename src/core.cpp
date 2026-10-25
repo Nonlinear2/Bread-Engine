@@ -936,7 +936,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         Piece captured_piece = pos.at(move.to());
 
         if (!in_check && move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-            if (!is_hit && capture_gen.index() > 11)
+            if (capture_gen.index() > 11)
                 continue;
 
             if (stand_pat 
