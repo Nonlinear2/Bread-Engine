@@ -936,7 +936,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         Piece captured_piece = pos.at(move.to());
 
         if (!in_check && move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-            if (capture_gen.index() > 11)
+            if (!is_hit && capture_gen.index() > 11)
                 continue;
 
             if (stand_pat 
@@ -946,7 +946,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
                 continue;
 
             // SEE pruning
-            if (move != transposition.move && !SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
+            if (!SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
                 continue;
 
             // move count pruning
