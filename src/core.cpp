@@ -625,7 +625,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 // continuation history pruning
                 if (prev_piece != int(Piece::NONE)
                     && prev_to != int(Square::underlying::NO_SQ)
-                    && cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
+                    && cont_history.get(prev_piece, prev_to, moved_piece, move.to()) < -cthis_1 - cthis_2*depth)
                     continue;
                 
                 // SEE pruning
@@ -682,6 +682,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         reduction += red_5 * (move_gen.index() > lmr_1);
         reduction += red_6 * (cutnode && depth > 5);
         reduction += red_7 * (depth > 3 && !improving);
+        reduction -= cont_history.get(prev_piece, prev_to, moved_piece, move.to()) / 200;
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
