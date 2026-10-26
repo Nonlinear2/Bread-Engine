@@ -26,6 +26,7 @@ struct Stack {
     Piece moved_piece = Piece::NONE;
     int static_eval = NO_VALUE;
     int reduction = 0;
+    int depth = 0;
 };
 
 class KillerMoves {
