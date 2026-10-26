@@ -523,7 +523,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         depth++;
         red_history.apply_bonus(
             red_history.get((ss - 1)->depth, ~pos.sideToMove(), (ss - 1)->curr_move.to()),
-            -180
+            -80
         );
     }
 
@@ -534,7 +534,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         depth--;
         red_history.apply_bonus(
             red_history.get((ss - 1)->depth, ~pos.sideToMove(), (ss - 1)->curr_move.to()),
-            180
+            80
         );
     }
 
