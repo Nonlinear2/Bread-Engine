@@ -523,7 +523,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         depth++;
         red_history.apply_bonus(
             red_history.get((ss - 1)->depth, ~pos.sideToMove(), (ss - 1)->curr_move.to()),
-            -200
+            -100
         );
     }
 
@@ -534,7 +534,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         depth--;
         red_history.apply_bonus(
             red_history.get((ss - 1)->depth, ~pos.sideToMove(), (ss - 1)->curr_move.to()),
-            200
+            100
         );
     }
 
@@ -694,7 +694,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         reduction += red_5 * (move_gen.index() > lmr_1);
         reduction += red_6 * (cutnode && depth > 5);
         reduction += red_7 * (depth > 3 && !improving);
-        reduction += red_history.get(depth, ~pos.sideToMove(), move.to()) / 40;
+        reduction += red_history.get(depth, ~pos.sideToMove(), move.to()) / 50;
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
