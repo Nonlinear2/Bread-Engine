@@ -523,7 +523,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         depth++;
         red_history.apply_bonus(
             red_history.get((ss - 1)->depth, ~pos.sideToMove(), (ss - 1)->curr_move.to()),
-            -std::min(((ss - 1)->reduction - 3)*100 + 80, 800)
+            -180
         );
     }
 
