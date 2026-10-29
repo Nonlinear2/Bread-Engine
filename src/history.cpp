@@ -17,6 +17,14 @@ int16_t& FromToHistory::get(Color color, Square from, Square to){
     ];
 }
 
+int16_t& ReductionHistory::get(int depth, Color color, Square to){
+    return this->history[
+        depth * NUM_COLORS * NUM_SQUARES 
+      + color * NUM_SQUARES
+      + to.index()
+    ];
+}
+
 int16_t& CaptureHistory::get(Piece piece, Square to, Piece captured){
     // if the move was en passant, this function may be called with captured == None,
     // but idx will still be less than the history size

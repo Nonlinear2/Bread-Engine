@@ -443,6 +443,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
+    ss->depth = depth;
 
     SortedMoveGen move_gen = SortedMoveGen<GenType::NORMAL>(
         root_node ? &root_moves : NULL, prev_piece, prev_to, prev_piece2, prev_to2, pos, depth,
@@ -518,13 +519,24 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     bool in_check = pos.inCheck();
 
     // increase depth if previous reduction was too large
-    if ((ss - 1)->reduction >= 3 && !opponent_worsening)
+    if ((ss - 1)->reduction >= 3 && !opponent_worsening){
         depth++;
+        red_history.apply_bonus(
+            red_history.get((ss - 1)->depth, ~pos.sideToMove(), (ss - 1)->curr_move.to()),
+            -std::min(((ss - 1)->reduction - 3)*100 + 80, 800)
+        );
+    }
 
     if ((ss - 1)->reduction >= 2 && depth >= 2 
         && is_valid(ss->static_eval) && is_valid((ss - 1)->static_eval)
-        && ss->static_eval > opp_1 - (ss - 1)->static_eval)
+        && ss->static_eval > opp_1 - (ss - 1)->static_eval){
+
         depth--;
+        red_history.apply_bonus(
+            red_history.get((ss - 1)->depth, ~pos.sideToMove(), (ss - 1)->curr_move.to()),
+            180
+        );
+    }
 
     depth = std::min(depth, ENGINE_MAX_DEPTH);
 
@@ -682,6 +694,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         reduction += red_5 * (move_gen.index() > lmr_1);
         reduction += red_6 * (cutnode && depth > 5);
         reduction += red_7 * (depth > 3 && !improving);
+        reduction += red_history.get(depth, ~pos.sideToMove(), move.to()) / 20;
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
