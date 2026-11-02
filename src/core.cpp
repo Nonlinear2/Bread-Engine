@@ -2,6 +2,10 @@
 #include "searcher.hpp"
 
 TUNEABLE(opp_1, int, 127, 0, 10000, 30, 0.002);
+TUNEABLE(rbon_1, int, 100, 0, 10000, 20, 0.002);
+TUNEABLE(rbon_2, int, 80, 0, 10000, 17, 0.002);
+TUNEABLE(rbon_3, int, 800, 0, 10000, 170, 0.002);
+TUNEABLE(rbon_4, int, 180, 0, 10000, 36, 0.002);
 TUNEABLE(r_1, int, 177, 0, 10000, 30, 0.002);
 TUNEABLE(r_2, int, 286, 0, 10000, 55, 0.002);
 TUNEABLE(rfp_1, int, 117, 0, 10000, 20, 0.002);
@@ -10,7 +14,7 @@ TUNEABLE(rfp_3, int, 35, 0, 10000, 7, 0.002);
 TUNEABLE(rfp_4, int, 69, -100, 10000, 10, 0.002);
 TUNEABLE(rfp_5, int, 31, 0, 10000, 6, 0.002);
 TUNEABLE(rfp_6, int, 339, 0, 10000, 70, 0.002);
-TUNEABLE(nmp_1, int, 104, -50, 10000, 15, 0.002);
+TUNEABLE(nmp_1, int, 104, -50, 10000, 20, 0.002);
 TUNEABLE(nmp_2, int, 27, -300, 10000, 5, 0.002);
 TUNEABLE(nmp_3, int, 109, 0, 10000, 30, 0.002);
 TUNEABLE(sprob_1, int, 450, 0, 10000, 80, 0.002);
@@ -49,6 +53,7 @@ TUNEABLE(red_4, int, 781, 0, 10000, 150, 0.002);
 TUNEABLE(red_5, int, 2520, 0, 10000, 300, 0.002);
 TUNEABLE(red_6, int, 681, 0, 10000, 120, 0.002);
 TUNEABLE(red_7, int, 652, 0, 10000, 180, 0.002);
+TUNEABLE(red_8, int, 205, 0, 10000, 40, 0.002);
 TUNEABLE(ext_1, int, 18, 0, 10000, 5, 0.002);
 TUNEABLE(ext_2, int, 119, 0, 10000, 16, 0.002);
 TUNEABLE(ext_3, int, 16, 0, 10000, 3, 0.002);
@@ -523,7 +528,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         depth++;
         red_history.apply_bonus(
             red_history.get((ss - 1)->depth, ~pos.sideToMove(), (ss - 1)->curr_move.to()),
-            -std::min(((ss - 1)->reduction - 3)*100 + 80, 800)
+            -std::min(((ss - 1)->reduction - 3)*rbon_1 + rbon_2, rbon_3)
         );
     }
 
@@ -534,7 +539,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         depth--;
         red_history.apply_bonus(
             red_history.get((ss - 1)->depth, ~pos.sideToMove(), (ss - 1)->curr_move.to()),
-            180
+            rbon_4
         );
     }
 
@@ -694,7 +699,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         reduction += red_5 * (move_gen.index() > lmr_1);
         reduction += red_6 * (cutnode && depth > 5);
         reduction += red_7 * (depth > 3 && !improving);
-        reduction += red_history.get(depth, ~pos.sideToMove(), move.to()) / 20;
+        reduction += red_8 * red_history.get(depth, ~pos.sideToMove(), move.to()) / 4096;
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
