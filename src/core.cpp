@@ -964,7 +964,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
                 continue;
 
             // SEE pruning
-            if (move != transposition.move && !SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
+            if (!SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
                 continue;
 
             // move count pruning
