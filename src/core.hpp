@@ -67,6 +67,7 @@ class Engine {
     CaptureHistory capt_history = CaptureHistory();
     KillerMoves killer_moves = KillerMoves();
     FromToHistory history = FromToHistory();
+    ReductionHistory red_history = ReductionHistory();
     ContinuationHistory cont_history = ContinuationHistory();
     ContinuationHistory cont_history2 = ContinuationHistory();
     PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory();
