@@ -555,12 +555,13 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         // reverse futility pruning
         if (depth < 9 - 3*is_hit
             && !is_decisive(eval)
+            && !is_loss(beta)
             && eval - depth * (rfp_1 - rfp_2*cutnode)
                     - rfp_3
                     + rfp_4 * improving
                     + rfp_5 * opponent_worsening 
                     - rfp_6 * std::abs(uncorrected_static_eval - ss->static_eval) / 1024 >= beta)
-            return eval;
+            return (eval + beta) / 2;
 
         // null move pruning
         // maybe check for zugzwang?
