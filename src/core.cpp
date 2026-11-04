@@ -553,9 +553,8 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             return qsearch<false>(alpha, beta, 0, ss); // we update static eval to the better qsearch eval.
 
         // reverse futility pruning
-        if (depth < 9 - 3*is_hit
+        if (depth < 9 - 3*is_hit + tt_capture
             && !is_decisive(eval)
-            && !is_loss(beta)
             && eval - depth * (rfp_1 - rfp_2*cutnode)
                     - rfp_3
                     + rfp_4 * improving
