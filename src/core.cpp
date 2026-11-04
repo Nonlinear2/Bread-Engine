@@ -561,7 +561,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     + rfp_4 * improving
                     + rfp_5 * opponent_worsening 
                     - rfp_6 * std::abs(uncorrected_static_eval - ss->static_eval) / 1024 >= beta)
-            return (eval + beta) / 2;
+            return eval;
 
         // null move pruning
         // maybe check for zugzwang?
