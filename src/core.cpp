@@ -806,7 +806,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         && (max_value > ss->static_eval) == (best_move != Move::NO_MOVE))
     {
         Color stm = pos.sideToMove();
-        int bonus = std::clamp((max_value - ss->static_eval) * depth/6, -corr_6, corr_6);
+        int bonus = std::clamp((max_value - ss->static_eval) * depth/8, -corr_6, corr_6);
 
         pawn_corrhist.apply_bonus(pawn_corrhist.get(stm, pos.get_pawn_key()), bonus);
         minor_corrhist.apply_bonus(minor_corrhist.get(stm, pos.get_minor_key()), bonus);
