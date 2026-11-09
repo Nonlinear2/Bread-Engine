@@ -660,7 +660,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         int extension = 0;
         if (!root_node && is_regular_eval(transposition.value)
             && move == transposition.move && excluded_move == Move::NO_MOVE
-            && depth >= 6 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
+            && depth >= 5 && (transposition.flag == TFlag::LOWER_BOUND || transposition.flag == TFlag::EXACT)
             && transposition.depth >= depth - 1)
         {
             int singular_beta = transposition.value - se_1 - se_2*depth / 16;
@@ -668,7 +668,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             if (is_regular_eval(singular_beta)){
                 auto saved_ss = *ss;
                 ss->excluded_move = move;
-                value = negamax<false>(new_depth / 2, singular_beta - 1, singular_beta, ss, cutnode);
+                value = negamax<false>(4 * new_depth / 6, singular_beta - 1, singular_beta, ss, cutnode);
                 *ss = saved_ss;
 
                 if (value < singular_beta)
