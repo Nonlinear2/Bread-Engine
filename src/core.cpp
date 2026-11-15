@@ -46,14 +46,14 @@ TUNEABLE(cthis_2, int, 1159, 0, 3000, 194, 0.002);
 TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
 TUNEABLE(asp_1, int, 25, 0, 5000, 7, 0.002);
 TUNEABLE(asp_2, int, 65, 0, 5000, 82, 0.002);
-TUNEABLE(red_1, int, 902, 0, 10000, 175, 0.002);
-TUNEABLE(red_2, int, 1204, 0, 10000, 195, 0.002);
-TUNEABLE(red_3, int, 2106, 0, 10000, 370, 0.002);
-TUNEABLE(red_4, int, 703, 0, 10000, 156, 0.002);
-TUNEABLE(red_5, int, 2707, 0, 10000, 504, 0.002);
+TUNEABLE(red_1, int, 982, 0, 10000, 175, 0.002);
+TUNEABLE(red_2, int, 1264, 0, 10000, 195, 0.002);
+TUNEABLE(red_3, int, 2146, 0, 10000, 370, 0.002);
+TUNEABLE(red_4, int, 773, 0, 10000, 156, 0.002);
+TUNEABLE(red_5, int, 2747, 0, 10000, 504, 0.002);
 TUNEABLE(red_6, int, 807, 0, 10000, 136, 0.002);
-TUNEABLE(red_7, int, 509, 0, 10000, 130, 0.002);
-TUNEABLE(red_8, int, 101, 0, 10000, 41, 0.002);
+TUNEABLE(red_7, int, 599, 0, 10000, 130, 0.002);
+TUNEABLE(red_8, int, 171, 0, 10000, 41, 0.002);
 TUNEABLE(ext_1, int, 21, 0, 10000, 4, 0.002);
 TUNEABLE(ext_2, int, 125, 0, 10000, 24, 0.002);
 TUNEABLE(ext_3, int, 17, 0, 10000, 3, 0.002);
@@ -707,14 +707,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         int reduction = get_base_reduction(depth, move_gen.index());
 
-        reduction -= red_1 * (gives_check);
-        reduction -= red_2 * (transposition.ttpv);
-        reduction += red_3 * (move_gen.index() > 2 && !is_capture);
-        reduction += red_4 * (tt_capture && !is_capture);
-        reduction += red_5 * (move_gen.index() > lmr_1);
-        reduction += red_6 * (cutnode && depth > 5);
-        reduction += red_7 * (depth > 3 && !improving);
-        reduction += red_8 * red_history.get(depth, ~pos.sideToMove(), move.to()) / 4096;
+        reduction -= 15 * red_1 / 16 * (gives_check);
+        reduction -= 15 * red_2 / 16 * (transposition.ttpv);
+        reduction += 15 * red_3 / 16 * (move_gen.index() > 2 && !is_capture);
+        reduction += 15 * red_4 / 16 * (tt_capture && !is_capture);
+        reduction += 15 * red_5 / 16 * (move_gen.index() > lmr_1);
+        reduction += 15 * red_6 / 16 * (cutnode && depth > 5);
+        reduction += 15 * red_7 / 16 * (depth > 3 && !improving);
+        reduction += 15 * red_8 / 16 * red_history.get(depth, ~pos.sideToMove(), move.to()) / 4096;
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
