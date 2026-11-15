@@ -707,14 +707,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
         int reduction = get_base_reduction(depth, move_gen.index());
 
-        reduction -= 15 * red_1 / 16 * (gives_check);
-        reduction -= 15 * red_2 / 16 * (transposition.ttpv);
-        reduction += 15 * red_3 / 16 * (move_gen.index() > 2 && !is_capture);
-        reduction += 15 * red_4 / 16 * (tt_capture && !is_capture);
-        reduction += 15 * red_5 / 16 * (move_gen.index() > lmr_1);
-        reduction += 15 * red_6 / 16 * (cutnode && depth > 5);
-        reduction += 15 * red_7 / 16 * (depth > 3 && !improving);
-        reduction += 15 * red_8 / 16 * red_history.get(depth, ~pos.sideToMove(), move.to()) / 4096;
+        reduction -= 10 * red_1 / 11 * (gives_check);
+        reduction -= 10 * red_2 / 11 * (transposition.ttpv);
+        reduction += 10 * red_3 / 11 * (move_gen.index() > 2 && !is_capture);
+        reduction += 10 * red_4 / 11 * (tt_capture && !is_capture);
+        reduction += 10 * red_5 / 11 * (move_gen.index() > lmr_1);
+        reduction += 10 * red_6 / 11 * (cutnode && depth > 5);
+        reduction += 10 * red_7 / 11 * (depth > 3 && !improving);
+        reduction += 10 * red_8 / 11 * red_history.get(depth, ~pos.sideToMove(), move.to()) / 4096;
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
