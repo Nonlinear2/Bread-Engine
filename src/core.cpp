@@ -1,59 +1,71 @@
 #include "core.hpp"
+#include "searcher.hpp"
 
-UNACTIVE_TUNEABLE(r_1, int, 152, 0, 10000, 40, 0.002);
-UNACTIVE_TUNEABLE(r_2, int, 286, 0, 10000, 50, 0.002);
-UNACTIVE_TUNEABLE(rfp_1, int, 109, 0, 10000, 25, 0.002);
-UNACTIVE_TUNEABLE(rfp_2, int, 36, 0, 10000, 6, 0.002);
-UNACTIVE_TUNEABLE(rfp_3, int, 32, 0, 10000, 12, 0.002);
-UNACTIVE_TUNEABLE(rfp_4, int, 59, -100, 10000, 20, 0.002);
-UNACTIVE_TUNEABLE(rfp_5, int, 30, 0, 10000, 6, 0.002);
-UNACTIVE_TUNEABLE(rfp_6, int, 335, 0, 10000, 70, 0.002);
-UNACTIVE_TUNEABLE(nmp_1, int, 81, -50, 10000, 20, 0.002);
-UNACTIVE_TUNEABLE(nmp_2, int, 23, -300, 10000, 5, 0.002);
-UNACTIVE_TUNEABLE(nmp_3, int, 150, 0, 10000, 30, 0.002);
-UNACTIVE_TUNEABLE(sprob_1, int, 422, 0, 10000, 70, 0.002);
-UNACTIVE_TUNEABLE(lmp_1, int, 72, -100, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(see_1, int, 53, -100, 1000, 20, 0.002);
-UNACTIVE_TUNEABLE(see_2, int, 11, 0, 100, 0.5, 0.002);
-UNACTIVE_TUNEABLE(se_1, int, 8, -100, 100, 0.5, 0.002);
-UNACTIVE_TUNEABLE(se_2, int, 1, -100, 100, 0.5, 0.002);
-UNACTIVE_TUNEABLE(lmr_1, int, 9, 0, 23, 0.5, 0.002);
-UNACTIVE_TUNEABLE(cont_1, int, 999, 0, 10000, 200, 0.002);
-UNACTIVE_TUNEABLE(cont_2, int, 93, 0, 1500, 20, 0.002);
-UNACTIVE_TUNEABLE(cont_3, int, 32, 0, 1500, 6, 0.002);
-UNACTIVE_TUNEABLE(cont_4, int, 28, 0, 1500, 6, 0.002);
-UNACTIVE_TUNEABLE(cont_5, int, 264, 0, 3000, 100, 0.002);
-UNACTIVE_TUNEABLE(qs_fp_1, int, 2212, 0, 3000, 400, 0.002);
-UNACTIVE_TUNEABLE(qs_see_1, int, 357, 0, 1000, 50, 0.002);
-UNACTIVE_TUNEABLE(qs_p_1, int, 1295, 0, 5000, 200, 0.002);
-UNACTIVE_TUNEABLE(cthis_1, int, 7633, 0, 30000, 1500, 0.002);
-UNACTIVE_TUNEABLE(cthis_2, int, 678, 0, 3000, 100, 0.002);
-UNACTIVE_TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
-UNACTIVE_TUNEABLE(asp_1, int, 61, 0, 5000, 20, 0.002);
-UNACTIVE_TUNEABLE(asp_2, int, 443, 0, 5000, 80, 0.002);
-UNACTIVE_TUNEABLE(cred_lmr_1, int, 0, -10000, 10000, 70, 0.002);
-UNACTIVE_TUNEABLE(red_lmr_1, int, 0, -10000, 10000, 70, 0.002);
-UNACTIVE_TUNEABLE(cred_lmr_2, int, 100, 0, 10000, 30, 0.002);
-UNACTIVE_TUNEABLE(red_lmr_2, int, 121, 0, 10000, 30, 0.002);
-UNACTIVE_TUNEABLE(red_1, int, 1023, 0, 10000, 250, 0.002);
-UNACTIVE_TUNEABLE(red_2, int, 1113, 0, 10000, 250, 0.002);
-UNACTIVE_TUNEABLE(red_3, int, 1755, 0, 10000, 300, 0.002);
-UNACTIVE_TUNEABLE(red_4, int, 808, 0, 10000, 150, 0.002);
-UNACTIVE_TUNEABLE(red_5, int, 2116, 0, 10000, 300, 0.002);
-UNACTIVE_TUNEABLE(red_6, int, 674, 0, 10000, 200, 0.002);
-UNACTIVE_TUNEABLE(red_7, int, 702, 0, 10000, 180, 0.002);
-UNACTIVE_TUNEABLE(ext_1, int, 25, 0, 10000, 10, 0.002);
-UNACTIVE_TUNEABLE(ext_2, int, 80, 0, 10000, 16, 0.002);
-UNACTIVE_TUNEABLE(ext_3, int, 16, 0, 10000, 3, 0.002);
-UNACTIVE_TUNEABLE(red_th_1, int, 1960, 0, 10000, 320, 0.002);
-UNACTIVE_TUNEABLE(red_th_2, int, 2077, 0, 10000, 450, 0.002);
-UNACTIVE_TUNEABLE(corr_1, int, 310, 0, 10000, 50, 0.002);
-UNACTIVE_TUNEABLE(corr_2, int, 230, 0, 10000, 40, 0.002);
-UNACTIVE_TUNEABLE(corr_3, int, 194, 0, 10000, 40, 0.002);
-UNACTIVE_TUNEABLE(corr_4, int, 192, 0, 10000, 40, 0.002);
-UNACTIVE_TUNEABLE(corr_5, int, 188, 0, 10000, 40, 0.002);
-UNACTIVE_TUNEABLE(corr_6, int, 554, 0, 10000, 130, 0.002);
-UNACTIVE_TUNEABLE(de_1, int, 66, 0, 10000, 18, 0.002);
+TUNEABLE(opp_1, int, 77, 0, 10000, 25, 0.002);
+TUNEABLE(rbon_1, int, 103, 0, 10000, 20, 0.002);
+TUNEABLE(rbon_2, int, 99, 0, 10000, 16, 0.002);
+TUNEABLE(rbon_3, int, 729, 0, 10000, 160, 0.002);
+TUNEABLE(rbon_4, int, 167, 0, 10000, 36, 0.002);
+TUNEABLE(r_1, int, 198, 0, 10000, 35, 0.002);
+TUNEABLE(r_2, int, 342, 0, 10000, 57, 0.002);
+TUNEABLE(rfp_1, int, 99, 0, 10000, 23, 0.002);
+TUNEABLE(rfp_2, int, 18, 0, 10000, 7, 0.002);
+TUNEABLE(rfp_3, int, 36, 0, 10000, 7, 0.002);
+TUNEABLE(rfp_4, int, 74, -100, 10000, 14, 0.002);
+TUNEABLE(rfp_5, int, 31, 0, 10000, 6, 0.002);
+TUNEABLE(rfp_6, int, 393, 0, 10000, 68, 0.002);
+TUNEABLE(nmp_1, int, 128, -50, 10000, 21, 0.002);
+TUNEABLE(nmp_2, int, 30, -300, 10000, 5, 0.002);
+TUNEABLE(nmp_3, int, 125, 0, 10000, 22, 0.002);
+TUNEABLE(sprob_1, int, 507, 0, 10000, 90, 0.002);
+TUNEABLE(lmp_1, int, 121, 0, 1000, 17, 0.002);
+TUNEABLE(lmp_2, int, 201, 0, 1000, 40, 0.002);
+TUNEABLE(lmp_3, int, 79, 0, 1000, 15, 0.002);
+TUNEABLE(lmp_4, int, 114, 0, 1000, 32, 0.002);
+TUNEABLE(lmp_5, int, 46, 0, 1000, 12, 0.002);
+TUNEABLE(lmp_6, int, 129, 0, 1000, 30, 0.002);
+TUNEABLE(see_1, int, 54, 0, 1000, 11, 0.002);
+TUNEABLE(see_2, int, 12, 0, 100, 0.5, 0.002);
+TUNEABLE(see_3, int, 46, 0, 1000, 8, 0.002);
+TUNEABLE(see_4, int, 10, 0, 100, 0.5, 0.002);
+TUNEABLE(se_1, int, 8, 0, 100, 0.5, 0.002);
+TUNEABLE(se_2, int, 2, 0, 100, 0.5, 0.002);
+TUNEABLE(lmr_1, int, 11, 0, 23, 0.5, 0.002);
+TUNEABLE(cont_1, int, 1623, 0, 10000, 260, 0.002);
+TUNEABLE(cont_2, int, 1805, 0, 10000, 248, 0.002);
+TUNEABLE(cont_3, int, 78, 0, 1500, 14, 0.002);
+TUNEABLE(cont_4, int, 145, 0, 1500, 23, 0.002);
+TUNEABLE(cont_5, int, 54, 0, 1500, 8, 0.002);
+TUNEABLE(cont_6, int, 22, 0, 1500, 5, 0.002);
+TUNEABLE(cont_7, int, 342, 0, 3000, 67, 0.002);
+TUNEABLE(qs_fp_1, int, 2684, 0, 3000, 424, 0.002);
+TUNEABLE(qs_see_1, int, 271, 0, 1000, 54, 0.002);
+TUNEABLE(qs_p_1, int, 2169, 0, 5000, 303, 0.002);
+TUNEABLE(cthis_1, int, 4364, 0, 30000, 1077, 0.002);
+TUNEABLE(cthis_2, int, 1159, 0, 3000, 194, 0.002);
+TUNEABLE(qs_p_idx, int, 7, 0, 20, 0.5, 0.002);
+TUNEABLE(asp_1, int, 25, 0, 5000, 7, 0.002);
+TUNEABLE(asp_2, int, 65, 0, 5000, 82, 0.002);
+TUNEABLE(red_1, int, 982, 0, 10000, 175, 0.002);
+TUNEABLE(red_2, int, 1264, 0, 10000, 195, 0.002);
+TUNEABLE(red_3, int, 2146, 0, 10000, 370, 0.002);
+TUNEABLE(red_4, int, 773, 0, 10000, 156, 0.002);
+TUNEABLE(red_5, int, 2747, 0, 10000, 504, 0.002);
+TUNEABLE(red_6, int, 807, 0, 10000, 136, 0.002);
+TUNEABLE(red_7, int, 599, 0, 10000, 130, 0.002);
+TUNEABLE(red_8, int, 171, 0, 10000, 41, 0.002);
+TUNEABLE(ext_1, int, 21, 0, 10000, 4, 0.002);
+TUNEABLE(ext_2, int, 125, 0, 10000, 24, 0.002);
+TUNEABLE(ext_3, int, 17, 0, 10000, 3, 0.002);
+TUNEABLE(red_th_1, int, 2598, 0, 10000, 381, 0.002);
+TUNEABLE(red_th_2, int, 1421, 0, 10000, 233, 0.002);
+TUNEABLE(corr_1, int, 464, 0, 10000, 67, 0.002);
+TUNEABLE(corr_2, int, 282, 0, 10000, 53, 0.002);
+TUNEABLE(corr_3, int, 264, 0, 10000, 46, 0.002);
+TUNEABLE(corr_4, int, 156, 0, 10000, 35, 0.002);
+TUNEABLE(corr_5, int, 249, 0, 10000, 48, 0.002);
+TUNEABLE(corr_6, int, 870, 0, 10000, 120, 0.002);
+TUNEABLE(de_1, int, 57, 0, 10000, 11, 0.002);
 
 int nnue_evaluate(NnueBoard& pos){
     return pos.evaluate();
@@ -67,12 +79,10 @@ int get_think_time(float time_left, int num_moves_out_of_book, int num_moves_unt
     return static_cast<int>(target + 0.9F*increment);
 }
 
-Engine::Engine(bool display_uci, TranspositionTable& tt, std::atomic<int64_t>& nodes)
-    : display_uci(display_uci),
+Engine::Engine(bool is_main_thread, TranspositionTable& tt, WorkerPool& worker_pool)
+    : is_main_thread(is_main_thread),
       tt(tt),
-      nodes(nodes) {
-    fill_lmr_table();
-}
+      worker_pool(worker_pool) {};
 
 int Engine::get_corrhist(Color color){
     return (corr_1 * pawn_corrhist.get(color, pos.get_pawn_key()) 
@@ -84,17 +94,16 @@ int Engine::get_corrhist(Color color){
 }
 
 bool Engine::update_interrupt_flag(){
-    SearchLimit limit_ = limit.load();
-    switch (limit_.type){
+    switch (limit.load().type){
         case LimitType::Time:
-            update_run_time();
-            interrupt_flag = (run_time >= limit_.value);
+            if (timer.elapsed() >= limit.load().value)
+                interrupt_flag = true;
             break;
         case LimitType::Nodes:
-            interrupt_flag = (nodes >= limit_.value);
+            if (nodes >= limit.load().value)
+                interrupt_flag = true;
             break;
         default:
-            interrupt_flag = false;
             break;
     }
     return interrupt_flag;
@@ -116,7 +125,6 @@ int Engine::get_base_reduction(int depth, int move_count){
 }
 
 void Engine::clear_state(){
-    tt.clear();
     capt_history.clear();
     history.clear();
     pawn_corrhist.clear();
@@ -125,6 +133,7 @@ void Engine::clear_state(){
     nonpawn_corrhist[0].clear();
     nonpawn_corrhist[1].clear();
     cont_history.clear();
+    cont_history2.clear();
     killer_moves.clear();
 }
 
@@ -144,6 +153,7 @@ void Engine::save_state(std::string file){
     nonpawn_corrhist[0].save_to_stream(ofs);
     nonpawn_corrhist[1].save_to_stream(ofs);
     cont_history.save_to_stream(ofs);
+    cont_history2.save_to_stream(ofs);
     killer_moves.save_to_stream(ofs);
 
     ofs.close();
@@ -165,16 +175,11 @@ void Engine::load_state(std::string file){
     nonpawn_corrhist[0].load_from_stream(ifs);
     nonpawn_corrhist[1].load_from_stream(ifs);
     cont_history.load_from_stream(ifs);
+    cont_history2.load_from_stream(ifs);
     killer_moves.load_from_stream(ifs);
 
     ifs.close();
 }
-
-void Engine::update_run_time(){
-    run_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::high_resolution_clock::now() - start_time
-    ).count() + 1; // add 1 to avoid divisions by 0
-};
 
 std::pair<std::string, std::string> Engine::get_pv_pmove(){
     std::string pv = "";
@@ -198,7 +203,7 @@ std::pair<std::string, std::string> Engine::get_pv_pmove(){
     return std::pair(pv, ponder_move);
 }
 
-Move Engine::iterative_deepening(SearchLimit limit){
+Move Engine::iterative_deepening(SearchLimit limit_){
     assert(is_nonsense || nonsense_stage == Nonsense::STANDARD);
 
     if (is_nonsense){
@@ -210,14 +215,13 @@ Move Engine::iterative_deepening(SearchLimit limit){
         }
     }
 
-    if (nonsense_stage >= Nonsense::PROMOTE && limit.type == LimitType::Time)
-        this->limit = SearchLimit(LimitType::Time, std::min(limit.value, 200)); // move quickly
+    if (nonsense_stage >= Nonsense::PROMOTE && limit_.type == LimitType::Time)
+        limit = SearchLimit(LimitType::Time, std::min(limit_.value, 200)); // move quickly
     else
-        this->limit = limit;
+        limit = limit_;
 
-    start_time = std::chrono::high_resolution_clock::now();
+    timer.reset();
 
-    std::string pv;
     std::string ponder_move = "";
 
     Move best_move = Move::NO_MOVE;
@@ -238,13 +242,12 @@ Move Engine::iterative_deepening(SearchLimit limit){
 
     bool root_tb_hit = tablebase_loaded && TB::probe_root_dtz(pos, best_move, root_moves, is_nonsense);
     if (root_tb_hit && !(is_nonsense && best_move.score() == TB_VALUE && !Nonsense::only_knight_bishop(pos))){
-        if (display_uci){
-            update_run_time();
+        if (is_main_thread){
             std::cout << "info depth 0 seldepth 0";
             std::cout << " score cp " << best_move.score();
             std::cout << " nodes 0 nps 0";
             std::cout << " tbhits 0";
-            std::cout << " time " << run_time;
+            std::cout << " time " << timer.elapsed();
             std::cout << " hashfull " << tt.hashfull();
             std::cout << " pv " << uci::moveToUci(best_move) << std::endl;
             std::cout << "bestmove " << uci::moveToUci(best_move) << std::endl;
@@ -260,6 +263,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
             }
 
             if (root_tb_hit || pos.them(engine_color).count() == 1){
+                tt.clear();
                 clear_state();
                 evaluate = Nonsense::evaluate;
                 nonsense_stage = Nonsense::PROMOTE;
@@ -273,6 +277,7 @@ Move Engine::iterative_deepening(SearchLimit limit){
             }
 
             if (Nonsense::only_knight_bishop(pos)){
+                tt.clear();
                 clear_state();
                 evaluate = nnue_evaluate;
                 nonsense_stage = Nonsense::CHECKMATE;
@@ -322,13 +327,13 @@ Move Engine::iterative_deepening(SearchLimit limit){
             asp_beta = std::clamp(asp_beta, -INFINITE_VALUE, INFINITE_VALUE);
         }
 
-        if (display_uci){
+        if (is_main_thread){
+            std::string pv;
             std::pair<std::string, std::string> pv_pmove = get_pv_pmove();
             pv = pv_pmove.first;
             if (pv_pmove.second.size() > 0)
                 ponder_move = pv_pmove.second;
     
-            update_run_time();
     
             // do not count interrupted searches in depth
             std::cout << "info depth " << root_depth - interrupt_flag;
@@ -338,10 +343,12 @@ Move Engine::iterative_deepening(SearchLimit limit){
             else
                 std::cout << " score cp " << best_move.score();
     
-            std::cout << " nodes " << nodes;
-            std::cout << " nps " << nodes * 1000 / run_time;
+            uint64_t total_nodes = worker_pool.total_node_count(); // aggregate across all threads
+
+            std::cout << " nodes " << total_nodes;
+            std::cout << " nps " << total_nodes * 1000 / timer.elapsed();
             std::cout << " tbhits " << tb_hits;
-            std::cout << " time " << run_time;
+            std::cout << " time " << timer.elapsed();
             std::cout << " hashfull " << tt.hashfull();
             std::cout << " pv" << pv << std::endl;
         }
@@ -350,9 +357,9 @@ Move Engine::iterative_deepening(SearchLimit limit){
         if (interrupt_flag
             || is_mate(best_move.score())
             || root_depth >= ENGINE_MAX_DEPTH
-            || (limit.type == LimitType::Depth && root_depth == limit.value)
-            || (limit.type == LimitType::Nodes && nodes >= limit.value)
-            || (limit.type == LimitType::Time && best_move_changes < 1 && run_time > 2*limit.value / 3))
+            || (limit.load().type == LimitType::Depth && root_depth == limit.load().value)
+            || (limit.load().type == LimitType::Nodes && nodes >= limit.load().value)
+            || (limit.load().type == LimitType::Time && best_move_changes < 1 && timer.elapsed() > 2*limit.load().value / 3))
             break;
     }
 
@@ -365,13 +372,16 @@ Move Engine::iterative_deepening(SearchLimit limit){
                     || (Nonsense::material_evaluate(pos) > queen_value
                         && best_move.score() > 3 * queen_value / 2)))
             {
+                tt.clear();
                 clear_state();
                 nonsense_stage = Nonsense::TAKE_PIECES;
             }
         }
     }
 
-    if (display_uci){
+    if (is_main_thread){
+        worker_pool.interrupt();
+
         std::cout << "bestmove " << uci::moveToUci(best_move);
         if (ponder_move.size() > 0)
             std::cout << " ponder " << ponder_move;
@@ -418,9 +428,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     // transpositions will be checked inside of qsearch
     // if isRepetition(1), qsearch will not consider the danger of draw as it searches captures.
     if (depth <= 0)
-        return qsearch<pv>(alpha, beta, 0, ss + 1);
+        return qsearch<pv>(alpha, beta, 0, ss);
 
-    int static_eval, uncorrected_static_eval, eval;
+    int uncorrected_static_eval, eval;
 
     // tablebase probe
     if (!root_node && tablebase_loaded && TB::probe_wdl(pos, eval)){
@@ -446,13 +456,17 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     Piece prev_piece = (ss - 1)->moved_piece;
     Square prev_to = ((ss - 1)->curr_move == Move::NULL_MOVE || (ss - 1)->curr_move == Move::NO_MOVE)
                      ? Square::NO_SQ : (ss - 1)->curr_move.to();
+    Piece prev_piece2 = (ss - 2)->moved_piece;
+    Square prev_to2 = ((ss - 2)->curr_move == Move::NULL_MOVE || (ss - 2)->curr_move == Move::NO_MOVE)
+                      ? Square::NO_SQ : (ss - 2)->curr_move.to();
 
     const int initial_alpha = alpha;
     uint64_t zobrist_hash = pos.hash();
+    ss->depth = depth;
 
     SortedMoveGen move_gen = SortedMoveGen<GenType::NORMAL>(
-        root_node ? &root_moves : NULL, prev_piece, prev_to, pos, depth,
-        killer_moves, history, cont_history, capt_history
+        root_node ? &root_moves : NULL, prev_piece, prev_to, prev_piece2, prev_to2, pos, depth,
+        killer_moves, history, cont_history, cont_history2, capt_history
     );
 
     if (root_node && root_moves.empty()){
@@ -504,14 +518,12 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (uncorrected_static_eval == NO_VALUE)
         uncorrected_static_eval = evaluate(pos);
 
-    static_eval = std::clamp(
+    ss->static_eval = std::clamp(
         uncorrected_static_eval + get_corrhist(pos.sideToMove()), -BEST_VALUE, BEST_VALUE
     );
 
-    ss->static_eval = static_eval;
-
     if (transposition.value == NO_VALUE)
-        eval = static_eval;
+        eval = ss->static_eval;
     else
         eval = transposition.value;
 
@@ -526,36 +538,50 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     bool in_check = pos.inCheck();
 
     // increase depth if previous reduction was too large
-    if ((ss - 1)->reduction >= 3 && !opponent_worsening)
+    if ((ss - 1)->reduction >= 3 && !opponent_worsening){
         depth++;
+        red_history.apply_bonus(
+            red_history.get((ss - 1)->depth, ~pos.sideToMove(), (ss - 1)->curr_move.to()),
+            -std::min(((ss - 1)->reduction - 3)*rbon_1 + rbon_2, rbon_3)
+        );
+    }
 
     if ((ss - 1)->reduction >= 2 && depth >= 2 
         && is_valid(ss->static_eval) && is_valid((ss - 1)->static_eval)
-        && ss->static_eval > 150 - (ss - 1)->static_eval)
+        && ss->static_eval > opp_1 - (ss - 1)->static_eval){
+
         depth--;
+        red_history.apply_bonus(
+            red_history.get((ss - 1)->depth, ~pos.sideToMove(), (ss - 1)->curr_move.to()),
+            rbon_4
+        );
+    }
+
+    depth = std::min(depth, ENGINE_MAX_DEPTH);
 
     // pruning
     if (!root_node && !pv && !in_check){
 
         // razoring
         if (eval + r_1*depth*depth + r_2 < alpha)
-            return qsearch<false>(alpha, beta, 0, ss + 1); // we update static eval to the better qsearch eval.
+            return qsearch<false>(alpha, beta, 0, ss); // we update static eval to the better qsearch eval.
 
         // reverse futility pruning
         if (depth < 9 - 3*is_hit
-            && eval - depth * (rfp_1 - rfp_2*cutnode) 
+            && !is_decisive(eval)
+            && eval - depth * (rfp_1 - rfp_2*cutnode)
                     - rfp_3
                     + rfp_4 * improving
                     + rfp_5 * opponent_worsening 
-                    - rfp_6 * std::abs(uncorrected_static_eval - static_eval) / 1024 >= beta)
+                    - rfp_6 * std::abs(uncorrected_static_eval - ss->static_eval) / 1024 >= beta)
             return eval;
 
         // null move pruning
         // maybe check for zugzwang?
         if (cutnode && (ss - 1)->curr_move != Move::NULL_MOVE && excluded_move == Move::NO_MOVE
-            && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta)){
+            && eval > beta - depth*nmp_1 + nmp_2 && is_regular_eval(beta) && pos.hasNonPawnMaterial(pos.sideToMove())){
 
-            int R = 4 + (eval >= beta) + (eval >= beta + nmp_3) + depth / 4;
+            int R = 4 + (eval >= beta) + (eval >= beta + nmp_3) + depth / 3;
 
             ss->moved_piece = Piece::NONE;
             ss->curr_move = Move::NULL_MOVE;
@@ -581,34 +607,63 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         return probcut_beta;
 
     while (move_gen.next(move)){
+        Piece moved_piece = pos.at(move.from());
+        Piece captured_piece = pos.at(move.to());
+
         bool is_capture = pos.isCapture(move);
+        bool gives_check = !(
+            move_gen.check_squares[moved_piece.type()] & Bitboard::fromSquare(move.to())
+        ).empty(); // only detects direct checks
 
         if (move == excluded_move)
             continue;
 
         if (!root_node && is_valid(max_value) && !is_loss(max_value)){
 
-            if (move_gen.index() >= 6 + 2*depth*depth + 3*improving){
+            if (move_gen.index() >= 7 + 2*depth*depth + 3*improving)
+                continue;
+
+            if (!is_capture && move_gen.index() >= 7 + depth*depth){
                 move_gen.skip_quiets();
                 continue;
             }
 
-            // lmp
-            if (!in_check && !is_capture && move_gen.index() > 2 + depth + improving 
-                && !is_hit && eval - lmp_1 * !improving < alpha)
-                continue;
+            if (in_check){
+                // no pruning
+            } else if (is_capture){
 
-            // SEE pruning
-            if (!in_check && move_gen.index() > 5 + depth / 2
-                && depth < 5 && !SEE::evaluate(pos, move, alpha - static_eval - see_1 - see_2*depth))
-                continue;
+                if (move_gen.index() > 3
+                    && depth <= 8
+                    && ss->static_eval
+                        + lmp_2
+                        + lmp_3 * depth
+                        + lmp_6 * capt_history.get(moved_piece, move.to(), captured_piece) / 8192 < alpha)
+                    continue;
 
-            // continuation history pruning
-            if (!is_capture && !in_check
-                && prev_piece != int(Piece::NONE)
-                && prev_to != int(Square::underlying::NO_SQ)
-                && cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
-                continue;
+                // SEE pruning
+                if (move_gen.index() > 6 + depth / 2
+                    && depth < 5 && !SEE::evaluate(pos, move, -see_1 - see_2*depth))
+                    continue;
+            } else {
+                if (!gives_check && move_gen.index() > 3 && depth <= 8 && ss->static_eval + lmp_4 + lmp_5 * depth < alpha)
+                    continue;
+
+                // lmp
+                if (move_gen.index() > 3 + depth + improving
+                    && !is_hit && eval - lmp_1 * !improving < alpha)
+                    continue;
+
+                // continuation history pruning
+                if (prev_piece != int(Piece::NONE)
+                    && prev_to != int(Square::underlying::NO_SQ)
+                    && cont_history.get(prev_piece, prev_to, pos.at(move.from()), move.to()) < -cthis_1 - cthis_2*depth)
+                    continue;
+                
+                // SEE pruning
+                if (move_gen.index() > 6 &&
+                    depth < 5 && !SEE::evaluate(pos, move, alpha - ss->static_eval - see_3 - see_4*depth))
+                    continue;
+            }
         }
 
         int new_depth = depth-1;
@@ -641,26 +696,27 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         new_depth -= depth > 5 && !is_hit; // IIR
         new_depth = std::min(new_depth, ENGINE_MAX_DEPTH);
 
-        ss->moved_piece = pos.at(move.from());
+        ss->moved_piece = moved_piece;
         ss->curr_move = move;
         ss->curr_move_capture = is_capture;
         pos.update_state(move, tt);
 
-        bool gives_check = pos.inCheck();
+        gives_check = pos.inCheck(); // more accurate than the approximation computed before
 
         int reduction = get_base_reduction(depth, move_gen.index());
 
-        reduction -= red_1 * (gives_check && !root_node);
+        reduction -= red_1 * (gives_check);
         reduction -= red_2 * (transposition.ttpv);
-        reduction += red_3 * (move_gen.index() > 1 && !is_capture);
+        reduction += red_3 * (move_gen.index() > 2 && !is_capture);
         reduction += red_4 * (tt_capture && !is_capture);
         reduction += red_5 * (move_gen.index() > lmr_1);
         reduction += red_6 * (cutnode && depth > 5);
         reduction += red_7 * (depth > 3 && !improving);
+        reduction += red_8 * red_history.get(depth, ~pos.sideToMove(), move.to()) / 4096;
 
         int reduced_depth = std::min(new_depth - reduction / 1024, ENGINE_MAX_DEPTH);
 
-        if (move_gen.index() > 0 && depth >= 2){
+        if (move_gen.index() > 1 && depth >= 2){
 
             ss->reduction = new_depth - reduced_depth;
             value = -negamax<false>(reduced_depth, -alpha - 1, -alpha, ss + 1, true);
@@ -671,17 +727,21 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                 new_depth -= value < max_value + ext_3 * new_depth / 16;
 
                 value = -negamax<false>(new_depth, -alpha - 1, -alpha, ss + 1, !cutnode);
-                if (!is_capture)
+                if (!is_capture){
                     move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), cont_1);
+                    move_gen.update_cont_history2(prev_piece2, prev_to2, ss->moved_piece, move.to(), cont_2);
+                }
 
-            } else if (value <= alpha && !is_capture)
-                move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_2);
+            } else if (value <= alpha && !is_capture){
+                move_gen.update_cont_history(prev_piece, prev_to, ss->moved_piece, move.to(), -cont_3);
+                move_gen.update_cont_history2(prev_piece2, prev_to2, ss->moved_piece, move.to(), -cont_4);
+            }
 
-        } else if (!pv || move_gen.index() > 0){
+        } else if (!pv || move_gen.index() > 1){
             value = -negamax<false>(new_depth - (reduction > red_th_1), -alpha - 1, -alpha, ss + 1, !cutnode);
         }
 
-        if (pv && (move_gen.index() == 0 || value > alpha))
+        if (pv && (move_gen.index() == 1 || value > alpha))
             value = -negamax<true>(new_depth - (reduction > red_th_2), -beta, -alpha, ss + 1, false);
 
         pos.restore_state(move);
@@ -690,18 +750,18 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
             return NO_VALUE;
 
         if (root_node)
-            root_moves[move_gen.index()].setScore(value);
+            root_moves[move_gen.index() - 1].setScore(value);
 
         if (value > max_value){
             assert(is_valid(value));
             max_value = value;
             if (value > alpha)
                 best_move = move;
-            if (root_node){
+            if (root_node && value > alpha){
                 // ! This preserves the order of the array after the current move.
-                // ! Rotate invalidates root_moves[move_gen.index()].
-                std::rotate(root_moves.begin(), root_moves.begin() + move_gen.index(),
-                    root_moves.begin() + move_gen.index() + 1);
+                // ! Rotate invalidates root_moves[move_gen.index() - 1].
+                std::rotate(root_moves.begin(), root_moves.begin() + move_gen.index() - 1,
+                    root_moves.begin() + move_gen.index());
             }
         }
 
@@ -751,7 +811,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     if (max_value <= initial_alpha && !(ss - 1)->curr_move_capture){
         move_gen.update_cont_history(
-            (ss - 2)->moved_piece, ((ss - 2)->curr_move).to(), prev_piece, prev_to, std::min(depth*cont_3 + cont_4, cont_5));
+            (ss - 2)->moved_piece, ((ss - 2)->curr_move).to(), prev_piece, prev_to, std::min(depth*cont_5 + cont_6, cont_7));
     }
 
 
@@ -759,7 +819,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         && (max_value > ss->static_eval) == (best_move != Move::NO_MOVE))
     {
         Color stm = pos.sideToMove();
-        int bonus = std::clamp((max_value - static_eval) * depth/7, -corr_6, corr_6);
+        int bonus = std::clamp((max_value - ss->static_eval) * depth/6, -corr_6, corr_6);
 
         pawn_corrhist.apply_bonus(pawn_corrhist.get(stm, pos.get_pawn_key()), bonus);
         minor_corrhist.apply_bonus(minor_corrhist.get(stm, pos.get_minor_key()), bonus);
@@ -785,8 +845,9 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
 
     assert(is_valid(max_value));
 
-    tt.store(zobrist_hash, to_tt(max_value, ply), uncorrected_static_eval, depth, best_move,
-        node_type, pos.fullMoveNumber(), transposition.ttpv);
+    if (excluded_move == Move::NO_MOVE)
+        tt.store(zobrist_hash, to_tt(max_value, ply), uncorrected_static_eval, depth, best_move,
+            node_type, pos.fullMoveNumber(), transposition.ttpv);
 
     return max_value;
 }
@@ -810,7 +871,6 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
         seldepth = ply;
 
     int stand_pat = NO_VALUE;
-    int static_eval = NO_VALUE;
     int uncorrected_static_eval = NO_VALUE;
 
     // tablebase probe
@@ -865,14 +925,14 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     if (!in_check || depth <= -QSEARCH_HARD_DEPTH_LIMIT){
         uncorrected_static_eval = transposition.static_eval;
     
-        if (!is_valid(static_eval))
+        if (!is_valid(uncorrected_static_eval))
             uncorrected_static_eval = evaluate(pos);
 
-        static_eval = std::clamp(
+        ss->static_eval = std::clamp(
             uncorrected_static_eval + get_corrhist(pos.sideToMove()), -BEST_VALUE, BEST_VALUE
         );
 
-        stand_pat = static_eval;
+        stand_pat = ss->static_eval;
         assert(is_regular_eval(stand_pat, false));
 
         if (is_valid(transposition.value) && !is_decisive(transposition.value)
@@ -903,11 +963,11 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     Square previous_to_square = ((ss - 1)->curr_move).to();
 
     while (capture_gen.next(move)){
-        Piece captured_piece = pos.at(move.to());
         Piece moved_piece = pos.at(move.from());
+        Piece captured_piece = pos.at(move.to());
 
         if (!in_check && move.typeOf() != Move::PROMOTION && move.to() != previous_to_square){
-            if (!is_hit && capture_gen.index() > 10)
+            if (capture_gen.index() > 11)
                 continue;
 
             if (stand_pat 
@@ -917,7 +977,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
                 continue;
 
             // SEE pruning
-            if (move != transposition.move && !SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
+            if (!SEE::evaluate(pos, move, alpha - stand_pat - qs_see_1))
                 continue;
 
             // move count pruning
@@ -948,9 +1008,7 @@ int Engine::qsearch(int alpha, int beta, int depth, Stack* ss){
     }
 
     assert(!pos.isInsufficientMaterial());
-    if (capture_gen.tt_move == Move::NO_MOVE && capture_gen.empty() 
-        && (in_check || pos.is_stalemate())){
-
+    if (capture_gen.index() == 0 && (in_check || pos.is_stalemate())){
         if (in_check)
             stand_pat = pos_to_root_mate_value(-MATE_VALUE, ply);
         else

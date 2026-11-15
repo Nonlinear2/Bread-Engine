@@ -26,7 +26,7 @@ int main(){
             if (uci_engine.workers.main().thread.joinable()) {
                 uci_engine.workers.main().thread.join();
             }
-            correct_nodes.push_back(std::stoi(tokens[2]) == uci_engine.nodes);
+            correct_nodes.push_back(std::stoi(tokens[2]) == uci_engine.workers.total_node_count());
         }
     }
 

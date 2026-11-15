@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <chrono>
 #include <atomic>
 #include "chess.hpp"
 #include "transposition_table.hpp"
@@ -14,6 +13,9 @@
 #include "sorted_move_gen.hpp"
 #include "tune.hpp"
 #include "tb.hpp"
+#include "timer.hpp"
+
+class WorkerPool;
 
 int nnue_evaluate(NnueBoard& pos);
 
@@ -23,48 +25,46 @@ int get_think_time(float time_left, int num_moves_out_of_book,
 class Engine {
     public:
 
-    Engine(bool display_uci, TranspositionTable& tt, std::atomic<int64_t>& nodes);
+    Engine(bool is_main_thread, TranspositionTable& tt, WorkerPool& worker_pool);
 
-    bool display_uci;
-    std::atomic<int64_t>& nodes;
-    int64_t tb_hits = 0;
-    int64_t seldepth = 0;
-    int root_depth = 0;
-    std::atomic<SearchLimit> limit;
+    std::atomic<int64_t> nodes = 0;
+    std::atomic<bool> is_main_thread;
     std::atomic<bool> interrupt_flag = false;
-
-    Stack stack[MAX_PLY + STACK_PADDING_SIZE] = {};
-    Stack* root_ss = stack + 2;
-
-    std::atomic<int> run_time;
-    TranspositionTable& tt;
+    std::atomic<SearchLimit> limit;
 
     std::array<int, LMR_TABLE_SIZE> lmr_table;
 
     NnueBoard pos = NnueBoard();
 
-    Movelist root_moves;
-
-    void update_run_time();
+    TranspositionTable& tt;
 
     Move iterative_deepening(SearchLimit limit);
-
     void clear_state();
-
     void save_state(std::string file);
     void load_state(std::string file);
-
-    std::atomic<bool> is_nonsense = false;
 
     private:
     friend class WorkerPool;
 
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
+    Timer timer;
 
+    WorkerPool& worker_pool;
+
+    bool tablebase_loaded = false;
+
+    int64_t tb_hits = 0;
+    int64_t seldepth = 0;
+    int root_depth = 0;
+
+    Stack stack[MAX_PLY + STACK_PADDING_SIZE] = {};
+    Stack* root_ss = stack + 2;
+
+    Movelist root_moves;
+
+    bool is_nonsense = false;
     int (*evaluate)(NnueBoard& pos) = nnue_evaluate;
     Nonsense::Stage nonsense_stage = Nonsense::STANDARD;
     Color engine_color;
-    bool tablebase_loaded = false;
 
     void fill_lmr_table();
     int get_base_reduction(int depth, int move_count);
@@ -72,8 +72,10 @@ class Engine {
     CaptureHistory capt_history = CaptureHistory();
     KillerMoves killer_moves = KillerMoves();
     FromToHistory history = FromToHistory();
+    ReductionHistory red_history = ReductionHistory();
     ContinuationHistory cont_history = ContinuationHistory();
-    PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory(); 
+    ContinuationHistory cont_history2 = ContinuationHistory();
+    PawnCorrectionHistory pawn_corrhist = PawnCorrectionHistory();
     MinorCorrectionHistory minor_corrhist = MinorCorrectionHistory();
     MajorCorrectionHistory major_corrhist = MajorCorrectionHistory();
     std::array<NonPawnCorrectionHistory, 2> nonpawn_corrhist = {}; 
