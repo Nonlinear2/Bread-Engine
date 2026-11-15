@@ -82,7 +82,9 @@ int get_think_time(float time_left, int num_moves_out_of_book, int num_moves_unt
 Engine::Engine(bool is_main_thread, TranspositionTable& tt, WorkerPool& worker_pool)
     : is_main_thread(is_main_thread),
       tt(tt),
-      worker_pool(worker_pool) {};
+      worker_pool(worker_pool) {
+        fill_lmr_table();
+      };
 
 int Engine::get_corrhist(Color color){
     return (corr_1 * pawn_corrhist.get(color, pos.get_pawn_key()) 
