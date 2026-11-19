@@ -490,7 +490,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
                     if (transposition.move != Move::NO_MOVE && !tt_capture)
                         history.apply_bonus(
                             history.get(pos.sideToMove(), transposition.move.from(), transposition.move.to()),
-                            std::min(60*depth + 30, 800)
+                            std::min(30*depth + 30, 800)
                         );
                     return transposition.value;
                 }
