@@ -476,15 +476,24 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (is_mate(transposition.value))
         transposition.value = pos_to_root_mate_value(transposition.value, ply);
     
+    bool tt_capture = transposition.move != Move::NO_MOVE && pos.isCapture(transposition.move);
+    
     chess::Move excluded_move = ss->excluded_move;
     if (!root_node && !pv && transposition.depth >= depth 
-        && (cutnode == (transposition.value >= beta) || depth > 1)
         && excluded_move == Move::NO_MOVE){
         switch (transposition.flag){
             case TFlag::EXACT:
                 return transposition.value;
             case TFlag::LOWER_BOUND:
                 alpha = std::max(alpha, transposition.value);
+                if (beta <= alpha){
+                    if (transposition.move != Move::NO_MOVE && !tt_capture)
+                        history.apply_bonus(
+                            history.get(pos.sideToMove(), transposition.move.from(), transposition.move.to()),
+                            std::min(30*depth + 30, 800)
+                        );
+                    return transposition.value;
+                }
                 break;
             case TFlag::UPPER_BOUND:
                 beta = std::min(beta, transposition.value);
@@ -521,7 +530,6 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     bool opponent_worsening = is_valid(ss->static_eval) && is_valid((ss - 1)->static_eval)
         && ss->static_eval > -(ss - 1)->static_eval;
 
-    bool tt_capture = transposition.move != Move::NO_MOVE && pos.isCapture(transposition.move);
 
     bool in_check = pos.inCheck();
 
