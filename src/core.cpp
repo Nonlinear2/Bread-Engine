@@ -506,13 +506,14 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
     if (uncorrected_static_eval == NO_VALUE)
         uncorrected_static_eval = evaluate(pos);
 
-    eval = ss->static_eval = std::clamp(
+    ss->static_eval = std::clamp(
         uncorrected_static_eval + get_corrhist(pos.sideToMove()), -BEST_VALUE, BEST_VALUE
     );
 
-    if (is_valid(transposition.value) && !is_decisive(transposition.value)
-        && transposition.flag == TFlag::EXACT)
-            eval = transposition.value;
+    if (!is_valid(transposition.value) || is_decisive(transposition.value))
+        eval = ss->static_eval;
+    else
+        eval = transposition.value;
 
     bool improving = is_valid(ss->static_eval) && is_valid((ss - 2)->static_eval)
         && ss->static_eval > (ss - 2)->static_eval;
