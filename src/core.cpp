@@ -510,7 +510,7 @@ int Engine::negamax(int depth, int alpha, int beta, Stack* ss, bool cutnode){
         uncorrected_static_eval + get_corrhist(pos.sideToMove()), -BEST_VALUE, BEST_VALUE
     );
 
-    if (transposition.value == NO_VALUE)
+    if (!is_valid(transposition.value) || is_decisive(transposition.value))
         eval = ss->static_eval;
     else
         eval = transposition.value;
