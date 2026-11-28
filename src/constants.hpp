@@ -100,6 +100,9 @@ constexpr int DEPTH_QSEARCH = 0;
 constexpr int QSEARCH_SOFT_DEPTH_LIMIT = 6;
 constexpr int QSEARCH_HARD_DEPTH_LIMIT = 15;
 
+constexpr int LMR_NUM_FEATURES = 10;
+constexpr int LMR_TABLE_SIZE = 1 << LMR_NUM_FEATURES;
+
 /*****
 scores
 *****/

@@ -5,7 +5,7 @@
 #include <set>
 #include <stdexcept>
 
-// #define IS_TUNE 1
+#define IS_TUNE 1
 
 namespace SPSA {
 
@@ -61,8 +61,24 @@ inline int get_value(const std::string& name){
                       << (float)(c) << ", " << (float)(r) << std::endl; \
             return true; \
         }();
+
+    #define TUNEABLE_ARRAY(name, SIZE, init, min, max, c, r) \
+        inline std::array<int, SIZE> name = init(); \
+        inline bool name##_init = []() { \
+            for (size_t i = 0; i < SIZE; ++i) { \
+                std::string n = std::string(#name) + "_" + std::to_string(i); \
+                SPSA::register_tuneable(n, &name[i], min, max); \
+                std::cout << n << ", int, " << (float)name[i] << ", " \
+                          << (float)(min) << ", " << (float)(max) << ", " \
+                          << (float)(c) << ", " << (float)(r) << std::endl; \
+            } \
+            return true; \
+        }();
 #else
     #define TUNEABLE(name, type, value, min, max, c, r) constexpr type name = value;
+
+    #define TUNEABLE_ARRAY(name, SIZE, init, min, max, c, r) \
+        constexpr std::array<int, SIZE> name = init();
 #endif
 
 #define UNACTIVE_TUNEABLE(name, type, value, min, max, c, r) constexpr type name = value;
